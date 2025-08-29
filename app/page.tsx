@@ -1,10 +1,17 @@
+import Image from "next/image";
+
 export default function Home() {
   return (
     <main style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Bienvenue sur Comptanet Québec 🚀</h1>
+      <Image 
+        src="/logo-cq.png" 
+        alt="Logo ComptaNet Québec" 
+        width={200} 
+        height={200} 
+      />
+      <h1>Bienvenue sur ComptaNet Québec</h1>
       <p>
-        Votre partenaire de confiance pour la comptabilité et la fiscalité au Québec.  
-        Bientôt, vous pourrez remplir vos formulaires en ligne directement ici.
+        Votre partenaire de confiance pour la fiscalité et la comptabilité.
       </p>
     </main>
   );
