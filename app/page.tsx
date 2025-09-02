@@ -14,12 +14,16 @@ export default function Home() {
       brand: 'ComptaNet Québec',
       nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact' },
       cta: 'Commencez dès aujourd’hui',
-      heroTitle:
-        <>Déclarez vos revenus en ligne facilement et rapidement avec <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroTitle: (
+        <>
+          Déclarez vos revenus en ligne facilement et rapidement avec{' '}
+          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
+        </>
+      ),
       heroSub:
-        "Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.",
+        'Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.',
       servicesTitle: 'Services',
-      servicesSub: "On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.",
+      servicesSub: 'On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.',
       services: [
         { t: 'Déclarations de revenus', d: 'Particuliers, travailleurs autonomes & PME — fédéral et provincial.' },
         { t: 'Organisation de documents', d: 'Liste claire des pièces à fournir et dépôt sécurisé en ligne.' },
@@ -40,25 +44,34 @@ export default function Home() {
           t: 'Impôt des particuliers (T1)',
           p: 'à partir de 100 $',
           pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'],
+          href: '/tarifs/t1',
         },
         {
           t: 'Travailleurs autonomes',
           p: 'à partir de 150 $',
           pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'],
+          href: '/tarifs/travailleur-autonome',
         },
         {
           t: 'Sociétés incorporées (T2 / PME)',
-          p: 'à partir de 850 $',
+          p: 'à partir de 850 $ (450 $ si compagnie sans revenus)',
           pts: ['États financiers', 'Bilan complet', 'Transmission incluse'],
+          href: '/tarifs/t2',
         },
       ],
-      getPrice: 'Obtenir un prix',
+      getPrice: 'Voir les tarifs',
       faqTitle: 'FAQ',
       faq: [
-        { q: 'Comment vous envoyer mes documents?', a: "Après l’ouverture de votre compte, vous aurez un espace sécurisé pour téléverser des photos ou des PDF." },
-        { q: 'Quels documents avez-vous besoin?', a: "T4/Relevé 1, feuillets de revenus (REER, CÉLI, intérêts, etc.), reçus de dépenses admissibles et toute correspondance de l’ARC/Revenu Québec." },
-        { q: 'Combien de temps ça prend?', a: "Généralement 24 à 72 heures après réception des documents complets. Les périodes de pointe peuvent allonger le délai." },
-        { q: 'Comment paye-t-on?', a: "Par virement Interac ou carte (lien de paiement). La transmission est incluse dans le prix." },
+        {
+          q: 'Comment vous envoyer mes documents?',
+          a: "Après l’ouverture de votre compte, vous aurez un espace sécurisé pour téléverser des photos ou des PDF.",
+        },
+        {
+          q: 'Quels documents avez-vous besoin?',
+          a: 'T4/Relevé 1, feuillets de revenus (REER, CÉLI, intérêts, etc.), reçus de dépenses admissibles et toute correspondance de l’ARC/Revenu Québec.',
+        },
+        { q: 'Combien de temps ça prend?', a: 'Généralement 24 à 72 heures après réception des documents complets. Les périodes de pointe peuvent allonger le délai.' },
+        { q: 'Comment paye-t-on?', a: 'Par virement Interac ou carte (lien de paiement). La transmission est incluse dans le prix.' },
       ],
       contactTitle: 'Contact',
       contactHint: 'ou écrivez-nous à',
@@ -69,14 +82,18 @@ export default function Home() {
       brand: 'ComptaNet Québec',
       nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact' },
       cta: 'Get started today',
-      heroTitle:
-        <>File your taxes online quickly and easily with <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroTitle: (
+        <>
+          File your taxes online quickly and easily with{' '}
+          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
+        </>
+      ),
       heroSub:
         'A complete, stress-free online tax solution handled by experts. Maximize your refund while simplifying your tax situation.',
       servicesTitle: 'Services',
       servicesSub: 'We handle the essentials so you stay compliant, hassle-free.',
       services: [
-        { t: 'Tax returns', d: 'Individuals & self-employed — federal and provincial.' },
+        { t: 'Tax returns', d: 'Individuals, self-employed & SMB — federal and provincial.' },
         { t: 'Document organization', d: 'Clear checklist and secure online upload.' },
         { t: 'Support & review', d: 'Fast answers and final verification.' },
         { t: 'Optimization', d: 'Credits and deductions to maximize refunds.' },
@@ -91,15 +108,23 @@ export default function Home() {
       pricingTitle: 'Pricing 2025',
       pricingSub: 'Base examples — final price confirmed after review.',
       plans: [
-        { t: 'Personal income tax (T1)', p: 'from $100', pts: ['T4/Relevé 1', 'Basic credits', 'E-file included'] },
-        { t: 'Self-employed', p: 'from $150', pts: ['P&L statement', 'Eligible expenses', 'Optimization'] },
-        { t: 'Incorporated companies (T2 / SMB)', p: 'from $850', pts: ['Financial statements', 'Full balance sheet', 'E-file included'] },
+        { t: 'Personal income tax (T1)', p: 'from $100', pts: ['T4/Relevé 1', 'Basic credits', 'E-file included'], href: '/tarifs/t1' },
+        { t: 'Self-employed', p: 'from $150', pts: ['P&L statement', 'Eligible expenses', 'Optimization'], href: '/tarifs/travailleur-autonome' },
+        {
+          t: 'Incorporated companies (T2 / SMB)',
+          p: 'from $850 ( $450 if no revenue )',
+          pts: ['Financial statements', 'Full balance sheet', 'E-file included'],
+          href: '/tarifs/t2',
+        },
       ],
-      getPrice: 'Get a quote',
+      getPrice: 'See pricing',
       faqTitle: 'FAQ',
       faq: [
         { q: 'How do I send my documents?', a: 'Once your account is created, you get a secure portal to upload photos or PDFs.' },
-        { q: 'What documents are needed?', a: 'T4/Relevé 1, income slips (RRSP, TFSA, interest, etc.), receipts for eligible expenses, and any CRA/Revenu Québec letters.' },
+        {
+          q: 'What documents are needed?',
+          a: 'T4/Relevé 1, income slips (RRSP, TFSA, interest, etc.), receipts for eligible expenses, and any CRA/Revenu Québec letters.',
+        },
         { q: 'How long does it take?', a: 'Usually 24–72 hours after receiving complete files. Peak season may take longer.' },
         { q: 'How do I pay?', a: 'Interac e-Transfer or card (payment link). E-file is included.' },
       ],
@@ -112,14 +137,18 @@ export default function Home() {
       brand: 'ComptaNet Québec',
       nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto' },
       cta: 'Empieza hoy',
-      heroTitle:
-        <>Declare sus impuestos en línea de forma rápida y sencilla con <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroTitle: (
+        <>
+          Declare sus impuestos en línea de forma rápida y sencilla con{' '}
+          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
+        </>
+      ),
       heroSub:
         'Solución completa y sin estrés gestionada por expertos. Maximice su reembolso simplificando su fiscalidad.',
       servicesTitle: 'Servicios',
       servicesSub: 'Nos ocupamos de lo esencial para que esté en regla, sin complicaciones.',
       services: [
-        { t: 'Declaraciones de impuestos', d: 'Particulares y autónomos — federal y provincial.' },
+        { t: 'Declaraciones de impuestos', d: 'Particulares, autónomos y PyME — federal y provincial.' },
         { t: 'Organización de documentos', d: 'Lista clara y carga segura en línea.' },
         { t: 'Soporte y revisión', d: 'Respuestas rápidas y verificación final.' },
         { t: 'Optimización', d: 'Créditos y deducciones para maximizar reembolsos.' },
@@ -134,11 +163,16 @@ export default function Home() {
       pricingTitle: 'Tarifas 2025',
       pricingSub: 'Ejemplos base — el precio final se confirma según su caso.',
       plans: [
-        { t: 'Impuesto personal (T1)', p: 'desde $100', pts: ['T4/Relevé 1', 'Créditos básicos', 'Envío incluido'] },
-        { t: 'Autónomos', p: 'desde $150', pts: ['Estado de resultados', 'Gastos deducibles', 'Optimización'] },
-        { t: 'Sociedades (T2 / PyME)', p: 'desde $850', pts: ['Estados financieros', 'Balance completo', 'Envío incluido'] },
+        { t: 'Impuesto personal (T1)', p: 'desde $100', pts: ['T4/Relevé 1', 'Créditos básicos', 'Envío incluido'], href: '/tarifs/t1' },
+        { t: 'Autónomos', p: 'desde $150', pts: ['Estado de resultados', 'Gastos deducibles', 'Optimización'], href: '/tarifs/travailleur-autonome' },
+        {
+          t: 'Sociedades (T2 / PyME)',
+          p: 'desde $850 ( $450 si la compañía no tiene ingresos )',
+          pts: ['Estados financieros', 'Balance completo', 'Envío incluido'],
+          href: '/tarifs/t2',
+        },
       ],
-      getPrice: 'Solicitar precio',
+      getPrice: 'Ver tarifas',
       faqTitle: 'FAQ',
       faq: [
         { q: '¿Cómo envío mis documentos?', a: 'Con su cuenta obtendrá un portal seguro para subir fotos o PDF.' },
@@ -173,7 +207,7 @@ export default function Home() {
             {/* Sélecteur de langue */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 12 }}>
               <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
-              {(['fr','en','es'] as Lang[]).map((l) => (
+              {(['fr', 'en', 'es'] as Lang[]).map((l) => (
                 <button
                   key={l}
                   onClick={() => setLang(l)}
@@ -196,7 +230,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* -------- HERO / BANNIÈRE -------- */}
+      {/* -------- HERO -------- */}
       <section style={{ position: 'relative', width: '100%', height: 520, overflow: 'hidden' }}>
         <img src="/banniere.png" alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 16 }}>
@@ -256,10 +290,23 @@ export default function Home() {
               <h3 style={{ margin: 0, fontSize: 18 }}>{x.t}</h3>
               <div style={{ color: bleu, fontWeight: 800, fontSize: 20, margin: '8px 0 12px' }}>{x.p}</div>
               <ul style={{ margin: 0, paddingLeft: 18, color: '#6b7280' }}>
-                {x.pts.map((p, j) => <li key={j}>{p}</li>)}
+                {x.pts.map((p, j) => (
+                  <li key={j}>{p}</li>
+                ))}
               </ul>
               <div style={{ marginTop: 14 }}>
-                <a href="#contact" style={{ display: 'inline-block', background: bleu, color: 'white', padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700 }}>
+                <a
+                  href={x.href}
+                  style={{
+                    display: 'inline-block',
+                    background: bleu,
+                    color: 'white',
+                    padding: '10px 16px',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                  }}
+                >
                   {T.getPrice}
                 </a>
               </div>
@@ -283,7 +330,10 @@ export default function Home() {
               <input name="Nom" placeholder="Votre nom" required style={inputStyle} />
               <input name="Courriel" placeholder="Votre courriel" type="email" required style={inputStyle} />
               <textarea name="Message" placeholder="Comment pouvons-nous aider?" rows={5} style={inputStyle} />
-              <button type="submit" style={{ background: bleu, color: 'white', border: 0, padding: '12px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
+              <button
+                type="submit"
+                style={{ background: bleu, color: 'white', border: 0, padding: '12px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
+              >
                 {T.send}
               </button>
             </div>
@@ -352,7 +402,7 @@ function FAQ({ items }: { items: { q: string; a: string }[] }) {
 /* ---- style réutilisable pour les inputs ---- */
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  border: '1px solid #e5e7eb',
+  border: '1px solid '#e5e7eb',
   borderRadius: 10,
   padding: '12px 14px',
   outline: 'none',
