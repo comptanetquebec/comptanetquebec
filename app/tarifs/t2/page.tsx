@@ -1,106 +1,97 @@
 'use client';
 
-import React, { useState } from 'react';
-// idem remarque _shared que ci-dessus
+import { useState } from 'react';
 
-export default function T2Page() {
-  const bleu = '#004aad' as const;
+export default function Page() {
+  const bleu = '#004aad';
   type Lang = 'fr' | 'en' | 'es';
   const [lang, setLang] = useState<Lang>('fr');
 
   const T = {
     fr: {
-      title: 'Sociétés incorporées (T2 / PME)',
-      intro:
-        'Exemples de prix — variables selon la taille et la complexité du dossier. (Tenue de livres & remises TPS/TVQ non incluses.)',
+      title: 'Sociétés incorporées (T2 / PME) – Tarifs détaillés',
+      back: '← Retour à l’accueil',
       blocks: [
         {
           h: 'T2 complet',
           items: [
-            ['États financiers + Bilan, notes sommaires', 'à partir de 850 $'],
-            ['Transmission incluse (ARC)', 'inclus'],
-            ['Ajustement selon complexité', 'sur devis'],
+            'À partir de 850 $',
+            '450 $ si compagnie sans revenus',
+            'États financiers et bilan complet',
+            'Annexes & transmission incluse',
+            'Tarif ajusté selon la taille et la complexité du dossier',
           ],
         },
         {
-          h: 'Cas particuliers',
+          h: 'Services connexes (sur demande)',
           items: [
-            ['Compagnie sans revenus (exercice sans activité)', '450 $'],
-            ['Année courte / première année / changement fin d’année', 'sur devis'],
-          ],
-        },
-        {
-          h: 'Options utiles',
-          items: [
-            ['Révision d’avis de cotisation', 'inclus'],
-            ['Conseils fiscaux rapides', 'inclus'],
+            'Aide à l’organisation des pièces justificatives',
+            'Conseils fiscaux de base pour dirigeants',
           ],
         },
       ],
-      back: '← Retour aux tarifs',
-      cta: 'Nous écrire',
     },
     en: {
-      title: 'Incorporated companies (T2 / SMB)',
-      intro:
-        'Sample pricing — depends on size and complexity. (Bookkeeping & GST/QST remittances excluded.)',
+      title: 'Incorporated (T2 / SMB) – Detailed pricing',
+      back: '← Back to home',
       blocks: [
         {
-          h: 'Full T2',
+          h: 'Full T2 return',
           items: [
-            ['Financial statements + Balance sheet, short notes', 'from $850'],
-            ['E-file (CRA) included', 'included'],
-            ['Complexity adjustment', 'on quote'],
+            'From $850',
+            '$450 if the company has no revenue',
+            'Financial statements & full balance sheet',
+            'Schedules & e-file included',
+            'Price adjusted to size/complexity of the file',
           ],
         },
-        {
-          h: 'Special cases',
-          items: [
-            ['No-revenue company (inactive fiscal year)', '$450'],
-            ['Short year / first year / year-end change', 'on quote'],
-          ],
-        },
-        { h: 'Useful options', items: [['Notice of assessment review', 'included'], ['Quick tax advice', 'included']] },
+        { h: 'Related services (on request)', items: ['Help organizing supporting docs', 'Basic tax guidance for owners'] },
       ],
-      back: '← Back to pricing',
-      cta: 'Contact us',
     },
     es: {
-      title: 'Sociedades (T2 / PyME)',
-      intro:
-        'Precios de referencia — según tamaño y complejidad. (Sin contabilidad ni remesas de impuestos).',
+      title: 'Sociedades (T2 / PyME) – Tarifas detalladas',
+      back: '← Volver al inicio',
       blocks: [
         {
-          h: 'T2 completo',
+          h: 'Declaración T2 completa',
           items: [
-            ['Estados financieros + Balance, notas breves', 'desde $850'],
-            ['Envío electrónico (CRA) incluido', 'incluido'],
-            ['Ajuste por complejidad', 'a cotizar'],
+            'Desde $850',
+            '$450 si la compañía no tiene ingresos',
+            'Estados financieros y balance completo',
+            'Anexos y envío incluido',
+            'Precio ajustado según tamaño/complejidad',
           ],
         },
-        { h: 'Casos especiales', items: [['Compañía sin ingresos (año inactivo)', '$450'], ['Año corto / primer año / cambio de cierre', 'a cotizar']] },
-        { h: 'Opciones útiles', items: [['Revisión de notificación de evaluación', 'incluido'], ['Consejo fiscal rápido', 'incluido']] },
+        { h: 'Servicios relacionados (a pedido)', items: ['Ayuda para organizar documentos', 'Consejos fiscales básicos'] },
       ],
-      back: '← Volver a tarifas',
-      cta: 'Escríbenos',
     },
   }[lang];
 
   return (
-    <Wrapper bleu={bleu} lang={lang} setLang={setLang} title={T.title} intro={T.intro} backHref="/#tarifs" backLabel={T.back}>
-      {T.blocks.map((b, i) => (
-        <Card key={i} title={b.h}>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {b.items.map(([label, price]: [string, string], j: number) => (
-              <li key={j} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '4px 0' }}>
-                <span>{label}</span>
-                <strong>{price}</strong>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ))}
-      <CTA bleu={bleu} label={T.cta} />
-    </Wrapper>
+    <main style={{ maxWidth: 900, margin: '30px auto', padding: '0 16px', fontFamily: 'Arial, sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <a href="/" style={{ textDecoration: 'none', color: '#374151' }}>{T.back}</a>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(['fr','en','es'] as Lang[]).map(l => (
+            <button key={l} onClick={() => setLang(l)} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', background: l===lang ? bleu : 'white', color: l===lang ? 'white' : '#374151', cursor: 'pointer' }}>
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <h1 style={{ color: bleu, marginBottom: 12 }}>{T.title}</h1>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        {T.blocks.map((b, i) => (
+          <section key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, background: 'white' }}>
+            <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>{b.h}</h2>
+            <ul style={{ margin: 0, paddingLeft: 18, color: '#4b5563' }}>
+              {b.items.map((it, j) => <li key={j}>{it}</li>)}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </main>
   );
 }
