@@ -21,9 +21,9 @@ export default function Home() {
         </>
       ),
       heroSub:
-        'Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.',
+        "Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.",
       servicesTitle: 'Services',
-      servicesSub: 'On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.',
+      servicesSub: "On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.",
       services: [
         { t: 'Déclarations de revenus', d: 'Particuliers, travailleurs autonomes & PME — fédéral et provincial.' },
         { t: 'Organisation de documents', d: 'Liste claire des pièces à fournir et dépôt sécurisé en ligne.' },
@@ -62,16 +62,10 @@ export default function Home() {
       getPrice: 'Voir les tarifs',
       faqTitle: 'FAQ',
       faq: [
-        {
-          q: 'Comment vous envoyer mes documents?',
-          a: "Après l’ouverture de votre compte, vous aurez un espace sécurisé pour téléverser des photos ou des PDF.",
-        },
-        {
-          q: 'Quels documents avez-vous besoin?',
-          a: 'T4/Relevé 1, feuillets de revenus (REER, CÉLI, intérêts, etc.), reçus de dépenses admissibles et toute correspondance de l’ARC/Revenu Québec.',
-        },
-        { q: 'Combien de temps ça prend?', a: 'Généralement 24 à 72 heures après réception des documents complets. Les périodes de pointe peuvent allonger le délai.' },
-        { q: 'Comment paye-t-on?', a: 'Par virement Interac ou carte (lien de paiement). La transmission est incluse dans le prix.' },
+        { q: 'Comment vous envoyer mes documents?', a: "Après l’ouverture de votre compte, vous aurez un espace sécurisé pour téléverser des photos ou des PDF." },
+        { q: 'Quels documents avez-vous besoin?', a: "T4/Relevé 1, feuillets de revenus (REER, CÉLI, intérêts, etc.), reçus de dépenses admissibles et toute correspondance de l’ARC/Revenu Québec." },
+        { q: 'Combien de temps ça prend?', a: "Généralement 24 à 72 heures après réception des documents complets. Les périodes de pointe peuvent allonger le délai." },
+        { q: 'Comment paye-t-on?', a: "Par virement Interac ou carte (lien de paiement). La transmission est incluse." },
       ],
       contactTitle: 'Contact',
       contactHint: 'ou écrivez-nous à',
@@ -88,8 +82,7 @@ export default function Home() {
           <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
         </>
       ),
-      heroSub:
-        'A complete, stress-free online tax solution handled by experts. Maximize your refund while simplifying your tax situation.',
+      heroSub: 'A complete, stress-free online tax solution handled by experts. Maximize your refund while simplifying your taxes.',
       servicesTitle: 'Services',
       servicesSub: 'We handle the essentials so you stay compliant, hassle-free.',
       services: [
@@ -110,23 +103,15 @@ export default function Home() {
       plans: [
         { t: 'Personal income tax (T1)', p: 'from $100', pts: ['T4/Relevé 1', 'Basic credits', 'E-file included'], href: '/tarifs/t1' },
         { t: 'Self-employed', p: 'from $150', pts: ['P&L statement', 'Eligible expenses', 'Optimization'], href: '/tarifs/travailleur-autonome' },
-        {
-          t: 'Incorporated companies (T2 / SMB)',
-          p: 'from $850 ($450 if no revenue)',
-          pts: ['Financial statements', 'Full balance sheet', 'E-file included'],
-          href: '/tarifs/t2',
-        },
+        { t: 'Incorporated (T2 / SMB)', p: 'from $850 ($450 if no revenue)', pts: ['Financial statements', 'Full balance sheet', 'E-file included'], href: '/tarifs/t2' },
       ],
       getPrice: 'See pricing',
       faqTitle: 'FAQ',
       faq: [
         { q: 'How do I send my documents?', a: 'Once your account is created, you get a secure portal to upload photos or PDFs.' },
-        {
-          q: 'What documents are needed?',
-          a: 'T4/Relevé 1, income slips (RRSP, TFSA, interest, etc.), receipts for eligible expenses, and any CRA/Revenu Québec letters.',
-        },
-        { q: 'How long does it take?', a: 'Usually 24–72 hours after receiving complete files. Peak season may take longer.' },
-        { q: 'How do I pay?', a: 'Interac e-Transfer or card (payment link). E-file is included.' },
+        { q: 'What documents are needed?', a: 'T4/Relevé 1, income slips, receipts for eligible expenses, and CRA/Revenu Québec letters.' },
+        { q: 'How long does it take?', a: 'Usually 24–72 hours after receiving complete files.' },
+        { q: 'How do I pay?', a: 'Interac e-Transfer or card (payment link). E-file included.' },
       ],
       contactTitle: 'Contact',
       contactHint: 'or email us at',
@@ -143,8 +128,7 @@ export default function Home() {
           <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
         </>
       ),
-      heroSub:
-        'Solución completa y sin estrés gestionada por expertos. Maximice su reembolso simplificando su fiscalidad.',
+      heroSub: 'Solución completa y sin estrés gestionada por expertos. Maximice su reembolso simplificando su fiscalidad.',
       servicesTitle: 'Servicios',
       servicesSub: 'Nos ocupamos de lo esencial para que esté en regla, sin complicaciones.',
       services: [
@@ -165,19 +149,14 @@ export default function Home() {
       plans: [
         { t: 'Impuesto personal (T1)', p: 'desde $100', pts: ['T4/Relevé 1', 'Créditos básicos', 'Envío incluido'], href: '/tarifs/t1' },
         { t: 'Autónomos', p: 'desde $150', pts: ['Estado de resultados', 'Gastos deducibles', 'Optimización'], href: '/tarifs/travailleur-autonome' },
-        {
-          t: 'Sociedades (T2 / PyME)',
-          p: 'desde $850 ($450 si la compañía no tiene ingresos)',
-          pts: ['Estados financieros', 'Balance completo', 'Envío incluido'],
-          href: '/tarifs/t2',
-        },
+        { t: 'Sociedades (T2 / PyME)', p: 'desde $850 ($450 si sin ingresos)', pts: ['Estados financieros', 'Balance completo', 'Envío incluido'], href: '/tarifs/t2' },
       ],
       getPrice: 'Ver tarifas',
       faqTitle: 'FAQ',
       faq: [
         { q: '¿Cómo envío mis documentos?', a: 'Con su cuenta obtendrá un portal seguro para subir fotos o PDF.' },
         { q: '¿Qué documentos necesito?', a: 'T4/Relevé 1, comprobantes de ingresos, recibos de gastos y cartas de CRA/Revenu Québec.' },
-        { q: '¿Cuánto demora?', a: 'Normalmente 24–72 h después de recibir todo completo.' },
+        { q: '¿Cuánto demora?', a: 'Normalmente 24–72 h tras recibir todo completo.' },
         { q: '¿Cómo pago?', a: 'Interac o tarjeta (enlace de pago). Envío incluido.' },
       ],
       contactTitle: 'Contacto',
@@ -189,7 +168,7 @@ export default function Home() {
 
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
-      {/* -------- NAVBAR -------- */}
+      {/* NAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'white', borderBottom: '1px solid #eee' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -204,9 +183,9 @@ export default function Home() {
             <a href="#faq" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.faq}</a>
             <a href="#contact" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.contact}</a>
 
-            {/* Sélecteur de langue */}
+            {/* Langues */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 12 }}>
-              <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
+              <span style={{ fontSize: 12, color: '#6b7280' }}> {T.langLabel} </span>
               {(['fr', 'en', 'es'] as Lang[]).map((l) => (
                 <button
                   key={l}
@@ -230,7 +209,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* -------- HERO -------- */}
+      {/* HERO */}
       <section style={{ position: 'relative', width: '100%', height: 520, overflow: 'hidden' }}>
         <img src="/banniere.png" alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 16 }}>
@@ -246,7 +225,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* -------- SERVICES -------- */}
+      {/* SERVICES */}
       <section id="services" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
         <h2 style={{ color: bleu, marginBottom: 12 }}>{T.servicesTitle}</h2>
         <p style={{ color: '#4b5563', marginBottom: 22 }}>{T.servicesSub}</p>
@@ -261,16 +240,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* -------- ÉTAPES -------- */}
+      {/* ÉTAPES */}
       <section id="etapes" style={{ background: '#f8fafc', borderTop: '1px solid #eef2f7', borderBottom: '1px solid #eef2f7' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '50px 16px' }}>
           <h2 style={{ color: bleu, marginBottom: 20 }}>{T.stepsTitle}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             {T.steps.map((e, i) => (
               <div key={i} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: bleu, color: 'white', display: 'grid', placeItems: 'center', fontWeight: 700, marginBottom: 10 }}>
-                  {e.n}
-                </div>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: bleu, color: 'white', display: 'grid', placeItems: 'center', fontWeight: 700, marginBottom: 10 }}>{e.n}</div>
                 <h3 style={{ margin: '0 0 6px 0', fontSize: 18 }}>{e.t}</h3>
                 <p style={{ margin: 0, color: '#6b7280' }}>{e.d}</p>
               </div>
@@ -279,7 +256,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* -------- TARIFS -------- */}
+      {/* TARIFS */}
       <section id="tarifs" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
         <h2 style={{ color: bleu, marginBottom: 12 }}>{T.pricingTitle}</h2>
         <p style={{ color: '#4b5563', marginBottom: 20 }}>{T.pricingSub}</p>
@@ -290,23 +267,10 @@ export default function Home() {
               <h3 style={{ margin: 0, fontSize: 18 }}>{x.t}</h3>
               <div style={{ color: bleu, fontWeight: 800, fontSize: 20, margin: '8px 0 12px' }}>{x.p}</div>
               <ul style={{ margin: 0, paddingLeft: 18, color: '#6b7280' }}>
-                {x.pts.map((p, j) => (
-                  <li key={j}>{p}</li>
-                ))}
+                {x.pts.map((p, j) => <li key={j}>{p}</li>)}
               </ul>
               <div style={{ marginTop: 14 }}>
-                <a
-                  href={x.href}
-                  style={{
-                    display: 'inline-block',
-                    background: bleu,
-                    color: 'white',
-                    padding: '10px 16px',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    fontWeight: 700,
-                  }}
-                >
+                <a href={x.href} style={{ display: 'inline-block', background: bleu, color: 'white', padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700 }}>
                   {T.getPrice}
                 </a>
               </div>
@@ -315,13 +279,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* -------- FAQ -------- */}
+      {/* FAQ */}
       <section id="faq" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
         <h2 style={{ color: bleu, marginBottom: 16 }}>{T.faqTitle}</h2>
         <FAQ items={T.faq} />
       </section>
 
-      {/* -------- CONTACT -------- */}
+      {/* CONTACT */}
       <section id="contact" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px 60px', display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
         <h2 style={{ color: bleu }}>{T.contactTitle}</h2>
         <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white', maxWidth: 700 }}>
@@ -330,10 +294,7 @@ export default function Home() {
               <input name="Nom" placeholder="Votre nom" required style={inputStyle} />
               <input name="Courriel" placeholder="Votre courriel" type="email" required style={inputStyle} />
               <textarea name="Message" placeholder="Comment pouvons-nous aider?" rows={5} style={inputStyle} />
-              <button
-                type="submit"
-                style={{ background: bleu, color: 'white', border: 0, padding: '12px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
-              >
+              <button type="submit" style={{ background: bleu, color: 'white', border: 0, padding: '12px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
                 {T.send}
               </button>
             </div>
@@ -344,7 +305,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* -------- FOOTER -------- */}
+      {/* FOOTER */}
       <footer style={{ background: '#0f172a', color: '#cbd5e1', padding: '24px 16px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -352,9 +313,9 @@ export default function Home() {
             <span>© {new Date().getFullYear()} ComptaNet Québec</span>
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
-            <a href="#services" style={{ color: '#cbd5e1', textDecoration: 'none' }}>{T.nav.services}</a>
-            <a href="#tarifs" style={{ color: '#cbd5e1', textDecoration: 'none' }}>{T.nav.pricing}</a>
-            <a href="#contact" style={{ color: '#cbd5e1', textDecoration: 'none' }}>{T.nav.contact}</a>
+            <a href="#services" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Services</a>
+            <a href="#tarifs" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Tarifs</a>
+            <a href="#contact" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>
