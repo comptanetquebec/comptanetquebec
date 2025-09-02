@@ -21,7 +21,7 @@ export default function Home() {
       servicesTitle: 'Services',
       servicesSub: "On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.",
       services: [
-        { t: 'Déclarations de revenus', d: 'Particuliers & travailleurs autonomes — fédéral et provincial.' },
+        { t: 'Déclarations de revenus', d: 'Particuliers, travailleurs autonomes & PME — fédéral et provincial.' },
         { t: 'Organisation de documents', d: 'Liste claire des pièces à fournir et dépôt sécurisé en ligne.' },
         { t: 'Support & révision', d: 'Réponses rapides à vos questions et vérification finale.' },
         { t: 'Optimisation', d: 'Crédits et déductions pour maximiser vos remboursements.' },
