@@ -1,30 +1,170 @@
+'use client';
+
+import React, { useState } from 'react';
+
 export default function Home() {
-  const bleu = "#004aad";
+  const bleu = '#004aad' as const;
+
+  type Lang = 'fr' | 'en' | 'es';
+  const [lang, setLang] = useState<Lang>('fr');
+
+  // ---- Textes multilingues ----
+  const T = {
+    fr: {
+      brand: 'ComptaNet Québec',
+      nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact' },
+      cta: 'Commencez dès aujourd’hui',
+      heroTitle:
+        <>Déclarez vos revenus en ligne facilement et rapidement avec <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroSub:
+        "Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.",
+      servicesTitle: 'Services',
+      servicesSub: "On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.",
+      services: [
+        { t: 'Déclarations de revenus', d: 'Particuliers & travailleurs autonomes — fédéral et provincial.' },
+        { t: 'Organisation de documents', d: 'Liste claire des pièces à fournir et dépôt sécurisé en ligne.' },
+        { t: 'Support & révision', d: 'Réponses rapides à vos questions et vérification finale.' },
+        { t: 'Optimisation', d: 'Crédits et déductions pour maximiser vos remboursements.' },
+      ],
+      stepsTitle: 'Comment ça marche (4 étapes)',
+      steps: [
+        { n: '1', t: 'Créer votre compte', d: 'On vous ouvre un espace sécurisé.' },
+        { n: '2', t: 'Téléverser vos documents', d: 'Photos ou PDF, tout passe par votre espace.' },
+        { n: '3', t: 'Révision & signature', d: 'On prépare, vous vérifiez et signez en ligne.' },
+        { n: '4', t: 'Transmission', d: 'On transmet aux autorités fiscales et on vous confirme.' },
+      ],
+      pricingTitle: 'Tarifs',
+      pricingSub: 'Exemple de base — on confirme le prix selon votre situation.',
+      plans: [
+        { t: 'Revenu simple', p: 'à partir de 79 $', pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'] },
+        { t: 'Travail autonome', p: 'à partir de 189 $', pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'] },
+        { t: 'Famille', p: 'sur mesure', pts: ['Conjoints & enfants', 'Crédits familles', 'Planification simple'] },
+      ],
+      getPrice: 'Obtenir un prix',
+      faqTitle: 'FAQ',
+      faq: [
+        { q: 'Comment vous envoyer mes documents?', a: "Après l’ouverture de votre compte, vous aurez un espace sécurisé pour téléverser des photos ou des PDF." },
+        { q: 'Quels documents avez-vous besoin?', a: "T4/Relevé 1, feuillets de revenus (REER, CÉLI, intérêts, etc.), reçus de dépenses admissibles et toute correspondance de l’ARC/Revenu Québec." },
+        { q: 'Combien de temps ça prend?', a: "Généralement 24 à 72 heures après réception des documents complets. Les périodes de pointe peuvent allonger le délai." },
+        { q: 'Comment paye-t-on?', a: "Par virement Interac ou carte (lien de paiement). La transmission est incluse dans le prix." },
+      ],
+      contactTitle: 'Contact',
+      contactHint: 'ou écrivez-nous à',
+      send: 'Envoyer',
+      langLabel: 'Langue',
+    },
+    en: {
+      brand: 'ComptaNet Québec',
+      nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact' },
+      cta: 'Get started today',
+      heroTitle:
+        <>File your taxes online quickly and easily with <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroSub:
+        'A complete, stress-free online tax solution handled by experts. Maximize your refund while simplifying your tax situation.',
+      servicesTitle: 'Services',
+      servicesSub: 'We handle the essentials so you stay compliant, hassle-free.',
+      services: [
+        { t: 'Tax returns', d: 'Individuals & self-employed — federal and provincial.' },
+        { t: 'Document organization', d: 'Clear checklist and secure online upload.' },
+        { t: 'Support & review', d: 'Fast answers and final verification.' },
+        { t: 'Optimization', d: 'Credits and deductions to maximize refunds.' },
+      ],
+      stepsTitle: 'How it works (4 steps)',
+      steps: [
+        { n: '1', t: 'Create your account', d: 'We open a secure space for you.' },
+        { n: '2', t: 'Upload your documents', d: 'Photos or PDFs through your portal.' },
+        { n: '3', t: 'Review & sign', d: 'We prepare, you review and e-sign.' },
+        { n: '4', t: 'Transmission', d: 'We e-file to tax authorities and confirm.' },
+      ],
+      pricingTitle: 'Pricing',
+      pricingSub: 'Base examples — final price confirmed after review.',
+      plans: [
+        { t: 'Simple income', p: 'from $79', pts: ['T4/Relevé 1', 'Basic credits', 'E-file included'] },
+        { t: 'Self-employed', p: 'from $189', pts: ['P&L statement', 'Eligible expenses', 'Optimization'] },
+        { t: 'Family', p: 'custom', pts: ['Couple & children', 'Family credits', 'Simple planning'] },
+      ],
+      getPrice: 'Get a quote',
+      faqTitle: 'FAQ',
+      faq: [
+        { q: 'How do I send my documents?', a: 'Once your account is created, you get a secure portal to upload photos or PDFs.' },
+        { q: 'What documents are needed?', a: 'T4/Relevé 1, income slips (RRSP, TFSA, interest, etc.), receipts for eligible expenses, and any CRA/Revenu Québec letters.' },
+        { q: 'How long does it take?', a: 'Usually 24–72 hours after receiving complete files. Peak season may take longer.' },
+        { q: 'How do I pay?', a: 'Interac e-Transfer or card (payment link). E-file is included.' },
+      ],
+      contactTitle: 'Contact',
+      contactHint: 'or email us at',
+      send: 'Send',
+      langLabel: 'Language',
+    },
+    es: {
+      brand: 'ComptaNet Québec',
+      nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto' },
+      cta: 'Empieza hoy',
+      heroTitle:
+        <>Declare sus impuestos en línea de forma rápida y sencilla con <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroSub:
+        'Solución completa y sin estrés gestionada por expertos. Maximize su reembolso simplificando su fiscalidad.',
+      servicesTitle: 'Servicios',
+      servicesSub: 'Nos ocupamos de lo esencial para que esté en regla, sin complicaciones.',
+      services: [
+        { t: 'Declaraciones de impuestos', d: 'Particulares y autónomos — federal y provincial.' },
+        { t: 'Organización de documentos', d: 'Lista clara y carga segura en línea.' },
+        { t: 'Soporte y revisión', d: 'Respuestas rápidas y verificación final.' },
+        { t: 'Optimización', d: 'Créditos y deducciones para maximizar reembolsos.' },
+      ],
+      stepsTitle: 'Cómo funciona (4 pasos)',
+      steps: [
+        { n: '1', t: 'Cree su cuenta', d: 'Espacio seguro para usted.' },
+        { n: '2', t: 'Suba sus documentos', d: 'Fotos o PDF en su portal.' },
+        { n: '3', t: 'Revisión y firma', d: 'Preparamos, usted revisa y firma.' },
+        { n: '4', t: 'Envío', d: 'Transmitimos a las autoridades y confirmamos.' },
+      ],
+      pricingTitle: 'Tarifas',
+      pricingSub: 'Ejemplos base — el precio final se confirma según su caso.',
+      plans: [
+        { t: 'Ingreso simple', p: 'desde $79', pts: ['T4/Relevé 1', 'Créditos básicos', 'Envío incluido'] },
+        { t: 'Autónomo', p: 'desde $189', pts: ['Estado de resultados', 'Gastos deducibles', 'Optimización'] },
+        { t: 'Familia', p: 'a medida', pts: ['Pareja e hijos', 'Créditos familiares', 'Planificación simple'] },
+      ],
+      getPrice: 'Solicitar precio',
+      faqTitle: 'FAQ',
+      faq: [
+        { q: '¿Cómo envío mis documentos?', a: 'Con su cuenta obtendrá un portal seguro para subir fotos o PDF.' },
+        { q: '¿Qué documentos necesito?', a: 'T4/Relevé 1, comprobantes de ingresos, recibos de gastos y cartas de CRA/Revenu Québec.' },
+        { q: '¿Cuánto demora?', a: 'Normalmente 24–72 h después de recibir todo completo.' },
+        { q: '¿Cómo pago?', a: 'Interac o tarjeta (enlace de pago). Envío incluido.' },
+      ],
+      contactTitle: 'Contacto',
+      contactHint: 'o escríbanos a',
+      send: 'Enviar',
+      langLabel: 'Idioma',
+    },
+  }[lang];
 
   return (
-    <main style={{ fontFamily: "Arial, sans-serif", color: "#1f2937" }}>
+    <main style={{ fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
       {/* -------- NAVBAR -------- */}
       <header
         style={{
-          position: "sticky",
+          position: 'sticky',
           top: 0,
           zIndex: 40,
-          background: "white",
-          borderBottom: "1px solid #eee",
+          background: 'white',
+          borderBottom: '1px solid #eee',
         }}
       >
         <div
           style={{
             maxWidth: 1100,
-            margin: "0 auto",
-            padding: "10px 16px",
-            display: "flex",
-            alignItems: "center",
+            margin: '0 auto',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
             gap: 16,
-            justifyContent: "space-between",
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img
               src="/logo-cq.png"
               alt="Logo ComptaNet Québec"
@@ -32,14 +172,38 @@ export default function Home() {
               height={36}
               style={{ borderRadius: 6 }}
             />
-            <strong style={{ color: bleu }}>ComptaNet Québec</strong>
+            <strong style={{ color: bleu }}>{T.brand}</strong>
           </div>
 
-          <nav style={{ display: "flex", gap: 16, fontSize: 14 }}>
-            <a href="#services" style={{ textDecoration: "none", color: "#374151" }}>Services</a>
-            <a href="#etapes" style={{ textDecoration: "none", color: "#374151" }}>Étapes</a>
-            <a href="#tarifs" style={{ textDecoration: "none", color: "#374151" }}>Tarifs</a>
-            <a href="#contact" style={{ textDecoration: "none", color: "#374151" }}>Contact</a>
+          <nav style={{ display: 'flex', gap: 16, fontSize: 14, alignItems: 'center' }}>
+            <a href="#services" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.services}</a>
+            <a href="#etapes" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.steps}</a>
+            <a href="#tarifs" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.pricing}</a>
+            <a href="#faq" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.faq}</a>
+            <a href="#contact" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.contact}</a>
+
+            {/* Sélecteur de langue */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 12 }}>
+              <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
+              {(['fr','en','es'] as Lang[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  style={{
+                    border: `1px solid ${l === lang ? bleu : '#e5e7eb'}`,
+                    background: l === lang ? bleu : 'white',
+                    color: l === lang ? 'white' : '#374151',
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                  aria-pressed={l === lang}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </nav>
         </div>
       </header>
@@ -47,60 +211,54 @@ export default function Home() {
       {/* -------- HERO / BANNIÈRE -------- */}
       <section
         style={{
-          position: "relative",
-          width: "100%",
+          position: 'relative',
+          width: '100%',
           height: 520,
-          overflow: "hidden",
+          overflow: 'hidden',
         }}
       >
         <img
           src="/banniere.png"
-          alt="Famille souriante - ComptaNet Québec"
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          alt="Bannière"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
 
         <div
           style={{
-            position: "absolute",
+            position: 'absolute',
             inset: 0,
-            display: "grid",
-            placeItems: "center",
+            display: 'grid',
+            placeItems: 'center',
             padding: 16,
           }}
         >
           <div
             style={{
-              background: "white",
-              padding: "38px 30px",
+              background: 'white',
+              padding: '38px 30px',
               borderRadius: 16,
               maxWidth: 760,
-              width: "100%",
-              boxShadow: "0 10px 30px rgba(0,0,0,.18)",
-              textAlign: "center",
+              width: '100%',
+              boxShadow: '0 10px 30px rgba(0,0,0,.18)',
+              textAlign: 'center',
             }}
           >
-            <h1 style={{ fontSize: 28, lineHeight: 1.2, margin: 0 }}>
-              Déclarez vos revenus en ligne facilement et rapidement avec{" "}
-              <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
-            </h1>
-            <p style={{ marginTop: 14, color: "#4b5563" }}>
-              Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des
-              experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.
-            </p>
+            <h1 style={{ fontSize: 28, lineHeight: 1.2, margin: 0 }}>{T.heroTitle}</h1>
+            <p style={{ marginTop: 14, color: '#4b5563' }}>{T.heroSub}</p>
             <div style={{ marginTop: 18 }}>
               <a
                 href="#tarifs"
                 style={{
-                  display: "inline-block",
+                  display: 'inline-block',
                   background: bleu,
-                  color: "white",
-                  padding: "12px 22px",
+                  color: 'white',
+                  padding: '12px 22px',
                   borderRadius: 10,
-                  textDecoration: "none",
+                  textDecoration: 'none',
                   fontWeight: 700,
                 }}
               >
-                Commencez dès aujourd’hui
+                {T.cta}
               </a>
             </div>
           </div>
@@ -108,48 +266,29 @@ export default function Home() {
       </section>
 
       {/* -------- SERVICES -------- */}
-      <section id="services" style={{ maxWidth: 1100, margin: "60px auto", padding: "0 16px" }}>
-        <h2 style={{ color: bleu, marginBottom: 12 }}>Services</h2>
-        <p style={{ color: "#4b5563", marginBottom: 22 }}>
-          On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.
-        </p>
+      <section id="services" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
+        <h2 style={{ color: bleu, marginBottom: 12 }}>{T.servicesTitle}</h2>
+        <p style={{ color: '#4b5563', marginBottom: 22 }}>{T.servicesSub}</p>
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
             gap: 16,
           }}
         >
-          {[
-            {
-              t: "Déclarations de revenus",
-              d: "Particuliers & travailleurs autonomes — fédéral et provincial.",
-            },
-            {
-              t: "Organisation de documents",
-              d: "Liste claire des pièces à fournir et dépôt sécurisé en ligne.",
-            },
-            {
-              t: "Support & révision",
-              d: "Réponses rapides à vos questions et vérification finale.",
-            },
-            {
-              t: "Optimisation",
-              d: "Crédits et déductions pour maximiser vos remboursements.",
-            },
-          ].map((c, i) => (
+          {T.services.map((c, i) => (
             <div
               key={i}
               style={{
-                border: "1px solid #e5e7eb",
+                border: '1px solid #e5e7eb',
                 borderRadius: 12,
                 padding: 18,
-                background: "white",
+                background: 'white',
               }}
             >
-              <h3 style={{ margin: "0 0 8px 0", color: "#111827", fontSize: 18 }}>{c.t}</h3>
-              <p style={{ margin: 0, color: "#6b7280" }}>{c.d}</p>
+              <h3 style={{ margin: '0 0 8px 0', color: '#111827', fontSize: 18 }}>{c.t}</h3>
+              <p style={{ margin: 0, color: '#6b7280' }}>{c.d}</p>
             </div>
           ))}
         </div>
@@ -159,44 +298,27 @@ export default function Home() {
       <section
         id="etapes"
         style={{
-          background: "#f8fafc",
-          borderTop: "1px solid #eef2f7",
-          borderBottom: "1px solid #eef2f7",
+          background: '#f8fafc',
+          borderTop: '1px solid #eef2f7',
+          borderBottom: '1px solid #eef2f7',
         }}
       >
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "50px 16px" }}>
-          <h2 style={{ color: bleu, marginBottom: 20 }}>Comment ça marche (4 étapes)</h2>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '50px 16px' }}>
+          <h2 style={{ color: bleu, marginBottom: 20 }}>{T.stepsTitle}</h2>
 
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: 16,
             }}
           >
-            {[
-              { n: "1", t: "Créer votre compte", d: "On vous ouvre un espace sécurisé." },
-              {
-                n: "2",
-                t: "Téléverser vos documents",
-                d: "Photos ou PDF, tout passe par votre espace.",
-              },
-              {
-                n: "3",
-                t: "Révision & signature",
-                d: "On prépare, vous vérifiez et signez en ligne.",
-              },
-              {
-                n: "4",
-                t: "Transmission",
-                d: "On transmet aux autorités fiscales et on vous confirme.",
-              },
-            ].map((e, i) => (
+            {T.steps.map((e, i) => (
               <div
                 key={i}
                 style={{
-                  background: "white",
-                  border: "1px solid #e5e7eb",
+                  background: 'white',
+                  border: '1px solid #e5e7eb',
                   borderRadius: 12,
                   padding: 18,
                 }}
@@ -205,19 +327,19 @@ export default function Home() {
                   style={{
                     width: 36,
                     height: 36,
-                    borderRadius: "50%",
+                    borderRadius: '50%',
                     background: bleu,
-                    color: "white",
-                    display: "grid",
-                    placeItems: "center",
+                    color: 'white',
+                    display: 'grid',
+                    placeItems: 'center',
                     fontWeight: 700,
                     marginBottom: 10,
                   }}
                 >
                   {e.n}
                 </div>
-                <h3 style={{ margin: "0 0 6px 0", fontSize: 18 }}>{e.t}</h3>
-                <p style={{ margin: 0, color: "#6b7280" }}>{e.d}</p>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: 18 }}>{e.t}</h3>
+                <p style={{ margin: 0, color: '#6b7280' }}>{e.d}</p>
               </div>
             ))}
           </div>
@@ -225,50 +347,32 @@ export default function Home() {
       </section>
 
       {/* -------- TARIFS -------- */}
-      <section id="tarifs" style={{ maxWidth: 1100, margin: "60px auto", padding: "0 16px" }}>
-        <h2 style={{ color: bleu, marginBottom: 12 }}>Tarifs</h2>
-        <p style={{ color: "#4b5563", marginBottom: 20 }}>
-          Exemple de base — on confirme le prix selon votre situation.
-        </p>
+      <section id="tarifs" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
+        <h2 style={{ color: bleu, marginBottom: 12 }}>{T.pricingTitle}</h2>
+        <p style={{ color: '#4b5563', marginBottom: 20 }}>{T.pricingSub}</p>
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
             gap: 16,
           }}
         >
-          {[
-            {
-              t: "Revenu simple",
-              p: "à partir de 79 $",
-              pts: ["T4/Relevé 1", "Crédits de base", "Transmission incluse"],
-            },
-            {
-              t: "Travail autonome",
-              p: "à partir de 189 $",
-              pts: ["État des résultats", "Dépenses admissibles", "Optimisation"],
-            },
-            {
-              t: "Famille",
-              p: "sur mesure",
-              pts: ["Conjoints & enfants", "Crédits familles", "Planification simple"],
-            },
-          ].map((x, i) => (
+          {T.plans.map((x, i) => (
             <div
               key={i}
               style={{
-                border: "1px solid #e5e7eb",
+                border: '1px solid #e5e7eb',
                 borderRadius: 12,
                 padding: 20,
-                background: "white",
+                background: 'white',
               }}
             >
               <h3 style={{ margin: 0, fontSize: 18 }}>{x.t}</h3>
-              <div style={{ color: bleu, fontWeight: 800, fontSize: 20, margin: "8px 0 12px" }}>
+              <div style={{ color: bleu, fontWeight: 800, fontSize: 20, margin: '8px 0 12px' }}>
                 {x.p}
               </div>
-              <ul style={{ margin: 0, paddingLeft: 18, color: "#6b7280" }}>
+              <ul style={{ margin: 0, paddingLeft: 18, color: '#6b7280' }}>
                 {x.pts.map((p, j) => (
                   <li key={j}>{p}</li>
                 ))}
@@ -277,16 +381,16 @@ export default function Home() {
                 <a
                   href="#contact"
                   style={{
-                    display: "inline-block",
+                    display: 'inline-block',
                     background: bleu,
-                    color: "white",
-                    padding: "10px 16px",
+                    color: 'white',
+                    padding: '10px 16px',
                     borderRadius: 8,
-                    textDecoration: "none",
+                    textDecoration: 'none',
                     fontWeight: 700,
                   }}
                 >
-                  Obtenir un prix
+                  {T.getPrice}
                 </a>
               </div>
             </div>
@@ -294,95 +398,85 @@ export default function Home() {
         </div>
       </section>
 
+      {/* -------- FAQ -------- */}
+      <section id="faq" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
+        <h2 style={{ color: bleu, marginBottom: 16 }}>{T.faqTitle}</h2>
+        <FAQ items={T.faq} />
+      </section>
+
       {/* -------- CONTACT -------- */}
       <section
         id="contact"
         style={{
           maxWidth: 1100,
-          margin: "60px auto",
-          padding: "0 16px 60px",
-          display: "grid",
-          gridTemplateColumns: "1fr",
+          margin: '60px auto',
+          padding: '0 16px 60px',
+          display: 'grid',
+          gridTemplateColumns: '1fr',
           gap: 20,
         }}
       >
-        <h2 style={{ color: bleu }}>Contact</h2>
+        <h2 style={{ color: bleu }}>{T.contactTitle}</h2>
 
         <div
           style={{
-            border: "1px solid #e5e7eb",
+            border: '1px solid #e5e7eb',
             borderRadius: 12,
             padding: 18,
-            background: "white",
+            background: 'white',
             maxWidth: 700,
           }}
         >
           {/* Formulaire sans backend (mailto) */}
-          <form action="mailto:info@comptanetquebec.com" method="post" encType="text/plain">
-            <div style={{ display: "grid", gap: 12 }}>
-              <input
-                name="Nom"
-                placeholder="Votre nom"
-                required
-                style={inputStyle}
-              />
-              <input
-                name="Courriel"
-                placeholder="Votre courriel"
-                type="email"
-                required
-                style={inputStyle}
-              />
-              <textarea
-                name="Message"
-                placeholder="Comment pouvons-nous aider?"
-                rows={5}
-                style={inputStyle}
-              />
+          <form action="mailto:comptanetquebec@gmail.com" method="post" encType="text/plain">
+            <div style={{ display: 'grid', gap: 12 }}>
+              <input name="Nom" placeholder="Votre nom" required style={inputStyle} />
+              <input name="Courriel" placeholder="Votre courriel" type="email" required style={inputStyle} />
+              <textarea name="Message" placeholder="Comment pouvons-nous aider?" rows={5} style={inputStyle} />
               <button
                 type="submit"
                 style={{
                   background: bleu,
-                  color: "white",
+                  color: 'white',
                   border: 0,
-                  padding: "12px 18px",
+                  padding: '12px 18px',
                   borderRadius: 10,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: 'pointer',
                 }}
               >
-                Envoyer
+                {T.send}
               </button>
             </div>
           </form>
 
-          <p style={{ color: "#6b7280", marginTop: 12 }}>
-            ou écrivez-nous à <a href="mailto:info@comptanetquebec.com">info@comptanetquebec.com</a>
+          <p style={{ color: '#6b7280', marginTop: 12 }}>
+            {T.contactHint} <a href="mailto:comptanetquebec@gmail.com">comptanetquebec@gmail.com</a>
           </p>
         </div>
       </section>
 
       {/* -------- FOOTER -------- */}
-      <footer style={{ background: "#0f172a", color: "#cbd5e1", padding: "24px 16px" }}>
+      <footer style={{ background: '#0f172a', color: '#cbd5e1', padding: '24px 16px' }}>
         <div
           style={{
             maxWidth: 1100,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 12,
-            flexWrap: "wrap",
+            flexWrap: 'wrap',
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/logo-cq.png" alt="" width={28} height={28} />
             <span>© {new Date().getFullYear()} ComptaNet Québec</span>
           </div>
-          <div style={{ display: "flex", gap: 16 }}>
-            <a href="#services" style={{ color: "#cbd5e1", textDecoration: "none" }}>Services</a>
-            <a href="#tarifs" style={{ color: "#cbd5e1", textDecoration: "none" }}>Tarifs</a>
-            <a href="#contact" style={{ color: "#cbd5e1", textDecoration: "none" }}>Contact</a>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <a href="#services" style={{ color: '#cbd5e1', textDecoration: 'none' }}>{T.nav.services}</a>
+            <a href="#tarifs" style={{ color: '#cbd5e1', textDecoration: 'none' }}>{T.nav.pricing}</a>
+            <a href="#contact" style={{ color: '#cbd5e1', textDecoration: 'none' }}>{T.nav.contact}</a>
           </div>
         </div>
       </footer>
@@ -390,12 +484,53 @@ export default function Home() {
   );
 }
 
-/* petit style réutilisable pour les inputs */
+/* ---- FAQ component ---- */
+function FAQ({ items }: { items: { q: string; a: string }[] }) {
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <div style={{ display: 'grid', gap: 10 }}>
+      {items.map((it, i) => {
+        const isOpen = open === i;
+        return (
+          <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: 'white' }}>
+            <button
+              onClick={() => setOpen(isOpen ? null : i)}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '14px 16px',
+                background: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                color: '#111827',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+              aria-expanded={isOpen}
+            >
+              <span>{it.q}</span>
+              <span style={{ fontSize: 18, color: '#6b7280' }}>{isOpen ? '−' : '+'}</span>
+            </button>
+            {isOpen && (
+              <div style={{ padding: '0 16px 16px', color: '#4b5563' }}>
+                {it.a}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---- style réutilisable pour les inputs ---- */
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  border: "1px solid #e5e7eb",
+  width: '100%',
+  border: '1px solid #e5e7eb',
   borderRadius: 10,
-  padding: "12px 14px",
-  outline: "none",
+  padding: '12px 14px',
+  outline: 'none',
   fontSize: 14,
 };
