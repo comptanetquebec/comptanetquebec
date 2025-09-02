@@ -39,7 +39,7 @@ export default function Home() {
       ],
       pricingTitle: 'Tarifs 2025',
       pricingSub: 'Exemple de base — on confirme le prix selon votre situation.',
-      plans: [
+     plans: [
   {
     t: 'Impôt des particuliers (T1)',
     p: 'à partir de 100 $',
