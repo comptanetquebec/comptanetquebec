@@ -39,26 +39,26 @@ export default function Home() {
       ],
       pricingTitle: 'Tarifs 2025',
       pricingSub: 'Exemple de base — on confirme le prix selon votre situation.',
-     plans: [
-  {
-    t: 'Impôt des particuliers (T1)',
-    p: 'à partir de 100 $',
-    pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'],
-    href: '/tarifs/t1',
-  },
-  {
-    t: 'Travailleurs autonomes',
-    p: 'à partir de 150 $',
-    pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'],
-    href: '/tarifs/travailleur-autonome',
-  },
-  {
-    t: 'Sociétés incorporées (T2 / PME)',
-    p: 'à partir de 850 $ (450 $ si compagnie sans revenus)',
-    pts: ['États financiers', 'Bilan complet', 'Transmission incluse'],
-    href: '/tarifs/t2',
-  },
-],
+      plans: [
+        {
+          t: 'Impôt des particuliers (T1)',
+          p: 'à partir de 100 $',
+          pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'],
+          href: '/tarifs/t1',
+        },
+        {
+          t: 'Travailleurs autonomes',
+          p: 'à partir de 150 $',
+          pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'],
+          href: '/tarifs/travailleur-autonome',
+        },
+        {
+          t: 'Sociétés incorporées (T2 / PME)',
+          p: 'à partir de 850 $ (450 $ si compagnie sans revenus)',
+          pts: ['États financiers', 'Bilan complet', 'Transmission incluse'],
+          href: '/tarifs/t2',
+        },
+      ],
       getPrice: 'Voir les tarifs',
       faqTitle: 'FAQ',
       faq: [
@@ -112,7 +112,7 @@ export default function Home() {
         { t: 'Self-employed', p: 'from $150', pts: ['P&L statement', 'Eligible expenses', 'Optimization'], href: '/tarifs/travailleur-autonome' },
         {
           t: 'Incorporated companies (T2 / SMB)',
-          p: 'from $850 ( $450 if no revenue )',
+          p: 'from $850 ($450 if no revenue)',
           pts: ['Financial statements', 'Full balance sheet', 'E-file included'],
           href: '/tarifs/t2',
         },
@@ -167,7 +167,7 @@ export default function Home() {
         { t: 'Autónomos', p: 'desde $150', pts: ['Estado de resultados', 'Gastos deducibles', 'Optimización'], href: '/tarifs/travailleur-autonome' },
         {
           t: 'Sociedades (T2 / PyME)',
-          p: 'desde $850 ( $450 si la compañía no tiene ingresos )',
+          p: 'desde $850 ($450 si la compañía no tiene ingresos)',
           pts: ['Estados financieros', 'Balance completo', 'Envío incluido'],
           href: '/tarifs/t2',
         },
@@ -402,7 +402,7 @@ function FAQ({ items }: { items: { q: string; a: string }[] }) {
 /* ---- style réutilisable pour les inputs ---- */
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  border: '1px solid '#e5e7eb',
+  border: '1px solid #e5e7eb',
   borderRadius: 10,
   padding: '12px 14px',
   outline: 'none',
