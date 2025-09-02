@@ -40,25 +40,25 @@ export default function Home() {
       pricingTitle: 'Tarifs 2025',
       pricingSub: 'Exemple de base — on confirme le prix selon votre situation.',
       plans: [
-        {
-          t: 'Impôt des particuliers (T1)',
-          p: 'à partir de 100 $',
-          pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'],
-          href: '/tarifs/t1',
-        },
-        {
-          t: 'Travailleurs autonomes',
-          p: 'à partir de 150 $',
-          pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'],
-          href: '/tarifs/travailleur-autonome',
-        },
-        {
-          t: 'Sociétés incorporées (T2 / PME)',
-          p: 'à partir de 850 $ (450 $ si compagnie sans revenus)',
-          pts: ['États financiers', 'Bilan complet', 'Transmission incluse'],
-          href: '/tarifs/t2',
-        },
-      ],
+  {
+    t: 'Impôt des particuliers (T1)',
+    p: 'à partir de 100 $',
+    pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'],
+    href: '/tarifs/t1',
+  },
+  {
+    t: 'Travailleurs autonomes',
+    p: 'à partir de 150 $',
+    pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'],
+    href: '/tarifs/travailleur-autonome',
+  },
+  {
+    t: 'Sociétés incorporées (T2 / PME)',
+    p: 'à partir de 850 $ (450 $ si compagnie sans revenus)',
+    pts: ['États financiers', 'Bilan complet', 'Transmission incluse'],
+    href: '/tarifs/t2',
+  },
+],
       getPrice: 'Voir les tarifs',
       faqTitle: 'FAQ',
       faq: [
