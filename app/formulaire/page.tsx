@@ -92,7 +92,8 @@ export default function Formulaire() {
     },
   }[lang];
 
-  const FORMSPREE_ACTION = "https://formspree.io/f/FORM_ID_ICI"; // ← remplace par ton URL
+  // 👉 remplace FORM_ID_ICI par ton ID formspree
+  const FORMSPREE_ACTION = 'https://formspree.io/f/FORM_ID_ICI';
 
   const LangSwitcher = () => {
     if (isMobile) {
@@ -110,7 +111,7 @@ export default function Formulaire() {
       );
     }
     return (
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
         {(['fr','en','es'] as Lang[]).map((l) => (
           <button
@@ -135,8 +136,44 @@ export default function Formulaire() {
     );
   };
 
+  // --- handler d’envoi via fetch (reste sur la page)
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus('sending');
+    try {
+      const form = e.currentTarget;
+      const data = new FormData(form);
+      // champs utiles Formspree
+      data.append('_language', lang.toUpperCase());
+      // option : redirection après succès
+      // data.append('_next', 'https://www.comptanetquebec.com/merci');
+
+      const res = await fetch(FORMSPREE_ACTION, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: data,
+      });
+
+      if (res.ok) {
+        form.reset();
+        setStatus('ok');
+      } else {
+        setStatus('err');
+      }
+    } catch {
+      setStatus('err');
+    }
+  }
+
   return (
     <main style={{ maxWidth: 900, margin: '30px auto', padding: '0 16px', fontFamily: 'Arial, sans-serif' }}>
+      {/* global anti-débordement */}
+      <style jsx global>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+        img, video { max-width: 100%; height: auto; display: block; }
+      `}</style>
+
       {/* Haut: retour + langues */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Link href="/" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
@@ -149,24 +186,38 @@ export default function Formulaire() {
       <p style={{ color: '#4b5563', marginBottom: 18 }}>{T.intro}</p>
 
       <form
-        action={FORMSPREE_ACTION}
-        method="POST"
-        onSubmit={() => setStatus('sending')}
+        onSubmit={handleSubmit}
         style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white' }}
+        aria-describedby="form-hint"
       >
+        {/* Formspree need: subject, honeypot */}
         <input type="hidden" name="_subject" value="Nouveau dossier — ComptaNet Québec" />
-        <input type="hidden" name="Langue" value={lang.toUpperCase()} />
+        <input type="text" name="_gotcha" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
 
         <h2 style={{ margin: '0 0 12px', fontSize: 18 }}>{T.step}</h2>
 
         <div style={{ display: 'grid', gap: 12 }}>
-          <input name="Nom" placeholder={T.name} required style={inputStyle} />
-          <input name="Courriel" placeholder={T.email} type="email" required style={inputStyle} />
-          <input name="Téléphone" placeholder={T.phone} style={inputStyle} />
+          <label style={labelStyle}>
+            {T.name}
+            <input name="Nom" placeholder={T.name} required style={inputStyle}
+                   autoComplete="name" aria-label={T.name}/>
+          </label>
+
+          <label style={labelStyle}>
+            {T.email}
+            <input name="Courriel" placeholder={T.email} type="email" required style={inputStyle}
+                   autoComplete="email" aria-label={T.email}/>
+          </label>
+
+          <label style={labelStyle}>
+            {T.phone}
+            <input name="Téléphone" placeholder={T.phone} type="tel" style={inputStyle}
+                   autoComplete="tel" aria-label={T.phone}/>
+          </label>
 
           <div style={{ display: 'grid', gap: 8 }}>
             <label style={labelStyle}>{T.taxYear}</label>
-            <select name="Année" required style={inputStyle as any}>
+            <select name="Année" required style={inputStyle as any} aria-label={T.taxYear}>
               {Array.from({ length: 6 }).map((_, i) => {
                 const y = new Date().getFullYear() - i;
                 return <option key={y} value={String(y)}>{y}</option>;
@@ -176,24 +227,24 @@ export default function Formulaire() {
 
           <div style={{ display: 'grid', gap: 8 }}>
             <label style={labelStyle}>{T.province}</label>
-            <select name="Province" required style={inputStyle as any}>
+            <select name="Province" required style={inputStyle as any} aria-label={T.province}>
               <option value="QC">{T.qc}</option>
               <option value="Other">{T.other}</option>
             </select>
           </div>
 
-          <div style={{ display: 'grid', gap: 8 }}>
-            <label style={labelStyle}>{T.situation}</label>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <fieldset style={{ border: 0, padding: 0 }}>
+            <legend style={labelStyle as any}>{T.situation}</legend>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', color: '#374151' }}>
               <label><input type="radio" name="Situation" value="Seul" required /> {T.single}</label>
               <label><input type="radio" name="Situation" value="Couple" /> {T.couple}</label>
               <label><input type="checkbox" name="Enfants" value="Oui" /> {T.children}</label>
             </div>
-          </div>
+          </fieldset>
 
-          <div style={{ display: 'grid', gap: 8 }}>
-            <label style={labelStyle}>{T.income}</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 8 }}>
+          <fieldset style={{ border: 0, padding: 0 }}>
+            <legend style={labelStyle as any}>{T.income}</legend>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 8, color: '#374151' }}>
               <label><input type="checkbox" name="Revenus_T4" value="Oui" /> {T.t4}</label>
               <label><input type="checkbox" name="Relevés_Etudes" value="Oui" /> {T.r1}</label>
               <label><input type="checkbox" name="Revenus_Locatifs" value="Oui" /> {T.rent}</label>
@@ -201,9 +252,13 @@ export default function Formulaire() {
               <label><input type="checkbox" name="T5008" value="Oui" /> {T.capital}</label>
               <label><input type="checkbox" name="Crypto" value="Oui" /> {T.crypto}</label>
             </div>
-          </div>
+          </fieldset>
 
-          <textarea name="Message" placeholder={T.message} rows={5} style={inputStyle} />
+          <label style={labelStyle}>
+            {T.message}
+            <textarea name="Message" placeholder={T.message} rows={5} style={inputStyle}
+                      aria-label={T.message}/>
+          </label>
 
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14, color: '#374151' }}>
             <input type="checkbox" name="Consentement" value="Oui" required /> {T.consent}
@@ -213,13 +268,14 @@ export default function Formulaire() {
             type="submit"
             disabled={status === 'sending'}
             style={{ background: bleu, color: 'white', border: 0, padding: '12px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
+            aria-busy={status === 'sending'}
           >
             {status === 'sending' ? T.sending : T.send}
           </button>
         </div>
       </form>
 
-      <p style={{ color: '#6b7280', marginTop: 12 }}>{T.docsHint}</p>
+      <p id="form-hint" style={{ color: '#6b7280', marginTop: 12 }}>{T.docsHint}</p>
 
       {status === 'ok' && <p style={{ color: 'green', marginTop: 8 }}>{T.ok}</p>}
       {status === 'err' && <p style={{ color: 'crimson', marginTop: 8 }}>{T.err}</p>}
