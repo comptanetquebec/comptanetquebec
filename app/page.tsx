@@ -1,18 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   const bleu = '#004aad' as const;
 
   type Lang = 'fr' | 'en' | 'es';
   const [lang, setLang] = useState<Lang>('fr');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Responsive: bascule en "mobile" sous 768px
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // ---- Textes multilingues ----
   const T = {
     fr: {
       brand: 'ComptaNet Québec',
-      nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact' },
+      nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact', form: 'Formulaire' },
       cta: 'Commencez dès aujourd’hui',
       heroTitle: (
         <>
@@ -38,26 +48,11 @@ export default function Home() {
         { n: '4', t: 'Transmission', d: 'On transmet aux autorités fiscales et on vous confirme.' },
       ],
       pricingTitle: 'Tarifs 2025',
-      pricingSub: 'Exemple de base — on confirme le prix selon votre situation.',
+      pricingSub: 'Exemples de base — on confirme le prix selon votre situation.',
       plans: [
-        {
-          t: 'Impôt des particuliers (T1)',
-          p: 'à partir de 100 $',
-          pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'],
-          href: '/tarifs/t1',
-        },
-        {
-          t: 'Travailleurs autonomes',
-          p: 'à partir de 150 $',
-          pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'],
-          href: '/tarifs/travailleur-autonome',
-        },
-        {
-          t: 'Sociétés incorporées (T2 / PME)',
-          p: 'à partir de 850 $ (450 $ si compagnie sans revenus)',
-          pts: ['États financiers', 'Bilan complet', 'Transmission incluse'],
-          href: '/tarifs/t2',
-        },
+        { t: 'Impôt des particuliers (T1)', p: 'à partir de 100 $', pts: ['T4/Relevé 1', 'Crédits de base', 'Transmission incluse'], href: '/tarifs/t1' },
+        { t: 'Travailleurs autonomes', p: 'à partir de 150 $', pts: ['État des résultats', 'Dépenses admissibles', 'Optimisation'], href: '/tarifs/travailleur-autonome' },
+        { t: 'Sociétés incorporées (T2 / PME)', p: 'à partir de 850 $ (450 $ si compagnie sans revenus)', pts: ['États financiers', 'Bilan complet', 'Transmission incluse'], href: '/tarifs/t2' },
       ],
       getPrice: 'Voir les tarifs',
       faqTitle: 'FAQ',
@@ -74,7 +69,7 @@ export default function Home() {
     },
     en: {
       brand: 'ComptaNet Québec',
-      nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact' },
+      nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact', form: 'Form' },
       cta: 'Get started today',
       heroTitle: (
         <>
@@ -120,7 +115,7 @@ export default function Home() {
     },
     es: {
       brand: 'ComptaNet Québec',
-      nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto' },
+      nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto', form: 'Formulario' },
       cta: 'Empieza hoy',
       heroTitle: (
         <>
@@ -166,44 +161,80 @@ export default function Home() {
     },
   }[lang];
 
+  // UI: bouton ou select pour les langues selon l’écran
+  const LangSwitcher = () => {
+    if (isMobile) {
+      return (
+        <select
+          value={lang}
+          onChange={(e) => setLang(e.target.value as Lang)}
+          style={{ border: '1px solid #e5e7eb', padding: '6px 10px', borderRadius: 8, fontSize: 12 }}
+          aria-label={T.langLabel}
+        >
+          <option value="fr">FR</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+        </select>
+      );
+    }
+    return (
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
+        {(['fr','en','es'] as Lang[]).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            style={{
+              border: `1px solid ${l === lang ? bleu : '#e5e7eb'}`,
+              background: l === lang ? bleu : 'white',
+              color: l === lang ? 'white' : '#374151',
+              padding: '6px 10px',
+              borderRadius: 8,
+              fontSize: 12,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+            aria-pressed={l === lang}
+          >
+            {l.toUpperCase()}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
       {/* NAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'white', borderBottom: '1px solid #eee' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
+        <div style={{
+          maxWidth: 1100, margin: '0 auto', padding: '10px 16px',
+          display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} />
-            <strong style={{ color: bleu }}>{T.brand}</strong>
+            <strong style={{ color: bleu, whiteSpace: 'nowrap' }}>{T.brand}</strong>
           </div>
 
-          <nav style={{ display: 'flex', gap: 16, fontSize: 14, alignItems: 'center' }}>
-            <a href="#services" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.services}</a>
-            <a href="#etapes" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.steps}</a>
-            <a href="#tarifs" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.pricing}</a>
-            <a href="#faq" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.faq}</a>
-            <a href="#contact" style={{ textDecoration: 'none', color: '#374151' }}>{T.nav.contact}</a>
+          {/* Nav scrollable sur mobile */}
+          <nav style={{
+            display: 'flex', gap: 12, fontSize: 14, alignItems: 'center',
+            overflowX: 'auto', WebkitOverflowScrolling: 'touch'
+          }}>
+            <a href="#services" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.services}</a>
+            <a href="#etapes" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.steps}</a>
+            <a href="#tarifs" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.pricing}</a>
+            <a href="#faq" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.faq}</a>
+            <a href="#contact" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.contact}</a>
 
-            {/* Langues */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 12 }}>
-              <span style={{ fontSize: 12, color: '#6b7280' }}> {T.langLabel} </span>
-              {(['fr', 'en', 'es'] as Lang[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  style={{
-                    border: `1px solid ${l === lang ? bleu : '#e5e7eb'}`,
-                    background: l === lang ? bleu : 'white',
-                    color: l === lang ? 'white' : '#374151',
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                  aria-pressed={l === lang}
-                >
-                  {l.toUpperCase()}
-                </button>
-              ))}
+            {/* Lien vers la page Formulaire (route interne → Link) */}
+            <Link href="/formulaire" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
+              {T.nav.form}
+            </Link>
+
+            {/* Langues responsive */}
+            <div style={{ marginLeft: 8 }}>
+              <LangSwitcher />
             </div>
           </nav>
         </div>
@@ -213,13 +244,26 @@ export default function Home() {
       <section style={{ position: 'relative', width: '100%', height: 520, overflow: 'hidden' }}>
         <img src="/banniere.png" alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 16 }}>
-          <div style={{ background: 'white', padding: '38px 30px', borderRadius: 16, maxWidth: 760, width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,.18)', textAlign: 'center' }}>
-            <h1 style={{ fontSize: 28, lineHeight: 1.2, margin: 0 }}>{T.heroTitle}</h1>
+          <div style={{
+            background: 'white', padding: isMobile ? '24px 18px' : '38px 30px',
+            borderRadius: 16, maxWidth: 760, width: '100%',
+            boxShadow: '0 10px 30px rgba(0,0,0,.18)', textAlign: 'center'
+          }}>
+            <h1 style={{ fontSize: isMobile ? 22 : 28, lineHeight: 1.2, margin: 0 }}>{T.heroTitle}</h1>
             <p style={{ marginTop: 14, color: '#4b5563' }}>{T.heroSub}</p>
-            <div style={{ marginTop: 18 }}>
-              <a href="#tarifs" style={{ display: 'inline-block', background: bleu, color: 'white', padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>
+            <div style={{ marginTop: 18, display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a href="#tarifs" style={{
+                display: 'inline-block', background: bleu, color: 'white',
+                padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700
+              }}>
                 {T.cta}
               </a>
+              <Link href="/formulaire" style={{
+                display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
+                padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700
+              }}>
+                {T.nav.form}
+              </Link>
             </div>
           </div>
         </div>
@@ -247,7 +291,12 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             {T.steps.map((e, i) => (
               <div key={i} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: bleu, color: 'white', display: 'grid', placeItems: 'center', fontWeight: 700, marginBottom: 10 }}>{e.n}</div>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', background: bleu, color: 'white',
+                  display: 'grid', placeItems: 'center', fontWeight: 700, marginBottom: 10
+                }}>
+                  {e.n}
+                </div>
                 <h3 style={{ margin: '0 0 6px 0', fontSize: 18 }}>{e.t}</h3>
                 <p style={{ margin: 0, color: '#6b7280' }}>{e.d}</p>
               </div>
@@ -269,10 +318,27 @@ export default function Home() {
               <ul style={{ margin: 0, paddingLeft: 18, color: '#6b7280' }}>
                 {x.pts.map((p, j) => <li key={j}>{p}</li>)}
               </ul>
-              <div style={{ marginTop: 14 }}>
-                <a href={x.href} style={{ display: 'inline-block', background: bleu, color: 'white', padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700 }}>
+              <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {/* Vers les pages internes -> Link */}
+                <Link
+                  href={x.href}
+                  style={{
+                    display: 'inline-block', background: bleu, color: 'white',
+                    padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700
+                  }}
+                >
                   {T.getPrice}
-                </a>
+                </Link>
+                {/* Vers le formulaire */}
+                <Link
+                  href="/formulaire"
+                  style={{
+                    display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
+                    padding: '9px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700
+                  }}
+                >
+                  {T.nav.form}
+                </Link>
               </div>
             </div>
           ))}
@@ -312,10 +378,11 @@ export default function Home() {
             <img src="/logo-cq.png" alt="" width={28} height={28} />
             <span>© {new Date().getFullYear()} ComptaNet Québec</span>
           </div>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <a href="#services" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Services</a>
-            <a href="#tarifs" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Tarifs</a>
-            <a href="#contact" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Contact</a>
+          <div style={{ display: 'flex', gap: 16, overflowX: 'auto' }}>
+            <a href="#services" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>Services</a>
+            <a href="#tarifs" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>Tarifs</a>
+            <a href="#contact" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>Contact</a>
+            <Link href="/formulaire" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>{T.nav.form}</Link>
           </div>
         </div>
       </footer>
@@ -335,17 +402,10 @@ function FAQ({ items }: { items: { q: string; a: string }[] }) {
             <button
               onClick={() => setOpen(isOpen ? null : i)}
               style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '14px 16px',
-                background: 'white',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 700,
-                color: '#111827',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                width: '100%', textAlign: 'left', padding: '14px 16px',
+                background: 'white', border: 'none', cursor: 'pointer',
+                fontWeight: 700, color: '#111827', display: 'flex',
+                justifyContent: 'space-between', alignItems: 'center',
               }}
               aria-expanded={isOpen}
             >
