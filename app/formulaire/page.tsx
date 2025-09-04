@@ -8,7 +8,6 @@ export default function Formulaire() {
   type Lang = 'fr' | 'en' | 'es';
   const [lang, setLang] = useState<Lang>('fr');
   const [isMobile, setIsMobile] = useState(false);
-  const [status, setStatus] = useState<'idle'|'sending'|'ok'|'err'>('idle');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -35,9 +34,7 @@ export default function Formulaire() {
       capital: "Gains/pertes en capital (T5008)", crypto: "Cryptomonnaie",
       message: "Message (questions, précisions)",
       consent: "J’accepte qu’on me contacte par courriel/téléphone pour compléter mon dossier.",
-      send: "Envoyer", sending: "Envoi...",
-      ok: "Merci! On vous revient rapidement par courriel.",
-      err: "Oups, l’envoi a échoué. Réessayez ou écrivez à comptanetquebec@gmail.com.",
+      send: "Envoyer",
       docsHint: "Après l’envoi, vous recevrez les instructions pour déposer vos pièces (photos/PDF).",
       langLabel: "Langue",
       back: "← Retour à l’accueil",
@@ -59,9 +56,7 @@ export default function Formulaire() {
       capital: "Capital gains/losses (T5008)", crypto: "Crypto",
       message: "Message (questions, details)",
       consent: "I agree to be contacted by email/phone to complete my file.",
-      send: "Send", sending: "Sending...",
-      ok: "Thanks! We’ll get back to you by email.",
-      err: "Send failed. Try again or email comptanetquebec@gmail.com.",
+      send: "Send",
       docsHint: "After sending, you'll receive instructions to upload your documents (photos/PDF).",
       langLabel: "Language",
       back: "← Back to home",
@@ -83,18 +78,14 @@ export default function Formulaire() {
       capital: "Ganancias/pérdidas de capital (T5008)", crypto: "Cripto",
       message: "Mensaje (preguntas, detalles)",
       consent: "Acepto ser contactado por correo/teléfono para completar mi expediente.",
-      send: "Enviar", sending: "Enviando...",
-      ok: "¡Gracias! Le responderemos por correo.",
-      err: "Error al enviar. Intente de nuevo o escriba a comptanetquebec@gmail.com.",
+      send: "Enviar",
       docsHint: "Tras enviar, recibirá instrucciones para subir sus documentos (fotos/PDF).",
       langLabel: "Idioma",
       back: "← Volver al inicio",
     },
   }[lang];
 
-  // 👉 remplace FORM_ID_ICI par ton ID formspree
-  const FORMSPREE_ACTION = 'https://formspree.io/f/FORM_ID_ICI';
-
+  // ----- Lang switcher
   const LangSwitcher = () => {
     if (isMobile) {
       return (
@@ -136,35 +127,6 @@ export default function Formulaire() {
     );
   };
 
-  // --- handler d’envoi via fetch (reste sur la page)
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus('sending');
-    try {
-      const form = e.currentTarget;
-      const data = new FormData(form);
-      // champs utiles Formspree
-      data.append('_language', lang.toUpperCase());
-      // option : redirection après succès
-      // data.append('_next', 'https://www.comptanetquebec.com/merci');
-
-      const res = await fetch(FORMSPREE_ACTION, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' },
-        body: data,
-      });
-
-      if (res.ok) {
-        form.reset();
-        setStatus('ok');
-      } else {
-        setStatus('err');
-      }
-    } catch {
-      setStatus('err');
-    }
-  }
-
   return (
     <main style={{ maxWidth: 900, margin: '30px auto', padding: '0 16px', fontFamily: 'Arial, sans-serif' }}>
       {/* global anti-débordement */}
@@ -185,34 +147,61 @@ export default function Formulaire() {
       <h1 style={{ color: bleu, marginBottom: 8 }}>{T.title}</h1>
       <p style={{ color: '#4b5563', marginBottom: 18 }}>{T.intro}</p>
 
+      {/* ====== FormSubmit : envoi direct sans backend ====== */}
       <form
-        onSubmit={handleSubmit}
+        action="https://formsubmit.co/comptanetquebec@gmail.com"
+        method="POST"
         style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white' }}
         aria-describedby="form-hint"
       >
-        {/* Formspree need: subject, honeypot */}
+        {/* options FormSubmit */}
         <input type="hidden" name="_subject" value="Nouveau dossier — ComptaNet Québec" />
-        <input type="text" name="_gotcha" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+        <input type="hidden" name="_template" value="table" />
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_next" value="https://www.comptanetquebec.com/merci" />
+        {/* honeypot anti-bot */}
+        <input type="text" name="_honey" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+        {/* langue utile dans l’email */}
+        <input type="hidden" name="Langue" value={lang.toUpperCase()} />
 
         <h2 style={{ margin: '0 0 12px', fontSize: 18 }}>{T.step}</h2>
 
         <div style={{ display: 'grid', gap: 12 }}>
           <label style={labelStyle}>
             {T.name}
-            <input name="Nom" placeholder={T.name} required style={inputStyle}
-                   autoComplete="name" aria-label={T.name}/>
+            <input
+              name="Nom"
+              placeholder={T.name}
+              required
+              style={inputStyle}
+              autoComplete="name"
+              aria-label={T.name}
+            />
           </label>
 
           <label style={labelStyle}>
             {T.email}
-            <input name="Courriel" placeholder={T.email} type="email" required style={inputStyle}
-                   autoComplete="email" aria-label={T.email}/>
+            <input
+              name="Courriel"
+              placeholder={T.email}
+              type="email"
+              required
+              style={inputStyle}
+              autoComplete="email"
+              aria-label={T.email}
+            />
           </label>
 
           <label style={labelStyle}>
             {T.phone}
-            <input name="Téléphone" placeholder={T.phone} type="tel" style={inputStyle}
-                   autoComplete="tel" aria-label={T.phone}/>
+            <input
+              name="Téléphone"
+              placeholder={T.phone}
+              type="tel"
+              style={inputStyle}
+              autoComplete="tel"
+              aria-label={T.phone}
+            />
           </label>
 
           <div style={{ display: 'grid', gap: 8 }}>
@@ -220,7 +209,11 @@ export default function Formulaire() {
             <select name="Année" required style={inputStyle as any} aria-label={T.taxYear}>
               {Array.from({ length: 6 }).map((_, i) => {
                 const y = new Date().getFullYear() - i;
-                return <option key={y} value={String(y)}>{y}</option>;
+                return (
+                  <option key={y} value={String(y)}>
+                    {y}
+                  </option>
+                );
               })}
             </select>
           </div>
@@ -236,28 +229,58 @@ export default function Formulaire() {
           <fieldset style={{ border: 0, padding: 0 }}>
             <legend style={labelStyle as any}>{T.situation}</legend>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', color: '#374151' }}>
-              <label><input type="radio" name="Situation" value="Seul" required /> {T.single}</label>
-              <label><input type="radio" name="Situation" value="Couple" /> {T.couple}</label>
-              <label><input type="checkbox" name="Enfants" value="Oui" /> {T.children}</label>
+              <label>
+                <input type="radio" name="Situation" value="Seul" required /> {T.single}
+              </label>
+              <label>
+                <input type="radio" name="Situation" value="Couple" /> {T.couple}
+              </label>
+              <label>
+                <input type="checkbox" name="Enfants" value="Oui" /> {T.children}
+              </label>
             </div>
           </fieldset>
 
           <fieldset style={{ border: 0, padding: 0 }}>
             <legend style={labelStyle as any}>{T.income}</legend>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 8, color: '#374151' }}>
-              <label><input type="checkbox" name="Revenus_T4" value="Oui" /> {T.t4}</label>
-              <label><input type="checkbox" name="Relevés_Etudes" value="Oui" /> {T.r1}</label>
-              <label><input type="checkbox" name="Revenus_Locatifs" value="Oui" /> {T.rent}</label>
-              <label><input type="checkbox" name="Travail_Autonome" value="Oui" /> {T.self}</label>
-              <label><input type="checkbox" name="T5008" value="Oui" /> {T.capital}</label>
-              <label><input type="checkbox" name="Crypto" value="Oui" /> {T.crypto}</label>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
+                gap: 8,
+                color: '#374151',
+              }}
+            >
+              <label>
+                <input type="checkbox" name="Revenus_T4" value="Oui" /> {T.t4}
+              </label>
+              <label>
+                <input type="checkbox" name="Relevés_Etudes" value="Oui" /> {T.r1}
+              </label>
+              <label>
+                <input type="checkbox" name="Revenus_Locatifs" value="Oui" /> {T.rent}
+              </label>
+              <label>
+                <input type="checkbox" name="Travail_Autonome" value="Oui" /> {T.self}
+              </label>
+              <label>
+                <input type="checkbox" name="T5008" value="Oui" /> {T.capital}
+              </label>
+              <label>
+                <input type="checkbox" name="Crypto" value="Oui" /> {T.crypto}
+              </label>
             </div>
           </fieldset>
 
           <label style={labelStyle}>
             {T.message}
-            <textarea name="Message" placeholder={T.message} rows={5} style={inputStyle}
-                      aria-label={T.message}/>
+            <textarea
+              name="Message"
+              placeholder={T.message}
+              rows={5}
+              style={inputStyle}
+              aria-label={T.message}
+            />
           </label>
 
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14, color: '#374151' }}>
@@ -266,26 +289,38 @@ export default function Formulaire() {
 
           <button
             type="submit"
-            disabled={status === 'sending'}
-            style={{ background: bleu, color: 'white', border: 0, padding: '12px 18px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
-            aria-busy={status === 'sending'}
+            style={{
+              background: bleu,
+              color: 'white',
+              border: 0,
+              padding: '12px 18px',
+              borderRadius: 10,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
           >
-            {status === 'sending' ? T.sending : T.send}
+            {T.send}
           </button>
         </div>
       </form>
 
       <p id="form-hint" style={{ color: '#6b7280', marginTop: 12 }}>{T.docsHint}</p>
-
-      {status === 'ok' && <p style={{ color: 'green', marginTop: 8 }}>{T.ok}</p>}
-      {status === 'err' && <p style={{ color: 'crimson', marginTop: 8 }}>{T.err}</p>}
     </main>
   );
 }
 
-/* Styles */
+/* Styles réutilisables */
 const inputStyle: React.CSSProperties = {
-  width: '100%', border: '1px solid #e5e7eb', borderRadius: 10,
-  padding: '12px 14px', outline: 'none', fontSize: 14,
+  width: '100%',
+  border: '1px solid #e5e7eb',
+  borderRadius: 10,
+  padding: '12px 14px',
+  outline: 'none',
+  fontSize: 14,
 };
-const labelStyle: React.CSSProperties = { fontSize: 14, color: '#111827', fontWeight: 700 };
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 14,
+  color: '#111827',
+  fontWeight: 700,
+};
