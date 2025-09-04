@@ -1,357 +1,333 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 
-export default function Formulaire() {
-  const bleu = '#004aad' as const;
-  type Lang = 'fr' | 'en' | 'es';
-  const [lang, setLang] = useState<Lang>('fr');
-  const [isMobile, setIsMobile] = useState(false);
+type Lang = 'fr' | 'en' | 'es';
+type ClientType = 't1' | 'ta' | 't2';
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  clientType: ClientType;
+  message: string;
+  consent: boolean;
+}
+
+export default function FormulairePage() {
+  const bleu = '#004aad' as const;
+
+  const [lang, setLang] = useState<Lang>('fr');
+  const [data, setData] = useState<FormData>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    clientType: 't1',
+    message: '',
+    consent: false,
+  });
 
   const T = {
     fr: {
-      title: 'Formulaire de démarrage — Impôts',
+      title: 'Créer votre compte / Demande de prise en charge',
       intro:
-        'Remplissez ce formulaire pour qu’on ouvre votre dossier et vous envoie les instructions pour les documents.',
-      step: 'Informations de base',
-      name: 'Nom complet',
-      email: 'Courriel',
-      phone: 'Téléphone (optionnel)',
-      taxYear: "Année d’imposition",
-      province: 'Province',
-      qc: 'Québec',
-      other: 'Autre',
-      situation: 'Situation',
-      single: 'Personne seule',
-      couple: 'Couple',
-      children: 'Enfants à charge',
-      income: 'Types de revenus (cochez tout ce qui s’applique)',
-      t4: 'T4 / Relevé 1 (emploi)',
-      r1: 'Études / bourses',
-      rent: 'Revenus de location',
-      self: 'Travail autonome',
-      capital: 'Gains/pertes en capital (T5008)',
-      crypto: 'Cryptomonnaie',
-      message: 'Message (questions, précisions)',
-      consent:
-        'J’accepte qu’on me contacte par courriel/téléphone pour compléter mon dossier.',
-      send: 'Envoyer',
-      docsHint:
-        'Après l’envoi, vous recevrez les instructions pour déposer vos pièces (photos/PDF).',
-      langLabel: 'Langue',
-      back: '← Retour à l’accueil',
+        "Répondez à ces questions et nous ouvrons votre dossier sécurisé. Vous recevrez un courriel de confirmation.",
+      labels: {
+        firstName: 'Prénom',
+        lastName: 'Nom',
+        email: 'Courriel',
+        phone: 'Téléphone (optionnel)',
+        type: 'Type de client',
+        t1: 'Impôt des particuliers (T1)',
+        ta: 'Travailleur autonome',
+        t2: 'Société incorporée (T2 / PME)',
+        message: 'Message / précisions (optionnel)',
+        consent: "J’accepte d’être contacté par courriel.",
+        submit: 'Envoyer la demande',
+        back: 'Retour à l’accueil',
+        lang: 'Langue',
+      },
+      success:
+        "Merci! Votre brouillon d’email va s’ouvrir. Vérifiez et envoyez pour finaliser la demande.",
+      error: "Veuillez remplir au minimum prénom, nom et courriel.",
     },
     en: {
-      title: 'Start form — Taxes',
+      title: 'Create your account / Intake form',
       intro:
-        'Fill this form so we can open your file and send upload instructions.',
-      step: 'Basic information',
-      name: 'Full name',
-      email: 'Email',
-      phone: 'Phone (optional)',
-      taxYear: 'Tax year',
-      province: 'Province',
-      qc: 'Quebec',
-      other: 'Other',
-      situation: 'Situation',
-      single: 'Single',
-      couple: 'Couple',
-      children: 'Children',
-      income: 'Income types (check all that apply)',
-      t4: 'T4 / Relevé 1 (employment)',
-      r1: 'Study slips / grants',
-      rent: 'Rental income',
-      self: 'Self-employed',
-      capital: 'Capital gains/losses (T5008)',
-      crypto: 'Crypto',
-      message: 'Message (questions, details)',
-      consent:
-        'I agree to be contacted by email/phone to complete my file.',
-      send: 'Send',
-      docsHint:
-        "After sending, you'll receive instructions to upload your documents (photos/PDF).",
-      langLabel: 'Language',
-      back: '← Back to home',
+        'Answer these questions and we will open your secure file. You will receive a confirmation email.',
+      labels: {
+        firstName: 'First name',
+        lastName: 'Last name',
+        email: 'Email',
+        phone: 'Phone (optional)',
+        type: 'Client type',
+        t1: 'Personal income tax (T1)',
+        ta: 'Self-employed',
+        t2: 'Incorporated company (T2 / SMB)',
+        message: 'Message / details (optional)',
+        consent: 'I agree to be contacted by email.',
+        submit: 'Submit request',
+        back: 'Back to home',
+        lang: 'Language',
+      },
+      success:
+        'Thanks! Your email draft will open. Check it and send to finalize the request.',
+      error: 'Please fill at least first name, last name and email.',
     },
     es: {
-      title: 'Formulario inicial — Impuestos',
+      title: 'Crear su cuenta / Formulario de inicio',
       intro:
-        'Complete este formulario para abrir su expediente y recibir instrucciones de carga.',
-      step: 'Información básica',
-      name: 'Nombre completo',
-      email: 'Correo',
-      phone: 'Teléfono (opcional)',
-      taxYear: 'Año fiscal',
-      province: 'Provincia',
-      qc: 'Quebec',
-      other: 'Otra',
-      situation: 'Situación',
-      single: 'Persona sola',
-      couple: 'Pareja',
-      children: 'Hijos a cargo',
-      income: 'Tipos de ingresos (marque los que correspondan)',
-      t4: 'T4 / Relevé 1 (empleo)',
-      r1: 'Estudios / becas',
-      rent: 'Ingresos de alquiler',
-      self: 'Autónomo',
-      capital: 'Ganancias/pérdidas de capital (T5008)',
-      crypto: 'Cripto',
-      message: 'Mensaje (preguntas, detalles)',
-      consent:
-        'Acepto ser contactado por correo/teléfono para completar mi expediente.',
-      send: 'Enviar',
-      docsHint:
-        'Tras enviar, recibirá instrucciones para subir sus documentos (fotos/PDF).',
-      langLabel: 'Idioma',
-      back: '← Volver al inicio',
+        'Responda estas preguntas y abriremos su expediente seguro. Recibirá un correo de confirmación.',
+      labels: {
+        firstName: 'Nombre',
+        lastName: 'Apellido',
+        email: 'Correo',
+        phone: 'Teléfono (opcional)',
+        type: 'Tipo de cliente',
+        t1: 'Impuesto personal (T1)',
+        ta: 'Autónomo',
+        t2: 'Sociedad (T2 / PyME)',
+        message: 'Mensaje / detalles (opcional)',
+        consent: 'Acepto ser contactado por correo electrónico.',
+        submit: 'Enviar solicitud',
+        back: 'Volver al inicio',
+        lang: 'Idioma',
+      },
+      success:
+        '¡Gracias! Se abrirá un borrador de correo. Revíselo y envíelo para finalizar.',
+      error: 'Complete al menos nombre, apellido y correo.',
     },
   }[lang];
 
-  const LangSwitcher = () => {
-    if (isMobile) {
-      return (
-        <select
-          value={lang}
-          onChange={(e) => setLang(e.target.value as Lang)}
-          style={{ border: '1px solid #e5e7eb', padding: '6px 10px', borderRadius: 8, fontSize: 12 }}
-          aria-label={T.langLabel}
-        >
-          <option value="fr">FR</option>
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-        </select>
-      );
+  /** Handler typé par clé — évite les erreurs TS sur [name] */
+  const handle =
+    <K extends keyof FormData>(key: K) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const el = e.currentTarget;
+      const isCheckbox = (el as HTMLInputElement).type === 'checkbox';
+      const raw = isCheckbox ? (el as HTMLInputElement).checked : el.value;
+      setData((prev) => ({ ...prev, [key]: raw as FormData[K] }));
+    };
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!data.firstName || !data.lastName || !data.email) {
+      alert(T.error);
+      return;
     }
-    return (
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
-        {(['fr','en','es'] as Lang[]).map((l) => (
-          <button
-            key={l}
-            onClick={() => setLang(l)}
-            style={{
-              border: `1px solid ${l === lang ? bleu : '#e5e7eb'}`,
-              background: l === lang ? bleu : 'white',
-              color: l === lang ? 'white' : '#374151',
-              padding: '6px 10px',
-              borderRadius: 8,
-              fontSize: 12,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-            aria-pressed={l === lang}
-          >
-            {l.toUpperCase()}
-          </button>
-        ))}
-      </div>
+
+    const subject = encodeURIComponent(
+      `[${data.clientType.toUpperCase()}] Nouvelle demande – ${data.firstName} ${data.lastName}`
     );
-  };
+
+    const bodyLines = [
+      `Prénom/First name: ${data.firstName}`,
+      `Nom/Last name: ${data.lastName}`,
+      `Courriel/Email: ${data.email}`,
+      `Téléphone/Phone: ${data.phone || '-'}`,
+      `Type: ${data.clientType}`,
+      `Consentement/Consent: ${data.consent ? 'Oui/Yes' : 'Non/No'}`,
+      '',
+      'Message:',
+      data.message || '-',
+      '',
+      '---',
+      'Envoyé depuis comptanetquebec.com',
+    ];
+
+    const body = encodeURIComponent(bodyLines.join('\n'));
+    window.location.href = `mailto:comptanetquebec@gmail.com?subject=${subject}&body=${body}`;
+    alert(T.success);
+  }
 
   return (
-    <main style={{ maxWidth: 900, margin: '30px auto', padding: '0 16px', fontFamily: 'Arial, sans-serif' }}>
-      {/* anti-débordement global */}
-      <style jsx global>{`
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
-        img, video { max-width: 100%; height: auto; display: block; }
-      `}</style>
-
-      {/* Top bar: back + langue */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <Link href="/" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
-          {T.back}
-        </Link>
-        <LangSwitcher />
-      </div>
-
-      <h1 style={{ color: bleu, marginBottom: 8 }}>{T.title}</h1>
-      <p style={{ color: '#4b5563', marginBottom: 18 }}>{T.intro}</p>
-
-      {/* ====== FormSubmit : envoi direct, pas de backend ====== */}
-      <form
-        action="https://formsubmit.co/comptanetquebec@gmail.com"
-        method="POST"
-        style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white' }}
-        aria-describedby="form-hint"
+    <main style={{ fontFamily: 'Arial, sans-serif', color: '#111827' }}>
+      <header
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          background: 'white',
+          borderBottom: '1px solid #eee',
+        }}
       >
-        {/* Options FormSubmit */}
-        <input type="hidden" name="_subject" value="Nouveau dossier — ComptaNet Québec" />
-        <input type="hidden" name="_template" value="table" />
-        <input type="hidden" name="_captcha" value="false" />
-        {/* Tu peux mettre l'URL absolue de ton domaine si tu préfères */}
-        <input type="hidden" name="_next" value="/merci" />
-        {/* Honeypot anti-bot */}
-        <input type="text" name="_honey" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
-        {/* Contexte utile dans l'email */}
-        <input type="hidden" name="Langue" value={lang.toUpperCase()} />
+        <div
+          style={{
+            maxWidth: 900,
+            margin: '0 auto',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <Link href="/" style={{ textDecoration: 'none', color: bleu, fontWeight: 800 }}>
+            ComptaNet Québec
+          </Link>
 
-        <h2 style={{ margin: '0 0 12px', fontSize: 18 }}>{T.step}</h2>
-
-        <div style={{ display: 'grid', gap: 12 }}>
-          {/* Nom → name (FormSubmit comprend mieux pour reply-to avec email) */}
-          <label style={labelStyle}>
-            {T.name}
-            <input
-              name="name"
-              placeholder={T.name}
-              required
-              style={inputStyle}
-              autoComplete="name"
-              aria-label={T.name}
-            />
-          </label>
-
-          {/* Courriel → email (pour que FormSubmit mette Reply-To) */}
-          <label style={labelStyle}>
-            {T.email}
-            <input
-              name="email"
-              placeholder={T.email}
-              type="email"
-              required
-              style={inputStyle}
-              autoComplete="email"
-              aria-label={T.email}
-            />
-          </label>
-
-          {/* Téléphone */}
-          <label style={labelStyle}>
-            {T.phone}
-            <input
-              name="Téléphone"
-              placeholder={T.phone}
-              type="tel"
-              style={inputStyle}
-              autoComplete="tel"
-              aria-label={T.phone}
-            />
-          </label>
-
-          {/* Année d'imposition */}
-          <div style={{ display: 'grid', gap: 8 }}>
-            <label style={labelStyle}>{T.taxYear}</label>
-            <select name="Année" required style={inputStyle as any} aria-label={T.taxYear}>
-              {Array.from({ length: 6 }).map((_, i) => {
-                const y = new Date().getFullYear() - i;
-                return (
-                  <option key={y} value={String(y)}>
-                    {y}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          {/* Province */}
-          <div style={{ display: 'grid', gap: 8 }}>
-            <label style={labelStyle}>{T.province}</label>
-            <select name="Province" required style={inputStyle as any} aria-label={T.province}>
-              <option value="QC">{T.qc}</option>
-              <option value="Other">{T.other}</option>
-            </select>
-          </div>
-
-          {/* Situation */}
-          <fieldset style={{ border: 0, padding: 0 }}>
-            <legend style={labelStyle as any}>{T.situation}</legend>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', color: '#374151' }}>
-              <label>
-                <input type="radio" name="Situation" value="Seul" required /> {T.single}
-              </label>
-              <label>
-                <input type="radio" name="Situation" value="Couple" /> {T.couple}
-              </label>
-              <label>
-                <input type="checkbox" name="Enfants" value="Oui" /> {T.children}
-              </label>
-            </div>
-          </fieldset>
-
-          {/* Types de revenus */}
-          <fieldset style={{ border: 0, padding: 0 }}>
-            <legend style={labelStyle as any}>{T.income}</legend>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
-                gap: 8,
-                color: '#374151',
-              }}
-            >
-              <label>
-                <input type="checkbox" name="Revenus_T4" value="Oui" /> {T.t4}
-              </label>
-              <label>
-                <input type="checkbox" name="Relevés_Etudes" value="Oui" /> {T.r1}
-              </label>
-              <label>
-                <input type="checkbox" name="Revenus_Locatifs" value="Oui" /> {T.rent}
-              </label>
-              <label>
-                <input type="checkbox" name="Travail_Autonome" value="Oui" /> {T.self}
-              </label>
-              <label>
-                <input type="checkbox" name="T5008" value="Oui" /> {T.capital}
-              </label>
-              <label>
-                <input type="checkbox" name="Crypto" value="Oui" /> {T.crypto}
-              </label>
-            </div>
-          </fieldset>
-
-          {/* Message */}
-          <label style={labelStyle}>
-            {T.message}
-            <textarea
-              name="Message"
-              placeholder={T.message}
-              rows={5}
-              style={inputStyle}
-              aria-label={T.message}
-            />
-          </label>
-
-          {/* Consentement */}
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14, color: '#374151' }}>
-            <input type="checkbox" name="Consentement" value="Oui" required /> {T.consent}
-          </label>
-
-          {/* Bouton */}
-          <button
-            type="submit"
+          <select
+            aria-label={T.labels.lang}
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
             style={{
-              background: bleu,
-              color: 'white',
-              border: 0,
-              padding: '12px 18px',
-              borderRadius: 10,
-              fontWeight: 700,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              border: '1px solid #e5e7eb',
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 12,
+              background: 'white',
+              color: '#374151',
             }}
           >
-            {T.send}
-          </button>
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
         </div>
-      </form>
+      </header>
 
-      <p id="form-hint" style={{ color: '#6b7280', marginTop: 12 }}>{T.docsHint}</p>
+      <section style={{ maxWidth: 900, margin: '32px auto', padding: '0 16px' }}>
+        <h1 style={{ fontSize: 26, marginBottom: 8 }}>{T.title}</h1>
+        <p style={{ color: '#4b5563', marginBottom: 18 }}>{T.intro}</p>
+
+        <form
+          onSubmit={onSubmit}
+          style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white' }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 12,
+            }}
+          >
+            <div>
+              <label style={lbl}>{T.labels.firstName}</label>
+              <input
+                name="firstName"
+                value={data.firstName}
+                onChange={handle('firstName')}
+                required
+                autoComplete="given-name"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.lastName}</label>
+              <input
+                name="lastName"
+                value={data.lastName}
+                onChange={handle('lastName')}
+                required
+                autoComplete="family-name"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.email}</label>
+              <input
+                type="email"
+                name="email"
+                value={data.email}
+                onChange={handle('email')}
+                required
+                autoComplete="email"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.phone}</label>
+              <input
+                type="tel"
+                name="phone"
+                value={data.phone}
+                onChange={handle('phone')}
+                autoComplete="tel"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.type}</label>
+              <select
+                name="clientType"
+                value={data.clientType}
+                onChange={handle('clientType')}
+                style={input as React.CSSProperties}
+              >
+                <option value="t1">{T.labels.t1}</option>
+                <option value="ta">{T.labels.ta}</option>
+                <option value="t2">{T.labels.t2}</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={lbl}>{T.labels.message}</label>
+            <textarea
+              name="message"
+              rows={5}
+              value={data.message}
+              onChange={handle('message')}
+              style={{ ...input, resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              name="consent"
+              checked={data.consent}
+              onChange={handle('consent')}
+              style={{ width: 18, height: 18 }}
+            />
+            <span style={{ fontSize: 14, color: '#374151' }}>{T.labels.consent}</span>
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="submit"
+              style={{
+                background: bleu,
+                color: 'white',
+                border: 0,
+                padding: '12px 18px',
+                borderRadius: 10,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {T.labels.submit}
+            </button>
+            <Link
+              href="/"
+              style={{
+                display: 'inline-block',
+                background: 'white',
+                border: `2px solid ${bleu}`,
+                color: bleu,
+                padding: '10px 16px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                fontWeight: 700,
+              }}
+            >
+              {T.labels.back}
+            </Link>
+          </div>
+        </form>
+      </section>
     </main>
   );
 }
 
-/* Styles réutilisables */
-const inputStyle: React.CSSProperties = {
+const input: React.CSSProperties = {
   width: '100%',
   border: '1px solid #e5e7eb',
   borderRadius: 10,
@@ -360,8 +336,9 @@ const inputStyle: React.CSSProperties = {
   fontSize: 14,
 };
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 14,
-  color: '#111827',
-  fontWeight: 700,
+const lbl: React.CSSProperties = {
+  display: 'block',
+  marginBottom: 6,
+  fontSize: 13,
+  color: '#374151',
 };
