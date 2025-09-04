@@ -50,8 +50,7 @@ export default function FormulairePage() {
         back: 'Retour à l’accueil',
         lang: 'Langue',
       },
-      success:
-        "Merci! Votre brouillon d’email va s’ouvrir. Vérifiez et envoyez pour finaliser la demande.",
+      success: "Merci! Votre demande a été envoyée.",
       error: "Veuillez remplir au minimum prénom, nom et courriel.",
     },
     en: {
@@ -73,8 +72,7 @@ export default function FormulairePage() {
         back: 'Back to home',
         lang: 'Language',
       },
-      success:
-        'Thanks! Your email draft will open. Check it and send to finalize the request.',
+      success: 'Thanks! Your request has been submitted.',
       error: 'Please fill at least first name, last name and email.',
     },
     es: {
@@ -96,13 +94,12 @@ export default function FormulairePage() {
         back: 'Volver al inicio',
         lang: 'Idioma',
       },
-      success:
-        '¡Gracias! Se abrirá un borrador de correo. Revíselo y envíelo para finalizar.',
+      success: '¡Gracias! Su solicitud ha sido enviada.',
       error: 'Complete al menos nombre, apellido y correo.',
     },
   }[lang];
 
-  /** Handler typé par clé — évite les erreurs TS sur [name] */
+  /** Handler générique */
   const handle =
     <K extends keyof FormData>(key: K) =>
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -112,35 +109,43 @@ export default function FormulairePage() {
       setData((prev) => ({ ...prev, [key]: raw as FormData[K] }));
     };
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  /** Nouvelle soumission → appel API */
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     if (!data.firstName || !data.lastName || !data.email) {
       alert(T.error);
       return;
     }
 
-    const subject = encodeURIComponent(
-      `[${data.clientType.toUpperCase()}] Nouvelle demande – ${data.firstName} ${data.lastName}`
-    );
+    try {
+      const res = await fetch('/api/add-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prenom: data.firstName,
+          nom: data.lastName,
+          email: data.email,
+          telephone: data.phone,
+          client_type: data.clientType,
+          message: data.message,
+          consent: data.consent,
+        }),
+      });
 
-    const bodyLines = [
-      `Prénom/First name: ${data.firstName}`,
-      `Nom/Last name: ${data.lastName}`,
-      `Courriel/Email: ${data.email}`,
-      `Téléphone/Phone: ${data.phone || '-'}`,
-      `Type: ${data.clientType}`,
-      `Consentement/Consent: ${data.consent ? 'Oui/Yes' : 'Non/No'}`,
-      '',
-      'Message:',
-      data.message || '-',
-      '',
-      '---',
-      'Envoyé depuis comptanetquebec.com',
-    ];
+      const json = await res.json();
 
-    const body = encodeURIComponent(bodyLines.join('\n'));
-    window.location.href = `mailto:comptanetquebec@gmail.com?subject=${subject}&body=${body}`;
-    alert(T.success);
+      if (!res.ok || !json.success) {
+        console.error(json);
+        alert('Une erreur est survenue, réessayez.');
+        return;
+      }
+
+      window.location.href = '/merci';
+    } catch (err) {
+      console.error(err);
+      alert("Erreur réseau. Vérifiez votre connexion.");
+    }
   }
 
   return (
