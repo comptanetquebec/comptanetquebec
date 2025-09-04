@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   const bleu = '#004aad' as const;
@@ -10,7 +11,6 @@ export default function Home() {
   const [lang, setLang] = useState<Lang>('fr');
   const [isMobile, setIsMobile] = useState(false);
 
-  // Responsive: bascule en "mobile" sous 768px
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -18,7 +18,6 @@ export default function Home() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // ---- Textes multilingues ----
   const T = {
     fr: {
       brand: 'ComptaNet Québec',
@@ -161,7 +160,6 @@ export default function Home() {
     },
   }[lang];
 
-  // UI: bouton ou select pour les langues selon l’écran
   const LangSwitcher = () => {
     if (isMobile) {
       return (
@@ -205,7 +203,6 @@ export default function Home() {
 
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
-      {/* Global fixes anti-débordement */}
       <style jsx global>{`
         *, *::before, *::after { box-sizing: border-box; }
         html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
@@ -219,11 +216,11 @@ export default function Home() {
           display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
-            <img src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} />
+            {/* Logo avec next/image */}
+            <Image src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} priority />
             <strong style={{ color: bleu, whiteSpace: 'nowrap' }}>{T.brand}</strong>
           </div>
 
-          {/* Nav scrollable ET wrap sur mobile */}
           <nav style={{
             display: 'flex', gap: 12, fontSize: 14, alignItems: 'center',
             overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'wrap', maxWidth: '100%'
@@ -233,12 +230,9 @@ export default function Home() {
             <a href="#tarifs" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.pricing}</a>
             <a href="#faq" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.faq}</a>
             <a href="#contact" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.contact}</a>
-
             <Link href="/formulaire" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
               {T.nav.form}
             </Link>
-
-            {/* Langues responsive */}
             <div style={{ marginLeft: 8 }}>
               <LangSwitcher />
             </div>
@@ -248,24 +242,29 @@ export default function Home() {
 
       {/* HERO */}
       <section style={{ position: 'relative', width: '100%', minHeight: isMobile ? 420 : 520, overflow: 'hidden' }}>
-        <img src="/banniere.png" alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 16 }}>
+        {/* Bannière avec next/image (fill) */}
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image
+            src="/banniere.png"
+            alt="Bannière"
+            fill
+            style={{ objectFit: 'cover' }}
+            priority
+            sizes="100vw"
+          />
+        </div>
+
+        <div style={{ position: 'relative', inset: 0, display: 'grid', placeItems: 'center', padding: 16, minHeight: isMobile ? 420 : 520 }}>
           <div style={{
             background: 'white',
             padding: isMobile ? '24px 18px' : '38px 30px',
             borderRadius: 16,
-            maxWidth: 720,           // IMPORTANT : limite la largeur max
-            width: '100%',           // IMPORTANT : ne dépasse jamais 100%
+            maxWidth: 720,
+            width: '100%',
             boxShadow: '0 10px 30px rgba(0,0,0,.18)',
             textAlign: 'center'
           }}>
-            <h1
-              style={{
-                fontSize: 'clamp(22px, 6vw, 36px)',
-                lineHeight: 1.2,
-                margin: 0
-              }}
-            >
+            <h1 style={{ fontSize: 'clamp(22px, 6vw, 36px)', lineHeight: 1.2, margin: 0 }}>
               {T.heroTitle}
             </h1>
             <p style={{ marginTop: 14, color: '#4b5563', fontSize: 'clamp(14px, 3.6vw, 18px)' }}>{T.heroSub}</p>
@@ -391,7 +390,7 @@ export default function Home() {
       <footer style={{ background: '#0f172a', color: '#cbd5e1', padding: '24px 16px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo-cq.png" alt="" width={28} height={28} />
+            <Image src="/logo-cq.png" alt="" width={28} height={28} />
             <span>© {new Date().getFullYear()} ComptaNet Québec</span>
           </div>
           <div style={{ display: 'flex', gap: 16, overflowX: 'auto' }}>
