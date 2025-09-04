@@ -8,7 +8,6 @@ export default function Merci() {
   type Lang = 'fr' | 'en' | 'es';
   const [lang, setLang] = useState<Lang>('fr');
   const [isMobile, setIsMobile] = useState(false);
-  const [seconds, setSeconds] = useState(6);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -17,42 +16,35 @@ export default function Merci() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Redirection auto vers l’accueil après 6s (facultatif)
-  useEffect(() => {
-    const t = setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
-    const r = setTimeout(() => { window.location.href = '/'; }, 6000);
-    return () => { clearInterval(t); clearTimeout(r); };
-  }, []);
-
   const T = {
     fr: {
       title: 'Merci !',
       subtitle: "Votre formulaire a été envoyé avec succès.",
-      text: "Nous vous répondrons rapidement par courriel avec les prochaines étapes pour déposer vos documents.",
+      text:
+        "Nous vous répondrons rapidement par courriel avec les prochaines étapes pour déposer vos documents.",
       hint: "Vous pouvez revenir à l’accueil ou ouvrir un autre formulaire.",
       back: '← Retour à l’accueil',
       form: 'Remplir un autre formulaire',
-      seconds: (s:number) => `Redirection automatique dans ${s} seconde${s>1?'s':''}…`,
       lang: 'Langue',
     },
     en: {
       title: 'Thank you!',
       subtitle: 'Your form was sent successfully.',
-      text: 'We will reply by email shortly with the next steps to upload your documents.',
+      text:
+        'We will reply by email shortly with the next steps to upload your documents.',
       hint: 'You can go back home or open another form.',
       back: '← Back to home',
       form: 'Fill another form',
-      seconds: (s:number) => `Auto-redirect in ${s} second${s>1?'s':''}…`,
       lang: 'Language',
     },
     es: {
       title: '¡Gracias!',
       subtitle: 'Su formulario se envió correctamente.',
-      text: 'Le responderemos por correo con los próximos pasos para subir sus documentos.',
+      text:
+        'Le responderemos por correo con los próximos pasos para subir sus documentos.',
       hint: 'Puede volver al inicio o abrir otro formulario.',
       back: '← Volver al inicio',
       form: 'Completar otro formulario',
-      seconds: (s:number) => `Redirección automática en ${s} segundo${s>1?'s':''}…`,
       lang: 'Idioma',
     },
   }[lang];
@@ -60,7 +52,7 @@ export default function Merci() {
   const LangSwitcher = () => (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ fontSize: 12, color: '#6b7280' }}>{T.lang}</span>
-      {(['fr','en','es'] as Lang[]).map((l) => (
+      {(['fr', 'en', 'es'] as Lang[]).map((l) => (
         <button
           key={l}
           onClick={() => setLang(l)}
@@ -121,19 +113,33 @@ export default function Merci() {
           <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
             <Link
               href="/"
-              style={{ background: bleu, color: 'white', padding: '10px 16px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}
+              style={{
+                background: bleu,
+                color: 'white',
+                padding: '10px 16px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+              }}
             >
               {T.back}
             </Link>
             <Link
               href="/formulaire"
-              style={{ border: `2px solid ${bleu}`, color: bleu, padding: '8px 14px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}
+              style={{
+                border: `2px solid ${bleu}`,
+                color: bleu,
+                padding: '8px 14px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+              }}
             >
               {T.form}
             </Link>
           </div>
-
-          <p style={{ color: '#9ca3af', marginTop: 14 }}>{T.seconds(seconds)}</p>
         </div>
       </section>
     </main>
