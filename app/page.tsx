@@ -178,7 +178,7 @@ export default function Home() {
       );
     }
     return (
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
         {(['fr','en','es'] as Lang[]).map((l) => (
           <button
@@ -205,21 +205,28 @@ export default function Home() {
 
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', color: '#1f2937' }}>
+      {/* Global fixes anti-débordement */}
+      <style jsx global>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+        img, video { max-width: 100%; height: auto; display: block; }
+      `}</style>
+
       {/* NAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'white', borderBottom: '1px solid #eee' }}>
         <div style={{
           maxWidth: 1100, margin: '0 auto', padding: '10px 16px',
-          display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between'
+          display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
             <img src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} />
             <strong style={{ color: bleu, whiteSpace: 'nowrap' }}>{T.brand}</strong>
           </div>
 
-          {/* Nav scrollable sur mobile */}
+          {/* Nav scrollable ET wrap sur mobile */}
           <nav style={{
             display: 'flex', gap: 12, fontSize: 14, alignItems: 'center',
-            overflowX: 'auto', WebkitOverflowScrolling: 'touch'
+            overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'wrap', maxWidth: '100%'
           }}>
             <a href="#services" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.services}</a>
             <a href="#etapes" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.steps}</a>
@@ -227,7 +234,6 @@ export default function Home() {
             <a href="#faq" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.faq}</a>
             <a href="#contact" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.contact}</a>
 
-            {/* Lien vers la page Formulaire (route interne → Link) */}
             <Link href="/formulaire" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
               {T.nav.form}
             </Link>
@@ -241,26 +247,38 @@ export default function Home() {
       </header>
 
       {/* HERO */}
-      <section style={{ position: 'relative', width: '100%', height: 520, overflow: 'hidden' }}>
+      <section style={{ position: 'relative', width: '100%', minHeight: isMobile ? 420 : 520, overflow: 'hidden' }}>
         <img src="/banniere.png" alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 16 }}>
           <div style={{
-            background: 'white', padding: isMobile ? '24px 18px' : '38px 30px',
-            borderRadius: 16, maxWidth: 760, width: '100%',
-            boxShadow: '0 10px 30px rgba(0,0,0,.18)', textAlign: 'center'
+            background: 'white',
+            padding: isMobile ? '24px 18px' : '38px 30px',
+            borderRadius: 16,
+            maxWidth: 720,           // IMPORTANT : limite la largeur max
+            width: '100%',           // IMPORTANT : ne dépasse jamais 100%
+            boxShadow: '0 10px 30px rgba(0,0,0,.18)',
+            textAlign: 'center'
           }}>
-            <h1 style={{ fontSize: isMobile ? 22 : 28, lineHeight: 1.2, margin: 0 }}>{T.heroTitle}</h1>
-            <p style={{ marginTop: 14, color: '#4b5563' }}>{T.heroSub}</p>
+            <h1
+              style={{
+                fontSize: 'clamp(22px, 6vw, 36px)',
+                lineHeight: 1.2,
+                margin: 0
+              }}
+            >
+              {T.heroTitle}
+            </h1>
+            <p style={{ marginTop: 14, color: '#4b5563', fontSize: 'clamp(14px, 3.6vw, 18px)' }}>{T.heroSub}</p>
             <div style={{ marginTop: 18, display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <a href="#tarifs" style={{
                 display: 'inline-block', background: bleu, color: 'white',
-                padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700
+                padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
               }}>
                 {T.cta}
               </a>
               <Link href="/formulaire" style={{
                 display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
-                padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700
+                padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
               }}>
                 {T.nav.form}
               </Link>
@@ -319,22 +337,20 @@ export default function Home() {
                 {x.pts.map((p, j) => <li key={j}>{p}</li>)}
               </ul>
               <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {/* Vers les pages internes -> Link */}
                 <Link
                   href={x.href}
                   style={{
                     display: 'inline-block', background: bleu, color: 'white',
-                    padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700
+                    padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
                   }}
                 >
                   {T.getPrice}
                 </Link>
-                {/* Vers le formulaire */}
                 <Link
                   href="/formulaire"
                   style={{
                     display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
-                    padding: '9px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700
+                    padding: '9px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
                   }}
                 >
                   {T.nav.form}
