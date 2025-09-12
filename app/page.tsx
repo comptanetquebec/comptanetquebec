@@ -21,7 +21,7 @@ export default function Home() {
   const T = {
     fr: {
       brand: 'ComptaNet Québec',
-      nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact', form: 'Formulaire' },
+      nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact', client: 'Espace client' },
       cta: 'Commencez dès aujourd’hui',
       heroTitle: (
         <>
@@ -68,7 +68,7 @@ export default function Home() {
     },
     en: {
       brand: 'ComptaNet Québec',
-      nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact', form: 'Form' },
+      nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact', client: 'Client portal' },
       cta: 'Get started today',
       heroTitle: (
         <>
@@ -114,7 +114,7 @@ export default function Home() {
     },
     es: {
       brand: 'ComptaNet Québec',
-      nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto', form: 'Formulario' },
+      nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto', client: 'Espacio cliente' },
       cta: 'Empieza hoy',
       heroTitle: (
         <>
@@ -216,7 +216,6 @@ export default function Home() {
           display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
-            {/* Logo avec next/image */}
             <Image src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} priority />
             <strong style={{ color: bleu, whiteSpace: 'nowrap' }}>{T.brand}</strong>
           </div>
@@ -230,8 +229,8 @@ export default function Home() {
             <a href="#tarifs" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.pricing}</a>
             <a href="#faq" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.faq}</a>
             <a href="#contact" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.contact}</a>
-            <Link href="/formulaire" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
-              {T.nav.form}
+            <Link href="/espace-client" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
+              {T.nav.client}
             </Link>
             <div style={{ marginLeft: 8 }}>
               <LangSwitcher />
@@ -242,7 +241,6 @@ export default function Home() {
 
       {/* HERO */}
       <section style={{ position: 'relative', width: '100%', minHeight: isMobile ? 420 : 520, overflow: 'hidden' }}>
-        {/* Bannière avec next/image (fill) */}
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image
             src="/banniere.png"
@@ -275,11 +273,11 @@ export default function Home() {
               }}>
                 {T.cta}
               </a>
-              <Link href="/formulaire" style={{
+              <Link href="/espace-client" style={{
                 display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
                 padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
               }}>
-                {T.nav.form}
+                {T.nav.client}
               </Link>
             </div>
           </div>
@@ -346,13 +344,13 @@ export default function Home() {
                   {T.getPrice}
                 </Link>
                 <Link
-                  href="/formulaire"
+                  href="/espace-client"
                   style={{
                     display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
                     padding: '9px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
                   }}
                 >
-                  {T.nav.form}
+                  {T.nav.client}
                 </Link>
               </div>
             </div>
@@ -397,7 +395,7 @@ export default function Home() {
             <a href="#services" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>Services</a>
             <a href="#tarifs" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>Tarifs</a>
             <a href="#contact" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>Contact</a>
-            <Link href="/formulaire" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>{T.nav.form}</Link>
+            <Link href="/espace-client" style={{ color: '#cbd5e1', textDecoration: 'none', whiteSpace: 'nowrap' }}>{T.nav.client}</Link>
           </div>
         </div>
       </footer>
