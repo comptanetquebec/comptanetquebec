@@ -39,7 +39,7 @@ export default function Home() {
         { t: 'Support & révision', d: 'Réponses rapides à vos questions et vérification finale.' },
         { t: 'Optimisation', d: 'Crédits et déductions pour maximiser vos remboursements.' },
       ],
-      stepsTitle: 'Comment ça fonctionne (4 étapes)',
+      stepsTitle: 'Comment ça marche (4 étapes)',
       steps: [
         { n: '1', t: 'Créer votre compte', d: 'On vous ouvre un espace sécurisé.' },
         { n: '2', t: 'Téléverser vos documents', d: 'Photos ou PDF, tout passe par votre espace.' },
