@@ -23,14 +23,8 @@ export default function Home() {
       brand: 'ComptaNet Québec',
       nav: { services: 'Services', steps: 'Étapes', pricing: 'Tarifs', faq: 'FAQ', contact: 'Contact', client: 'Espace client' },
       cta: 'Commencez dès aujourd’hui',
-      heroTitle: (
-        <>
-          Déclarez vos revenus en ligne facilement et rapidement avec{' '}
-          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
-        </>
-      ),
-      heroSub:
-        "Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.",
+      heroTitle: <>Déclarez vos revenus en ligne facilement et rapidement avec <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
+      heroSub: "Votre solution complète pour faire vos impôts en ligne sans stress, gérée par des experts. Maximisez vos remboursements d’impôt tout en simplifiant votre fiscalité grâce à notre expertise.",
       servicesTitle: 'Services',
       servicesSub: "On s’occupe de l’essentiel pour que vous soyez en règle, sans casse-tête.",
       services: [
@@ -70,12 +64,7 @@ export default function Home() {
       brand: 'ComptaNet Québec',
       nav: { services: 'Services', steps: 'Steps', pricing: 'Pricing', faq: 'FAQ', contact: 'Contact', client: 'Client portal' },
       cta: 'Get started today',
-      heroTitle: (
-        <>
-          File your taxes online quickly and easily with{' '}
-          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
-        </>
-      ),
+      heroTitle: <>File your taxes online quickly and easily with <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
       heroSub: 'A complete, stress-free online tax solution handled by experts. Maximize your refund while simplifying your taxes.',
       servicesTitle: 'Services',
       servicesSub: 'We handle the essentials so you stay compliant, hassle-free.',
@@ -116,12 +105,7 @@ export default function Home() {
       brand: 'ComptaNet Québec',
       nav: { services: 'Servicios', steps: 'Pasos', pricing: 'Tarifas', faq: 'FAQ', contact: 'Contacto', client: 'Espacio cliente' },
       cta: 'Empieza hoy',
-      heroTitle: (
-        <>
-          Declare sus impuestos en línea de forma rápida y sencilla con{' '}
-          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
-        </>
-      ),
+      heroTitle: <>Declare sus impuestos en línea de forma rápida y sencilla con <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span></>,
       heroSub: 'Solución completa y sin estrés gestionada por expertos. Maximice su reembolso simplificando su fiscalidad.',
       servicesTitle: 'Servicios',
       servicesSub: 'Nos ocupamos de lo esencial para que esté en regla, sin complicaciones.',
@@ -178,7 +162,7 @@ export default function Home() {
     return (
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: '#6b7280' }}>{T.langLabel}</span>
-        {(['fr','en','es'] as Lang[]).map((l) => (
+        {(['fr', 'en', 'es'] as Lang[]).map((l) => (
           <button
             key={l}
             onClick={() => setLang(l)}
@@ -211,27 +195,19 @@ export default function Home() {
 
       {/* NAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'white', borderBottom: '1px solid #eee' }}>
-        <div style={{
-          maxWidth: 1100, margin: '0 auto', padding: '10px 16px',
-          display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap'
-        }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
             <Image src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} priority />
             <strong style={{ color: bleu, whiteSpace: 'nowrap' }}>{T.brand}</strong>
           </div>
 
-          <nav style={{
-            display: 'flex', gap: 12, fontSize: 14, alignItems: 'center',
-            overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'wrap', maxWidth: '100%'
-          }}>
+          <nav style={{ display: 'flex', gap: 12, fontSize: 14, alignItems: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'wrap', maxWidth: '100%' }}>
             <a href="#services" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.services}</a>
             <a href="#etapes" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.steps}</a>
             <a href="#tarifs" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.pricing}</a>
             <a href="#faq" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.faq}</a>
             <a href="#contact" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.contact}</a>
-            <Link href="/espace-client" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>
-              {T.nav.client}
-            </Link>
+            <Link href="/espace-client" style={{ textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap' }}>{T.nav.client}</Link>
             <div style={{ marginLeft: 8 }}>
               <LangSwitcher />
             </div>
@@ -242,41 +218,18 @@ export default function Home() {
       {/* HERO */}
       <section style={{ position: 'relative', width: '100%', minHeight: isMobile ? 420 : 520, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image
-            src="/banniere.png"
-            alt="Bannière"
-            fill
-            style={{ objectFit: 'cover' }}
-            priority
-            sizes="100vw"
-          />
+          <Image src="/banniere.png" alt="Bannière" fill style={{ objectFit: 'cover' }} priority sizes="100vw" />
         </div>
 
         <div style={{ position: 'relative', inset: 0, display: 'grid', placeItems: 'center', padding: 16, minHeight: isMobile ? 420 : 520 }}>
-          <div style={{
-            background: 'white',
-            padding: isMobile ? '24px 18px' : '38px 30px',
-            borderRadius: 16,
-            maxWidth: 720,
-            width: '100%',
-            boxShadow: '0 10px 30px rgba(0,0,0,.18)',
-            textAlign: 'center'
-          }}>
-            <h1 style={{ fontSize: 'clamp(22px, 6vw, 36px)', lineHeight: 1.2, margin: 0 }}>
-              {T.heroTitle}
-            </h1>
+          <div style={{ background: 'white', padding: isMobile ? '24px 18px' : '38px 30px', borderRadius: 16, maxWidth: 720, width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,.18)', textAlign: 'center' }}>
+            <h1 style={{ fontSize: 'clamp(22px, 6vw, 36px)', lineHeight: 1.2, margin: 0 }}>{T.heroTitle}</h1>
             <p style={{ marginTop: 14, color: '#4b5563', fontSize: 'clamp(14px, 3.6vw, 18px)' }}>{T.heroSub}</p>
             <div style={{ marginTop: 18, display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="#tarifs" style={{
-                display: 'inline-block', background: bleu, color: 'white',
-                padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
-              }}>
+              <a href="#tarifs" style={{ display: 'inline-block', background: bleu, color: 'white', padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
                 {T.cta}
               </a>
-              <Link href="/espace-client" style={{
-                display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
-                padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
-              }}>
+              <Link href="/espace-client" style={{ display: 'inline-block', border: `2px solid ${bleu}`, color: bleu, padding: '10px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
                 {T.nav.client}
               </Link>
             </div>
@@ -288,7 +241,6 @@ export default function Home() {
       <section id="services" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
         <h2 style={{ color: bleu, marginBottom: 12 }}>{T.servicesTitle}</h2>
         <p style={{ color: '#4b5563', marginBottom: 22 }}>{T.servicesSub}</p>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           {T.services.map((c, i) => (
             <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white' }}>
@@ -306,12 +258,7 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             {T.steps.map((e, i) => (
               <div key={i} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 18 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', background: bleu, color: 'white',
-                  display: 'grid', placeItems: 'center', fontWeight: 700, marginBottom: 10
-                }}>
-                  {e.n}
-                </div>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: bleu, color: 'white', display: 'grid', placeItems: 'center', fontWeight: 700, marginBottom: 10 }}>{e.n}</div>
                 <h3 style={{ margin: '0 0 6px 0', fontSize: 18 }}>{e.t}</h3>
                 <p style={{ margin: 0, color: '#6b7280' }}>{e.d}</p>
               </div>
@@ -324,7 +271,6 @@ export default function Home() {
       <section id="tarifs" style={{ maxWidth: 1100, margin: '60px auto', padding: '0 16px' }}>
         <h2 style={{ color: bleu, marginBottom: 12 }}>{T.pricingTitle}</h2>
         <p style={{ color: '#4b5563', marginBottom: 20 }}>{T.pricingSub}</p>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           {T.plans.map((x, i) => (
             <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, background: 'white' }}>
@@ -334,22 +280,10 @@ export default function Home() {
                 {x.pts.map((p, j) => <li key={j}>{p}</li>)}
               </ul>
               <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <Link
-                  href={x.href}
-                  style={{
-                    display: 'inline-block', background: bleu, color: 'white',
-                    padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
-                  }}
-                >
+                <Link href={x.href} style={{ display: 'inline-block', background: bleu, color: 'white', padding: '10px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
                   {T.getPrice}
                 </Link>
-                <Link
-                  href="/espace-client"
-                  style={{
-                    display: 'inline-block', border: `2px solid ${bleu}`, color: bleu,
-                    padding: '9px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap'
-                  }}
-                >
+                <Link href="/espace-client" style={{ display: 'inline-block', border: `2px solid ${bleu}`, color: bleu, padding: '9px 16px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
                   {T.nav.client}
                 </Link>
               </div>
@@ -414,12 +348,7 @@ function FAQ({ items }: { items: { q: string; a: string }[] }) {
           <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', background: 'white' }}>
             <button
               onClick={() => setOpen(isOpen ? null : i)}
-              style={{
-                width: '100%', textAlign: 'left', padding: '14px 16px',
-                background: 'white', border: 'none', cursor: 'pointer',
-                fontWeight: 700, color: '#111827', display: 'flex',
-                justifyContent: 'space-between', alignItems: 'center',
-              }}
+              style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
               aria-expanded={isOpen}
             >
               <span>{it.q}</span>
@@ -433,7 +362,7 @@ function FAQ({ items }: { items: { q: string; a: string }[] }) {
   );
 }
 
-/* ---- style réutilisable pour les inputs ---- */
+/* ---- style inputs ---- */
 const inputStyle: React.CSSProperties = {
   width: '100%',
   border: '1px solid #e5e7eb',
