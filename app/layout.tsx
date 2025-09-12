@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ComptaNet Québec",
-  description: "Votre partenaire de confiance pour la fiscalité et la comptabilité au Québec.",
+  title: "Espace client - ComptaNet Québec",
+  description: "Accédez à votre espace client sécurisé pour déposer vos documents fiscaux.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
