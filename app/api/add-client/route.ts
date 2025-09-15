@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// (Optionnel mais conseillé)
-export const runtime = "nodejs"; // évite l’edge pour la clé service_role
+// ⚡ Important pour éviter les problèmes avec service_role
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  // 👉 Initialise le client **dans** le handler, pas en haut du module
-  const url = process.env.SUPABASE_URL!;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  // Récupère les variables d'environnement
+  const url = process.env.SUPABASE_URL;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url) throw new Error("Missing env SUPABASE_URL");
   if (!serviceRole) throw new Error("Missing env SUPABASE_SERVICE_ROLE_KEY");
 
+  // Initialise Supabase client
   const supabase = createClient(url, serviceRole);
 
   try {
@@ -30,13 +31,13 @@ export async function POST(req: Request) {
     ]);
 
     if (error) {
-      console.error(error);
+      console.error("Supabase insert error:", error);
       return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
-    console.error(err);
+  } catch (err: unknown) {
+    console.error("Request error:", err);
     return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
   }
 }
