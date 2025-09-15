@@ -5,10 +5,122 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 type Mode = "login" | "signup";
+type Lang = "fr" | "en" | "es";
+
+const I18N: Record<Lang, {
+  title: string;
+  intro_login: string;
+  intro_signup: string;
+  email: string;
+  password: string;
+  see: string;
+  hide: string;
+  login: string;
+  signup: string;
+  logging: string;
+  signing: string;
+  forgot: string;
+  needAccount: string;
+  haveAccount: string;
+  createAccount: string;
+  signIn: string;
+  pwRule: string;
+  loggedAs: (mail: string) => string;
+  resetSent: string;
+  resetNeedEmail: string;
+  pwTooShort: string;
+  emailNotConfirmed: string;
+  invalidCreds: string;
+  rateLimit: string;
+}> = {
+  fr: {
+    title: "Espace client",
+    intro_login: "Connectez-vous avec votre e-mail et votre mot de passe.",
+    intro_signup: "Créez votre compte pour accéder à votre espace sécurisé.",
+    email: "Courriel",
+    password: "Mot de passe",
+    see: "Voir",
+    hide: "Cacher",
+    login: "Se connecter",
+    signup: "Créer mon compte",
+    logging: "Connexion…",
+    signing: "Création…",
+    forgot: "Mot de passe oublié ?",
+    needAccount: "Pas de compte ?",
+    haveAccount: "Déjà inscrit ?",
+    createAccount: "Créer un compte",
+    signIn: "Se connecter",
+    pwRule: "Minimum 8 caractères (vous pouvez activer la vérification des mots de passe compromis dans Supabase).",
+    loggedAs: (m) => `Connecté en tant que ${m}. Redirection en cours…`,
+    resetSent: "Un e-mail de réinitialisation vient d’être envoyé.",
+    resetNeedEmail: "Entrez votre courriel pour recevoir le lien de réinitialisation.",
+    pwTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
+    emailNotConfirmed: "Courriel non confirmé. Vérifiez votre boîte de réception.",
+    invalidCreds: "Identifiants invalides.",
+    rateLimit: "Trop de tentatives. Réessayez dans quelques minutes.",
+  },
+  en: {
+    title: "Client area",
+    intro_login: "Log in with your email and password.",
+    intro_signup: "Create an account to access your secure area.",
+    email: "Email",
+    password: "Password",
+    see: "Show",
+    hide: "Hide",
+    login: "Log in",
+    signup: "Sign up",
+    logging: "Logging in…",
+    signing: "Signing up…",
+    forgot: "Forgot password?",
+    needAccount: "No account?",
+    haveAccount: "Already registered?",
+    createAccount: "Create account",
+    signIn: "Sign in",
+    pwRule: "At least 8 characters (you can enable leaked password checks in Supabase).",
+    loggedAs: (m) => `Logged in as ${m}. Redirecting…`,
+    resetSent: "A reset email has been sent.",
+    resetNeedEmail: "Enter your email to receive the reset link.",
+    pwTooShort: "Password must be at least 8 characters.",
+    emailNotConfirmed: "Email not confirmed. Check your inbox.",
+    invalidCreds: "Invalid credentials.",
+    rateLimit: "Too many attempts. Please try again later.",
+  },
+  es: {
+    title: "Área de cliente",
+    intro_login: "Inicia sesión con tu correo y contraseña.",
+    intro_signup: "Crea una cuenta para acceder a tu área segura.",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    see: "Ver",
+    hide: "Ocultar",
+    login: "Iniciar sesión",
+    signup: "Crear cuenta",
+    logging: "Conectando…",
+    signing: "Creando…",
+    forgot: "¿Olvidaste tu contraseña?",
+    needAccount: "¿No tienes cuenta?",
+    haveAccount: "¿Ya tienes cuenta?",
+    createAccount: "Crear cuenta",
+    signIn: "Iniciar sesión",
+    pwRule: "Mínimo 8 caracteres (puedes activar la verificación de contraseñas filtradas en Supabase).",
+    loggedAs: (m) => `Conectado como ${m}. Redirigiendo…`,
+    resetSent: "Se ha enviado un correo de restablecimiento.",
+    resetNeedEmail: "Introduce tu correo para recibir el enlace de restablecimiento.",
+    pwTooShort: "La contraseña debe tener al menos 8 caracteres.",
+    emailNotConfirmed: "Correo no confirmado. Revisa tu bandeja.",
+    invalidCreds: "Credenciales inválidas.",
+    rateLimit: "Demasiados intentos. Inténtalo más tarde.",
+  },
+};
 
 export default function EspaceClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Lang depuis ?lang=fr|en|es ou FR par défaut
+  const langParam = (searchParams.get("lang") || "fr").toLowerCase() as Lang;
+  const [lang, setLang] = useState<Lang>(["fr","en","es"].includes(langParam) ? langParam : "fr");
+  const t = I18N[lang];
 
   // Champs
   const [email, setEmail] = useState("");
@@ -24,17 +136,16 @@ export default function EspaceClient() {
   // Session
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Évite les doubles redirections si l’event d’auth arrive 2x
+  // Empêche les doubles redirections
   const redirectingRef = useRef(false);
 
-  // Où rediriger après succès (par défaut /formulaire)
+  // Route de destination
   const next = searchParams.get("next") || "/formulaire";
 
   useEffect(() => {
     let mounted = true;
 
-    // 1) Récupérer la session au montage
-    supabase.auth.getUser().then(({ data, error }) => {
+    supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
       const mail = data.user?.email ?? null;
       setUserEmail(mail);
@@ -42,13 +153,8 @@ export default function EspaceClient() {
         redirectingRef.current = true;
         router.replace(next);
       }
-      if (error) {
-        // silencieux, on laisse l’utilisateur se connecter
-        console.warn("getUser error:", error.message);
-      }
     });
 
-    // 2) Écouter les changements d’auth
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const mail = session?.user?.email ?? null;
       setUserEmail(mail);
@@ -64,7 +170,6 @@ export default function EspaceClient() {
     };
   }, [router, next]);
 
-  // Connexion
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -77,55 +182,41 @@ export default function EspaceClient() {
     });
 
     setLoading(false);
-    if (error) {
-      setErrorMsg(mapAuthError(error.message));
-    }
-    // En succès, onAuthStateChange s’occupe de rediriger
+    if (error) setErrorMsg(mapAuthError(error.message, t));
   }
 
-  // Inscription
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setInfo(null);
     setErrorMsg(null);
 
-    // Validation rapide côté UI
     if (password.length < 8) {
       setLoading(false);
-      setErrorMsg("Le mot de passe doit contenir au moins 8 caractères.");
+      setErrorMsg(t.pwTooShort);
       return;
     }
 
     const { error, data } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      // Si, dans Supabase Auth → Email, “Confirm email” est ON :
-      // l’utilisateur devra confirmer. Sinon, la session est créée directement.
-      options: {
-        emailRedirectTo: `${window.location.origin}/espace-client`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/espace-client` },
     });
 
     setLoading(false);
 
     if (error) {
-      setErrorMsg(mapAuthError(error.message));
+      setErrorMsg(mapAuthError(error.message, t));
     } else {
-      // Si confirmation requise, pas de session immédiate
       if (!data.session) {
-        setInfo(
-          "Compte créé. Vérifiez votre boîte de réception pour confirmer votre courriel."
-        );
+        setInfo(t.resetSent.replace("reset", "de confirmation")); // petit texte de confirmation
         setMode("login");
       } else {
-        // Si pas de confirmation requise, la session existe déjà → redirection via onAuthStateChange
-        setInfo("Compte créé !");
+        setInfo("OK");
       }
     }
   }
 
-  // Mot de passe oublié
   async function handleForgot() {
     setLoading(true);
     setInfo(null);
@@ -134,7 +225,7 @@ export default function EspaceClient() {
     const e = email.trim();
     if (!e) {
       setLoading(false);
-      setErrorMsg("Entrez votre courriel pour recevoir le lien de réinitialisation.");
+      setErrorMsg(t.resetNeedEmail);
       return;
     }
 
@@ -143,11 +234,10 @@ export default function EspaceClient() {
     });
 
     setLoading(false);
-    if (error) setErrorMsg(mapAuthError(error.message));
-    else setInfo("Un e-mail de réinitialisation vient d’être envoyé.");
+    if (error) setErrorMsg(mapAuthError(error.message, t));
+    else setInfo(t.resetSent);
   }
 
-  // Déconnexion (si jamais on voit l’écran connecté)
   async function handleLogout() {
     await supabase.auth.signOut();
     setUserEmail(null);
@@ -157,16 +247,14 @@ export default function EspaceClient() {
     redirectingRef.current = false;
   }
 
-  // Écran intermédiaire si déjà connecté
   if (userEmail) {
     return (
       <main className="max-w-xl mx-auto px-4 py-12">
-        <h1 className="text-2xl font-bold mb-2">Espace client</h1>
-        <p className="text-slate-600 mb-6">
-          Connecté en tant que <strong>{userEmail}</strong>. Redirection en cours…
-        </p>
+        <LangSwitcher lang={lang} setLang={setLang} />
+        <h1 className="text-2xl font-bold mb-2">{t.title}</h1>
+        <p className="text-slate-600 mb-6">{t.loggedAs(userEmail)}</p>
         <button onClick={handleLogout} className="text-sm text-slate-600 underline">
-          Déconnexion
+          Logout
         </button>
       </main>
     );
@@ -174,11 +262,10 @@ export default function EspaceClient() {
 
   return (
     <main className="max-w-md mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-2">Espace client</h1>
+      <LangSwitcher lang={lang} setLang={setLang} />
+      <h1 className="text-2xl font-bold mb-2">{t.title}</h1>
       <p className="text-slate-600 mb-6">
-        {mode === "login"
-          ? "Connectez-vous avec votre e-mail et votre mot de passe."
-          : "Créez votre compte pour accéder à votre espace sécurisé."}
+        {mode === "login" ? t.intro_login : t.intro_signup}
       </p>
 
       <form
@@ -186,7 +273,7 @@ export default function EspaceClient() {
         className="rounded-lg border bg-white p-6 grid gap-4"
       >
         <div className="grid gap-2">
-          <label className="text-sm text-slate-700">Courriel</label>
+          <label className="text-sm text-slate-700">{t.email}</label>
           <input
             type="email"
             required
@@ -200,7 +287,7 @@ export default function EspaceClient() {
         </div>
 
         <div className="grid gap-2">
-          <label className="text-sm text-slate-700">Mot de passe</label>
+          <label className="text-sm text-slate-700">{t.password}</label>
           <div className="flex items-stretch gap-2">
             <input
               type={showPwd ? "text" : "password"}
@@ -218,12 +305,108 @@ export default function EspaceClient() {
               className="px-3 border rounded-md text-sm"
               aria-pressed={showPwd}
             >
-              {showPwd ? "Cacher" : "Voir"}
+              {showPwd ? t.hide : t.see}
             </button>
           </div>
           {mode === "signup" && (
-            <p className="text-xs text-slate-500">
-              Au moins 8 caractères (tu peux activer “Prevent leaked passwords” dans Supabase pour plus de sécurité).
-            </p>
+            <p className="text-xs text-slate-500">{t.pwRule}</p>
           )}
         </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 disabled:opacity-60"
+        >
+          {loading ? (mode === "login" ? t.logging : t.signing) : (mode === "login" ? t.login : t.signup)}
+        </button>
+
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={handleForgot}
+            className="text-sm text-blue-700 hover:underline justify-self-start"
+            disabled={loading}
+          >
+            {t.forgot}
+          </button>
+        )}
+
+        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+        {info && <p className="text-green-700 text-sm">{info}</p>}
+      </form>
+
+      <div className="mt-4 text-sm text-slate-700">
+        {mode === "login" ? (
+          <>
+            {t.needAccount}{" "}
+            <button
+              className="text-blue-700 hover:underline"
+              onClick={() => {
+                setMode("signup");
+                setInfo(null);
+                setErrorMsg(null);
+              }}
+            >
+              {t.createAccount}
+            </button>
+          </>
+        ) : (
+          <>
+            {t.haveAccount}{" "}
+            <button
+              className="text-blue-700 hover:underline"
+              onClick={() => {
+                setMode("login");
+                setInfo(null);
+                setErrorMsg(null);
+              }}
+            >
+              {t.signIn}
+            </button>
+          </>
+        )}
+      </div>
+    </main>
+  );
+}
+
+/** Petit sélecteur de langue */
+function LangSwitcher({
+  lang,
+  setLang,
+}: {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+}) {
+  return (
+    <div className="flex gap-2 mb-4">
+      {(["fr", "en", "es"] as Lang[]).map((l) => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          className={`px-3 py-1 rounded border ${lang === l ? "bg-black text-white" : ""}`}
+          type="button"
+          aria-pressed={lang === l}
+        >
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Mapping d'erreurs Supabase vers les traductions */
+function mapAuthError(message: string, t: ReturnType<typeof pickFR>): string {
+  const m = message.toLowerCase();
+  if (m.includes("invalid login credentials")) return t.invalidCreds;
+  if (m.includes("email rate limit")) return t.rateLimit;
+  if (m.includes("password should be at least")) return t.pwTooShort;
+  if (m.includes("email not confirmed")) return t.emailNotConfirmed;
+  return message;
+}
+
+// util pour typer le sélecteur des chaînes FR (astuce typage)
+function pickFR() {
+  return I18N.fr;
+}
