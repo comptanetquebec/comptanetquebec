@@ -1,5 +1,16 @@
 "use client";
 
+import { Suspense } from "react";
+import EspaceClientInner from "./EspaceClientInner";
+
+export default function EspaceClientPage() {
+  return (
+    <Suspense fallback={<div>Loading…</div>}>
+      <EspaceClientInner />
+    </Suspense>
+  );
+}
+
 // 👇 Empêche le pré-rendu statique qui casse useSearchParams()
 export const dynamic = "force-dynamic";
 
