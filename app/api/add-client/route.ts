@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// ⚠️ Ici on utilise les variables SERVEUR (pas NEXT_PUBLIC)
-// 👉 Tu dois les définir dans Vercel :
-// SUPABASE_URL
-// SUPABASE_SERVICE_ROLE_KEY
-const supabaseUrl = process.env.SUPABASE_URL as string;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
-
-if (!supabaseUrl) {
-  throw new Error("SUPABASE_URL is not defined");
-}
-if (!supabaseServiceRoleKey) {
-  throw new Error("SUPABASE_SERVICE_ROLE_KEY is not defined");
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+// (Optionnel mais conseillé)
+export const runtime = "nodejs"; // évite l’edge pour la clé service_role
 
 export async function POST(req: Request) {
+  // 👉 Initialise le client **dans** le handler, pas en haut du module
+  const url = process.env.SUPABASE_URL!;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  if (!url) throw new Error("Missing env SUPABASE_URL");
+  if (!serviceRole) throw new Error("Missing env SUPABASE_SERVICE_ROLE_KEY");
+
+  const supabase = createClient(url, serviceRole);
+
   try {
     const body = await req.json();
 
@@ -35,18 +31,12 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error(error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    return NextResponse.json(
-      { success: false, error: "Erreur serveur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
   }
 }
