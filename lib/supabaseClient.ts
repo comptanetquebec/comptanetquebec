@@ -1,13 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-const getEnv = (name: string) => {
-  const v = process.env[name]
-  if (!v) {
-    // On n’arrête pas le build : on logge seulement.
-    console.warn(`[supabase] Missing env var: ${name}`)
-  }
-  return v ?? ''
-}
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
-const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL')
-const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+if (!url) throw new Error('NEXT_PUBLIC_SUPABASE_URL is not defined')
+if (!anon) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined')
+
+export const supabase = createClient(url, anon)
