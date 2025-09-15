@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 type Mode = "login" | "signup";
 type Lang = "fr" | "en" | "es";
 
+/* ====================== i18n ====================== */
 const I18N: Record<
   Lang,
   {
@@ -122,6 +123,7 @@ const I18N: Record<
   },
 };
 
+/* ====================== Page ====================== */
 export default function EspaceClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -146,11 +148,7 @@ export default function EspaceClientInner() {
 
   // Session
   const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  // Anti double-redirect
   const redirectingRef = useRef(false);
-
-  // Cible après succès
   const next = searchParams.get("next") || "/formulaire";
 
   useEffect(() => {
@@ -183,6 +181,7 @@ export default function EspaceClientInner() {
     };
   }, [router, next]);
 
+  /* ========== Actions ========== */
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -262,140 +261,183 @@ export default function EspaceClientInner() {
     redirectingRef.current = false;
   }
 
+  /* ========== Écran si déjà connecté ========== */
   if (userEmail) {
     return (
-      <main className="max-w-xl mx-auto px-4 py-12">
-        <LangSwitcher lang={lang} setLang={setLang} />
-        <h1 className="text-2xl font-bold mb-2">{t.title}</h1>
-        <p className="text-slate-600 mb-6">{t.loggedAs(userEmail)}</p>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-slate-600 underline"
-        >
-          Logout
-        </button>
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 px-4">
+        <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
+          <Header lang={lang} setLang={setLang} />
+          <h1 className="text-2xl font-bold text-slate-900 mt-4">
+            {t.title}
+          </h1>
+          <p className="text-slate-600 mt-2">{t.loggedAs(userEmail)}</p>
+          <button
+            onClick={handleLogout}
+            className="mt-6 inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm hover:bg-slate-50"
+          >
+            Logout
+          </button>
+        </div>
       </main>
     );
   }
 
+  /* ========== Formulaire (stylé) ========== */
   return (
-    <main className="max-w-md mx-auto px-4 py-12">
-      <LangSwitcher lang={lang} setLang={setLang} />
-      <h1 className="text-2xl font-bold mb-2">{t.title}</h1>
-      <p className="text-slate-600 mb-6">
-        {mode === "login" ? t.intro_login : t.intro_signup}
-      </p>
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 px-4">
+      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
+        <Header lang={lang} setLang={setLang} />
 
-      <form
-        onSubmit={mode === "login" ? handleLogin : handleSignup}
-        className="rounded-lg border bg-white p-6 grid gap-4"
-      >
-        <div className="grid gap-2">
-          <label className="text-sm text-slate-700">{t.email}</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="vous@example.com"
-            className="border rounded-md px-3 py-2"
-            autoComplete="email"
-            inputMode="email"
-          />
-        </div>
+        <h1 className="text-3xl font-bold text-slate-900 mt-4">
+          {t.title}
+        </h1>
+        <p className="text-slate-600 mt-2">
+          {mode === "login" ? t.intro_login : t.intro_signup}
+        </p>
 
-        <div className="grid gap-2">
-          <label className="text-sm text-slate-700">{t.password}</label>
-          <div className="flex items-stretch gap-2">
+        <form
+          onSubmit={mode === "login" ? handleLogin : handleSignup}
+          className="mt-6 space-y-4"
+        >
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t.email}
+            </label>
             <input
-              type={showPwd ? "text" : "password"}
+              type="email"
               required
-              minLength={mode === "signup" ? 8 : 1}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="border rounded-md px-3 py-2 w-full"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vous@example.com"
+              className="w-full rounded-lg border px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600"
+              autoComplete="email"
+              inputMode="email"
             />
+          </div>
+
+          {/* Mot de passe */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {t.password}
+            </label>
+            <div className="flex items-stretch gap-2">
+              <input
+                type={showPwd ? "text" : "password"}
+                required
+                minLength={mode === "signup" ? 8 : 1}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-lg border px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd((s) => !s)}
+                className="rounded-lg border px-3 text-sm hover:bg-slate-50"
+                aria-pressed={showPwd}
+              >
+                {showPwd ? t.hide : t.see}
+              </button>
+            </div>
+            {mode === "signup" && (
+              <p className="mt-1 text-xs text-slate-500">{t.pwRule}</p>
+            )}
+          </div>
+
+          {/* CTA */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-[#0f3b74] hover:bg-[#0c2f5c] text-white font-semibold py-2 transition disabled:opacity-60"
+          >
+            {loading
+              ? mode === "login"
+                ? t.logging
+                : t.signing
+              : mode === "login"
+              ? t.login
+              : t.signup}
+          </button>
+
+          {mode === "login" && (
             <button
               type="button"
-              onClick={() => setShowPwd((s) => !s)}
-              className="px-3 border rounded-md text-sm"
-              aria-pressed={showPwd}
+              onClick={handleForgot}
+              className="text-sm text-[#0f3b74] hover:underline"
+              disabled={loading}
             >
-              {showPwd ? t.hide : t.see}
+              {t.forgot}
             </button>
-          </div>
-          {mode === "signup" && (
-            <p className="text-xs text-slate-500">{t.pwRule}</p>
+          )}
+
+          {errorMsg && (
+            <p className="text-red-600 text-sm">{errorMsg}</p>
+          )}
+          {info && <p className="text-green-700 text-sm">{info}</p>}
+        </form>
+
+        {/* Switch login/signup */}
+        <div className="mt-6 text-sm text-slate-700">
+          {mode === "login" ? (
+            <>
+              {t.needAccount}{" "}
+              <button
+                className="text-[#0f3b74] hover:underline"
+                onClick={() => {
+                  setMode("signup");
+                  setInfo(null);
+                  setErrorMsg(null);
+                }}
+              >
+                {t.createAccount}
+              </button>
+            </>
+          ) : (
+            <>
+              {t.haveAccount}{" "}
+              <button
+                className="text-[#0f3b74] hover:underline"
+                onClick={() => {
+                  setMode("login");
+                  setInfo(null);
+                  setErrorMsg(null);
+                }}
+              >
+                {t.signIn}
+              </button>
+            </>
           )}
         </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md px-4 py-2 disabled:opacity-60"
-        >
-          {loading
-            ? mode === "login"
-              ? t.logging
-              : t.signing
-            : mode === "login"
-            ? t.login
-            : t.signup}
-        </button>
-
-        {mode === "login" && (
-          <button
-            type="button"
-            onClick={handleForgot}
-            className="text-sm text-blue-700 hover:underline justify-self-start"
-            disabled={loading}
-          >
-            {t.forgot}
-          </button>
-        )}
-
-        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
-        {info && <p className="text-green-700 text-sm">{info}</p>}
-      </form>
-
-      <div className="mt-4 text-sm text-slate-700">
-        {mode === "login" ? (
-          <>
-            {t.needAccount}{" "}
-            <button
-              className="text-blue-700 hover:underline"
-              onClick={() => {
-                setMode("signup");
-                setInfo(null);
-                setErrorMsg(null);
-              }}
-            >
-              {t.createAccount}
-            </button>
-          </>
-        ) : (
-          <>
-            {t.haveAccount}{" "}
-            <button
-              className="text-blue-700 hover:underline"
-              onClick={() => {
-                setMode("login");
-                setInfo(null);
-                setErrorMsg(null);
-              }}
-            >
-              {t.signIn}
-            </button>
-          </>
-        )}
       </div>
     </main>
   );
 }
 
-/** Sélecteur de langue minimal */
+/* ====================== Sous-composants ====================== */
+
+// En-tête avec logo + sélecteur de langue
+function Header({
+  lang,
+  setLang,
+}: {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {/* Remplace le src si ton logo a un autre nom */}
+        <img src="/logo-cq.png" alt="ComptaNet Québec" className="h-10 w-auto" />
+        <span className="font-semibold text-slate-900">ComptaNet Québec</span>
+      </div>
+
+      <LangSwitcher lang={lang} setLang={setLang} />
+    </div>
+  );
+}
+
 function LangSwitcher({
   lang,
   setLang,
@@ -404,13 +446,13 @@ function LangSwitcher({
   setLang: (l: Lang) => void;
 }) {
   return (
-    <div className="flex gap-2 mb-4">
+    <div className="flex gap-1">
       {(["fr", "en", "es"] as Lang[]).map((l) => (
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={`px-3 py-1 rounded border ${
-            lang === l ? "bg-black text-white" : ""
+          className={`px-2 py-1 rounded-md border text-xs ${
+            lang === l ? "bg-[#0f3b74] text-white border-[#0f3b74]" : "hover:bg-slate-50"
           }`}
           type="button"
           aria-pressed={lang === l}
@@ -422,7 +464,8 @@ function LangSwitcher({
   );
 }
 
-/** Mapping d'erreurs Supabase → textes traduits */
+/* ====================== Helpers ====================== */
+
 function mapAuthError(message: string, t: (typeof I18N)["fr"]): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login credentials")) return t.invalidCreds;
@@ -431,4 +474,3 @@ function mapAuthError(message: string, t: (typeof I18N)["fr"]): string {
   if (m.includes("email not confirmed")) return t.emailNotConfirmed;
   return message;
 }
-
