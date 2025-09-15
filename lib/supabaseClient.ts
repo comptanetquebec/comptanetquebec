@@ -1,14 +1,18 @@
 // lib/supabaseClient.ts
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+// On récupère les variables définies dans Vercel (ou dans .env.local en dev)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined
 
+// Vérifications avec erreurs claires
 if (!supabaseUrl) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL is not defined')
-}
-if (!supabaseAnonKey) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined')
+  throw new Error('❌ Erreur: NEXT_PUBLIC_SUPABASE_URL est manquant. Vérifie tes variables d’environnement.')
 }
 
+if (!supabaseAnonKey) {
+  throw new Error('❌ Erreur: NEXT_PUBLIC_SUPABASE_ANON_KEY est manquant. Vérifie tes variables d’environnement.')
+}
+
+// Création du client Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
