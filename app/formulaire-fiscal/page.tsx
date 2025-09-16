@@ -327,9 +327,17 @@ export default function FormulaireFiscal() {
     e.preventDefault();
     setLoading(true);
     try {
-      const raw = Object.fromEntries(new FormData(e.currentTarget));
-      // Convertit les checkbox "on" → booleans
-      const boolKeys = [
+      const form = e.currentTarget;
+      const fd = new FormData(form);
+
+      // 1) tout en string
+      const payload: Record<string, string> = {};
+      for (const [k, v] of fd.entries()) {
+        payload[k] = typeof v === "string" ? v : "";
+      }
+
+      // 2) cases à cocher → "true"/"false"
+      const checkboxKeys = [
         "treat_spouse",
         "status_changed",
         "spouse_same_address",
@@ -339,13 +347,15 @@ export default function FormulaireFiscal() {
         "first_home_purchase",
         "sold_residence",
         "call_back",
-      ];
-      for (const k of boolKeys) raw[k] = Boolean(raw[k]);
+      ] as const;
+      checkboxKeys.forEach((key) => {
+        payload[key] = fd.has(key) ? "true" : "false";
+      });
 
       const res = await fetch("/api/submit-formulaire", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(raw),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
@@ -493,7 +503,7 @@ export default function FormulaireFiscal() {
           <div className="grid">
             <label>{t.coverage}
               <select name="cov2_type" defaultValue="">
-                <option value="">{/* vide */}</option>
+                <option value=""></option>
                 <option value="RAMQ">{t.cov_RAMQ}</option>
                 <option value="PRIV">{t.cov_PRIV}</option>
                 <option value="CONJ">{t.cov_CONJ}</option>
@@ -512,7 +522,7 @@ export default function FormulaireFiscal() {
           <div className="grid">
             <label>{t.child_sex}
               <select name="child1_sex" defaultValue="">
-                <option value="">{/* vide */}</option>
+                <option value=""></option>
                 <option value="M">{t.sex_M}</option>
                 <option value="F">{t.sex_F}</option>
               </select>
@@ -526,7 +536,7 @@ export default function FormulaireFiscal() {
           <div className="grid">
             <label>{t.child_sex}
               <select name="child2_sex" defaultValue="">
-                <option value="">{/* vide */}</option>
+                <option value=""></option>
                 <option value="M">{t.sex_M}</option>
                 <option value="F">{t.sex_F}</option>
               </select>
