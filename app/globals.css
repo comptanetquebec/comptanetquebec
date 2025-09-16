@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Ton CSS global (inchangé) === */
 :root{
   --blue:#0b3b8a;         /* bleu principal */
   --blue-2:#113c80;       /* bleu foncé variante */
