@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-/* -------------------- i18n -------------------- */
+/* ───────────── i18n ───────────── */
 
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = (typeof LANGS)[number];
@@ -86,26 +86,17 @@ const I18N: Record<
   },
 };
 
-/* -------------------- Types -------------------- */
+/* ───────────── Types ───────────── */
 
-/** Forme renvoyée par Supabase Storage pour un objet */
 type SbFileObject = {
   name: string;
   updated_at?: string | null;
-  metadata?: {
-    size?: number; // octets
-    mimetype?: string;
-  };
+  metadata?: { size?: number; mimetype?: string };
 };
 
-/** Ligne affichée dans l'UI */
-type Row = {
-  name: string;
-  size: number;
-  updatedAt: string | null;
-};
+type Row = { name: string; size: number; updatedAt: string | null };
 
-/* -------------------- Page -------------------- */
+/* ───────────── Page ───────────── */
 
 export default function DocumentsPage() {
   const search = useSearchParams();
@@ -117,19 +108,17 @@ export default function DocumentsPage() {
 
   const [uid, setUid] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [busy, setBusy] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const prefix = useMemo(() => (uid ? `${uid}/` : null), [uid]);
 
-  /* --------- Récupération de l'utilisateur + listing --------- */
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       const currentUid = data.user?.id ?? null;
       setUid(currentUid);
-
       if (!currentUid) {
         setLoading(false);
         return;
@@ -144,8 +133,7 @@ export default function DocumentsPage() {
     try {
       const { data, error } = await supabase.storage
         .from("clients")
-        .list(currentUid, { limit: 100, sortBy: { column: "name", order: "asc" } });
-
+        .list(currentUid, { limit: 200, sortBy: { column: "name", order: "asc" } });
       if (error) throw error;
 
       const mapped: Row[] = (data || []).map((f: SbFileObject) => ({
@@ -162,9 +150,9 @@ export default function DocumentsPage() {
     }
   }
 
-  /* -------------------- Upload -------------------- */
+  /* ───────────── Upload ───────────── */
 
-  async function handlePickFiles() {
+  function handlePickFiles() {
     fileInputRef.current?.click();
   }
 
@@ -178,10 +166,7 @@ export default function DocumentsPage() {
         const path = `${uid}/${file.name}`;
         const { error } = await supabase.storage
           .from("clients")
-          .upload(path, file, {
-            upsert: true,
-            cacheControl: "3600",
-          });
+          .upload(path, file, { upsert: true, cacheControl: "3600" });
         if (error) throw error;
       }
       await refreshList(uid);
@@ -194,23 +179,22 @@ export default function DocumentsPage() {
     }
   }
 
-  /* -------------------- Download (URL signée) -------------------- */
+  /* ───────────── Download (URL signée) ───────────── */
 
   async function handleDownload(name: string) {
     if (!uid) return;
     const path = `${uid}/${name}`;
     const { data, error } = await supabase.storage
       .from("clients")
-      .createSignedUrl(path, 60); // 60s
+      .createSignedUrl(path, 60);
     if (error || !data?.signedUrl) {
       alert(t.error_list);
       return;
     }
-    // Ouvre dans un nouvel onglet
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
-  /* -------------------- Delete -------------------- */
+  /* ───────────── Delete ───────────── */
 
   async function handleDelete(name: string) {
     if (!uid) return;
@@ -231,7 +215,7 @@ export default function DocumentsPage() {
     }
   }
 
-  /* -------------------- UI -------------------- */
+  /* ───────────── UI ───────────── */
 
   if (!uid) {
     return (
@@ -239,9 +223,7 @@ export default function DocumentsPage() {
         <div className="card container">
           <Header />
           <h1>{t.title}</h1>
-          <p className="note" style={{ color: "red" }}>
-            {t.error_auth}
-          </p>
+          <p className="note" style={{ color: "red" }}>{t.error_auth}</p>
         </div>
       </main>
     );
@@ -255,12 +237,7 @@ export default function DocumentsPage() {
         <p className="lead">{t.intro}</p>
 
         <div className="cta-row" style={{ justifyContent: "flex-start" }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handlePickFiles}
-            disabled={busy}
-          >
+          <button type="button" className="btn btn-primary" onClick={handlePickFiles} disabled={busy}>
             {busy ? t.uploading : t.addFiles}
           </button>
 
@@ -294,6 +271,7 @@ export default function DocumentsPage() {
                     <Th>{t.table_name}</Th>
                     <Th style={{ width: 120 }}>{t.table_size}</Th>
                     <Th style={{ width: 180 }}>{t.table_updated}</Th>
+                    {/* colonne actions (vide mais volontaire) */}
                     <Th style={{ width: 220 }} />
                   </tr>
                 </thead>
@@ -305,19 +283,10 @@ export default function DocumentsPage() {
                       <Td>{r.updatedAt ? formatDate(r.updatedAt) : "—"}</Td>
                       <Td>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <button
-                            className="btn btn-outline"
-                            type="button"
-                            onClick={() => handleDownload(r.name)}
-                          >
+                          <button className="btn btn-outline" type="button" onClick={() => handleDownload(r.name)}>
                             {t.action_download}
                           </button>
-                          <button
-                            className="btn btn-outline"
-                            type="button"
-                            onClick={() => handleDelete(r.name)}
-                            disabled={busy}
-                          >
+                          <button className="btn btn-outline" type="button" onClick={() => handleDelete(r.name)} disabled={busy}>
                             {t.action_delete}
                           </button>
                         </div>
@@ -334,7 +303,7 @@ export default function DocumentsPage() {
   );
 }
 
-/* -------------------- Sub-components -------------------- */
+/* ───────────── Sub-components ───────────── */
 
 function Header() {
   return (
@@ -358,7 +327,7 @@ function Th({
   children,
   style,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode; // ← optionnel pour éviter l'erreur
   style?: React.CSSProperties;
 }) {
   return (
@@ -371,7 +340,7 @@ function Th({
         ...style,
       }}
     >
-      {children}
+      {children ?? "\u00A0" /* espace insécable si vide */}
     </th>
   );
 }
@@ -397,7 +366,7 @@ function Td({
   );
 }
 
-/* -------------------- Helpers -------------------- */
+/* ───────────── Helpers ───────────── */
 
 function formatSize(n: number): string {
   if (!n || n < 0) return "—";
