@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-/** Langues dispo (tuple) → type Lang dérivé automatiquement */
+/** Langues supportées */
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = typeof LANGS[number];
-
 type Mode = "login" | "signup";
 
 const I18N: Record<
@@ -123,15 +122,15 @@ export default function EspaceClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Récupère ?lang= et le force proprement au type Lang
+  // Langue initiale via ?lang=fr|en|es (FR par défaut)
   const langParamRaw = (searchParams.get("lang") || "fr").toLowerCase();
   const initialLang: Lang = (LANGS as readonly string[]).includes(langParamRaw)
     ? (langParamRaw as Lang)
     : "fr";
-
   const [lang, setLang] = useState<Lang>(initialLang);
   const t = I18N[lang];
 
+  // États UI / form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<Mode>("login");
@@ -141,11 +140,17 @@ export default function EspaceClientInner() {
   const [showPwd, setShowPwd] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
+  // Redirection
   const redirectingRef = useRef(false);
-  const next = searchParams.get("next") || "/formulaire";
+  // 🔁 PAR DÉFAUT → /formulaire-fiscal
+  const next = searchParams.get("next") || "/formulaire-fiscal";
 
+  // Session / écouteur auth
   useEffect(() => {
+    let mounted = true;
+
     supabase.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
       const mail = data.user?.email ?? null;
       setUserEmail(mail);
       if (mail && !redirectingRef.current) {
@@ -153,6 +158,7 @@ export default function EspaceClientInner() {
         router.replace(next);
       }
     });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       const mail = session?.user?.email ?? null;
       setUserEmail(mail);
@@ -161,17 +167,23 @@ export default function EspaceClientInner() {
         router.replace(next);
       }
     });
+
     return () => {
+      mounted = false;
       sub.subscription.unsubscribe();
     };
   }, [router, next]);
 
+  // Actions
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setInfo(null);
     setErrorMsg(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
     setLoading(false);
     if (error) setErrorMsg(mapAuthError(error.message, t));
   }
@@ -187,17 +199,20 @@ export default function EspaceClientInner() {
       return;
     }
     const { error, data } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: { emailRedirectTo: `${window.location.origin}/espace-client` },
     });
     setLoading(false);
-    if (error) setErrorMsg(mapAuthError(error.message, t));
-    else {
+    if (error) {
+      setErrorMsg(mapAuthError(error.message, t));
+    } else {
       if (!data.session) {
         setInfo("Compte créé. Vérifiez votre boîte mail pour confirmer.");
         setMode("login");
-      } else setInfo("Compte créé !");
+      } else {
+        setInfo("Compte créé !");
+      }
     }
   }
 
@@ -205,12 +220,13 @@ export default function EspaceClientInner() {
     setLoading(true);
     setInfo(null);
     setErrorMsg(null);
-    if (!email.trim()) {
+    const e = email.trim();
+    if (!e) {
       setLoading(false);
       setErrorMsg(t.resetNeedEmail);
       return;
     }
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    const { error } = await supabase.auth.resetPasswordForEmail(e, {
       redirectTo: `${window.location.origin}/espace-client`,
     });
     setLoading(false);
@@ -227,7 +243,7 @@ export default function EspaceClientInner() {
     redirectingRef.current = false;
   }
 
-  // Déjà connecté
+  // Écran si déjà connecté
   if (userEmail) {
     return (
       <main className="hero">
@@ -243,7 +259,7 @@ export default function EspaceClientInner() {
     );
   }
 
-  // Formulaire
+  // Formulaire login / signup
   return (
     <main className="hero">
       <div className="card container">
@@ -261,6 +277,8 @@ export default function EspaceClientInner() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="vous@example.com"
+              autoComplete="email"
+              inputMode="email"
             />
           </label>
 
@@ -274,11 +292,13 @@ export default function EspaceClientInner() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
               />
               <button
                 type="button"
                 onClick={() => setShowPwd((s) => !s)}
                 className="btn btn-outline"
+                aria-pressed={showPwd}
               >
                 {showPwd ? t.hide : t.see}
               </button>
