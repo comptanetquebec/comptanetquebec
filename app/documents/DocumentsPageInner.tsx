@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-/* -------------------- i18n -------------------- */
+/* ───────────── i18n ───────────── */
+
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = (typeof LANGS)[number];
 
@@ -85,42 +86,39 @@ const I18N: Record<
   },
 };
 
-/* -------------------- Types -------------------- */
+/* ───────────── Types ───────────── */
+
 type SbFileObject = {
   name: string;
   updated_at?: string | null;
-  metadata?: { size?: number; mimetype?: string };
+  metadata?: { size?: number } | null;
 };
 
-type Row = {
-  name: string;
-  size: number;
-  updatedAt: string | null;
-};
+type Row = { name: string; size: number; updatedAt: string | null };
 
-/* -------------------- Page -------------------- */
+/* ───────────── Component ───────────── */
+
 export default function DocumentsPageInner() {
-  const search = useSearchParams();
-  const langParam = (search.get("lang") || "fr").toLowerCase();
-  const lang: Lang = (["fr", "en", "es"] as const).includes(langParam as Lang)
+  // langue via ?lang=
+  const params = useSearchParams();
+  const langParam = (params.get("lang") || "fr").toLowerCase();
+  const lang: Lang = (LANGS as readonly string[]).includes(langParam as Lang)
     ? (langParam as Lang)
     : "fr";
   const t = I18N[lang];
 
   const [uid, setUid] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [busy, setBusy] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const prefix = useMemo(() => (uid ? `${uid}/` : null), [uid]);
-
+  // Session + listing initial
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       const currentUid = data.user?.id ?? null;
       setUid(currentUid);
-
       if (!currentUid) {
         setLoading(false);
         return;
@@ -137,11 +135,13 @@ export default function DocumentsPageInner() {
         .list(currentUid, { limit: 200, sortBy: { column: "name", order: "asc" } });
       if (error) throw error;
 
-      const mapped: Row[] = (data || []).map((f: SbFileObject) => ({
-        name: f.name,
-        size: f.metadata?.size ?? 0,
-        updatedAt: f.updated_at ?? null,
-      }));
+      const mapped: Row[] =
+        (data as SbFileObject[] | null)?.map((f) => ({
+          name: f.name,
+          size: f.metadata?.size ?? 0,
+          updatedAt: f.updated_at ?? null,
+        })) ?? [];
+
       setRows(mapped);
     } catch (e) {
       console.error(e);
@@ -151,11 +151,11 @@ export default function DocumentsPageInner() {
     }
   }
 
-  async function handlePickFiles() {
+  function openPicker() {
     fileInputRef.current?.click();
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.currentTarget.files;
     if (!files || !uid) return;
 
@@ -178,7 +178,7 @@ export default function DocumentsPageInner() {
     }
   }
 
-  async function handleDownload(name: string) {
+  async function download(name: string) {
     if (!uid) return;
     const { data, error } = await supabase.storage
       .from("clients")
@@ -190,9 +190,9 @@ export default function DocumentsPageInner() {
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
-  async function handleDelete(name: string) {
+  async function remove(name: string) {
     if (!uid) return;
-    if (!confirm(I18N[lang].confirm_delete(name))) return;
+    if (!confirm(t.confirm_delete(name))) return;
 
     setBusy(true);
     try {
@@ -209,6 +209,7 @@ export default function DocumentsPageInner() {
     }
   }
 
+  // Non connecté
   if (!uid) {
     return (
       <main className="hero">
@@ -229,16 +230,15 @@ export default function DocumentsPageInner() {
         <p className="lead">{t.intro}</p>
 
         <div className="cta-row" style={{ justifyContent: "flex-start" }}>
-          <button type="button" className="btn btn-primary" onClick={handlePickFiles} disabled={busy}>
+          <button className="btn btn-primary" onClick={openPicker} disabled={busy}>
             {busy ? t.uploading : t.addFiles}
           </button>
-
           <input
             ref={fileInputRef}
             type="file"
             multiple
             accept=".pdf,.jpg,.jpeg,.png,.heic,.zip,.csv,.xls,.xlsx,.doc,.docx,.txt"
-            onChange={handleUpload}
+            onChange={onUpload}
             hidden
           />
         </div>
@@ -274,10 +274,10 @@ export default function DocumentsPageInner() {
                       <Td>{r.updatedAt ? formatDate(r.updatedAt) : "—"}</Td>
                       <Td>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <button className="btn btn-outline" type="button" onClick={() => handleDownload(r.name)}>
+                          <button className="btn btn-outline" onClick={() => download(r.name)}>
                             {t.action_download}
                           </button>
-                          <button className="btn btn-outline" type="button" onClick={() => handleDelete(r.name)} disabled={busy}>
+                          <button className="btn btn-outline" onClick={() => remove(r.name)} disabled={busy}>
                             {t.action_delete}
                           </button>
                         </div>
@@ -294,7 +294,8 @@ export default function DocumentsPageInner() {
   );
 }
 
-/* -------------------- Sub-components -------------------- */
+/* ───────────── Sub-components ───────────── */
+
 function Header() {
   return (
     <header className="brand" style={{ justifyContent: "space-between", width: "100%" }}>
@@ -317,7 +318,7 @@ function Th({
   children,
   style,
 }: {
-  children?: React.ReactNode; // <- optionnel
+  children?: React.ReactNode;
   style?: React.CSSProperties;
 }) {
   return (
@@ -330,7 +331,7 @@ function Th({
         ...style,
       }}
     >
-      {children}
+      {children ?? "\u00A0"}
     </th>
   );
 }
@@ -356,7 +357,8 @@ function Td({
   );
 }
 
-/* -------------------- Helpers -------------------- */
+/* ───────────── Helpers ───────────── */
+
 function formatSize(n: number): string {
   if (!n || n < 0) return "—";
   const kb = n / 1024;
@@ -373,4 +375,3 @@ function formatDate(iso: string): string {
     return iso;
   }
 }
-
