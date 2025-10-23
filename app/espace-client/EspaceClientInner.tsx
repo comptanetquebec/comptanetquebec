@@ -1,57 +1,57 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-/* =========================
-   Types & constantes
-   ========================= */
+/** Langues supportées (valeur + type) */
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = (typeof LANGS)[number];
 type Mode = "login" | "signup";
 type OAuthProvider = "google";
 
-type Dict = {
-  title: string;
-  intro_login: string;
-  intro_signup: string;
-  email: string;
-  password: string;
-  see: string;
-  hide: string;
-  login: string;
-  signup: string;
-  logging: string;
-  signing: string;
-  forgot: string;
-  needAccount: string;
-  haveAccount: string;
-  createAccount: string;
-  signIn: string;
-  pwRule: string;
-  loggedAs: (m: string) => string;
-  resetSent: string;
-  resetNeedEmail: string;
-  pwTooShort: string;
-  emailNotConfirmed: string;
-  invalidCreds: string;
-  rateLimit: string;
-  magic: string;
-  magicHint: string;
-  or: string;
-  with: (p: string) => string;
-  accept: string;
-  terms: string;
-  and: string;
-  privacy: string;
-  mustAccept: string;
-  badRedirect: string;
-  pwStrength: string;
-  logout: string;
-};
-
-const I18N: Record<Lang, Dict> = {
+const I18N: Record<
+  Lang,
+  {
+    title: string;
+    intro_login: string;
+    intro_signup: string;
+    email: string;
+    password: string;
+    see: string;
+    hide: string;
+    login: string;
+    signup: string;
+    logging: string;
+    signing: string;
+    forgot: string;
+    needAccount: string;
+    haveAccount: string;
+    createAccount: string;
+    signIn: string;
+    pwRule: string;
+    loggedAs: (m: string) => string;
+    resetSent: string;
+    resetNeedEmail: string;
+    pwTooShort: string;
+    emailNotConfirmed: string;
+    invalidCreds: string;
+    rateLimit: string;
+    magic: string;
+    magicHint: string;
+    or: string;
+    with: (p: string) => string;
+    accept: string;
+    terms: string;
+    and: string;
+    privacy: string;
+    mustAccept: string;
+    badRedirect: string;
+    pwStrength: string;
+    logout: string;
+  }
+> = {
   fr: {
     title: "Espace client",
     intro_login: "Connectez-vous avec votre e-mail et votre mot de passe.",
@@ -78,7 +78,8 @@ const I18N: Record<Lang, Dict> = {
     invalidCreds: "Identifiants invalides.",
     rateLimit: "Trop de tentatives. Réessayez plus tard.",
     magic: "Recevoir un lien de connexion",
-    magicHint: "Nous vous enverrons un e-mail contenant un lien magique pour vous connecter.",
+    magicHint:
+      "Nous vous enverrons un e-mail contenant un lien magique pour vous connecter.",
     or: "ou",
     with: (p) => `Continuer avec ${p}`,
     accept: "J’accepte",
@@ -154,7 +155,8 @@ const I18N: Record<Lang, Dict> = {
     invalidCreds: "Credenciales inválidas.",
     rateLimit: "Demasiados intentos. Inténtalo más tarde.",
     magic: "Recibir enlace mágico",
-    magicHint: "Te enviaremos un correo con un enlace de acceso con un clic.",
+    magicHint:
+      "Te enviaremos un correo con un enlace de acceso con un clic.",
     or: "o",
     with: (p) => `Continuar con ${p}`,
     accept: "Acepto",
@@ -168,24 +170,25 @@ const I18N: Record<Lang, Dict> = {
   },
 };
 
-/* =========================
-   Composant
-   ========================= */
 export default function EspaceClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Langue via URL + localStorage
+  // Langue depuis URL + persistance localStorage
   const urlLang = (searchParams.get("lang") || "").toLowerCase();
   const storedLang =
-    (typeof window !== "undefined" && localStorage.getItem("cq.lang")) || undefined;
-  const initialLang: Lang = (LANGS as readonly string[]).includes(urlLang as any)
+    (typeof window !== "undefined" &&
+      (localStorage.getItem("cq.lang") as Lang | null)) ||
+    undefined;
+
+  const initialLang: Lang = (LANGS as readonly string[]).includes(urlLang)
     ? (urlLang as Lang)
-    : ((storedLang as Lang) || "fr");
+    : (storedLang ?? "fr");
+
   const [lang, setLang] = useState<Lang>(initialLang);
   const t = I18N[lang];
 
-  // UI
+  // UI state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<Mode>("login");
@@ -196,22 +199,24 @@ export default function EspaceClientInner() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
 
-  // Password strength
+  // Password strength (0..4)
   const pwScore = getPasswordScore(password);
 
-  // Redirection
+  // Redirection sécurisée
   const redirectingRef = useRef(false);
   const nextRaw = searchParams.get("next");
-  const next = sanitizeNext(nextRaw) || "/dossiers/nouveau"; // chemin par défaut
+  const next = sanitizeNext(nextRaw) || "/dossiers/nouveau";
 
-  /* ---------- Session / écouteur ---------- */
+  // Session / écouteur auth
   useEffect(() => {
     let mounted = true;
 
-    // persister la langue
+    // Persister la langue
     try {
       localStorage.setItem("cq.lang", lang);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
 
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
@@ -236,12 +241,14 @@ export default function EspaceClientInner() {
       mounted = false;
       try {
         sub?.subscription?.unsubscribe?.();
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     };
   }, [router, next, lang]);
 
-  /* ---------- Actions ---------- */
-  async function handleLogin(e: React.FormEvent) {
+  // Actions
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setInfo(null);
@@ -254,7 +261,7 @@ export default function EspaceClientInner() {
     if (error) setErrorMsg(mapAuthError(error.message, t));
   }
 
-  async function handleSignup(e: React.FormEvent) {
+  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setInfo(null);
@@ -314,7 +321,7 @@ export default function EspaceClientInner() {
     redirectingRef.current = false;
   }
 
-  async function handleMagicLink(e: React.FormEvent) {
+  async function handleMagicLink(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     setLoading(true);
     setInfo(null);
@@ -345,7 +352,7 @@ export default function EspaceClientInner() {
     if (error) setErrorMsg(mapAuthError(error.message, t));
   }
 
-  /* ---------- UI ---------- */
+  // Écran si déjà connecté
   if (userEmail) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -361,6 +368,7 @@ export default function EspaceClientInner() {
     );
   }
 
+  // Formulaire login / signup
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white rounded-2xl shadow p-6">
@@ -368,7 +376,11 @@ export default function EspaceClientInner() {
           lang={lang}
           setLang={(l) => {
             setLang(l);
-            try { localStorage.setItem("cq.lang", l); } catch {}
+            try {
+              localStorage.setItem("cq.lang", l);
+            } catch {
+              /* ignore */
+            }
           }}
         />
 
@@ -377,7 +389,10 @@ export default function EspaceClientInner() {
           {mode === "login" ? t.intro_login : t.intro_signup}
         </p>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="mt-6 space-y-4">
+        <form
+          onSubmit={mode === "login" ? handleLogin : handleSignup}
+          className="mt-6 space-y-4"
+        >
           <label className="block">
             <span className="text-sm font-medium">{t.email}</span>
             <input
@@ -415,7 +430,6 @@ export default function EspaceClientInner() {
                 {showPwd ? t.hide : t.see}
               </button>
             </div>
-
             {mode === "signup" && (
               <div className="mt-2">
                 <p className="text-xs text-gray-600">{t.pwRule}</p>
@@ -429,7 +443,12 @@ export default function EspaceClientInner() {
               <button type="submit" disabled={loading} className="btn btn-primary w-full">
                 {loading ? t.logging : t.login}
               </button>
-              <button type="button" onClick={handleForgot} className="btn btn-outline w-full" disabled={loading}>
+              <button
+                type="button"
+                onClick={handleForgot}
+                className="btn btn-outline w-full"
+                disabled={loading}
+              >
                 {t.forgot}
               </button>
               <div className="relative my-2 text-center text-sm text-gray-500">
@@ -446,12 +465,20 @@ export default function EspaceClientInner() {
           ) : (
             <div className="flex flex-col gap-3">
               <label className="inline-flex items-start gap-2 text-sm">
-                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                />
                 <span>
                   {t.accept}{" "}
-                  <a className="underline" href="/legal/terms" target="_blank" rel="noreferrer">{t.terms}</a>{" "}
+                  <a className="underline" href="/legal/terms" target="_blank" rel="noreferrer">
+                    {t.terms}
+                  </a>{" "}
                   {t.and}{" "}
-                  <a className="underline" href="/legal/privacy" target="_blank" rel="noreferrer">{t.privacy}</a>
+                  <a className="underline" href="/legal/privacy" target="_blank" rel="noreferrer">
+                    {t.privacy}
+                  </a>
                 </span>
               </label>
               <button type="submit" disabled={loading} className="btn btn-primary w-full">
@@ -468,12 +495,16 @@ export default function EspaceClientInner() {
           {mode === "login" ? (
             <>
               {t.needAccount}{" "}
-              <button className="btn btn-link" onClick={() => setMode("signup")}>{t.createAccount}</button>
+              <button className="btn btn-link" onClick={() => setMode("signup")}>
+                {t.createAccount}
+              </button>
             </>
           ) : (
             <>
               {t.haveAccount}{" "}
-              <button className="btn btn-link" onClick={() => setMode("login")}>{t.signIn}</button>
+              <button className="btn btn-link" onClick={() => setMode("login")}>
+                {t.signIn}
+              </button>
             </>
           )}
         </div>
@@ -488,14 +519,13 @@ export default function EspaceClientInner() {
   );
 }
 
-/* =========================
-   Header & Lang Switcher
-   ========================= */
+/* ---------- Header & LangSwitcher ---------- */
+
 function Header({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
   return (
     <header className="flex items-center justify-between w-full">
       <div className="flex items-center gap-3">
-        <img src="/logo-cq.png" alt="ComptaNet Québec" className="h-10 w-auto" />
+        <Image src="/logo-cq.png" alt="ComptaNet Québec" className="h-10 w-auto" width={120} height={40} priority />
         <span className="font-semibold">ComptaNet Québec</span>
       </div>
       <LangSwitcher lang={lang} setLang={setLang} />
@@ -521,10 +551,9 @@ function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => voi
   );
 }
 
-/* =========================
-   Helpers
-   ========================= */
-function mapAuthError(message: string, t: Dict): string {
+/* ---------- Helpers ---------- */
+
+function mapAuthError(message: string, t: (typeof I18N)["fr"]): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login credentials")) return t.invalidCreds;
   if (m.includes("email rate limit")) return t.rateLimit;
@@ -535,8 +564,8 @@ function mapAuthError(message: string, t: Dict): string {
 
 function sanitizeNext(input: string | null): string | null {
   if (!input) return null;
-  if (!input.startsWith("/")) return null;           // uniquement chemins internes
-  if (input.startsWith("//") || input.includes("://")) return null; // pas d’URL externe
+  if (!input.startsWith("/")) return null;
+  if (input.startsWith("//") || input.includes("://")) return null;
   return input;
 }
 
@@ -546,11 +575,13 @@ function getPasswordScore(pw: string): number {
   if (/[A-Z]/.test(pw)) s++;
   if (/[0-9]/.test(pw)) s++;
   if (/[^A-Za-z0-9]/.test(pw)) s++;
-  return s; // 0..4
+  return s;
 }
 
 function PwMeter({ label, score }: { label: string; score: number }) {
   const steps = 4;
+  // Astuce pour éviter tout "any": on génère directement un tableau d’index [0..steps-1]
+  const bars = Array.from({ length: steps }, (_: unknown, i: number) => i);
   return (
     <div className="mt-1">
       <div
@@ -561,11 +592,13 @@ function PwMeter({ label, score }: { label: string; score: number }) {
         aria-valuemax={steps}
         aria-valuenow={score}
       >
-        {Array.from({ length: steps }).map((_, i) => (
+        {bars.map((i) => (
           <div key={i} className={`h-1.5 flex-1 rounded ${i < score ? "bg-emerald-500" : "bg-gray-200"}`} />
         ))}
       </div>
-      <span className="sr-only">{label}: {score}/{steps}</span>
+      <span className="sr-only">
+        {label}: {score}/{steps}
+      </span>
     </div>
   );
 }
