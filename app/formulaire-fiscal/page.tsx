@@ -3,219 +3,175 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { jsPDF } from "jspdf";
 
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = typeof LANGS[number];
 type T1Type = "salarie" | "autonome";
-type FormStatus = "draft" | "submitted" | "processing" | "done";
+type FormStatus = "draft" | "submitted";
 
 type StoredFile = {
   name: string;
-  created_at?: string;
-  updated_at?: string;
   size?: number;
-  metadata?: any;
-};
-
-const I18N: Record<Lang, any> = {
-  fr: {
-    title_salarie: "Déclaration T1 — Particulier",
-    title_auto: "Déclaration T1 — Travailleur autonome",
-    intro_salarie: "Remplissez vos informations T1 (salarié).",
-    intro_auto: "Remplissez vos informations T1 (travailleur autonome).",
-    year: "Année d'imposition",
-    employment: "Revenus d'emploi (T4)",
-    rrsp: "Cotisations REER",
-    notes: "Notes",
-    biz_rev: "Revenus d'entreprise (autonome)",
-    biz_exp: "Dépenses d'entreprise",
-    saving: "Enregistrement…",
-    saved: "Enregistré",
-    logout: "Se déconnecter",
-    back: "Retour à l'accueil dossiers",
-
-    // Upload
-    upload_title: "Pièces jointes",
-    upload_hint: "Déposez vos relevés (PDF, JPG, PNG). Taille max typique 10 Mo.",
-    choose_files: "Choisir des fichiers",
-    uploading: "Téléversement…",
-    files: "Fichiers",
-    download: "Télécharger",
-    remove: "Supprimer",
-    empty_files: "Aucun fichier téléversé pour cette année.",
-    up_ok: "Fichier téléversé.",
-    up_err: "Erreur de téléversement.",
-    del_ok: "Fichier supprimé.",
-    del_err: "Erreur de suppression.",
-
-    // Submission
-    submit: "Soumettre",
-    submitted_badge: "Soumis",
-    submitted_info:
-      "Votre dossier a été soumis. Le formulaire et les pièces sont maintenant verrouillés.",
-    submit_confirm_title: "Confirmer la soumission",
-    submit_confirm_text:
-      "Une fois soumis, vous ne pourrez plus modifier ce dossier. Confirmez-vous la soumission ?",
-    submit_ok: "Dossier soumis.",
-    submit_err: "Impossible de soumettre le dossier.",
-    validate_err_year: "Veuillez saisir une année valide (>= 2000).",
-    validate_err_emp: "Veuillez saisir vos revenus d'emploi (T4).",
-    validate_err_biz: "Veuillez saisir vos revenus d'entreprise (autonome).",
-  },
-  en: {
-    title_salarie: "T1 Return — Personal",
-    title_auto: "T1 Return — Self-employed",
-    intro_salarie: "Fill your T1 information (employee).",
-    intro_auto: "Fill your T1 information (self-employed).",
-    year: "Tax year",
-    employment: "Employment income (T4)",
-    rrsp: "RRSP contributions",
-    notes: "Notes",
-    biz_rev: "Business income (self-employed)",
-    biz_exp: "Business expenses",
-    saving: "Saving…",
-    saved: "Saved",
-    logout: "Log out",
-    back: "Back to files hub",
-
-    // Upload
-    upload_title: "Attachments",
-    upload_hint: "Upload your slips (PDF, JPG, PNG). Typical max size 10 MB.",
-    choose_files: "Choose files",
-    uploading: "Uploading…",
-    files: "Files",
-    download: "Download",
-    remove: "Delete",
-    empty_files: "No files uploaded for this year.",
-    up_ok: "File uploaded.",
-    up_err: "Upload error.",
-    del_ok: "File deleted.",
-    del_err: "Delete error.",
-
-    // Submission
-    submit: "Submit",
-    submitted_badge: "Submitted",
-    submitted_info:
-      "Your file has been submitted. The form and attachments are now locked.",
-    submit_confirm_title: "Confirm submission",
-    submit_confirm_text:
-      "After submission, you won’t be able to edit this file. Do you confirm?",
-    submit_ok: "File submitted.",
-    submit_err: "Could not submit the file.",
-    validate_err_year: "Please enter a valid year (>= 2000).",
-    validate_err_emp: "Please enter your employment income (T4).",
-    validate_err_biz: "Please enter your business income (self-employed).",
-  },
-  es: {
-    title_salarie: "Declaración T1 — Persona",
-    title_auto: "Declaración T1 — Autónomo",
-    intro_salarie: "Complete su T1 (empleado).",
-    intro_auto: "Complete su T1 (autónomo).",
-    year: "Año fiscal",
-    employment: "Ingresos laborales (T4)",
-    rrsp: "Aportes RRSP",
-    notes: "Notas",
-    biz_rev: "Ingresos de negocio (autónomo)",
-    biz_exp: "Gastos de negocio",
-    saving: "Guardando…",
-    saved: "Guardado",
-    logout: "Cerrar sesión",
-    back: "Volver al inicio de expedientes",
-
-    // Upload
-    upload_title: "Adjuntos",
-    upload_hint: "Suba sus comprobantes (PDF, JPG, PNG). Tamaño máx. típico 10 MB.",
-    choose_files: "Elegir archivos",
-    uploading: "Subiendo…",
-    files: "Archivos",
-    download: "Descargar",
-    remove: "Eliminar",
-    empty_files: "No hay archivos subidos para este año.",
-    up_ok: "Archivo subido.",
-    up_err: "Error al subir.",
-    del_ok: "Archivo eliminado.",
-    del_err: "Error al eliminar.",
-
-    // Submission
-    submit: "Enviar",
-    submitted_badge: "Enviado",
-    submitted_info:
-      "Su expediente ha sido enviado. El formulario y los adjuntos están bloqueados.",
-    submit_confirm_title: "Confirmar envío",
-    submit_confirm_text:
-      "Después del envío, no podrá editar este expediente. ¿Confirma?",
-    submit_ok: "Expediente enviado.",
-    submit_err: "No se pudo enviar el expediente.",
-    validate_err_year: "Ingrese un año válido (>= 2000).",
-    validate_err_emp: "Ingrese sus ingresos laborales (T4).",
-    validate_err_biz: "Ingrese sus ingresos de negocio (autónomo).",
-  },
+  created_at?: string;
 };
 
 export default function FormulaireFiscalPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // Langue
+  /** Langue */
   const urlLang = (sp.get("lang") || "").toLowerCase();
   const lang: Lang = (LANGS as readonly string[]).includes(urlLang)
     ? (urlLang as Lang)
     : "fr";
-  const t = I18N[lang];
 
-  // Type: salarié par défaut ; autonome avec ?type=autonome
-  const typeParam = (sp.get("type") || "salarie").toLowerCase();
-  const t1Type: T1Type = typeParam === "autonome" ? "autonome" : "salarie";
+  const texts = {
+    fr: {
+      title_salarie: "Déclaration T1 — Particulier",
+      title_auto: "Déclaration T1 — Travailleur autonome",
+      intro_salarie: "Remplissez vos informations T1 (salarié).",
+      intro_auto: "Remplissez vos informations T1 (travailleur autonome).",
+      year: "Année d'imposition",
+      emp: "Revenus d'emploi (T4)",
+      rrsp: "Cotisations REER",
+      notes: "Notes",
+      biz_rev: "Revenus d'entreprise",
+      biz_exp: "Dépenses d'entreprise",
+      save: "Enregistrement…",
+      saved: "Enregistré",
+      logout: "Se déconnecter",
+      back: "Retour à l’accueil dossiers",
+      upload_title: "Pièces jointes",
+      upload_hint: "Téléversez vos relevés (PDF, JPG, PNG).",
+      choose: "Choisir des fichiers",
+      uploading: "Téléversement…",
+      files: "Fichiers",
+      empty_files: "Aucun fichier pour cette année.",
+      download: "Télécharger",
+      remove: "Supprimer",
+      submit: "Soumettre",
+      confirm_submit:
+        "Une fois soumis, le dossier sera verrouillé. Confirmez-vous la soumission ?",
+      submitted: "Soumis",
+      submitted_info:
+        "Dossier soumis : le formulaire et les pièces sont maintenant verrouillés.",
+      recap: "Télécharger le récapitulatif PDF",
+    },
+    en: {
+      title_salarie: "T1 Return — Personal",
+      title_auto: "T1 Return — Self-employed",
+      intro_salarie: "Fill your T1 information (employee).",
+      intro_auto: "Fill your T1 information (self-employed).",
+      year: "Tax year",
+      emp: "Employment income (T4)",
+      rrsp: "RRSP contributions",
+      notes: "Notes",
+      biz_rev: "Business income",
+      biz_exp: "Business expenses",
+      save: "Saving…",
+      saved: "Saved",
+      logout: "Log out",
+      back: "Back to files hub",
+      upload_title: "Attachments",
+      upload_hint: "Upload your slips (PDF, JPG, PNG).",
+      choose: "Choose files",
+      uploading: "Uploading…",
+      files: "Files",
+      empty_files: "No file for this year.",
+      download: "Download",
+      remove: "Delete",
+      submit: "Submit",
+      confirm_submit:
+        "Once submitted, your file will be locked. Do you confirm?",
+      submitted: "Submitted",
+      submitted_info:
+        "File submitted: the form and attachments are now locked.",
+      recap: "Download PDF Summary",
+    },
+    es: {
+      title_salarie: "Declaración T1 — Persona",
+      title_auto: "Declaración T1 — Autónomo",
+      intro_salarie: "Complete su T1 (empleado).",
+      intro_auto: "Complete su T1 (autónomo).",
+      year: "Año fiscal",
+      emp: "Ingresos laborales (T4)",
+      rrsp: "Aportes RRSP",
+      notes: "Notas",
+      biz_rev: "Ingresos de negocio",
+      biz_exp: "Gastos de negocio",
+      save: "Guardando…",
+      saved: "Guardado",
+      logout: "Cerrar sesión",
+      back: "Volver al inicio",
+      upload_title: "Adjuntos",
+      upload_hint: "Suba sus comprobantes (PDF, JPG, PNG).",
+      choose: "Elegir archivos",
+      uploading: "Subiendo…",
+      files: "Archivos",
+      empty_files: "No hay archivos.",
+      download: "Descargar",
+      remove: "Eliminar",
+      submit: "Enviar",
+      confirm_submit:
+        "Una vez enviado, el expediente estará bloqueado. ¿Confirma?",
+      submitted: "Enviado",
+      submitted_info:
+        "Expediente enviado: el formulario y los adjuntos están bloqueados.",
+      recap: "Descargar resumen PDF",
+    },
+  }[lang];
 
-  // Auth
-  const [email, setEmail] = useState<string | null>(null);
+  /** Type */
+  const t1Type: T1Type =
+    (sp.get("type") || "salarie").toLowerCase() === "autonome"
+      ? "autonome"
+      : "salarie";
+
+  const t = texts;
   const [uid, setUid] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
-  // Form data
   const [year, setYear] = useState<number>(new Date().getFullYear() - 1);
-  const [employmentIncome, setEmploymentIncome] = useState<string>("");
-  const [rrsp, setRrsp] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
-  const [bizIncome, setBizIncome] = useState<string>("");
-  const [bizExpenses, setBizExpenses] = useState<string>("");
-
-  // State
+  const [employment, setEmployment] = useState("");
+  const [rrsp, setRrsp] = useState("");
+  const [notes, setNotes] = useState("");
+  const [bizRev, setBizRev] = useState("");
+  const [bizExp, setBizExp] = useState("");
   const [status, setStatus] = useState<FormStatus>("draft");
+
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const [rowId, setRowId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const debounceRef = useRef<any>(null);
-
-  // Upload state
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
-  const locked = status !== "draft";
+  const debounceRef = useRef<any>(null);
+  const locked = status === "submitted";
 
-  // Protection
+  /** Auth protect */
+  const router = useRouter();
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       const u = data.user;
       if (!u) {
-        const suffix = t1Type === "autonome" ? "?type=autonome" : "";
-        router.replace(`/espace-client?lang=${lang}&next=/formulaire-fiscal${suffix}`);
+        router.replace(
+          `/espace-client?lang=${lang}&next=/formulaire-fiscal${
+            t1Type === "autonome" ? "?type=autonome" : ""
+          }`
+        );
         return;
       }
-      setEmail(u.email ?? null);
       setUid(u.id);
+      setEmail(u.email || null);
     })();
   }, [router, lang, t1Type]);
 
-  // Charger brouillon/ligne existante
+  /** Load existing draft */
   useEffect(() => {
+    if (!uid) return;
     (async () => {
-      if (!uid) return;
-
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("tax_forms")
         .select("id, payload, status")
         .eq("user_id", uid)
@@ -223,303 +179,223 @@ export default function FormulaireFiscalPage() {
         .contains("payload", { type: t1Type })
         .order("updated_at", { ascending: false })
         .limit(1);
-
-      if (error) return;
-
-      if (data && data.length > 0) {
-        const row = data[0];
-        setRowId(row.id);
-        setStatus((row.status as FormStatus) || "draft");
-        const p = (row.payload || {}) as any;
-        setEmploymentIncome(p.employmentIncome || "");
-        setRrsp(p.rrsp || "");
-        setNotes(p.notes || "");
-        setBizIncome(p.bizIncome || "");
-        setBizExpenses(p.bizExpenses || "");
-      } else {
-        setRowId(null);
-        setStatus("draft");
-        setEmploymentIncome("");
-        setRrsp("");
-        setNotes("");
-        setBizIncome("");
-        setBizExpenses("");
-      }
+      if (!data || !data[0]) return;
+      const row = data[0];
+      setStatus(row.status);
+      const p = row.payload || {};
+      setEmployment(p.employment || "");
+      setRrsp(p.rrsp || "");
+      setNotes(p.notes || "");
+      setBizRev(p.bizRev || "");
+      setBizExp(p.bizExp || "");
     })();
   }, [uid, year, t1Type]);
 
-  // Lister fichiers
-  useEffect(() => {
-    listFiles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uid, year]);
-
+  /** Autosave */
   function queueSave() {
     if (locked) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(saveNow, 700);
+    debounceRef.current = setTimeout(saveNow, 600);
   }
 
   async function saveNow() {
     if (!uid || locked) return;
     setSaving(true);
-    setError(null);
-
     const payload = {
       type: t1Type,
-      employmentIncome,
+      employment,
       rrsp,
       notes,
-      bizIncome,
-      bizExpenses,
+      bizRev,
+      bizExp,
     };
-
-    if (rowId) {
-      const { error } = await supabase.from("tax_forms").update({ payload }).eq("id", rowId);
-      if (!error) setSavedAt(new Date());
-    } else {
-      const { data, error } = await supabase
-        .from("tax_forms")
-        .insert({ user_id: uid, year, payload, status: "draft" })
-        .select("id")
-        .single();
-      if (!error && data) {
-        setRowId(data.id);
-        setSavedAt(new Date());
-      }
-    }
-
+    await supabase
+      .from("tax_forms")
+      .upsert({ user_id: uid, year, payload, status: "draft" });
+    setSavedAt(new Date());
     setSaving(false);
   }
 
-  // Validation minimale pour soumission
-  function validateBeforeSubmit(): string | null {
-    if (!year || year < 2000) return t.validate_err_year;
-    if (t1Type === "salarie") {
-      if (!String(employmentIncome || "").trim()) return t.validate_err_emp;
-    } else {
-      if (!String(bizIncome || "").trim()) return t.validate_err_biz;
-    }
-    return null;
-  }
-
-  async function handleSubmit() {
-    setError(null);
-    setInfo(null);
-
-    const err = validateBeforeSubmit();
-    if (err) {
-      setError(err);
-      return;
-    }
-
-    const confirmed = window.confirm(`${t.submit_confirm_title}\n\n${t.submit_confirm_text}`);
-    if (!confirmed) return;
-
-    // S'assurer que la ligne existe et est à jour
-    await saveNow();
-
-    // Créer si besoin
-    let id = rowId;
-    if (!id) {
-      const payload = {
-        type: t1Type,
-        employmentIncome,
-        rrsp,
-        notes,
-        bizIncome,
-        bizExpenses,
-      };
-      const { data, error } = await supabase
-        .from("tax_forms")
-        .insert({ user_id: uid, year, payload, status: "draft" })
-        .select("id")
-        .single();
-      if (error || !data) {
-        setError(t.submit_err);
-        return;
-      }
-      id = data.id;
-      setRowId(id);
-    }
-
-    // Passer en submitted
-    const { error } = await supabase
-      .from("tax_forms")
-      .update({ status: "submitted" })
-      .eq("id", id as string);
-
-    if (error) {
-      setError(t.submit_err);
-      return;
-    }
-
-    setStatus("submitted");
-    setInfo(t.submit_ok);
-  }
-
-  async function logout() {
-    await supabase.auth.signOut();
-    router.replace(`/espace-client?lang=${lang}`);
-  }
-
-  // ---------- Upload ----------
-  function folderPath() {
-    return `user-${uid}/${year}`;
-  }
-
+  /** Upload */
+  const folderPath = () => `user-${uid}/${year}`;
   async function listFiles() {
     if (!uid) return;
-    const path = folderPath();
-
-    const { data, error } = await supabase.storage
+    const { data } = await supabase.storage
       .from("client-files")
-      .list(path, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+      .list(folderPath());
+    setFiles(data || []);
+  }
+  useEffect(() => {
+    listFiles();
+  }, [uid, year]);
 
-    if (error) return;
-    setFiles((data || []) as StoredFile[]);
+  async function onFiles(e: any) {
+    const fl = e.target.files;
+    if (!fl || locked) return;
+    setUploading(true);
+    for (const f of fl) {
+      const path = `${folderPath()}/${Date.now()}-${f.name}`;
+      await supabase.storage.from("client-files").upload(path, f);
+    }
+    setUploading(false);
+    listFiles();
   }
 
-  async function onChooseFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const fileList = e.target.files;
-    if (!fileList || !uid || locked) return;
-
-    setUploading(true);
-    const bucket = supabase.storage.from("client-files");
-    const base = folderPath();
-
-    for (const f of Array.from(fileList)) {
-      const okType =
-        f.type === "application/pdf" ||
-        f.type === "image/jpeg" ||
-        f.type === "image/png";
-      if (!okType) continue;
-
-      const path = `${base}/${crypto.randomUUID()}-${f.name}`;
-      const { error } = await bucket.upload(path, f, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) {
-        setToast(t.up_err);
-      } else {
-        setToast(t.up_ok);
-      }
-    }
-
-    setUploading(false);
-    await listFiles();
-    e.target.value = "";
+  async function removeFile(name: string) {
+    if (locked) return;
+    await supabase.storage.from("client-files").remove([`${folderPath()}/${name}`]);
+    listFiles();
   }
 
   async function download(name: string) {
-    if (!uid) return;
-    const path = `${folderPath()}/${name}`;
-    const { data, error } = await supabase.storage
+    const { data } = await supabase.storage
       .from("client-files")
-      .createSignedUrl(path, 60);
-    if (error || !data?.signedUrl) return;
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      .createSignedUrl(`${folderPath()}/${name}`, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
-  async function remove(name: string) {
-    if (!uid || locked) return;
-    const path = `${folderPath()}/${name}`;
-    const { error } = await supabase.storage.from("client-files").remove([path]);
-    if (error) setToast(t.del_err);
-    else {
-      setToast(t.del_ok);
-      await listFiles();
+  /** Soumettre */
+  async function submitForm() {
+    if (!window.confirm(t.confirm_submit)) return;
+    await saveNow();
+    await supabase
+      .from("tax_forms")
+      .update({ status: "submitted" })
+      .eq("user_id", uid)
+      .eq("year", year);
+    setStatus("submitted");
+  }
+
+  /** PDF Récap */
+  async function downloadPDF() {
+    const pdf = new jsPDF();
+    const title = t1Type === "autonome" ? t.title_auto : t.title_salarie;
+
+    // Logo si présent
+    try {
+      const img = await fetch("/logo-cq.png");
+      const blob = await img.blob();
+      const reader = new FileReader();
+      reader.onload = function () {
+        pdf.addImage(reader.result as string, "PNG", 10, 10, 40, 15);
+        pdf.setFontSize(18);
+        pdf.text("ComptaNet Québec", 60, 20);
+        generate();
+      };
+      reader.readAsDataURL(blob);
+    } catch {
+      generate();
+    }
+
+    function generate() {
+      let y = 40;
+      pdf.setFontSize(14);
+      pdf.text(title, 10, y);
+      y += 10;
+      pdf.setFontSize(11);
+      pdf.text(`${t.year}: ${year}`, 10, y);
+      y += 8;
+      pdf.text(`${t.emp}: ${employment || "-"}`, 10, y);
+      y += 8;
+      pdf.text(`${t.rrsp}: ${rrsp || "-"}`, 10, y);
+      y += 8;
+      if (t1Type === "autonome") {
+        pdf.text(`${t.biz_rev}: ${bizRev || "-"}`, 10, y);
+        y += 8;
+        pdf.text(`${t.biz_exp}: ${bizExp || "-"}`, 10, y);
+        y += 8;
+      }
+      pdf.text(`${t.notes}:`, 10, y);
+      y += 6;
+      const noteText = notes || "-";
+      const wrapped = pdf.splitTextToSize(noteText, 180);
+      pdf.text(wrapped, 10, y);
+      y += wrapped.length * 6 + 8;
+
+      pdf.text(`${t.files}:`, 10, y);
+      y += 6;
+      if (files.length === 0) pdf.text(t.empty_files, 15, y);
+      else {
+        files.forEach((f) => {
+          pdf.text(`• ${f.name}`, 15, y);
+          y += 6;
+        });
+      }
+
+      y += 10;
+      pdf.setFontSize(9);
+      pdf.text(
+        `Client: ${email || "—"} | Généré le ${new Date().toLocaleString()}`,
+        10,
+        y
+      );
+
+      pdf.save(`Comptanet-${year}-${t1Type}.pdf`);
     }
   }
-
-  const title = useMemo(
-    () => (t1Type === "autonome" ? t.title_auto : t.title_salarie),
-    [t1Type, t]
-  );
-  const intro = useMemo(
-    () => (t1Type === "autonome" ? t.intro_auto : t.intro_salarie),
-    [t1Type, t]
-  );
 
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto p-4">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-semibold flex items-center gap-3">
-            {title}
+        <header className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            {t1Type === "autonome" ? t.title_auto : t.title_salarie}
             {locked && (
-              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
-                {t.submitted_badge}
+              <span className="bg-green-200 text-green-800 text-xs px-2 py-0.5 rounded-full">
+                {t.submitted}
               </span>
             )}
           </h1>
-          <div className="flex items-center gap-2 text-sm">
-            {saving ? <span>{t.saving}</span> : savedAt ? <span>{t.saved}</span> : null}
+          <div className="flex gap-2 text-sm">
+            {saving ? <span>{t.save}</span> : savedAt && <span>{t.saved}</span>}
             <button
-              className="btn btn-outline"
               onClick={() => router.push(`/dossiers/nouveau?lang=${lang}`)}
+              className="btn btn-outline"
             >
               {t.back}
             </button>
-            <button className="btn btn-outline" onClick={logout}>
+            <button onClick={() => supabase.auth.signOut()} className="btn btn-outline">
               {t.logout}
             </button>
           </div>
         </header>
 
-        {/* Info état */}
         {locked && (
-          <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <p className="mb-3 text-sm bg-green-50 text-green-700 p-2 rounded border border-green-200">
             {t.submitted_info}
-          </div>
-        )}
-        {error && (
-          <div className="mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {error}
-          </div>
-        )}
-        {info && (
-          <div className="mb-3 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-            {info}
-          </div>
+          </p>
         )}
 
-        <p className="text-gray-600 mb-4">{intro}</p>
+        <p className="text-gray-600 mb-4">
+          {t1Type === "autonome" ? t.intro_auto : t.intro_salarie}
+        </p>
 
-        {/* --- Formulaire --- */}
+        {/* Formulaire */}
         <div className="grid gap-4">
-          <label className="block">
-            <span className="text-sm font-medium">{t.year}</span>
+          <label>
+            {t.year}
             <input
               type="number"
               value={year}
               disabled={locked}
-              onChange={(e) => {
-                const v = parseInt(e.target.value || "0", 10);
-                if (!Number.isNaN(v)) setYear(v);
-              }}
-              className="mt-1 w-40 rounded border px-3 py-2 disabled:bg-gray-100"
+              onChange={(e) => setYear(parseInt(e.target.value))}
+              className="w-40 rounded border px-3 py-2 block"
             />
           </label>
-
-          <label className="block">
-            <span className="text-sm font-medium">{t.employment}</span>
+          <label>
+            {t.emp}
             <input
-              value={employmentIncome}
+              value={employment}
               disabled={locked}
               onChange={(e) => {
-                setEmploymentIncome(e.target.value);
+                setEmployment(e.target.value);
                 queueSave();
               }}
-              placeholder="ex. 48 500"
-              className="mt-1 w-full rounded border px-3 py-2 disabled:bg-gray-100"
+              className="w-full rounded border px-3 py-2 block"
             />
           </label>
-
-          <label className="block">
-            <span className="text-sm font-medium">{t.rrsp}</span>
+          <label>
+            {t.rrsp}
             <input
               value={rrsp}
               disabled={locked}
@@ -527,45 +403,39 @@ export default function FormulaireFiscalPage() {
                 setRrsp(e.target.value);
                 queueSave();
               }}
-              placeholder="ex. 2 000"
-              className="mt-1 w-full rounded border px-3 py-2 disabled:bg-gray-100"
+              className="w-full rounded border px-3 py-2 block"
             />
           </label>
-
           {t1Type === "autonome" && (
             <>
-              <label className="block">
-                <span className="text-sm font-medium">{t.biz_rev}</span>
+              <label>
+                {t.biz_rev}
                 <input
-                  value={bizIncome}
+                  value={bizRev}
                   disabled={locked}
                   onChange={(e) => {
-                    setBizIncome(e.target.value);
+                    setBizRev(e.target.value);
                     queueSave();
                   }}
-                  placeholder="ex. 22 000"
-                  className="mt-1 w-full rounded border px-3 py-2 disabled:bg-gray-100"
+                  className="w-full rounded border px-3 py-2 block"
                 />
               </label>
-
-              <label className="block">
-                <span className="text-sm font-medium">{t.biz_exp}</span>
+              <label>
+                {t.biz_exp}
                 <input
-                  value={bizExpenses}
+                  value={bizExp}
                   disabled={locked}
                   onChange={(e) => {
-                    setBizExpenses(e.target.value);
+                    setBizExp(e.target.value);
                     queueSave();
                   }}
-                  placeholder="ex. 6 500"
-                  className="mt-1 w-full rounded border px-3 py-2 disabled:bg-gray-100"
+                  className="w-full rounded border px-3 py-2 block"
                 />
               </label>
             </>
           )}
-
-          <label className="block">
-            <span className="text-sm font-medium">{t.notes}</span>
+          <label>
+            {t.notes}
             <textarea
               value={notes}
               disabled={locked}
@@ -574,81 +444,63 @@ export default function FormulaireFiscalPage() {
                 queueSave();
               }}
               rows={4}
-              className="mt-1 w-full rounded border px-3 py-2 disabled:bg-gray-100"
+              className="w-full rounded border px-3 py-2 block"
             />
           </label>
         </div>
 
-        {/* --- Upload de pièces --- */}
-        <section className="mt-8">
+        {/* Upload */}
+        <section className="mt-6">
           <h2 className="text-lg font-semibold">{t.upload_title}</h2>
           <p className="text-sm text-gray-600 mb-2">{t.upload_hint}</p>
-
-          <label className={`inline-flex items-center gap-2 ${locked ? "opacity-60" : ""}`}>
-            <input
-              type="file"
-              accept="application/pdf,image/jpeg,image/png"
-              multiple
-              onChange={onChooseFiles}
-              disabled={uploading || !uid || locked}
-              className="hidden"
-              id="file-input"
-            />
-            <span className="btn btn-outline">
-              <label htmlFor="file-input" className="cursor-pointer">
-                {uploading ? t.uploading : t.choose_files}
-              </label>
-            </span>
-          </label>
-
-          <div className="mt-4">
-            <h3 className="text-sm font-medium mb-2">{t.files}</h3>
-            {files.length === 0 ? (
-              <p className="text-sm text-gray-500">{t.empty_files}</p>
-            ) : (
-              <ul className="space-y-2">
-                {files.map((f) => (
-                  <li
-                    key={f.name}
-                    className="flex items-center justify-between rounded border bg-white px-3 py-2"
-                  >
-                    <div className="truncate">
-                      <span className="text-sm">{f.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className="btn btn-outline" onClick={() => download(f.name)}>
-                        {t.download}
-                      </button>
-                      <button
-                        className="btn btn-outline"
-                        onClick={() => remove(f.name)}
-                        disabled={locked}
-                        title={locked ? t.submitted_info : ""}
-                      >
-                        {t.remove}
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {toast && <p className="mt-2 text-sm text-gray-700">{toast}</p>}
+          <input
+            type="file"
+            accept="application/pdf,image/jpeg,image/png"
+            multiple
+            onChange={onFiles}
+            disabled={uploading || locked}
+          />
+          <ul className="mt-3 space-y-1 text-sm">
+            {files.length === 0 && <li>{t.empty_files}</li>}
+            {files.map((f) => (
+              <li
+                key={f.name}
+                className="flex justify-between items-center border rounded px-2 py-1 bg-white"
+              >
+                <span className="truncate">{f.name}</span>
+                <span className="flex gap-2">
+                  <button onClick={() => download(f.name)} className="btn btn-outline">
+                    {t.download}
+                  </button>
+                  {!locked && (
+                    <button
+                      onClick={() => removeFile(f.name)}
+                      className="btn btn-outline text-red-600"
+                    >
+                      {t.remove}
+                    </button>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
         </section>
 
-        {/* --- Actions --- */}
-        <div className="mt-8 flex items-center gap-3">
+        {/* Actions */}
+        <div className="mt-8 flex gap-3">
           <button
-            className="btn btn-primary"
-            onClick={handleSubmit}
+            onClick={submitForm}
             disabled={locked}
-            title={locked ? t.submitted_info : ""}
+            className="btn btn-primary"
           >
             {t.submit}
+          </button>
+          <button onClick={downloadPDF} className="btn btn-outline">
+            {t.recap}
           </button>
         </div>
       </div>
     </main>
   );
 }
+
