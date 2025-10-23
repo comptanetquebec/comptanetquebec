@@ -48,7 +48,7 @@ a:hover{ text-decoration:underline }
   }
   .btn-outline{
     @apply bg-white;
-    color: var(--blue);            /* ✅ pas d'arbitrary value dans @apply */
+    color: var(--blue);
     border-color: var(--blue);
   }
   .btn-outline:hover{
@@ -56,7 +56,7 @@ a:hover{ text-decoration:underline }
   }
   .btn-link{
     @apply underline underline-offset-2 font-medium;
-    color: var(--blue);            /* ✅ idem */
+    color: var(--blue);
   }
 
   /* Cartes */
@@ -70,9 +70,10 @@ a:hover{ text-decoration:underline }
     @apply max-w-[1040px] mx-auto px-5;
   }
 
-  /* Grid utilitaire (attention : surcharge du nom .grid de Tailwind) */
-  .grid{
-    @apply grid gap-3;
+  /* Grille perso (⚠️ pas .grid pour éviter la boucle) */
+  .cq-grid{
+    display:grid;            /* pas @apply grid */
+    gap:0.75rem;             /* ≈ gap-3 */
     grid-template-columns: repeat(2, minmax(0,1fr));
   }
 
@@ -156,5 +157,5 @@ input:focus,textarea:focus{
    ========================= */
 @media (max-width:900px){
   .cards{ grid-template-columns:1fr }
-  .grid{ grid-template-columns:1fr }
+  .cq-grid{ grid-template-columns:1fr }
 }
