@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Ton CSS global (inchangé) === */
+/* =========================
+   Variables & reset léger
+   ========================= */
 :root{
   --blue:#0b3b8a;         /* bleu principal */
   --blue-2:#113c80;       /* bleu foncé variante */
@@ -13,68 +15,144 @@
   --radius:14px;
 }
 
-*{box-sizing:border-box}
-html,body{padding:0;margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;line-height:1.5}
-
-a{color:var(--blue);text-decoration:none}
-a:hover{text-decoration:underline}
-
-.container{max-width:1040px;margin:0 auto;padding:0 20px}
-
-header{
-  position:sticky;top:0;background:rgba(255,255,255,0.9);
-  backdrop-filter:saturate(140%) blur(6px);border-bottom:1px solid #e8ecf3; z-index:20;
+*{ box-sizing:border-box }
+html,body{
+  padding:0; margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+  line-height:1.5;
 }
-.brand{display:flex;align-items:center;gap:12px;padding:14px 0}
-.brand-text{font-weight:700;font-size:18px}
 
-.nav{display:flex;align-items:center;gap:18px}
-header .container{display:flex;justify-content:space-between;align-items:center}
+a{ color:var(--blue); text-decoration:none }
+a:hover{ text-decoration:underline }
 
+/* =========================
+   Couche "components" Tailwind
+   (pour éviter la purge et faciliter @apply)
+   ========================= */
+@layer components {
+  /* Boutons */
+  .btn{
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-full font-semibold border transition
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+           disabled:opacity-60 disabled:cursor-not-allowed;
+    border-color: var(--blue);
+  }
+  .btn-primary{
+    @apply text-white;
+    background: var(--blue);
+  }
+  .btn-primary:hover{
+    background: var(--blue-2);
+    text-decoration: none;
+  }
+  .btn-outline{
+    @apply bg-white text-[color:var(--blue)];
+    border-color: var(--blue);
+  }
+  .btn-outline:hover{
+    background:#eef3ff; text-decoration: none;
+  }
+  .btn-link{
+    @apply underline underline-offset-2 font-medium text-[color:var(--blue)];
+  }
+
+  /* Cartes */
+  .card{
+    @apply bg-white border rounded-[var(--radius)] p-4;
+    border-color:#e6ecf5;
+  }
+
+  /* Conteneur principal */
+  .container{
+    @apply max-w-[1040px] mx-auto px-5;
+  }
+
+  /* Grid utilitaire */
+  .grid{
+    @apply grid gap-3;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  /* Notes / textes secondaires */
+  .note{
+    @apply text-sm;
+    color: var(--muted);
+  }
+}
+
+/* =========================
+   En-tête & navigation
+   ========================= */
+header{
+  position:sticky; top:0; background:rgba(255,255,255,0.9);
+  backdrop-filter:saturate(140%) blur(6px);
+  border-bottom:1px solid #e8ecf3; z-index:20;
+}
+.brand{ display:flex; align-items:center; gap:12px; padding:14px 0 }
+.brand-text{ font-weight:700; font-size:18px }
+.nav{ display:flex; align-items:center; gap:18px }
+header .container{ display:flex; justify-content:space-between; align-items:center }
+
+/* =========================
+   Sections / héros
+   ========================= */
 .hero{
   background:linear-gradient(180deg,var(--bg),var(--bg-soft));
   padding:64px 20px 56px; text-align:center;
 }
-.hero h1{font-size:clamp(28px,4vw,40px);margin:0 0 10px}
-.lead{color:var(--muted);max-width:800px;margin:0 auto}
+.hero h1{ font-size:clamp(28px,4vw,40px); margin:0 0 10px }
+.lead{ color:var(--muted); max-width:800px; margin:0 auto }
 
-.cta-row{margin-top:22px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-
-.btn{
-  display:inline-block;border:1px solid var(--blue);
-  padding:10px 16px;border-radius:999px;font-weight:600
+/* =========================
+   CTA row
+   ========================= */
+.cta-row{
+  margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
 }
-.btn-primary{background:var(--blue);color:#fff}
-.btn-primary:hover{background:var(--blue-2);text-decoration:none}
-.btn-outline{color:var(--blue);background:#fff}
-.btn-outline:hover{background:#eef3ff;text-decoration:none}
 
-.section{padding:56px 0}
-.section h2{font-size:28px;margin:0 0 14px}
+/* =========================
+   Sections génériques
+   ========================= */
+.section{ padding:56px 0 }
+.section h2{ font-size:28px; margin:0 0 14px }
 
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.card{
-  background:#fff;border:1px solid #e6ecf5;border-radius:var(--radius);
-  padding:18px
-}
-.card h3{margin:0 0 6px}
+/* =========================
+   Cartes / listes
+   ========================= */
+.cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px }
+.card h3{ margin:0 0 6px }
 
-.prices{list-style:none;padding:0;margin:0 0 8px}
-.prices li{padding:10px 0;border-bottom:1px dashed #e1e6ef}
-.note{color:var(--muted);font-size:14px;margin-top:6px}
+.prices{ list-style:none; padding:0; margin:0 0 8px }
+.prices li{ padding:10px 0; border-bottom:1px dashed #e1e6ef }
 
-.form{margin-top:12px;display:grid;gap:12px}
-.grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
-label{display:grid;gap:6px;font-weight:600}
+/* =========================
+   Formulaires
+   ========================= */
+.form{ margin-top:12px; display:grid; gap:12px }
+label{ display:grid; gap:6px; font-weight:600 }
 input,textarea{
-  border:1px solid #d8deea;border-radius:10px;padding:10px;font:inherit
+  border:1px solid #d8deea; border-radius:10px; padding:10px; font:inherit
 }
-input:focus,textarea:focus{outline:2px solid #cfe0ff;border-color:#cfe0ff}
+input:focus,textarea:focus{
+  outline:2px solid #cfe0ff; border-color:#cfe0ff
+}
 
-.footer{border-top:1px solid #e8ecf3;background:#fbfcff;margin-top:42px}
-.footer-inner{display:flex;justify-content:space-between;align-items:center;padding:16px 0;color:var(--muted);font-size:14px}
+/* =========================
+   Pied de page
+   ========================= */
+.footer{
+  border-top:1px solid #e8ecf3; background:#fbfcff; margin-top:42px
+}
+.footer-inner{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:16px 0; color:var(--muted); font-size:14px
+}
 
+/* =========================
+   Responsive
+   ========================= */
 @media (max-width:900px){
-  .cards{grid-template-columns:1fr}
-  .grid{grid-template-columns:1fr}
+  .cards{ grid-template-columns:1fr }
+  .grid{ grid-template-columns:1fr }
 }
