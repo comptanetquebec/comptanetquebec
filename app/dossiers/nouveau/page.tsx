@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-const LANGS = ["fr", "en", "es"] as const;
-type Lang = (typeof LANGS)[number];
+/** Langues */
+const LANGS_LIST = ["fr", "en", "es"] as const;
+type Lang = (typeof LANGS_LIST)[number];
 
 const I18N: Record<Lang, any> = {
   fr: {
@@ -32,17 +33,41 @@ const I18N: Record<Lang, any> = {
   en: {
     title: "Start a file",
     intro: "Choose the type of tax return you want to submit.",
-    t1: { title: "Personal tax (T1)", desc: "Employee, student, retired, etc.", cta: "Open T1 form" },
-    auto:{ title: "Self-employed (T1)", desc: "Freelancer, contractor, delivery, etc.", cta: "Open self-employed form" },
-    t2:  { title: "Corporation / T2", desc: "Incorporated business return (300$ deposit).", cta: "Start T2" },
+    t1: {
+      title: "Personal tax (T1)",
+      desc: "Employee, student, retired, etc.",
+      cta: "Open T1 form",
+    },
+    auto: {
+      title: "Self-employed (T1)",
+      desc: "Freelancer, contractor, delivery, etc.",
+      cta: "Open self-employed form",
+    },
+    t2: {
+      title: "Corporation / T2",
+      desc: "Incorporated business return (300$ deposit).",
+      cta: "Start T2",
+    },
     logout: "Log out",
   },
   es: {
     title: "Iniciar un expediente",
     intro: "Elige el tipo de declaración que quieres enviar.",
-    t1: { title: "Impuestos personales (T1)", desc: "Empleado, estudiante, jubilado, etc.", cta: "Abrir formulario T1" },
-    auto:{ title: "Autónomo (T1)", desc: "Freelancer, contratista, repartidor, etc.", cta: "Abrir formulario autónomo" },
-    t2:  { title: "Sociedad / T2", desc: "Empresa incorporada (depósito 300$).", cta: "Iniciar T2" },
+    t1: {
+      title: "Impuestos personales (T1)",
+      desc: "Empleado, estudiante, jubilado, etc.",
+      cta: "Abrir formulario T1",
+    },
+    auto: {
+      title: "Autónomo (T1)",
+      desc: "Freelancer, contratista, repartidor, etc.",
+      cta: "Abrir formulario autónomo",
+    },
+    t2: {
+      title: "Sociedad / T2",
+      desc: "Empresa incorporada (depósito 300$).",
+      cta: "Iniciar T2",
+    },
     logout: "Cerrar sesión",
   },
 };
@@ -51,14 +76,16 @@ export default function ChoixDossierPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // langue via ?lang=fr|en|es (FR par défaut)
+  // langue depuis l’URL (?lang=fr|en|es)
   const langParam = (sp.get("lang") || "fr").toLowerCase() as Lang;
-  const lang: Lang = (["fr","en","es"] as const).includes(langParam) ? langParam : "fr";
+  const lang: Lang = (["fr", "en", "es"] as const).includes(langParam)
+    ? langParam
+    : "fr";
   const t = I18N[lang];
 
   const [email, setEmail] = useState<string | null>(null);
 
-  // Protection: rediriger si non connecté
+  // Protection: si pas connecté -> renvoyer à /espace-client
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
@@ -77,7 +104,6 @@ export default function ChoixDossierPage() {
   }
 
   function go(href: string) {
-    // on garde la langue dans l’URL
     router.push(`${href}?lang=${lang}`);
   }
 
@@ -109,30 +135,35 @@ export default function ChoixDossierPage() {
         <p className="lead">{t.intro}</p>
 
         <div
-          className="grid"
-          style={{
-            gap: 16,
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          }}
+          className="card"
+          style={{ border: "none", padding: 0, background: "transparent" }}
         >
-          <Card
-            title={t.t1.title}
-            desc={t.t1.desc}
-            cta={t.t1.cta}
-            onClick={() => go("/formulaire-fiscal")}
-          />
-          <Card
-            title={t.auto.title}
-            desc={t.auto.desc}
-            cta={t.auto.cta}
-            onClick={() => go("/formulaire-fiscal?type=autonome")}
-          />
-          <Card
-            title={t.t2.title}
-            desc={t.t2.desc}
-            cta={t.t2.cta}
-            onClick={() => go("/t2")}
-          />
+          <div
+            className="cq-grid"
+            style={{
+              gap: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            }}
+          >
+            <Card
+              title={t.t1.title}
+              desc={t.t1.desc}
+              cta={t.t1.cta}
+              onClick={() => go("/formulaire-fiscal")}
+            />
+            <Card
+              title={t.auto.title}
+              desc={t.auto.desc}
+              cta={t.auto.cta}
+              onClick={() => go("/formulaire-fiscal?type=autonome")}
+            />
+            <Card
+              title={t.t2.title}
+              desc={t.t2.desc}
+              cta={t.t2.cta}
+              onClick={() => go("/t2")}
+            />
+          </div>
         </div>
       </div>
     </main>
@@ -162,7 +193,9 @@ function Card({
       }}
     >
       <h3 style={{ margin: 0 }}>{title}</h3>
-      <p className="note" style={{ margin: 0 }}>{desc}</p>
+      <p className="note" style={{ margin: 0 }}>
+        {desc}
+      </p>
       <div style={{ marginTop: "auto" }}>
         <button className="btn btn-primary" onClick={onClick}>
           {cta}
