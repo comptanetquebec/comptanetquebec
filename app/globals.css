@@ -27,7 +27,7 @@ a:hover{ text-decoration:underline }
 
 /* =========================
    Couche "components" Tailwind
-   (pour éviter la purge et faciliter @apply)
+   (évite la purge et permet @apply)
    ========================= */
 @layer components {
   /* Boutons */
@@ -47,19 +47,21 @@ a:hover{ text-decoration:underline }
     text-decoration: none;
   }
   .btn-outline{
-    @apply bg-white text-[color:var(--blue)];
+    @apply bg-white;
+    color: var(--blue);            /* ✅ pas d'arbitrary value dans @apply */
     border-color: var(--blue);
   }
   .btn-outline:hover{
     background:#eef3ff; text-decoration: none;
   }
   .btn-link{
-    @apply underline underline-offset-2 font-medium text-[color:var(--blue)];
+    @apply underline underline-offset-2 font-medium;
+    color: var(--blue);            /* ✅ idem */
   }
 
   /* Cartes */
   .card{
-    @apply bg-white border rounded-[var(--radius)] p-4;
+    @apply bg-white border p-4 rounded-[14px];
     border-color:#e6ecf5;
   }
 
@@ -68,7 +70,7 @@ a:hover{ text-decoration:underline }
     @apply max-w-[1040px] mx-auto px-5;
   }
 
-  /* Grid utilitaire */
+  /* Grid utilitaire (attention : surcharge du nom .grid de Tailwind) */
   .grid{
     @apply grid gap-3;
     grid-template-columns: repeat(2, minmax(0,1fr));
