@@ -5,11 +5,26 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-/** Langues */
-const LANGS_LIST = ["fr", "en", "es"] as const;
-type Lang = (typeof LANGS_LIST)[number];
+/* ---------- i18n ---------- */
+const LANGS = ["fr", "en", "es"] as const;
+type Lang = (typeof LANGS)[number];
 
-const I18N: Record<Lang, any> = {
+type CardText = {
+  title: string;
+  desc: string;
+  cta: string;
+};
+
+type Dict = {
+  title: string;
+  intro: string;
+  t1: CardText;
+  auto: CardText;
+  t2: CardText;
+  logout: string;
+};
+
+const I18N: Record<Lang, Dict> = {
   fr: {
     title: "Commencer un dossier",
     intro: "Choisissez le type d’impôt que vous voulez déposer.",
@@ -72,30 +87,43 @@ const I18N: Record<Lang, any> = {
   },
 };
 
+/* ---------- Page ---------- */
 export default function ChoixDossierPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // langue depuis l’URL (?lang=fr|en|es)
-  const langParam = (sp.get("lang") || "fr").toLowerCase() as Lang;
-  const lang: Lang = (["fr", "en", "es"] as const).includes(langParam)
-    ? langParam
+  // langue via ?lang=fr|en|es (fr par défaut)
+  const langParam = (sp.get("lang") || "fr").toLowerCase();
+  const lang: Lang = (LANGS as readonly string[]).includes(
+    langParam as Lang
+  )
+    ? (langParam as Lang)
     : "fr";
   const t = I18N[lang];
 
+  // email affiché dans le bouton "logout"
   const [email, setEmail] = useState<string | null>(null);
 
-  // Protection: si pas connecté -> renvoyer à /espace-client
+  // Protection: si pas connecté -> /espace-client?next=/dossiers/nouveau
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        // en cas d’erreur inattendue, on renvoie au login
+        router.replace(`/espace-client?lang=${lang}&next=/dossiers/nouveau`);
+        return;
+      }
       const u = data.user;
       if (!u) {
         router.replace(`/espace-client?lang=${lang}&next=/dossiers/nouveau`);
-      } else {
+      } else if (mounted) {
         setEmail(u.email ?? null);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [router, lang]);
 
   async function logout() {
@@ -104,7 +132,8 @@ export default function ChoixDossierPage() {
   }
 
   function go(href: string) {
-    router.push(`${href}?lang=${lang}`);
+    // on garde la langue dans l’URL
+    router.push(`${href}${href.includes("?") ? "&" : "?"}lang=${lang}`);
   }
 
   return (
@@ -120,8 +149,8 @@ export default function ChoixDossierPage() {
               alt="ComptaNet Québec"
               width={120}
               height={40}
-              style={{ height: 40, width: "auto" }}
               priority
+              style={{ height: 40, width: "auto" }}
             />
             <span className="brand-text">ComptaNet Québec</span>
           </div>
@@ -135,52 +164,46 @@ export default function ChoixDossierPage() {
         <p className="lead">{t.intro}</p>
 
         <div
-          className="card"
-          style={{ border: "none", padding: 0, background: "transparent" }}
+          className="grid"
+          style={{
+            gap: 16,
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            marginTop: 16,
+          }}
         >
-          <div
-            className="cq-grid"
-            style={{
-              gap: 16,
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            }}
-          >
-            <Card
-              title={t.t1.title}
-              desc={t.t1.desc}
-              cta={t.t1.cta}
-              onClick={() => go("/formulaire-fiscal")}
-            />
-            <Card
-              title={t.auto.title}
-              desc={t.auto.desc}
-              cta={t.auto.cta}
-              onClick={() => go("/formulaire-fiscal?type=autonome")}
-            />
-            <Card
-              title={t.t2.title}
-              desc={t.t2.desc}
-              cta={t.t2.cta}
-              onClick={() => go("/t2")}
-            />
-          </div>
+          <Card
+            title={t.t1.title}
+            desc={t.t1.desc}
+            cta={t.t1.cta}
+            onClick={() => go("/formulaire-fiscal")}
+          />
+          <Card
+            title={t.auto.title}
+            desc={t.auto.desc}
+            cta={t.auto.cta}
+            onClick={() => go("/formulaire-fiscal?type=autonome")}
+          />
+          <Card
+            title={t.t2.title}
+            desc={t.t2.desc}
+            cta={t.t2.cta}
+            onClick={() => go("/T2")}
+          />
         </div>
       </div>
     </main>
   );
 }
 
-function Card({
-  title,
-  desc,
-  cta,
-  onClick,
-}: {
+/* ---------- Card ---------- */
+type CardProps = {
   title: string;
   desc: string;
   cta: string;
   onClick: () => void;
-}) {
+};
+
+function Card({ title, desc, cta, onClick }: CardProps) {
   return (
     <div
       className="card"
@@ -197,10 +220,11 @@ function Card({
         {desc}
       </p>
       <div style={{ marginTop: "auto" }}>
-        <button className="btn btn-primary" onClick={onClick}>
+        <button className="btn btn-primary" onClick={onClick} type="button">
           {cta}
         </button>
       </div>
     </div>
   );
 }
+
