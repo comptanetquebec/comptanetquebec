@@ -9,6 +9,8 @@ const LANGS = ["fr", "en", "es"] as const;
 type Lang = typeof LANGS[number];
 type Mode = "login" | "signup";
 
+type OAuthProvider = "google"; // Ajoutez-en d'autres si activés côté Supabase (ex.: "github", "apple")
+
 const I18N: Record<
   Lang,
   {
@@ -36,6 +38,17 @@ const I18N: Record<
     emailNotConfirmed: string;
     invalidCreds: string;
     rateLimit: string;
+    magic: string;
+    magicHint: string;
+    or: string;
+    with: (p: string) => string;
+    accept: string;
+    terms: string;
+    and: string;
+    privacy: string;
+    mustAccept: string;
+    badRedirect: string;
+    pwStrength: string;
   }
 > = {
   fr: {
@@ -63,6 +76,18 @@ const I18N: Record<
     emailNotConfirmed: "Courriel non confirmé.",
     invalidCreds: "Identifiants invalides.",
     rateLimit: "Trop de tentatives. Réessayez plus tard.",
+    magic: "Recevoir un lien de connexion",
+    magicHint:
+      "Nous vous enverrons un e-mail contenant un lien magique pour vous connecter.",
+    or: "ou",
+    with: (p) => `Continuer avec ${p}`,
+    accept: "J’accepte",
+    terms: "les Conditions d’utilisation",
+    and: "et",
+    privacy: "la Politique de confidentialité",
+    mustAccept: "Vous devez accepter les conditions pour créer un compte.",
+    badRedirect: "Redirection non valide. Utilisation du chemin par défaut.",
+    pwStrength: "Robustesse du mot de passe",
   },
   en: {
     title: "Client area",
@@ -89,6 +114,17 @@ const I18N: Record<
     emailNotConfirmed: "Email not confirmed.",
     invalidCreds: "Invalid credentials.",
     rateLimit: "Too many attempts. Try again later.",
+    magic: "Get a magic link",
+    magicHint: "We’ll email you a one-click sign-in link.",
+    or: "or",
+    with: (p) => `Continue with ${p}`,
+    accept: "I accept",
+    terms: "the Terms of Service",
+    and: "and",
+    privacy: "the Privacy Policy",
+    mustAccept: "You must accept the terms to create an account.",
+    badRedirect: "Invalid redirect. Using default path.",
+    pwStrength: "Password strength",
   },
   es: {
     title: "Área de cliente",
@@ -115,6 +151,18 @@ const I18N: Record<
     emailNotConfirmed: "Correo no confirmado.",
     invalidCreds: "Credenciales inválidas.",
     rateLimit: "Demasiados intentos. Inténtalo más tarde.",
+    magic: "Recibir enlace mágico",
+    magicHint:
+      "Te enviaremos un correo con un enlace de acceso con un clic.",
+    or: "o",
+    with: (p) => `Continuar con ${p}`,
+    accept: "Acepto",
+    terms: "los Términos de servicio",
+    and: "y",
+    privacy: "la Política de privacidad",
+    mustAccept: "Debes aceptar los términos para crear una cuenta.",
+    badRedirect: "Redirección no válida. Usando la ruta por defecto.",
+    pwStrength: "Fortaleza de la contraseña",
   },
 };
 
@@ -122,11 +170,12 @@ export default function EspaceClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Langue initiale via ?lang=fr|en|es (FR par défaut)
-  const langParamRaw = (searchParams.get("lang") || "fr").toLowerCase();
-  const initialLang: Lang = (LANGS as readonly string[]).includes(langParamRaw)
-    ? (langParamRaw as Lang)
-    : "fr";
+  // Langue initiale via ?lang=fr|en|es (FR par défaut) + persistance localStorage
+  const urlLang = (searchParams.get("lang") || "").toLowerCase();
+  const storedLang = (typeof window !== "undefined" && localStorage.getItem("cq.lang")) || undefined;
+  const initialLang: Lang = (LANGS as readonly string[]).includes(urlLang)
+    ? (urlLang as Lang)
+    : ((storedLang as Lang) || "fr");
   const [lang, setLang] = useState<Lang>(initialLang);
   const t = I18N[lang];
 
@@ -139,15 +188,24 @@ export default function EspaceClientInner() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showPwd, setShowPwd] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
-  // Redirection
+  // Password strength
+  const pwScore = getPasswordScore(password);
+
+  // Redirection sécurisée
   const redirectingRef = useRef(false);
-  // 🔁 PAR DÉFAUT → /formulaire-fiscal
-  const next = searchParams.get("next") || "/formulaire-fiscal";
+  const nextRaw = searchParams.get("next");
+  const next = sanitizeNext(nextRaw) || "/formulaire-fiscal"; // fallback
 
   // Session / écouteur auth
   useEffect(() => {
     let mounted = true;
+
+    // Persister la langue
+    try {
+      localStorage.setItem("cq.lang", lang);
+    } catch {}
 
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
@@ -172,7 +230,7 @@ export default function EspaceClientInner() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [router, next]);
+  }, [router, next, lang]);
 
   // Actions
   async function handleLogin(e: React.FormEvent) {
@@ -196,6 +254,11 @@ export default function EspaceClientInner() {
     if (password.length < 8) {
       setLoading(false);
       setErrorMsg(t.pwTooShort);
+      return;
+    }
+    if (!accepted) {
+      setLoading(false);
+      setErrorMsg(t.mustAccept);
       return;
     }
     const { error, data } = await supabase.auth.signUp({
@@ -243,15 +306,46 @@ export default function EspaceClientInner() {
     redirectingRef.current = false;
   }
 
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setInfo(null);
+    setErrorMsg(null);
+    const eaddr = email.trim();
+    if (!eaddr) {
+      setLoading(false);
+      setErrorMsg(t.resetNeedEmail);
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOtp({
+      email: eaddr,
+      options: { emailRedirectTo: `${window.location.origin}/espace-client` },
+    });
+    setLoading(false);
+    if (error) setErrorMsg(mapAuthError(error.message, t));
+    else setInfo(t.resetSent);
+  }
+
+  async function handleOAuth(provider: OAuthProvider) {
+    setLoading(true);
+    setErrorMsg(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/espace-client` },
+    });
+    setLoading(false);
+    if (error) setErrorMsg(mapAuthError(error.message, t));
+  }
+
   // Écran si déjà connecté
   if (userEmail) {
     return (
-      <main className="hero">
-        <div className="card container">
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow p-6">
           <Header lang={lang} setLang={setLang} />
-          <h1>{t.title}</h1>
-          <p>{t.loggedAs(userEmail)}</p>
-          <button onClick={handleLogout} className="btn btn-outline">
+          <h1 className="text-2xl font-semibold mt-2">{t.title}</h1>
+          <p className="mt-2 text-sm text-gray-600">{t.loggedAs(userEmail)}</p>
+          <button onClick={handleLogout} className="btn btn-outline mt-6 w-full">
             Logout
           </button>
         </div>
@@ -261,16 +355,19 @@ export default function EspaceClientInner() {
 
   // Formulaire login / signup
   return (
-    <main className="hero">
-      <div className="card container">
-        <Header lang={lang} setLang={setLang} />
+    <main className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow p-6">
+        <Header lang={lang} setLang={(l) => {
+          setLang(l);
+          try { localStorage.setItem("cq.lang", l); } catch {}
+        }} />
 
-        <h1>{t.title}</h1>
-        <p>{mode === "login" ? t.intro_login : t.intro_signup}</p>
+        <h1 className="text-2xl font-semibold mt-2">{t.title}</h1>
+        <p className="mt-2 text-sm text-gray-600">{mode === "login" ? t.intro_login : t.intro_signup}</p>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="form">
-          <label>
-            {t.email}
+        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="mt-6 space-y-4">
+          <label className="block">
+            <span className="text-sm font-medium">{t.email}</span>
             <input
               type="email"
               required
@@ -279,12 +376,13 @@ export default function EspaceClientInner() {
               placeholder="vous@example.com"
               autoComplete="email"
               inputMode="email"
+              className="mt-1 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring"
             />
           </label>
 
-          <label>
-            {t.password}
-            <div className="grid" style={{ gridTemplateColumns: "1fr auto" }}>
+          <label className="block">
+            <span className="text-sm font-medium">{t.password}</span>
+            <div className="mt-1 grid" style={{ gridTemplateColumns: "1fr auto" }}>
               <input
                 type={showPwd ? "text" : "password"}
                 required
@@ -293,63 +391,95 @@ export default function EspaceClientInner() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
+                className="rounded-l-xl border px-3 py-2 focus:outline-none focus:ring"
               />
               <button
                 type="button"
                 onClick={() => setShowPwd((s) => !s)}
-                className="btn btn-outline"
+                className="btn btn-outline rounded-r-xl"
                 aria-pressed={showPwd}
+                aria-label={showPwd ? t.hide : t.see}
               >
                 {showPwd ? t.hide : t.see}
               </button>
             </div>
+            {mode === "signup" && (
+              <div className="mt-2">
+                <p className="text-xs text-gray-600">{t.pwRule}</p>
+                <PwMeter label={t.pwStrength} score={pwScore} />
+              </div>
+            )}
           </label>
-          {mode === "signup" && <p className="note">{t.pwRule}</p>}
 
-          <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading ? (mode === "login" ? t.logging : t.signing) : (mode === "login" ? t.login : t.signup)}
-          </button>
-
-          {mode === "login" && (
-            <button type="button" onClick={handleForgot} className="btn btn-outline" disabled={loading}>
-              {t.forgot}
-            </button>
+          {mode === "login" ? (
+            <div className="flex flex-col gap-2">
+              <button type="submit" disabled={loading} className="btn btn-primary w-full">
+                {loading ? t.logging : t.login}
+              </button>
+              <button type="button" onClick={handleForgot} className="btn btn-outline w-full" disabled={loading}>
+                {t.forgot}
+              </button>
+              <div className="relative my-2 text-center text-sm text-gray-500">
+                <span className="px-2 bg-white relative z-10">{t.or}</span>
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-b" />
+              </div>
+              <button onClick={handleMagicLink} className="btn btn-outline w-full" disabled={loading}>
+                {t.magic}
+              </button>
+              <button onClick={() => handleOAuth("google")} className="btn btn-outline w-full" disabled={loading}>
+                {t.with("Google")}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <label className="inline-flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+                <span>
+                  {t.accept} <a className="underline" href="/legal/terms" target="_blank" rel="noreferrer">{t.terms}</a> {t.and} {" "}
+                  <a className="underline" href="/legal/privacy" target="_blank" rel="noreferrer">{t.privacy}</a>
+                </span>
+              </label>
+              <button type="submit" disabled={loading} className="btn btn-primary w-full">
+                {loading ? t.signing : t.signup}
+              </button>
+            </div>
           )}
 
-          {errorMsg && <p className="note" style={{ color: "red" }}>{errorMsg}</p>}
-          {info && <p className="note" style={{ color: "green" }}>{info}</p>}
+          {errorMsg && <p className="text-sm" style={{ color: "#dc2626" }}>{errorMsg}</p>}
+          {info && <p className="text-sm" style={{ color: "#16a34a" }}>{info}</p>}
         </form>
 
-        <div className="note">
+        <div className="mt-6 text-sm text-gray-700">
           {mode === "login" ? (
             <>
-              {t.needAccount}{" "}
-              <button className="btn btn-outline" onClick={() => setMode("signup")}>
-                {t.createAccount}
-              </button>
+              {t.needAccount} {" "}
+              <button className="btn btn-link" onClick={() => setMode("signup")}>{t.createAccount}</button>
             </>
           ) : (
             <>
-              {t.haveAccount}{" "}
-              <button className="btn btn-outline" onClick={() => setMode("login")}>
-                {t.signIn}
-              </button>
+              {t.haveAccount} {" "}
+              <button className="btn btn-link" onClick={() => setMode("login")}>{t.signIn}</button>
             </>
           )}
         </div>
+
+        {nextRaw && !sanitizeNext(nextRaw) && (
+          <p className="mt-4 text-xs text-amber-600">{t.badRedirect}</p>
+        )}
+
+        <p className="mt-4 text-xs text-gray-500">{t.magicHint}</p>
       </div>
     </main>
   );
 }
 
 /* ---------- Header & LangSwitcher ---------- */
-
 function Header({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
   return (
-    <header className="brand" style={{ justifyContent: "space-between", width: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <img src="/logo-cq.png" alt="ComptaNet Québec" style={{ height: 40, width: "auto" }} />
-        <span className="brand-text">ComptaNet Québec</span>
+    <header className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-3">
+        <img src="/logo-cq.png" alt="ComptaNet Québec" className="h-10 w-auto" />
+        <span className="font-semibold">ComptaNet Québec</span>
       </div>
       <LangSwitcher lang={lang} setLang={setLang} />
     </header>
@@ -358,12 +488,14 @@ function Header({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
 
 function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
   return (
-    <div className="nav">
+    <div className="flex gap-2">
       {LANGS.map((l) => (
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={lang === l ? "btn btn-primary" : "btn btn-outline"}
+          className={
+            (lang === l ? "btn btn-primary" : "btn btn-outline") + " px-3 py-1 rounded-xl"
+          }
           type="button"
           aria-pressed={lang === l}
         >
@@ -382,4 +514,37 @@ function mapAuthError(message: string, t: (typeof I18N)["fr"]): string {
   if (m.includes("password should be at least")) return t.pwTooShort;
   if (m.includes("email not confirmed")) return t.emailNotConfirmed;
   return message;
+}
+
+function sanitizeNext(input: string | null): string | null {
+  if (!input) return null;
+  // Autoriser uniquement chemins relatifs internes (ex.: "/dashboard")
+  if (!input.startsWith("/")) return null;
+  // Bloquer tentatives d'URL externe ou doubles //
+  if (input.startsWith("//") || input.includes("://")) return null;
+  return input;
+}
+
+function getPasswordScore(pw: string): number {
+  // Score ultra-simple (0..4)
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (/[A-Z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return s;
+}
+
+function PwMeter({ label, score }: { label: string; score: number }) {
+  const steps = 4;
+  return (
+    <div className="mt-1">
+      <div className="flex gap-1" aria-label={label} role="meter" aria-valuemin={0} aria-valuemax={steps} aria-valuenow={score}>
+        {Array.from({ length: steps }).map((_, i) => (
+          <div key={i} className={`h-1.5 flex-1 rounded ${i < score ? "bg-emerald-500" : "bg-gray-200"}`} />
+        ))}
+      </div>
+      <span className="sr-only">{label}: {score}/{steps}</span>
+    </div>
+  );
 }
