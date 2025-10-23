@@ -1,14 +1,23 @@
 {
+  "name": "comptanetquebec",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
-    "next": "15.5.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
     "@supabase/supabase-js": "^2.45.4",
+    "autoprefixer": "^10.4.20",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.2",
-    "tailwindcss": "^3.4.13",      // ✅ v3 stable ici
+    "next": "15.5.2",
     "postcss": "^8.4.47",
-    "autoprefixer": "^10.4.20"
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "tailwindcss": "^3.4.13"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
@@ -17,6 +26,5 @@
     "eslint": "^9.12.0",
     "eslint-config-next": "15.5.2",
     "typescript": "^5.6.3"
-    // ❌ supprime "@tailwindcss/postcss"
   }
 }
