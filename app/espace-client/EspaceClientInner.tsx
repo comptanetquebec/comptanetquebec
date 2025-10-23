@@ -49,6 +49,7 @@ const I18N: Record<
     mustAccept: string;
     badRedirect: string;
     pwStrength: string;
+    logout: string;
   }
 > = {
   fr: {
@@ -88,6 +89,7 @@ const I18N: Record<
     mustAccept: "Vous devez accepter les conditions pour créer un compte.",
     badRedirect: "Redirection non valide. Utilisation du chemin par défaut.",
     pwStrength: "Robustesse du mot de passe",
+    logout: "Se déconnecter",
   },
   en: {
     title: "Client area",
@@ -125,6 +127,7 @@ const I18N: Record<
     mustAccept: "You must accept the terms to create an account.",
     badRedirect: "Invalid redirect. Using default path.",
     pwStrength: "Password strength",
+    logout: "Log out",
   },
   es: {
     title: "Área de cliente",
@@ -163,6 +166,7 @@ const I18N: Record<
     mustAccept: "Debes aceptar los términos para crear una cuenta.",
     badRedirect: "Redirección no válida. Usando la ruta por defecto.",
     pwStrength: "Fortaleza de la contraseña",
+    logout: "Cerrar sesión",
   },
 };
 
@@ -172,7 +176,9 @@ export default function EspaceClientInner() {
 
   // Langue initiale via ?lang=fr|en|es (FR par défaut) + persistance localStorage
   const urlLang = (searchParams.get("lang") || "").toLowerCase();
-  const storedLang = (typeof window !== "undefined" && localStorage.getItem("cq.lang")) || undefined;
+  const storedLang =
+    (typeof window !== "undefined" && localStorage.getItem("cq.lang")) ||
+    undefined;
   const initialLang: Lang = (LANGS as readonly string[]).includes(urlLang)
     ? (urlLang as Lang)
     : ((storedLang as Lang) || "fr");
@@ -196,7 +202,7 @@ export default function EspaceClientInner() {
   // Redirection sécurisée
   const redirectingRef = useRef(false);
   const nextRaw = searchParams.get("next");
-  const next = sanitizeNext(nextRaw) || "/formulaire-fiscal"; // fallback
+  const next = sanitizeNext(nextRaw) || "/dossiers/nouveau"; // fallback mis à jour
 
   // Session / écouteur auth
   useEffect(() => {
@@ -228,7 +234,10 @@ export default function EspaceClientInner() {
 
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      // sécurité: évite les erreurs si l'API change
+      try {
+        sub?.subscription?.unsubscribe?.();
+      } catch {}
     };
   }, [router, next, lang]);
 
@@ -346,7 +355,7 @@ export default function EspaceClientInner() {
           <h1 className="text-2xl font-semibold mt-2">{t.title}</h1>
           <p className="mt-2 text-sm text-gray-600">{t.loggedAs(userEmail)}</p>
           <button onClick={handleLogout} className="btn btn-outline mt-6 w-full">
-            Logout
+            {t.logout}
           </button>
         </div>
       </main>
@@ -357,15 +366,25 @@ export default function EspaceClientInner() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white rounded-2xl shadow p-6">
-        <Header lang={lang} setLang={(l) => {
-          setLang(l);
-          try { localStorage.setItem("cq.lang", l); } catch {}
-        }} />
+        <Header
+          lang={lang}
+          setLang={(l) => {
+            setLang(l);
+            try {
+              localStorage.setItem("cq.lang", l);
+            } catch {}
+          }}
+        />
 
         <h1 className="text-2xl font-semibold mt-2">{t.title}</h1>
-        <p className="mt-2 text-sm text-gray-600">{mode === "login" ? t.intro_login : t.intro_signup}</p>
+        <p className="mt-2 text-sm text-gray-600">
+          {mode === "login" ? t.intro_login : t.intro_signup}
+        </p>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="mt-6 space-y-4">
+        <form
+          onSubmit={mode === "login" ? handleLogin : handleSignup}
+          className="mt-6 space-y-4"
+        >
           <label className="block">
             <span className="text-sm font-medium">{t.email}</span>
             <input
@@ -416,7 +435,12 @@ export default function EspaceClientInner() {
               <button type="submit" disabled={loading} className="btn btn-primary w-full">
                 {loading ? t.logging : t.login}
               </button>
-              <button type="button" onClick={handleForgot} className="btn btn-outline w-full" disabled={loading}>
+              <button
+                type="button"
+                onClick={handleForgot}
+                className="btn btn-outline w-full"
+                disabled={loading}
+              >
                 {t.forgot}
               </button>
               <div className="relative my-2 text-center text-sm text-gray-500">
@@ -433,10 +457,20 @@ export default function EspaceClientInner() {
           ) : (
             <div className="flex flex-col gap-3">
               <label className="inline-flex items-start gap-2 text-sm">
-                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                />
                 <span>
-                  {t.accept} <a className="underline" href="/legal/terms" target="_blank" rel="noreferrer">{t.terms}</a> {t.and} {" "}
-                  <a className="underline" href="/legal/privacy" target="_blank" rel="noreferrer">{t.privacy}</a>
+                  {t.accept} {" "}
+                  <a className="underline" href="/legal/terms" target="_blank" rel="noreferrer">
+                    {t.terms}
+                  </a>{" "}
+                  {t.and} {" "}
+                  <a className="underline" href="/legal/privacy" target="_blank" rel="noreferrer">
+                    {t.privacy}
+                  </a>
                 </span>
               </label>
               <button type="submit" disabled={loading} className="btn btn-primary w-full">
@@ -445,20 +479,32 @@ export default function EspaceClientInner() {
             </div>
           )}
 
-          {errorMsg && <p className="text-sm" style={{ color: "#dc2626" }}>{errorMsg}</p>}
-          {info && <p className="text-sm" style={{ color: "#16a34a" }}>{info}</p>}
+          {errorMsg && (
+            <p className="text-sm" style={{ color: "#dc2626" }}>
+              {errorMsg}
+            </p>
+          )}
+          {info && (
+            <p className="text-sm" style={{ color: "#16a34a" }}>
+              {info}
+            </p>
+          )}
         </form>
 
         <div className="mt-6 text-sm text-gray-700">
           {mode === "login" ? (
             <>
               {t.needAccount} {" "}
-              <button className="btn btn-link" onClick={() => setMode("signup")}>{t.createAccount}</button>
+              <button className="btn btn-link" onClick={() => setMode("signup")}>
+                {t.createAccount}
+              </button>
             </>
           ) : (
             <>
               {t.haveAccount} {" "}
-              <button className="btn btn-link" onClick={() => setMode("login")}>{t.signIn}</button>
+              <button className="btn btn-link" onClick={() => setMode("login")}>
+                {t.signIn}
+              </button>
             </>
           )}
         </div>
@@ -493,9 +539,7 @@ function LangSwitcher({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => voi
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={
-            (lang === l ? "btn btn-primary" : "btn btn-outline") + " px-3 py-1 rounded-xl"
-          }
+          className={(lang === l ? "btn btn-primary" : "btn btn-outline") + " px-3 py-1 rounded-xl"}
           type="button"
           aria-pressed={lang === l}
         >
@@ -539,12 +583,24 @@ function PwMeter({ label, score }: { label: string; score: number }) {
   const steps = 4;
   return (
     <div className="mt-1">
-      <div className="flex gap-1" aria-label={label} role="meter" aria-valuemin={0} aria-valuemax={steps} aria-valuenow={score}>
+      <div
+        className="flex gap-1"
+        aria-label={label}
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={steps}
+        aria-valuenow={score}
+      >
         {Array.from({ length: steps }).map((_, i) => (
-          <div key={i} className={`h-1.5 flex-1 rounded ${i < score ? "bg-emerald-500" : "bg-gray-200"}`} />
+          <div
+            key={i}
+            className={`h-1.5 flex-1 rounded ${i < score ? "bg-emerald-500" : "bg-gray-200"}`}
+          />
         ))}
       </div>
-      <span className="sr-only">{label}: {score}/{steps}</span>
+      <span className="sr-only">
+        {label}: {score}/{steps}
+      </span>
     </div>
   );
 }
