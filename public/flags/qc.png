@@ -1,0 +1,7 @@
+<img
+  src="/flags/qc.png"
+  alt="Drapeau du Québec"
+  width={20}
+  height={14}
+  style={{ borderRadius: 2, objectFit: "cover" }}
+/>
