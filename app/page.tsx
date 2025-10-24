@@ -578,15 +578,18 @@ export default function Home() {
   const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
-  // sélecteur de langue
+  // sélecteur de langue (avec drapeaux locaux)
   const LangSwitcher = () => {
-    const FLAGS: Record<Lang, string> = {
-      fr: "🇨🇦",
-      en: "🇬🇧",
-      es: "🇪🇸",
+    // IMPORTANT : tes fichiers doivent exister dans /public/flags/
+    // qc.png, ca.png, es.png
+    const FLAG_SRC: Record<Lang, string> = {
+      fr: "/flags/qc.png", // Québec -> français
+      en: "/flags/ca.png", // Canada -> anglais
+      es: "/flags/es.png", // Espagne -> espagnol
     };
 
     if (isMobile) {
+      // version mobile = <select> simple
       return (
         <select
           value={lang}
@@ -601,13 +604,14 @@ export default function Home() {
         >
           {(["fr", "en", "es"] as Lang[]).map((l) => (
             <option key={l} value={l}>
-              {FLAGS[l]} {T.langNames[l]}
+              {T.langNames[l]}
             </option>
           ))}
         </select>
       );
     }
 
+    // version desktop = boutons avec drapeaux
     return (
       <div
         style={{
@@ -618,31 +622,50 @@ export default function Home() {
         }}
       >
         <span style={{ fontSize: 12, color: "#6b7280" }}>{T.langLabel}</span>
-        {(["fr", "en", "es"] as Lang[]).map((l) => (
-          <button
-            key={l}
-            onClick={() => setLang(l)}
-            style={{
-              border: `1px solid ${l === lang ? bleu : "#e5e7eb"}`,
-              background: l === lang ? bleu : "white",
-              color: l === lang ? "white" : "#374151",
-              padding: "6px 10px",
-              borderRadius: 8,
-              fontSize: 12,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              lineHeight: 1,
-              fontWeight: 600,
-            }}
-            aria-pressed={l === lang}
-          >
-            <span>{FLAGS[l]}</span>
-            <span>{T.langNames[l]}</span>
-          </button>
-        ))}
+
+        {(["fr", "en", "es"] as Lang[]).map((l) => {
+          const active = l === lang;
+          return (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              style={{
+                border: `1px solid ${active ? bleu : "#e5e7eb"}`,
+                background: active ? bleu : "white",
+                color: active ? "white" : "#374151",
+                padding: "6px 10px",
+                borderRadius: 8,
+                fontSize: 12,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                lineHeight: 1,
+                fontWeight: 600,
+                minWidth: 60,
+              }}
+              aria-pressed={active}
+            >
+              {/* drapeau */}
+              <Image
+                src={FLAG_SRC[l]}
+                alt={T.langNames[l]}
+                width={20}
+                height={14}
+                style={{
+                  borderRadius: 2,
+                  objectFit: "cover",
+                  boxShadow: active
+                    ? "0 0 0 2px rgba(255,255,255,0.6)"
+                    : "0 0 0 1px rgba(0,0,0,0.1)",
+                }}
+              />
+              {/* code langue */}
+              <span>{T.langNames[l]}</span>
+            </button>
+          );
+        })}
       </div>
     );
   };
