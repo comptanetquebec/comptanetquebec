@@ -39,7 +39,9 @@ export default function Home() {
       heroTitle: (
         <>
           Service d’impôt personnel et corporatif partout au Canada{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>(incluant le Québec)</span>{" "}
+          <span style={{ color: bleu, fontWeight: 800 }}>
+            (incluant le Québec)
+          </span>{" "}
           avec{" "}
           <span style={{ color: bleu, fontWeight: 800 }}>
             ComptaNet Québec
@@ -573,23 +575,15 @@ export default function Home() {
     },
   }[lang];
 
-  // redirections sécurisées vers l'espace client avec le "next"
+  // redirections vers l'espace client
   const toT1 = `/espace-client?lang=${lang}&next=/formulaire-fiscal`;
   const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
-  // sélecteur de langue (avec drapeaux locaux)
+  // sélecteur de langue (sans drapeaux maintenant)
   const LangSwitcher = () => {
-    // IMPORTANT : tes fichiers doivent exister dans /public/flags/
-    // qc.png, ca.png, es.png
-    const FLAG_SRC: Record<Lang, string> = {
-      fr: "/flags/qc.png", // Québec -> français
-      en: "/flags/ca.png", // Canada -> anglais
-      es: "/flags/es.png", // Espagne -> espagnol
-    };
-
     if (isMobile) {
-      // version mobile = <select> simple
+      // dropdown sur mobile
       return (
         <select
           value={lang}
@@ -611,7 +605,7 @@ export default function Home() {
       );
     }
 
-    // version desktop = boutons avec drapeaux
+    // boutons sur desktop
     return (
       <div
         style={{
@@ -638,31 +632,13 @@ export default function Home() {
                 fontSize: 12,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
                 lineHeight: 1,
                 fontWeight: 600,
-                minWidth: 60,
+                minWidth: 44,
               }}
               aria-pressed={active}
             >
-              {/* drapeau */}
-              <Image
-                src={FLAG_SRC[l]}
-                alt={T.langNames[l]}
-                width={20}
-                height={14}
-                style={{
-                  borderRadius: 2,
-                  objectFit: "cover",
-                  boxShadow: active
-                    ? "0 0 0 2px rgba(255,255,255,0.6)"
-                    : "0 0 0 1px rgba(0,0,0,0.1)",
-                }}
-              />
-              {/* code langue */}
-              <span>{T.langNames[l]}</span>
+              {T.langNames[l]}
             </button>
           );
         })}
@@ -1511,3 +1487,7 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   fontSize: 14,
 };
+``` 🙌
+
+Tu peux remplacer ton fichier `app/page.tsx` par ça directement.
+::contentReference[oaicite:0]{index=0}
