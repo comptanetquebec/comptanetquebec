@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
-import LangProvider from "./providers/LangProvider";
 
 export const metadata: Metadata = {
   title: "Espace client - ComptaNet Québec",
@@ -8,12 +8,16 @@ export const metadata: Metadata = {
     "Accédez à votre espace client sécurisé pour déposer vos documents fiscaux.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="fr" className="h-full">
       <body className="min-h-full bg-slate-50 text-slate-900 antialiased">
-        {/* ✅ Envelopper tout avec le fournisseur de langue */}
-        <LangProvider>{children}</LangProvider>
+        {/* <= Important pour useSearchParams partout dans l'app */}
+        <Suspense fallback={null}>{children}</Suspense>
       </body>
     </html>
   );
