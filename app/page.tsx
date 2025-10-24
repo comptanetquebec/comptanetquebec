@@ -42,7 +42,7 @@ export default function Home() {
         </>
       ),
       heroSub:
-        "Service professionnel pour vos impôts personnels partout au Canada, incluant le Québec, ainsi que vos déclarations de société (t2). Sécurisé, rapie et géré par des spécialistes fiscaux.",
+        "Service professionnel pour vos impôts personnels partout au Canada, incluant le Québec, ainsi que vos déclarations de société (t2). Sécurisé, rapide et géré par des spécialistes fiscaux.",
 
       chooseType: "Choisissez votre type d’impôt",
       t1Title: "Impôt des particuliers (T1 Québec et Canada)",
