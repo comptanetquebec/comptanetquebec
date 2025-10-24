@@ -1,4 +1,4 @@
- "use client";
+  "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -112,7 +112,7 @@ export default function Home() {
         "Exemples de base. Les cas plus complexes (plusieurs revenus, biens locatifs, déductions spéciales, états financiers détaillés, etc.) peuvent ajuster le prix. Nous confirmons toujours le montant avant de transmettre.",
       plans: [
         {
-          t: "Impôt des particuliers (T1 Québec)",
+          t: "Impôt des particuliers (T1 Québec et Canada)",
           p: "à partir de 100 $",
           pts: [
             "T4 / Relevé 1",
@@ -124,7 +124,7 @@ export default function Home() {
           href: "/tarifs/t1",
         },
         {
-          t: "Travailleur autonome (T1 Québec)",
+          t: "Travailleur autonome (T1 Québec et Canada)",
           p: "à partir de 150 $",
           pts: [
             "Revenus d’entreprise / travail autonome",
@@ -136,7 +136,7 @@ export default function Home() {
           href: "/tarifs/travailleur-autonome",
         },
         {
-          t: "Sociétés incorporées (T2 Canada)",
+          t: "Sociétés incorporées (T2 Québec et Canada)",
           p: "à partir de 850 $",
           pts: [
             "Déclaration T2 fédérale (ARC) pour sociétés canadiennes",
@@ -209,11 +209,11 @@ export default function Home() {
         "Professional tax filing for Quebec residents (T1 personal & self-employed) and corporate returns (T2) across Canada. Secure upload, human review, full compliance.",
 
       chooseType: "Choose your return type",
-      t1Title: "Personal income tax (T1 Québec)",
+      t1Title: "Personal income tax (T1 Québec and Canada)",
       t1Desc:
         "Employee, student, retired. Federal + Québec personal tax return.",
       t1Btn: "Start T1",
-      autoTitle: "Self-employed (T1 Québec)",
+      autoTitle: "Self-employed (T1 Québec and Canada)",
       autoDesc:
         "Freelancer, contractor, delivery driver. Federal + Québec self-employed taxes.",
       autoBtn: "Start self-employed T1",
