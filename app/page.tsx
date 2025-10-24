@@ -42,18 +42,18 @@ export default function Home() {
         </>
       ),
       heroSub:
-        "Service professionnel pour vos impôts personnels (Québec) et vos déclarations de société (T2) partout au Canada. Sécurisé, rapide, guidé par des spécialistes fiscaux.",
+        "Service professionnel pour vos impôts personnels partout au Canada, incluant le Québec, ainsi que vos déclarations de société (t2). Sécurisé, rapie et géré par des spécialistes fiscaux.",
 
       chooseType: "Choisissez votre type d’impôt",
-      t1Title: "Impôt des particuliers (T1 Québec)",
+      t1Title: "Impôt des particuliers (T1 Québec et Canada)",
       t1Desc:
         "Salarié, étudiant, retraité, etc. Déclaration fédérale + Québec.",
       t1Btn: "Commencer T1",
-      autoTitle: "Travailleur autonome (T1 Québec)",
+      autoTitle: "Travailleur autonome (T1 Québec et Canada)",
       autoDesc:
         "Travailleur autonome, livreur, pigiste, sous-traitant. Fédéral + Québec.",
       autoBtn: "T1 travailleur autonome",
-      t2Title: "Impôt des sociétés (T2 Canada)",
+      t2Title: "Impôt des sociétés (T2 Québec et Canada)",
       t2Desc:
         "Société incorporée, partout au Canada. Déclaration fédérale T2 (et Québec si applicable).",
       t2Btn: "Commencer T2",
@@ -64,7 +64,7 @@ export default function Home() {
         "On s’occupe de l’essentiel pour que vous restiez conforme, sans casse-tête.",
       services: [
         {
-          t: "Déclarations T1 Québec",
+          t: "Déclarations T1 Québec et Canada",
           d: "Particuliers et travailleurs autonomes : Revenu Canada (fédéral) et Revenu Québec.",
         },
         {
