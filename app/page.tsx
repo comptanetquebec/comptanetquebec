@@ -39,9 +39,7 @@ export default function Home() {
       heroTitle: (
         <>
           Service d’impôt personnel et corporatif partout au Canada{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>
-            (incluant le Québec)
-          </span>{" "}
+          <span style={{ color: bleu, fontWeight: 800 }}>(incluant le Québec)</span>{" "}
           avec{" "}
           <span style={{ color: bleu, fontWeight: 800 }}>
             ComptaNet Québec
@@ -575,15 +573,15 @@ export default function Home() {
     },
   }[lang];
 
-  // redirections vers l'espace client
+  // redirections sécurisées vers l'espace client avec le "next"
   const toT1 = `/espace-client?lang=${lang}&next=/formulaire-fiscal`;
   const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
-  // sélecteur de langue (sans drapeaux maintenant)
+  // sélecteur de langue (SANS drapeaux)
   const LangSwitcher = () => {
     if (isMobile) {
-      // dropdown sur mobile
+      // version mobile : select simple
       return (
         <select
           value={lang}
@@ -605,7 +603,7 @@ export default function Home() {
       );
     }
 
-    // boutons sur desktop
+    // version desktop : boutons FR / EN / ES
     return (
       <div
         style={{
@@ -615,7 +613,9 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <span style={{ fontSize: 12, color: "#6b7280" }}>{T.langLabel}</span>
+        <span style={{ fontSize: 12, color: "#6b7280" }}>
+          {T.langLabel}
+        </span>
 
         {(["fr", "en", "es"] as Lang[]).map((l) => {
           const active = l === lang;
@@ -1487,7 +1487,3 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   fontSize: 14,
 };
-``` 🙌
-
-Tu peux remplacer ton fichier `app/page.tsx` par ça directement.
-::contentReference[oaicite:0]{index=0}
