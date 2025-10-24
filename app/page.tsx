@@ -23,6 +23,7 @@ export default function Home() {
   // dictionnaire multilingue
   const T = {
     fr: {
+      // --- NAV / IDENTITÉ ---
       brand: "ComptaNet Québec",
       nav: {
         services: "Services",
@@ -33,98 +34,102 @@ export default function Home() {
         client: "Espace client",
       },
 
-      // HERO
-      ctaMain: "Commencez dès aujourd’hui",
+      // --- HERO ---
+      ctaMain: "Commencer maintenant",
       heroTitle: (
         <>
-          Impôt personnel et corporatif partout au Canada{" "}
+          Service d’impôt personnel et d’impôt corporatif partout au Canada{" "}
           <span style={{ color: bleu, fontWeight: 800 }}>
             (incluant le Québec)
           </span>{" "}
           avec{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
+          <span style={{ color: bleu, fontWeight: 800 }}>
+            ComptaNet Québec
+          </span>
         </>
       ),
       heroSub:
-        "Déclarations T1 (particuliers et travailleurs autonomes) partout au Canada, incluant la déclaration fédérale et le Québec. Déclarations T2 pour les sociétés incorporées dans toutes les provinces canadiennes. Au Québec, nous produisons aussi la CO-17. Service rapide, sécurisé et géré par des spécialistes fiscaux.",
+        "Impôt T1 (particuliers, travailleurs autonomes) partout au Canada, incluant le Québec. Impôt T2 pour sociétés incorporées dans toutes les provinces canadiennes. Au Québec, on prépare aussi la CO-17. Portail sécurisé. Traitement humain. Conforme ARC / Revenu Québec.",
 
-      chooseType: "Choisissez votre type d’impôt",
+      chooseType: "Choisissez ce qui vous correspond",
       t1Title: "Impôt des particuliers (T1 Canada, incluant Québec)",
       t1Desc:
-        "Salarié, étudiant, retraité, etc. On produit votre déclaration fédérale pour l’ARC et, si vous vivez au Québec, aussi la déclaration Québec.",
-      t1Btn: "Commencer T1",
+        "Salarié, étudiant, retraité, etc. On produit votre déclaration fédérale pour l’ARC. Si vous vivez au Québec, on produit aussi la déclaration Québec.",
+      t1Btn: "Impôt personnel T1",
+
       autoTitle:
         "Travailleur autonome / petit business (T1 Canada, incluant Québec)",
       autoDesc:
-        "Travailleur autonome, livreur, pigiste, sous-traitant. On inclut vos revenus d’entreprise et vos dépenses. Fédéral + Québec si applicable.",
+        "Travailleur autonome, livreur, pigiste, sous-traitant. On inclut vos revenus d’entreprise et vos dépenses admissibles. Fédéral + Québec si requis.",
       autoBtn: "T1 travailleur autonome",
-      t2Title: "Impôt des sociétés (T2 partout au Canada)",
-      t2Desc:
-        "Sociétés incorporées dans n’importe quelle province. On prépare la T2 fédérale (ARC) et la déclaration provinciale requise. Au Québec : T2 + CO-17.",
-      t2Btn: "Commencer T2",
 
-      // SERVICES
-      servicesTitle: "Services",
+      t2Title: "Société incorporée (T2 partout au Canada)",
+      t2Desc:
+        "Sociétés incorporées dans n’importe quelle province canadienne. On prépare la T2 fédérale (ARC) et la déclaration provinciale. Au Québec : T2 + CO-17.",
+      t2Btn: "Impôt société T2",
+
+      // --- SERVICES ---
+      servicesTitle: "Services offerts",
       servicesSub:
-        "On s’occupe de tout pour vos impôts personnels et corporatifs, partout au pays.",
+        "Impôt personnel, travail autonome et sociétés incorporées — partout au Canada, incluant le Québec.",
       services: [
         {
-          t: "Déclarations T1 particuliers (Canada et Québec)",
-          d: "Déclaration fédérale à l’ARC, et pour les résidents du Québec, aussi la déclaration Revenu Québec.",
+          t: "Déclaration T1 particuliers",
+          d: "Déclaration fédérale (ARC). Si vous êtes résident du Québec, on prépare aussi votre déclaration Revenu Québec.",
         },
         {
-          t: "Travailleurs autonomes (Canada et Québec)",
-          d: "Revenus d’entreprise / travail autonome, dépenses admissibles, optimisation fiscale. Inclus : fédéral + Québec si requis.",
+          t: "Travailleurs autonomes / revenus d’entreprise",
+          d: "Revenus autonome, dépenses admissibles, kilométrage, cellulaire, bureau à la maison, etc. Fédéral + Québec si applicable.",
         },
         {
-          t: "Déclarations T2 pour sociétés canadiennes",
-          d: "Impôt des sociétés incorporées partout au Canada. Au Québec, nous produisons aussi la CO-17.",
+          t: "Déclaration T2 (sociétés incorporées)",
+          d: "Impôt des sociétés partout au Canada. Au Québec, on inclut aussi la CO-17.",
         },
         {
-          t: "Organisation sécurisée de vos pièces",
-          d: "Portail sécurisé pour déposer T4 / Relevé 1, factures, relevés bancaires, états financiers, etc.",
+          t: "Portail sécurisé pour vos documents",
+          d: "Déposez vos T4 / Relevé 1, factures, relevés bancaires, états financiers. Zéro papier.",
         },
         {
-          t: "Optimisation et soutien",
-          d: "Crédits, déductions, dépenses d’entreprise, optimisation REER. On vérifie avant l’envoi.",
+          t: "Optimisation fiscale",
+          d: "On vérifie crédits, dépenses déductibles, REER, frais d’auto, etc., avant d’envoyer.",
         },
       ],
 
-      // ÉTAPES
-      stepsTitle: "Comment ça marche (4 étapes simples)",
+      // --- ÉTAPES ---
+      stepsTitle: "Comment ça fonctionne",
       steps: [
         {
           n: "1",
           t: "Créez votre compte",
-          d: "On vous ouvre un espace client sécurisé.",
+          d: "On ouvre votre espace client sécurisé.",
         },
         {
           n: "2",
           t: "Téléversez vos documents",
-          d: "Photos ou PDF (T4, Relevé 1, factures, relevés bancaires, états financiers…).",
+          d: "Glissez vos feuillets, factures, relevés bancaires, états financiers (photo ou PDF).",
         },
         {
           n: "3",
-          t: "Révision & approbation",
-          d: "On prépare vos déclarations. Vous validez avant l’envoi officiel.",
+          t: "On prépare votre déclaration",
+          d: "Un spécialiste fiscal prépare vos formulaires. Vous validez avant envoi.",
         },
         {
           n: "4",
-          t: "Transmission officielle",
-          d: "On transmet à l’ARC (fédéral), et à Revenu Québec si nécessaire. Vous recevez la confirmation.",
+          t: "Envoi officiel",
+          d: "On transmet à l’ARC (fédéral) et à Revenu Québec / la province au besoin. Vous recevez une confirmation.",
         },
       ],
 
-      // TARIFS
+      // --- TARIFS ---
       pricingTitle: "Tarifs 2025",
       pricingSub:
-        "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, locations, tenue de livres, structure corporative, etc.). On confirme toujours le montant AVANT d’envoyer quoi que ce soit.",
+        "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). On confirme toujours le montant AVANT d’envoyer quoi que ce soit.",
       plans: [
         {
           t: "Impôt des particuliers (T1 Canada / Québec)",
           p: "à partir de 100 $",
           pts: [
-            "T4 / Relevé 1",
+            "T4 / Relevé 1 inclus",
             "Crédits et déductions de base",
             "Fédéral (ARC) + Québec si applicable",
             "Portail client sécurisé",
@@ -133,11 +138,11 @@ export default function Home() {
           href: "/tarifs/t1",
         },
         {
-          t: "Travailleur autonome (T1 Canada / Québec)",
+          t: "Travailleur autonome / petit business (T1 Canada / Québec)",
           p: "à partir de 150 $",
           pts: [
             "Revenus d’entreprise / travail autonome",
-            "Dépenses admissibles",
+            "Dépenses admissibles (kilométrage, cellulaire, etc.)",
             "Optimisation REER / déductions",
             "Fédéral (ARC) + Québec si applicable",
             "Acompte initial 100 $",
@@ -160,30 +165,34 @@ export default function Home() {
       ],
       getPrice: "Voir les détails",
 
-      // FAQ
+      // --- FAQ ---
       faqTitle: "FAQ",
       faq: [
         {
-          q: "Comment je vous envoie mes documents?",
-          a: "Après la création du compte, vous avez un portail sécurisé pour téléverser vos pièces (photos, PDF, relevés bancaires, etc.). Aucune impression papier nécessaire.",
+          q: "Est-ce que vous faites les impôts au Québec?",
+          a: "Oui. Pour les particuliers et travailleurs autonomes du Québec, on prépare la déclaration fédérale (ARC) ET la déclaration Québec (Revenu Québec). Pour les sociétés au Québec, on s’occupe aussi de la CO-17.",
         },
         {
-          q: "Quels documents avez-vous besoin?",
-          a: "T4/Relevé 1, feuillets de revenu (REER, intérêts, placements, prestations), reçus de dépenses d’entreprise, états financiers si société, et toute lettre de l’ARC / Revenu Québec.",
+          q: "Je suis en Ontario / Alberta / Manitoba… est-ce que je peux vous envoyer mes impôts?",
+          a: "Oui. On sert toutes les provinces et territoires du Canada, à distance, par portail sécurisé. Pas besoin d’être physiquement au Québec.",
+        },
+        {
+          q: "Comment je vous envoie mes documents?",
+          a: "Dès que votre compte est créé, vous avez un portail sécurisé pour téléverser vos pièces (photos ou PDF). Plus besoin d’imprimer.",
         },
         {
           q: "Combien de temps ça prend?",
-          a: "En période normale : environ 3 à 7 jours ouvrables après réception de tous les documents. En haute saison (mars-avril), les dossiers incomplets peuvent prendre plus longtemps.",
+          a: "Habituellement 3 à 7 jours ouvrables après réception complète des infos. En haute saison (mars–avril), les dossiers incomplets peuvent prendre plus longtemps.",
         },
         {
           q: "Comment se fait le paiement?",
-          a: "Acompte (100 $ pour T1 / 400 $ pour T2). Le solde est payable quand la déclaration est prête, avant l’envoi officiel. Paiement par Interac ou carte (lien sécurisé).",
+          a: "On demande un acompte (100 $ pour T1 / 400 $ pour T2). Le solde est payable quand la déclaration est prête, avant l’envoi officiel. Paiement par transfert Interac ou carte (lien sécurisé).",
         },
       ],
 
-      // CONTACT
+      // --- CONTACT ---
       contactTitle: "Contact",
-      contactHint: "Vous pouvez aussi nous écrire directement à",
+      contactHint: "Vous pouvez aussi nous écrire à",
       send: "Envoyer",
 
       // divers
@@ -192,352 +201,6 @@ export default function Home() {
         services: "Services",
         pricing: "Tarifs",
         contact: "Contact",
-      },
-    },
-
-    en: {
-      brand: "ComptaNet Québec",
-      nav: {
-        services: "Services",
-        steps: "Steps",
-        pricing: "Pricing",
-        faq: "FAQ",
-        contact: "Contact",
-        client: "Client portal",
-      },
-
-      // HERO
-      ctaMain: "Get started today",
-      heroTitle: (
-        <>
-          Personal and corporate tax filing across Canada{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>
-            (including Québec)
-          </span>{" "}
-          with{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
-        </>
-      ),
-      heroSub:
-        "We prepare and file personal T1 returns and self-employed T1 returns for clients anywhere in Canada, including Québec. We also file corporate T2 returns for incorporated businesses in every province. If you're in Québec, we also prepare and file the CO-17. Secure portal, human review, CRA compliant.",
-
-      chooseType: "Choose your return type",
-      t1Title: "Personal income tax (T1 Canada, including Québec)",
-      t1Desc:
-        "Employee, student, retired. We file your federal T1 with the CRA, and if you live in Québec we also file the Québec provincial return.",
-      t1Btn: "Start T1",
-      autoTitle:
-        "Self-employed / small business (T1 Canada, including Québec)",
-      autoDesc:
-        "Freelancer, contractor, delivery driver, subcontractor. We include your business income and expenses. Federal (CRA) + Québec if required.",
-      autoBtn: "Start self-employed T1",
-      t2Title: "Corporate income tax (T2 anywhere in Canada)",
-      t2Desc:
-        "Incorporated business in any province. We file the federal T2 to the CRA and any required provincial corporate return. In Québec: T2 + CO-17 handled.",
-      t2Btn: "Start T2",
-
-      // SERVICES
-      servicesTitle: "Services",
-      servicesSub:
-        "Personal, self-employed, and corporate tax filing anywhere in Canada.",
-      services: [
-        {
-          t: "Personal T1 returns (Canada & Québec)",
-          d: "We prepare your federal CRA return and, if you are a Québec resident, we also file your Québec provincial return.",
-        },
-        {
-          t: "Self-employed and gig workers (Canada & Québec)",
-          d: "Business income, deductible expenses, GST/QST considerations. Federal CRA filing and Québec if applicable.",
-        },
-        {
-          t: "Corporate tax (T2 across Canada)",
-          d: "We file T2 for incorporated businesses in all provinces. Québec clients also get CO-17 prepared and filed.",
-        },
-        {
-          t: "Secure document portal",
-          d: "Upload T4/Relevé 1, invoices, bank statements, receipts, financial statements — all in one place.",
-        },
-        {
-          t: "Tax optimization & support",
-          d: "We check credits, deductions, RRSP strategy, business expenses, and small business deductions before filing.",
-        },
-      ],
-
-      // STEPS
-      stepsTitle: "How it works (4 simple steps)",
-      steps: [
-        {
-          n: "1",
-          t: "Create your account",
-          d: "We set up your secure client portal.",
-        },
-        {
-          n: "2",
-          t: "Upload your documents",
-          d: "Slips, receipts, statements, financials — PDF or photo.",
-        },
-        {
-          n: "3",
-          t: "Review & approve",
-          d: "We prepare your return(s). You approve before we file.",
-        },
-        {
-          n: "4",
-          t: "We file for you",
-          d: "We submit to the CRA (federal) and to Revenu Québec if required. You get confirmation.",
-        },
-      ],
-
-      // PRICING
-      pricingTitle: "Pricing 2025",
-      pricingSub:
-        "These are starting prices. Complex cases (rental income, multiple businesses, bookkeeping cleanup, corporate structure, etc.) may affect the final quote. We always confirm the total before filing.",
-      plans: [
-        {
-          t: "Personal tax (T1 Canada / Québec)",
-          p: "from $100",
-          pts: [
-            "T4 / Relevé 1",
-            "Basic deductions & credits",
-            "Federal (CRA) + Québec if needed",
-            "Secure client portal",
-            "Initial deposit $100",
-          ],
-          href: "/tarifs/t1",
-        },
-        {
-          t: "Self-employed / small business (T1 Canada / Québec)",
-          p: "from $150",
-          pts: [
-            "Business / self-employment income",
-            "Expense deductions",
-            "RRSP / deduction optimization",
-            "Federal (CRA) + Québec if needed",
-            "Initial deposit $100",
-          ],
-          href: "/tarifs/travailleur-autonome",
-        },
-        {
-          t: "Incorporated business (T2 anywhere in Canada)",
-          p: "from $850",
-          pts: [
-            "Corporate T2 return (CRA federal)",
-            "Provincial filing where required",
-            "In Québec: CO-17 included",
-            "Financial statements / balance sheet / P&L",
-            "Initial deposit $400",
-            "No revenue corporation? from $450",
-          ],
-          href: "/tarifs/t2",
-        },
-      ],
-      getPrice: "See details",
-
-      // FAQ
-      faqTitle: "FAQ",
-      faq: [
-        {
-          q: "How do I send documents?",
-          a: "After you create your account, you’ll have a secure portal to upload photos or PDFs (slips, receipts, bank statements, financial statements, etc.). No printing required.",
-        },
-        {
-          q: "What documents do you need?",
-          a: "T4 / Relevé 1, income slips (RRSP, investments, benefits), deductible business expenses, financial statements if you have a corporation, and any CRA / Revenu Québec letters.",
-        },
-        {
-          q: "How long does it take?",
-          a: "Typical turnaround is about 3–7 business days once we receive complete information. During peak season (March–April), incomplete files may take longer.",
-        },
-        {
-          q: "How do I pay?",
-          a: "We request a deposit ($100 for T1 / $400 for T2). The balance is due once the return is ready, before we file. You can pay by Interac e-Transfer or by card using a secure link.",
-        },
-      ],
-
-      // CONTACT
-      contactTitle: "Contact",
-      contactHint: "You can also write to",
-      send: "Send",
-
-      // misc
-      langLabel: "Language",
-      footerLinks: {
-        services: "Services",
-        pricing: "Pricing",
-        contact: "Contact",
-      },
-    },
-
-    es: {
-      brand: "ComptaNet Québec",
-      nav: {
-        services: "Servicios",
-        steps: "Pasos",
-        pricing: "Tarifas",
-        faq: "FAQ",
-        contact: "Contacto",
-        client: "Espacio cliente",
-      },
-
-      // HERO
-      ctaMain: "Empieza hoy",
-      heroTitle: (
-        <>
-          Declaración de impuestos personal y corporativa en todo Canadá{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>
-            (incluyendo Québec)
-          </span>{" "}
-          con{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
-        </>
-      ),
-      heroSub:
-        "Preparamos y presentamos declaraciones T1 para personas y trabajadores autónomos en cualquier provincia de Canadá, incluyendo Québec. También hacemos declaraciones corporativas T2 para sociedades incorporadas en todo el país. En Québec también preparamos y enviamos la CO-17. Portal seguro, revisión humana, cumplimiento con la CRA.",
-
-      chooseType: "Elija el tipo de declaración",
-      t1Title: "Impuesto personal (T1 Canadá, incluyendo Québec)",
-      t1Desc:
-        "Empleado, estudiante, jubilado. Presentamos su declaración federal ante la CRA y, si reside en Québec, también la declaración provincial de Québec.",
-      t1Btn: "Empezar T1",
-      autoTitle:
-        "Autónomo / pequeño negocio (T1 Canadá, incluyendo Québec)",
-      autoDesc:
-        "Freelancer, contratista, repartidor, subcontratista. Incluimos ingresos de negocio y gastos deducibles. Federal (CRA) + Québec si aplica.",
-      autoBtn: "T1 Autónomo",
-      t2Title: "Impuesto corporativo (T2 en todo Canadá)",
-      t2Desc:
-        "Sociedad incorporada en cualquier provincia. Preparamos la T2 federal para la CRA y la declaración corporativa provincial que se requiera. En Québec: T2 + CO-17.",
-      t2Btn: "Empezar T2",
-
-      // SERVICES
-      servicesTitle: "Servicios",
-      servicesSub:
-        "Impuestos personales, autónomos y corporativos para todas las provincias de Canadá.",
-      services: [
-        {
-          t: "Declaraciones T1 personales (Canadá y Québec)",
-          d: "Preparamos la declaración federal para la CRA y, si vive en Québec, también la declaración provincial de Québec.",
-        },
-        {
-          t: "Trabajadores autónomos / gig (Canadá y Québec)",
-          d: "Ingresos de negocio, gastos deducibles, estrategia fiscal. Incluye federal y Québec si corresponde.",
-        },
-        {
-          t: "Impuesto corporativo T2 (todas las provincias)",
-          d: "Declaración de sociedades incorporadas en todo Canadá. En Québec también preparamos la CO-17.",
-        },
-        {
-          t: "Portal seguro de documentos",
-          d: "Suba T4 / Relevé 1, facturas, extractos bancarios y estados financieros de forma segura.",
-        },
-        {
-          t: "Optimización fiscal y soporte",
-          d: "Revisamos créditos, deducciones, gastos de negocio y planificación RRSP antes de enviar.",
-        },
-      ],
-
-      // STEPS
-      stepsTitle: "Cómo funciona (4 pasos)",
-      steps: [
-        {
-          n: "1",
-          t: "Cree su cuenta",
-          d: "Le damos acceso a su portal seguro.",
-        },
-        {
-          n: "2",
-          t: "Suba sus documentos",
-          d: "PDF o foto (T4, Relevé 1, facturas, extractos bancarios, estados financieros…).",
-        },
-        {
-          n: "3",
-          t: "Revisión y aprobación",
-          d: "Preparamos su declaración. Usted la aprueba antes del envío.",
-        },
-        {
-          n: "4",
-          t: "Envío oficial",
-          d: "Enviamos a la CRA (federal) y a Revenu Québec cuando aplica. Recibe confirmación.",
-        },
-      ],
-
-      // PRICING
-      pricingTitle: "Tarifas 2025",
-      pricingSub:
-        "Precios iniciales. Casos más complejos (rentas, varios negocios, contabilidad pendiente, estructura corporativa, etc.) pueden ajustar el precio final. Siempre confirmamos el monto ANTES de enviar.",
-      plans: [
-        {
-          t: "Impuesto personal (T1 Canadá / Québec)",
-          p: "desde $100",
-          pts: [
-            "T4 / Relevé 1",
-            "Créditos y deducciones básicas",
-            "Federal (CRA) + Québec si aplica",
-            "Portal seguro",
-            "Depósito inicial $100",
-          ],
-          href: "/tarifs/t1",
-        },
-        {
-          t: "Autónomos / pequeño negocio (T1 Canadá / Québec)",
-          p: "desde $150",
-          pts: [
-            "Ingresos de negocio / autónomo",
-            "Gastos deducibles",
-            "Optimización RRSP / deducciones",
-            "Federal (CRA) + Québec si aplica",
-            "Depósito inicial $100",
-          ],
-          href: "/tarifs/travailleur-autonome",
-        },
-        {
-          t: "Sociedades incorporadas (T2 en todo Canadá)",
-          p: "desde $850",
-          pts: [
-            "Declaración corporativa T2 (CRA, nivel federal)",
-            "Declaración provincial según la provincia",
-            "En Québec: CO-17 incluida",
-            "Estados financieros / balance / resultados",
-            "Depósito inicial $400",
-            "Sin ingresos? desde $450",
-          ],
-          href: "/tarifs/t2",
-        },
-      ],
-      getPrice: "Ver detalles",
-
-      // FAQ
-      faqTitle: "FAQ",
-      faq: [
-        {
-          q: "¿Cómo envío mis documentos?",
-          a: "Al crear su cuenta obtiene un portal seguro para subir fotos o PDF (recibos, T4 / Relevé 1, estados bancarios, estados financieros, etc.). No necesita imprimir.",
-        },
-        {
-          q: "¿Qué documentos necesitan?",
-          a: "T4/Relevé 1, comprobantes de ingresos (RRSP, inversiones, prestaciones), gastos deducibles del negocio, estados financieros de la sociedad y cualquier carta de la CRA / Revenu Québec.",
-        },
-        {
-          q: "¿Cuánto demora?",
-          a: "Normalmente entre 3 y 7 días hábiles después de recibir toda la información. En temporada alta (marzo-abril), los expedientes incompletos pueden tardar más.",
-        },
-        {
-          q: "¿Cómo pago?",
-          a: "Pedimos un depósito ($100 T1 / $400 T2). El saldo se paga cuando la declaración está lista, antes del envío oficial. Puede pagar por Interac o tarjeta (enlace seguro).",
-        },
-      ],
-
-      // CONTACT
-      contactTitle: "Contacto",
-      contactHint: "También puede escribirnos a",
-      send: "Enviar",
-
-      // misc
-      langLabel: "Idioma",
-      footerLinks: {
-        services: "Servicios",
-        pricing: "Tarifas",
-        contact: "Contacto",
       },
     },
   }[lang];
@@ -569,41 +232,41 @@ export default function Home() {
       );
     }
     return (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <span style={{ fontSize: 12, color: "#6b7280" }}>{T.langLabel}</span>
-          {(["fr", "en", "es"] as Lang[]).map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              style={{
-                border: `1px solid ${l === lang ? bleu : "#e5e7eb"}`,
-                background: l === lang ? bleu : "white",
-                color: l === lang ? "white" : "#374151",
-                padding: "6px 10px",
-                borderRadius: 8,
-                fontSize: 12,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-              aria-pressed={l === lang}
-            >
-              {l.toUpperCase()}
-            </button>
-          ))}
-        </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontSize: 12, color: "#6b7280" }}>{T.langLabel}</span>
+        {(["fr", "en", "es"] as Lang[]).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            style={{
+              border: `1px solid ${l === lang ? bleu : "#e5e7eb"}`,
+              background: l === lang ? bleu : "white",
+              color: l === lang ? "white" : "#374151",
+              padding: "6px 10px",
+              borderRadius: 8,
+              fontSize: 12,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            aria-pressed={l === lang}
+          >
+            {l.toUpperCase()}
+          </button>
+        ))}
+      </div>
     );
   };
 
   return (
     <main style={{ fontFamily: "Arial, sans-serif", color: "#1f2937" }}>
-      {/* petit reset responsive */}
+      {/* reset responsive minimal */}
       <style jsx global>{`
         *,
         *::before,
@@ -738,6 +401,7 @@ export default function Home() {
                 textDecoration: "none",
                 color: "#374151",
                 whiteSpace: "nowrap",
+                fontWeight: 600,
               }}
             >
               {T.nav.client}
@@ -763,7 +427,7 @@ export default function Home() {
         <div style={{ position: "absolute", inset: 0 }}>
           <Image
             src="/banniere.png"
-            alt="Bannière"
+            alt="Bannière fisc"
             fill
             style={{ objectFit: "cover" }}
             priority
@@ -771,7 +435,7 @@ export default function Home() {
           />
         </div>
 
-        {/* contenu du bloc blanc par-dessus */}
+        {/* contenu par-dessus */}
         <div
           style={{
             position: "relative",
@@ -815,7 +479,7 @@ export default function Home() {
               {T.heroSub}
             </p>
 
-            {/* boutons CTA généraux */}
+            {/* CTA */}
             <div
               style={{
                 marginTop: 18,
@@ -858,7 +522,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* bloc : choix de type d'impôt */}
+            {/* Choix du type d'impôt */}
             <div
               style={{
                 marginTop: 28,
@@ -887,7 +551,7 @@ export default function Home() {
                   gap: 12,
                   gridTemplateColumns: isMobile
                     ? "1fr"
-                    : "repeat(auto-fit,minmax(200px,1fr))",
+                    : "repeat(auto-fit,minmax(220px,1fr))",
                 }}
               >
                 <TaxChoiceCard
@@ -1173,38 +837,20 @@ export default function Home() {
             <div style={{ display: "grid", gap: 12 }}>
               <input
                 name="Nom"
-                placeholder={
-                  lang === "fr"
-                    ? "Votre nom"
-                    : lang === "en"
-                    ? "Your name"
-                    : "Su nombre"
-                }
+                placeholder="Votre nom"
                 required
                 style={inputStyle}
               />
               <input
                 name="Courriel"
-                placeholder={
-                  lang === "fr"
-                    ? "Votre courriel"
-                    : lang === "en"
-                    ? "Your email"
-                    : "Su correo"
-                }
+                placeholder="Votre courriel"
                 type="email"
                 required
                 style={inputStyle}
               />
               <textarea
                 name="Message"
-                placeholder={
-                  lang === "fr"
-                    ? "Comment pouvons-nous aider?"
-                    : lang === "en"
-                    ? "How can we help?"
-                    : "¿Cómo podemos ayudar?"
-                }
+                placeholder="Comment pouvons-nous aider?"
                 rows={5}
                 style={inputStyle}
               />
@@ -1308,6 +954,7 @@ export default function Home() {
                 color: "#cbd5e1",
                 textDecoration: "none",
                 whiteSpace: "nowrap",
+                fontWeight: 600,
               }}
             >
               {T.nav.client}
@@ -1342,13 +989,27 @@ function TaxChoiceCard({
         padding: 16,
         display: "flex",
         flexDirection: "column",
-        minHeight: 150,
+        minHeight: 170,
       }}
     >
-      <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>
+      <div
+        style={{
+          fontWeight: 600,
+          fontSize: 15,
+          color: "#111827",
+          lineHeight: 1.4,
+        }}
+      >
         {title}
       </div>
-      <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+      <div
+        style={{
+          fontSize: 13,
+          color: "#6b7280",
+          marginTop: 6,
+          lineHeight: 1.4,
+        }}
+      >
         {desc}
       </div>
       <div style={{ marginTop: "auto" }}>
