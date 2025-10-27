@@ -35,35 +35,33 @@ export default function Home() {
       },
 
       // --- HERO ---
-      ctaMain: "Commencer maintenant",
+      ctaMain: "Démarrer ma déclaration",
       heroTitle: (
         <>
           Service d’impôt personnel et corporatif partout au Canada{" "}
           <span style={{ color: bleu, fontWeight: 800 }}>(incluant le Québec)</span>{" "}
           avec{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>
-            ComptaNet Québec
-          </span>
+          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
         </>
       ),
       heroSub:
         "Impôt T1 (particuliers, travailleurs autonomes) partout au Canada, incluant le Québec. Impôt T2 pour sociétés incorporées dans toutes les provinces canadiennes. Au Québec, on prépare aussi la CO-17. Portail sécurisé. Traitement humain. Conforme ARC / Revenu Québec.",
 
-      chooseType: "Choisissez ce qui vous correspond",
-      t1Title: "Impôt des particuliers (T1 Canada, incluant Québec)",
+      chooseType: "Choisissez votre situation fiscale",
+      t1Title: "Impôt des particuliers (T1 Canada / Québec)",
       t1Desc:
-        "Salarié, étudiant, retraité, etc. On produit votre déclaration fédérale pour l’ARC. Si vous vivez au Québec, on produit aussi la déclaration Québec.",
+        "Votre déclaration personnelle annuelle (salarié, étudiant, retraité). On produit la déclaration fédérale pour l’ARC et, si vous vivez au Québec, la déclaration Québec aussi.",
       t1Btn: "Impôt personnel T1",
 
       autoTitle:
-        "Travailleur autonome / petit business (T1 Canada, incluant Québec)",
+        "Travailleur autonome / petit business (T1 Canada / Québec)",
       autoDesc:
-        "Travailleur autonome, livreur, pigiste, sous-traitant. On inclut vos revenus d’entreprise et vos dépenses admissibles. Fédéral + Québec si requis.",
+        "Votre déclaration T1 avec revenus d’entreprise, piges, livraison, sous-traitance. On inclut toutes vos dépenses admissibles. Fédéral + Québec si requis.",
       autoBtn: "T1 travailleur autonome",
 
       t2Title: "Société incorporée (T2 partout au Canada)",
       t2Desc:
-        "Sociétés incorporées dans n’importe quelle province canadienne. On prépare la T2 fédérale (ARC) et la déclaration provinciale. Au Québec : T2 + CO-17.",
+        "Impôt de votre société incorporée (T2 fédéral + déclaration provinciale). Au Québec : T2 + CO-17.",
       t2Btn: "Impôt société T2",
 
       // --- SERVICES ---
@@ -109,7 +107,7 @@ export default function Home() {
         {
           n: "3",
           t: "On prépare votre déclaration",
-          d: "Un spécialiste fiscal prépare vos formulaires. Vous validez avant envoi.",
+          d: "Un spécialiste fiscal prépare vos formulaires. Vous validez avant l’envoi.",
         },
         {
           n: "4",
@@ -162,6 +160,27 @@ export default function Home() {
         },
       ],
       getPrice: "Voir les détails",
+
+      // --- POURQUOI NOUS ---
+      whyTitle: "Pourquoi nous choisir",
+      whyPoints: [
+        {
+          t: "Service humain et rapide",
+          d: "Votre dossier est traité par une vraie personne, pas juste un robot.",
+        },
+        {
+          t: "Portail 100 % sécurisé",
+          d: "Téléversement de vos documents sans impression ni déplacement.",
+        },
+        {
+          t: "Basé au Québec",
+          d: "On connaît la réalité fiscale du Québec… mais on sert tout le Canada.",
+        },
+        {
+          t: "Conforme ARC / Revenu Québec",
+          d: "On envoie officiellement vos déclarations aux bons gouvernements.",
+        },
+      ],
 
       // --- FAQ ---
       faqTitle: "FAQ",
@@ -221,35 +240,32 @@ export default function Home() {
         client: "Client portal",
       },
 
-      ctaMain: "Get started",
+      ctaMain: "Start my return",
       heroTitle: (
         <>
           Personal and corporate tax filing across Canada{" "}
           <span style={{ color: bleu, fontWeight: 800 }}>(including Québec)</span>{" "}
           with{" "}
-          <span style={{ color: bleu, fontWeight: 800 }}>
-            ComptaNet Québec
-          </span>
+          <span style={{ color: bleu, fontWeight: 800 }}>ComptaNet Québec</span>
         </>
       ),
       heroSub:
         "We prepare and file personal T1 returns (including self-employed) anywhere in Canada, including Québec. We also file corporate T2 returns for incorporated businesses in every province. In Québec we also handle the CO-17. Secure portal. Human review. CRA / Revenu Québec compliant.",
 
-      chooseType: "Choose what matches you",
-      t1Title: "Personal income tax (T1 Canada, including Québec)",
+      chooseType: "Choose what fits your situation",
+      t1Title: "Personal income tax (T1 Canada / Québec)",
       t1Desc:
-        "Employee, student, retired. We file your federal T1 with the CRA. If you live in Québec, we also file the Québec provincial return.",
+        "Your annual personal tax return (employee, student, retiree). We file your federal T1 with the CRA. If you live in Québec, we also file the Québec provincial return.",
       t1Btn: "Personal T1 return",
 
-      autoTitle:
-        "Self-employed / small business (T1 Canada, including Québec)",
+      autoTitle: "Self-employed / small business (T1 Canada / Québec)",
       autoDesc:
-        "Freelancer, contractor, delivery driver, subcontractor. We include your business income and deductible expenses. Federal + Québec if required.",
+        "Your T1 with business / freelance / delivery / subcontract income. We include deductible expenses. Federal + Québec if required.",
       autoBtn: "Self-employed T1",
 
-      t2Title: "Incorporated business (T2 anywhere in Canada)",
+      t2Title: "Incorporated company (T2 anywhere in Canada)",
       t2Desc:
-        "For incorporated companies in any Canadian province. We prepare the federal T2 (CRA) and any required provincial corporate return. In Québec: T2 + CO-17 handled.",
+        "Your incorporated business corporate tax (federal T2 + provincial). In Québec: T2 + CO-17.",
       t2Btn: "Corporate T2 filing",
 
       servicesTitle: "What we do",
@@ -346,6 +362,26 @@ export default function Home() {
       ],
       getPrice: "See details",
 
+      whyTitle: "Why choose us",
+      whyPoints: [
+        {
+          t: "Real humans, not just software",
+          d: "Your file is prepared and reviewed by a tax specialist.",
+        },
+        {
+          t: "100% secure portal",
+          d: "Send photos or PDFs. No printing, no travel.",
+        },
+        {
+          t: "Québec expertise",
+          d: "We understand Québec tax rules, and we also serve all of Canada.",
+        },
+        {
+          t: "Fully compliant",
+          d: "We e-file with CRA and Revenu Québec when required.",
+        },
+      ],
+
       faqTitle: "FAQ",
       faq: [
         {
@@ -401,7 +437,7 @@ export default function Home() {
         client: "Espacio cliente",
       },
 
-      ctaMain: "Empezar",
+      ctaMain: "Iniciar mi declaración",
       heroTitle: (
         <>
           Declaración de impuestos personal y corporativa en todo Canadá{" "}
@@ -415,23 +451,22 @@ export default function Home() {
         </>
       ),
       heroSub:
-        "Preparamos y presentamos declaraciones T1 para personas y autónomos en cualquier provincia de Canadá, incluyendo Québec. También hacemos declaraciones corporativas T2 para sociedades incorporadas en todo el país. En Québec también gestionamos la CO-17. Portal seguro. Revisión humana. Cumplimos con la CRA / Revenu Québec.",
+        "Preparamos y presentamos declaraciones T1 para personas y autónomos en cualquier provincia de Canadá, incluyendo Québec. También hacemos declaraciones corporativas T2 para sociedades incorporadas en todo el país. En Québec también gestionamos la CO-17. Portal seguro. Revisión humana. Cumple con CRA / Revenu Québec.",
 
-      chooseType: "Elija lo que se aplica a usted",
-      t1Title: "Impuesto personal (T1 Canadá, incluyendo Québec)",
+      chooseType: "Elija su situación",
+      t1Title: "Impuesto personal (T1 Canadá / Québec)",
       t1Desc:
-        "Empleado, estudiante, jubilado. Presentamos su T1 federal ante la CRA. Si vive en Québec, también presentamos la declaración provincial de Québec.",
+        "Su declaración personal anual (empleado, estudiante, jubilado). Presentamos la T1 federal ante la CRA. Si vive en Québec, también la declaración provincial.",
       t1Btn: "Declaración T1 personal",
 
-      autoTitle:
-        "Autónomo / pequeño negocio (T1 Canadá, incluyendo Québec)",
+      autoTitle: "Autónomo / pequeño negocio (T1 Canadá / Québec)",
       autoDesc:
-        "Freelancer, contratista, repartidor, subcontratista. Incluimos ingresos de negocio y gastos deducibles. Federal + Québec si aplica.",
-      autoBtn: "T1 Autónomo / negocio",
+        "Su T1 con ingresos de negocio, freelance, repartos, subcontrato. Incluimos gastos deducibles. Federal + Québec si aplica.",
+      autoBtn: "T1 autónomo / negocio",
 
       t2Title: "Sociedad incorporada (T2 en todo Canadá)",
       t2Desc:
-        "Para sociedades incorporadas en cualquier provincia de Canadá. Preparamos la T2 federal (CRA) y la declaración corporativa provincial requerida. En Québec: T2 + CO-17.",
+        "Impuesto corporativo de su sociedad incorporada (T2 federal + declaración provincial). En Québec: T2 + CO-17.",
       t2Btn: "Declaración corporativa T2",
 
       servicesTitle: "Servicios",
@@ -465,7 +500,7 @@ export default function Home() {
         {
           n: "1",
           t: "Cree su cuenta",
-          d: "Le damos acceso a su portal seguro.",
+          d: "Acceso a su portal seguro.",
         },
         {
           n: "2",
@@ -475,12 +510,12 @@ export default function Home() {
         {
           n: "3",
           t: "Preparamos su declaración",
-          d: "Un especialista fiscal prepara su expediente. Usted lo aprueba antes del envío.",
+          d: "Un especialista fiscal arma su expediente. Usted lo aprueba antes del envío.",
         },
         {
           n: "4",
           t: "Envío oficial",
-          d: "Presentamos a la CRA (federal) y a Revenu Québec / su provincia si aplica. Usted recibe confirmación.",
+          d: "Presentamos ante la CRA (federal) y ante Revenu Québec / su provincia si aplica. Usted recibe confirmación.",
         },
       ],
 
@@ -527,6 +562,26 @@ export default function Home() {
         },
       ],
       getPrice: "Ver detalles",
+
+      whyTitle: "Por qué elegirnos",
+      whyPoints: [
+        {
+          t: "Servicio humano y rápido",
+          d: "Su archivo lo maneja una persona real, no solo software.",
+        },
+        {
+          t: "Portal 100 % seguro",
+          d: "Envíe fotos o PDF. Sin imprimir.",
+        },
+        {
+          t: "Basados en Québec",
+          d: "Conocemos las reglas de Québec y servimos a todo Canadá.",
+        },
+        {
+          t: "Cumplimiento total",
+          d: "Declaraciones enviadas oficialmente a CRA y Revenu Québec.",
+        },
+      ],
 
       faqTitle: "FAQ",
       faq: [
@@ -578,10 +633,10 @@ export default function Home() {
   const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
-  // sélecteur de langue (SANS drapeaux)
+  // sélecteur de langue SANS drapeaux, juste FR / EN / ES
   const LangSwitcher = () => {
     if (isMobile) {
-      // version mobile : select simple
+      // version mobile = <select>
       return (
         <select
           value={lang}
@@ -603,7 +658,7 @@ export default function Home() {
       );
     }
 
-    // version desktop : boutons FR / EN / ES
+    // version desktop = boutons FR / EN / ES
     return (
       <div
         style={{
@@ -613,35 +668,29 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <span style={{ fontSize: 12, color: "#6b7280" }}>
-          {T.langLabel}
-        </span>
-
-        {(["fr", "en", "es"] as Lang[]).map((l) => {
-          const active = l === lang;
-          return (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              style={{
-                border: `1px solid ${active ? bleu : "#e5e7eb"}`,
-                background: active ? bleu : "white",
-                color: active ? "white" : "#374151",
-                padding: "6px 10px",
-                borderRadius: 8,
-                fontSize: 12,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                lineHeight: 1,
-                fontWeight: 600,
-                minWidth: 44,
-              }}
-              aria-pressed={active}
-            >
-              {T.langNames[l]}
-            </button>
-          );
-        })}
+        <span style={{ fontSize: 12, color: "#6b7280" }}>{T.langLabel}</span>
+        {(["fr", "en", "es"] as Lang[]).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            style={{
+              border: `1px solid ${l === lang ? bleu : "#e5e7eb"}`,
+              background: l === lang ? bleu : "white",
+              color: l === lang ? "white" : "#374151",
+              padding: "6px 10px",
+              borderRadius: 8,
+              fontSize: 12,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              lineHeight: 1,
+              fontWeight: 600,
+              minWidth: 44,
+            }}
+            aria-pressed={l === lang}
+          >
+            {T.langNames[l]}
+          </button>
+        ))}
       </div>
     );
   };
@@ -1175,6 +1224,58 @@ export default function Home() {
         </div>
       </section>
 
+      {/* POURQUOI NOUS CHOISIR */}
+      <section
+        style={{
+          maxWidth: 1100,
+          margin: "60px auto",
+          padding: "0 16px",
+        }}
+      >
+        <h2 style={{ color: bleu, marginBottom: 20 }}>{T.whyTitle}</h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {T.whyPoints.map((pt, i) => (
+            <div
+              key={i}
+              style={{
+                background: "white",
+                border: "1px solid #e5e7eb",
+                borderRadius: 12,
+                padding: 18,
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 600,
+                  color: "#111827",
+                  marginBottom: 6,
+                  fontSize: 16,
+                  lineHeight: 1.4,
+                }}
+              >
+                {pt.t}
+              </div>
+              <div
+                style={{
+                  color: "#6b7280",
+                  fontSize: 14,
+                  lineHeight: 1.45,
+                }}
+              >
+                {pt.d}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* FAQ */}
       <section
         id="faq"
@@ -1487,3 +1588,4 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   fontSize: 14,
 };
+
