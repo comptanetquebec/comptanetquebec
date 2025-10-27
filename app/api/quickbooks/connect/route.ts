@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  // On lit tes variables Vercel
   const clientId = process.env.QB_CLIENT_ID!;
   const redirectUri = process.env.QB_REDIRECT_URI!;
-  const env = process.env.QB_ENVIRONMENT === "production" ? "production" : "sandbox";
+  // sandbox ou production (on ne s’en sert pas pour l’URL maintenant,
+  // mais on le garde si tu veux afficher/logguer plus tard)
+  const env =
+    process.env.QB_ENVIRONMENT === "production" ? "production" : "sandbox";
 
-  const baseAuthorizeUrl =
-    env === "production"
-      ? "https://appcenter.intuit.com/connect/oauth2"
-      : "https://sandbox.appcenter.intuit.com/connect/oauth2";
+  // IMPORTANT: même URL pour sandbox et production maintenant
+  const baseAuthorizeUrl = "https://appcenter.intuit.com/connect/oauth2";
 
+  // Permissions qu’on demande à QuickBooks
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: "code",
@@ -22,9 +25,11 @@ export async function GET() {
       "address",
     ].join(" "),
     redirect_uri: redirectUri,
-    state: "secureRandomState123",
+    state: "secureRandomState123", // on pourra le rendre dynamique plus tard
   });
 
   const authorizeUrl = `${baseAuthorizeUrl}?${params.toString()}`;
+
+  // On redirige le navigateur vers QuickBooks
   return NextResponse.redirect(authorizeUrl);
 }
