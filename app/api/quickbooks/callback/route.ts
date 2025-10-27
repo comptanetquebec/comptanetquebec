@@ -1,15 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const code = searchParams.get("code");
-  const realmId = searchParams.get("realmId");
+export async function GET(req: NextRequest) {
+  const code = req.nextUrl.searchParams.get("code");
+  const realmId = req.nextUrl.searchParams.get("realmId");
 
   if (!code || !realmId) {
-    return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Code ou realmId manquant dans le callback QuickBooks" },
+      { status: 400 }
+    );
   }
 
-  // Ici tu pourrais sauvegarder les tokens QuickBooks dans Supabase ou QuickBooks API
-  // Pour l’instant on redirige simplement vers l’espace client
-  return NextResponse.redirect("/espace-client?quickbooks=connected");
+  // Étape suivante : échanger le "code" contre un access_token (à faire après test)
+  return NextResponse.json({
+    ok: true,
+    message: "Callback QuickBooks reçu avec succès",
+    code,
+    realmId,
+  });
 }
