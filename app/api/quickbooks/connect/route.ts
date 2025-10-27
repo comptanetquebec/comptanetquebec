@@ -1,23 +1,30 @@
 import { NextResponse } from "next/server";
 
-const CLIENT_ID = process.env.QB_CLIENT_ID!;
-const REDIRECT_URI = process.env.QB_REDIRECT_URI!;
-const ENVIRONMENT = process.env.QB_ENVIRONMENT || "sandbox";
-
 export async function GET() {
-  const baseUrl =
-    ENVIRONMENT === "production"
+  const clientId = process.env.QB_CLIENT_ID!;
+  const redirectUri = process.env.QB_REDIRECT_URI!;
+  const env = process.env.QB_ENVIRONMENT === "production" ? "production" : "sandbox";
+
+  const baseAuthorizeUrl =
+    env === "production"
       ? "https://appcenter.intuit.com/connect/oauth2"
       : "https://sandbox.appcenter.intuit.com/connect/oauth2";
 
-  const query = new URLSearchParams({
-    client_id: CLIENT_ID,
+  const params = new URLSearchParams({
+    client_id: clientId,
     response_type: "code",
-    scope: "com.intuit.quickbooks.accounting openid profile email phone address",
-    redirect_uri: REDIRECT_URI,
-    state: "comptanet_quebec",
+    scope: [
+      "com.intuit.quickbooks.accounting",
+      "openid",
+      "profile",
+      "email",
+      "phone",
+      "address",
+    ].join(" "),
+    redirect_uri: redirectUri,
+    state: "secureRandomState123",
   });
 
-  const authUrl = `${baseUrl}?${query.toString()}`;
-  return NextResponse.redirect(authUrl);
+  const authorizeUrl = `${baseAuthorizeUrl}?${params.toString()}`;
+  return NextResponse.redirect(authorizeUrl);
 }
