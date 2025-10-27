@@ -226,6 +226,12 @@ export default function Home() {
         services: "Services",
         pricing: "Tarifs",
         contact: "Contact",
+        legal: {
+          privacy: "Politique de confidentialité",
+          terms: "Conditions d’utilisation",
+          disclaimer: "Avis légal",
+          note: "Nous ne sommes pas l’ARC ni Revenu Québec. Nous préparons et transmettons vos déclarations selon l’information fournie.",
+        },
       },
     },
 
@@ -423,6 +429,12 @@ export default function Home() {
         services: "Services",
         pricing: "Pricing",
         contact: "Contact",
+        legal: {
+          privacy: "Privacy Policy",
+          terms: "Terms of Service",
+          disclaimer: "Disclaimer",
+          note: "We are not the CRA or Revenu Québec. We prepare and submit returns based on the information you provide.",
+        },
       },
     },
 
@@ -624,19 +636,24 @@ export default function Home() {
         services: "Servicios",
         pricing: "Tarifas",
         contact: "Contacto",
+        legal: {
+          privacy: "Política de privacidad",
+          terms: "Condiciones de uso",
+          disclaimer: "Aviso legal",
+          note: "No somos la CRA ni Revenu Québec. Declaraciones enviadas según la información que usted nos proporciona.",
+        },
       },
     },
   }[lang];
 
-  // redirections sécurisées vers l'espace client avec le "next"
+  // URLs espace client
   const toT1 = `/espace-client?lang=${lang}&next=/formulaire-fiscal`;
   const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
-  // sélecteur de langue SANS drapeaux, juste FR / EN / ES
+  // sélecteur de langue (pas de drapeaux)
   const LangSwitcher = () => {
     if (isMobile) {
-      // version mobile = <select>
       return (
         <select
           value={lang}
@@ -658,7 +675,6 @@ export default function Home() {
       );
     }
 
-    // version desktop = boutons FR / EN / ES
     return (
       <div
         style={{
@@ -697,7 +713,7 @@ export default function Home() {
 
   return (
     <main style={{ fontFamily: "Arial, sans-serif", color: "#1f2937" }}>
-      {/* reset responsive minimal */}
+      {/* RESET CSS minimal responsive */}
       <style jsx global>{`
         *,
         *::before,
@@ -866,7 +882,7 @@ export default function Home() {
           />
         </div>
 
-        {/* contenu par-dessus */}
+        {/* contenu */}
         <div
           style={{
             position: "relative",
@@ -1376,72 +1392,137 @@ export default function Home() {
             maxWidth: 1100,
             margin: "0 auto",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
+            flexDirection: "column",
+            gap: 24,
           }}
         >
+          {/* top row brand / nav */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
             }}
           >
-            <Image src="/logo-cq.png" alt="" width={28} height={28} />
-            <span>© {new Date().getFullYear()} ComptaNet Québec</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Image src="/logo-cq.png" alt="" width={28} height={28} />
+              <span>© {new Date().getFullYear()} ComptaNet Québec</span>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                overflowX: "auto",
+                fontSize: 14,
+              }}
+            >
+              <a
+                href="#services"
+                style={{
+                  color: "#cbd5e1",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {T.footerLinks.services}
+              </a>
+              <a
+                href="#tarifs"
+                style={{
+                  color: "#cbd5e1",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {T.footerLinks.pricing}
+              </a>
+              <a
+                href="#contact"
+                style={{
+                  color: "#cbd5e1",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {T.footerLinks.contact}
+              </a>
+              <Link
+                href="/espace-client"
+                style={{
+                    color: "#cbd5e1",
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    fontWeight: 600,
+                }}
+              >
+                {T.nav.client}
+              </Link>
+            </div>
           </div>
 
+          {/* legal row */}
           <div
             style={{
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+              paddingTop: 16,
+              fontSize: 12,
+              color: "#94a3b8",
               display: "flex",
-              gap: 16,
-              overflowX: "auto",
-              fontSize: 14,
+              flexDirection: "column",
+              gap: 12,
             }}
           >
-            <a
-              href="#services"
+            <div
               style={{
-                color: "#cbd5e1",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
+                lineHeight: 1.4,
               }}
             >
-              {T.footerLinks.services}
-            </a>
-            <a
-              href="#tarifs"
+              <Link
+                href="/legal#privacy"
+                style={{ color: "#94a3b8", textDecoration: "none" }}
+              >
+                {T.footerLinks.legal.privacy}
+              </Link>
+
+              <span style={{ opacity: 0.4 }}>•</span>
+
+              <Link
+                href="/legal#terms"
+                style={{ color: "#94a3b8", textDecoration: "none" }}
+              >
+                {T.footerLinks.legal.terms}
+              </Link>
+
+              <span style={{ opacity: 0.4 }}>•</span>
+
+              <Link
+                href="/legal#disclaimer"
+                style={{ color: "#94a3b8", textDecoration: "none" }}
+              >
+                {T.footerLinks.legal.disclaimer}
+              </Link>
+            </div>
+
+            <div
               style={{
-                color: "#cbd5e1",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
+                maxWidth: 800,
+                lineHeight: 1.4,
               }}
             >
-              {T.footerLinks.pricing}
-            </a>
-            <a
-              href="#contact"
-              style={{
-                color: "#cbd5e1",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {T.footerLinks.contact}
-            </a>
-            <Link
-              href="/espace-client"
-              style={{
-                color: "#cbd5e1",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-                fontWeight: 600,
-              }}
-            >
-              {T.nav.client}
-            </Link>
+              {T.footerLinks.legal.note}
+            </div>
           </div>
         </div>
       </footer>
@@ -1588,4 +1669,3 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   fontSize: 14,
 };
-
