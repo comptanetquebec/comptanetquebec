@@ -4,6 +4,148 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+/* --- style de base pour les inputs du formulaire contact --- */
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: "12px 14px",
+  outline: "none",
+  fontSize: 14,
+};
+
+/* --- composant carte pour choix T1 / autonome / T2 --- */
+function TaxChoiceCard({
+  title,
+  desc,
+  btn,
+  href,
+  bleu,
+}: {
+  title: string;
+  desc: string;
+  btn: string;
+  href: string;
+  bleu: string;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 10,
+        background: "white",
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 170,
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 600,
+          fontSize: 15,
+          color: "#111827",
+          lineHeight: 1.4,
+        }}
+      >
+        {title}
+      </div>
+
+      <div
+        style={{
+          fontSize: 13,
+          color: "#6b7280",
+          marginTop: 6,
+          lineHeight: 1.4,
+        }}
+      >
+        {desc}
+      </div>
+
+      <div style={{ marginTop: "auto" }}>
+        <Link
+          href={href}
+          style={{
+            display: "inline-block",
+            background: bleu,
+            color: "white",
+            padding: "10px 14px",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 700,
+            fontSize: 14,
+            marginTop: 12,
+            textAlign: "center",
+            width: "100%",
+          }}
+        >
+          {btn}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/* --- composant FAQ accordéon --- */
+function FAQ({ items }: { items: { q: string; a: string }[] }) {
+  const [open, setOpen] = useState<number | null>(0);
+
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      {items.map((it, i) => {
+        const isOpen = open === i;
+        return (
+          <div
+            key={i}
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              overflow: "hidden",
+              background: "white",
+            }}
+          >
+            <button
+              onClick={() => setOpen(isOpen ? null : i)}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "14px 16px",
+                background: "white",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 700,
+                color: "#111827",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+              aria-expanded={isOpen}
+            >
+              <span>{it.q}</span>
+              <span style={{ fontSize: 18, color: "#6b7280" }}>
+                {isOpen ? "−" : "+"}
+              </span>
+            </button>
+
+            {isOpen && (
+              <div
+                style={{
+                  padding: "0 16px 16px",
+                  color: "#4b5563",
+                  fontSize: 14,
+                  lineHeight: 1.45,
+                }}
+              >
+                {it.a}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Home() {
   const bleu = "#004aad" as const;
 
@@ -23,7 +165,6 @@ export default function Home() {
   // dictionnaire multilingue
   const T = {
     fr: {
-      // --- NAV / IDENTITÉ ---
       brand: "ComptaNet Québec",
       nav: {
         services: "Services",
@@ -34,7 +175,6 @@ export default function Home() {
         client: "Espace client",
       },
 
-      // --- HERO ---
       ctaMain: "Démarrer ma déclaration",
       heroTitle: (
         <>
@@ -64,7 +204,6 @@ export default function Home() {
         "Impôt de votre société incorporée (T2 fédéral + déclaration provinciale). Au Québec : T2 + CO-17.",
       t2Btn: "Impôt société T2",
 
-      // --- SERVICES ---
       servicesTitle: "Services offerts",
       servicesSub:
         "Impôt personnel, travail autonome et sociétés incorporées — partout au Canada, incluant le Québec.",
@@ -91,7 +230,6 @@ export default function Home() {
         },
       ],
 
-      // --- ÉTAPES ---
       stepsTitle: "Comment ça fonctionne",
       steps: [
         {
@@ -116,7 +254,6 @@ export default function Home() {
         },
       ],
 
-      // --- TARIFS ---
       pricingTitle: "Tarifs 2025",
       pricingSub:
         "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). On confirme toujours le montant AVANT d’envoyer quoi que ce soit.",
@@ -161,7 +298,6 @@ export default function Home() {
       ],
       getPrice: "Voir les détails",
 
-      // --- POURQUOI NOUS ---
       whyTitle: "Pourquoi nous choisir",
       whyPoints: [
         {
@@ -182,7 +318,6 @@ export default function Home() {
         },
       ],
 
-      // --- FAQ ---
       faqTitle: "FAQ",
       faq: [
         {
@@ -207,7 +342,6 @@ export default function Home() {
         },
       ],
 
-      // --- CONTACT ---
       contactTitle: "Contact",
       contactHint: "Vous pouvez aussi nous écrire à",
       send: "Envoyer",
@@ -218,7 +352,6 @@ export default function Home() {
         msg: "Comment pouvons-nous aider?",
       },
 
-      // divers
       langLabel: "Langue",
       langNames: { fr: "FR", en: "EN", es: "ES" },
 
@@ -651,7 +784,7 @@ export default function Home() {
   const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
-  // sélecteur de langue (pas de drapeaux)
+  // sélecteur de langue
   const LangSwitcher = () => {
     if (isMobile) {
       return (
@@ -756,7 +889,7 @@ export default function Home() {
             flexWrap: "wrap",
           }}
         >
-          {/* Logo + marque */}
+          {/* Marque */}
           <div
             style={{
               display: "flex",
@@ -1435,6 +1568,7 @@ export default function Home() {
               >
                 {T.footerLinks.services}
               </a>
+
               <a
                 href="#tarifs"
                 style={{
@@ -1445,6 +1579,7 @@ export default function Home() {
               >
                 {T.footerLinks.pricing}
               </a>
+
               <a
                 href="#contact"
                 style={{
@@ -1455,13 +1590,14 @@ export default function Home() {
               >
                 {T.footerLinks.contact}
               </a>
+
               <Link
                 href="/espace-client"
                 style={{
-                    color: "#cbd5e1",
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                    fontWeight: 600,
+                  color: "#cbd5e1",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  fontWeight: 600,
                 }}
               >
                 {T.nav.client}
@@ -1490,7 +1626,7 @@ export default function Home() {
               }}
             >
               <Link
-                href="/legal#privacy"
+                href="/legal/confidentialite"
                 style={{ color: "#94a3b8", textDecoration: "none" }}
               >
                 {T.footerLinks.legal.privacy}
@@ -1499,7 +1635,7 @@ export default function Home() {
               <span style={{ opacity: 0.4 }}>•</span>
 
               <Link
-                href="/legal#terms"
+                href="/legal/conditions"
                 style={{ color: "#94a3b8", textDecoration: "none" }}
               >
                 {T.footerLinks.legal.terms}
@@ -1508,7 +1644,7 @@ export default function Home() {
               <span style={{ opacity: 0.4 }}>•</span>
 
               <Link
-                href="/legal#disclaimer"
+                href="/legal/avis-legal"
                 style={{ color: "#94a3b8", textDecoration: "none" }}
               >
                 {T.footerLinks.legal.disclaimer}
@@ -1529,143 +1665,3 @@ export default function Home() {
     </main>
   );
 }
-
-/* --- composant carte pour choix T1 / autonome / T2 --- */
-function TaxChoiceCard({
-  title,
-  desc,
-  btn,
-  href,
-  bleu,
-}: {
-  title: string;
-  desc: string;
-  btn: string;
-  href: string;
-  bleu: string;
-}) {
-  return (
-    <div
-      style={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 10,
-        background: "white",
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 170,
-      }}
-    >
-      <div
-        style={{
-          fontWeight: 600,
-          fontSize: 15,
-          color: "#111827",
-          lineHeight: 1.4,
-        }}
-      >
-        {title}
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          color: "#6b7280",
-          marginTop: 6,
-          lineHeight: 1.4,
-        }}
-      >
-        {desc}
-      </div>
-      <div style={{ marginTop: "auto" }}>
-        <Link
-          href={href}
-          style={{
-            display: "inline-block",
-            background: bleu,
-            color: "white",
-            padding: "10px 14px",
-            borderRadius: 8,
-            textDecoration: "none",
-            fontWeight: 700,
-            fontSize: 14,
-            marginTop: 12,
-            textAlign: "center",
-            width: "100%",
-          }}
-        >
-          {btn}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-/* --- composant FAQ accordéon --- */
-function FAQ({ items }: { items: { q: string; a: string }[] }) {
-  const [open, setOpen] = useState<number | null>(0);
-
-  return (
-    <div style={{ display: "grid", gap: 10 }}>
-      {items.map((it, i) => {
-        const isOpen = open === i;
-        return (
-          <div
-            key={i}
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
-              overflow: "hidden",
-              background: "white",
-            }}
-          >
-            <button
-              onClick={() => setOpen(isOpen ? null : i)}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "14px 16px",
-                background: "white",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: 700,
-                color: "#111827",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-              aria-expanded={isOpen}
-            >
-              <span>{it.q}</span>
-              <span style={{ fontSize: 18, color: "#6b7280" }}>
-                {isOpen ? "−" : "+"}
-              </span>
-            </button>
-
-            {isOpen && (
-              <div
-                style={{
-                  padding: "0 16px 16px",
-                  color: "#4b5563",
-                  fontSize: 14,
-                  lineHeight: 1.45,
-                }}
-              >
-                {it.a}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* --- style de base pour les inputs du formulaire contact --- */
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  border: "1px solid #e5e7eb",
-  borderRadius: 10,
-  padding: "12px 14px",
-  outline: "none",
-  fontSize: 14,
-};
