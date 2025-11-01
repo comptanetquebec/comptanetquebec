@@ -1,34 +1,15 @@
 'use client';
 
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
 type Lang = 'fr' | 'en' | 'es';
 type ClientType = 't1' | 'ta' | 't2';
 
-interface FormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  clientType: ClientType;
-  message: string;
-  consent: boolean;
-}
-
 export default function FormulairePage() {
   const bleu = '#004aad' as const;
 
   const [lang, setLang] = useState<Lang>('fr');
-  const [data, setData] = useState<FormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    clientType: 't1',
-    message: '',
-    consent: false,
-  });
 
   const T = {
     fr: {
@@ -50,8 +31,6 @@ export default function FormulairePage() {
         back: 'Retour à l’accueil',
         lang: 'Langue',
       },
-      success: "Merci! Votre demande a été envoyée.",
-      error: "Veuillez remplir au minimum prénom, nom et courriel.",
     },
     en: {
       title: 'Create your account / Intake form',
@@ -72,8 +51,6 @@ export default function FormulairePage() {
         back: 'Back to home',
         lang: 'Language',
       },
-      success: 'Thanks! Your request has been submitted.',
-      error: 'Please fill at least first name, last name and email.',
     },
     es: {
       title: 'Crear su cuenta / Formulario de inicio',
@@ -94,62 +71,33 @@ export default function FormulairePage() {
         back: 'Volver al inicio',
         lang: 'Idioma',
       },
-      success: '¡Gracias! Su solicitud ha sido enviada.',
-      error: 'Complete al menos nombre, apellido y correo.',
     },
   }[lang];
 
-  /** Handler générique */
-  const handle =
-    <K extends keyof FormData>(key: K) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const el = e.currentTarget;
-      const isCheckbox = (el as HTMLInputElement).type === 'checkbox';
-      const raw = isCheckbox ? (el as HTMLInputElement).checked : el.value;
-      setData((prev) => ({ ...prev, [key]: raw as FormData[K] }));
-    };
+  // état des champs visibles
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName]   = useState('');
+  const [email, setEmail]         = useState('');
+  const [phone, setPhone]         = useState('');
+  const [clientType, setClientType] = useState<ClientType>('t1');
+  const [message, setMessage]     = useState('');
+  const [consent, setConsent]     = useState(false);
 
-  /** Nouvelle soumission → appel API */
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  // champs "API" attendus par /api/contact
+  const fullName   = `${firstName} ${lastName}`.trim();
+  const apiMessage =
+`Type: ${clientType.toUpperCase()}
+Téléphone: ${phone || '-'}
+Consentement courriel: ${consent ? 'oui' : 'non'}
 
-    if (!data.firstName || !data.lastName || !data.email) {
-      alert(T.error);
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/add-client', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prenom: data.firstName,
-          nom: data.lastName,
-          email: data.email,
-          telephone: data.phone,
-          client_type: data.clientType,
-          message: data.message,
-          consent: data.consent,
-        }),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        console.error(json);
-        alert('Une erreur est survenue, réessayez.');
-        return;
-      }
-
-      window.location.href = '/merci';
-    } catch (err) {
-      console.error(err);
-      alert("Erreur réseau. Vérifiez votre connexion.");
-    }
-  }
+Message:
+${message || '-'}`;
 
   return (
     <main style={{ fontFamily: 'Arial, sans-serif', color: '#111827' }}>
+      {/* Script reCAPTCHA v2 */}
+      <script async defer src="https://www.google.com/recaptcha/api.js"></script>
+
       <header
         style={{
           position: 'sticky',
@@ -198,10 +146,13 @@ export default function FormulairePage() {
         <h1 style={{ fontSize: 26, marginBottom: 8 }}>{T.title}</h1>
         <p style={{ color: '#4b5563', marginBottom: 18 }}>{T.intro}</p>
 
+        {/* IMPORTANT: envoi direct à /api/contact pour inclure automatiquement g-recaptcha-response */}
         <form
-          onSubmit={onSubmit}
+          method="POST"
+          action="/api/contact"
           style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, background: 'white' }}
         >
+          {/* Champs visibles (tes libellés) */}
           <div
             style={{
               display: 'grid',
@@ -212,9 +163,8 @@ export default function FormulairePage() {
             <div>
               <label style={lbl}>{T.labels.firstName}</label>
               <input
-                name="firstName"
-                value={data.firstName}
-                onChange={handle('firstName')}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
                 autoComplete="given-name"
                 style={input}
@@ -224,9 +174,8 @@ export default function FormulairePage() {
             <div>
               <label style={lbl}>{T.labels.lastName}</label>
               <input
-                name="lastName"
-                value={data.lastName}
-                onChange={handle('lastName')}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 required
                 autoComplete="family-name"
                 style={input}
@@ -237,9 +186,8 @@ export default function FormulairePage() {
               <label style={lbl}>{T.labels.email}</label>
               <input
                 type="email"
-                name="email"
-                value={data.email}
-                onChange={handle('email')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
                 style={input}
@@ -250,9 +198,8 @@ export default function FormulairePage() {
               <label style={lbl}>{T.labels.phone}</label>
               <input
                 type="tel"
-                name="phone"
-                value={data.phone}
-                onChange={handle('phone')}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 autoComplete="tel"
                 style={input}
               />
@@ -261,9 +208,8 @@ export default function FormulairePage() {
             <div>
               <label style={lbl}>{T.labels.type}</label>
               <select
-                name="clientType"
-                value={data.clientType}
-                onChange={handle('clientType')}
+                value={clientType}
+                onChange={(e) => setClientType(e.target.value as ClientType)}
                 style={input as React.CSSProperties}
               >
                 <option value="t1">{T.labels.t1}</option>
@@ -276,10 +222,9 @@ export default function FormulairePage() {
           <div style={{ marginTop: 12 }}>
             <label style={lbl}>{T.labels.message}</label>
             <textarea
-              name="message"
               rows={5}
-              value={data.message}
-              onChange={handle('message')}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               style={{ ...input, resize: 'vertical' }}
             />
           </div>
@@ -287,12 +232,24 @@ export default function FormulairePage() {
           <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input
               type="checkbox"
-              name="consent"
-              checked={data.consent}
-              onChange={handle('consent')}
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
               style={{ width: 18, height: 18 }}
             />
             <span style={{ fontSize: 14, color: '#374151' }}>{T.labels.consent}</span>
+          </div>
+
+          {/* --- Champs attendus par /api/contact --- */}
+          <input type="hidden" name="name" value={fullName} />
+          <input type="hidden" name="email" value={email} />
+          <textarea name="message" value={apiMessage} hidden readOnly />
+
+          {/* reCAPTCHA v2 (case à cocher) */}
+          <div style={{ marginTop: 14 }}>
+            <div
+              className="g-recaptcha"
+              data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7"
+            />
           </div>
 
           <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
