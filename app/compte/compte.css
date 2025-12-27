@@ -1,0 +1,246 @@
+/* compte.css */
+
+.signup-bg {
+  min-height: 100vh;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.signup-card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+/* Header */
+.signup-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.signup-header-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.signup-header-text strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.signup-header-text span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Titres */
+.signup-title {
+  margin-top: 18px;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.signup-intro {
+  font-size: 14px;
+  color: #475569;
+  margin: 10px 0 18px;
+}
+
+/* Form */
+.signup-form {
+  margin-top: 6px;
+}
+
+.label {
+  font-size: 13px;
+  margin-top: 12px;
+  display: block;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  margin-top: 6px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus {
+  border-color: #004aad;
+  box-shadow: 0 0 0 4px rgba(0, 74, 173, 0.12);
+}
+
+.rule {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Boutons */
+.btn-primary {
+  margin-top: 18px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: #004aad;
+  color: white;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.06s ease, filter 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Google */
+.btn-google {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.06s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-google:hover {
+  background: #f8fafc;
+}
+
+.btn-google:active {
+  transform: translateY(1px);
+}
+
+.btn-google:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  display: block;
+}
+
+/* Divider */
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 18px 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.divider span {
+  background: #ffffff;
+  padding: 0 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Déjà un compte */
+.login-row {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+  color: #475569;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #004aad;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.btn-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Messages */
+.message {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  border: 1px solid transparent;
+}
+
+.message.ok {
+  background: #e5f3ff;
+  color: #0f172a;
+  border-color: rgba(0, 74, 173, 0.18);
+}
+
+.message.error {
+  background: #fff1f2;
+  color: #7f1d1d;
+  border-color: rgba(185, 28, 28, 0.2);
+}
+
+/* Mobile */
+@media (max-width: 420px) {
+  .signup-card {
+    padding: 22px;
+    border-radius: 16px;
+  }
+
+  .signup-title {
+    font-size: 20px;
+  }
+}
