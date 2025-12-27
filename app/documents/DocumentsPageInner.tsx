@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -125,14 +125,16 @@ export default function DocumentsPageInner() {
       }
       await refreshList(currentUid);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function refreshList(currentUid: string) {
     setLoading(true);
     try {
-      const { data, error } = await supabase.storage
-        .from("clients")
-        .list(currentUid, { limit: 200, sortBy: { column: "name", order: "asc" } });
+      const { data, error } = await supabase.storage.from("clients").list(currentUid, {
+        limit: 200,
+        sortBy: { column: "name", order: "asc" },
+      });
       if (error) throw error;
 
       const mapped: Row[] =
@@ -163,9 +165,10 @@ export default function DocumentsPageInner() {
     try {
       for (const file of Array.from(files)) {
         const path = `${uid}/${file.name}`;
-        const { error } = await supabase.storage
-          .from("clients")
-          .upload(path, file, { upsert: true, cacheControl: "3600" });
+        const { error } = await supabase.storage.from("clients").upload(path, file, {
+          upsert: true,
+          cacheControl: "3600",
+        });
         if (error) throw error;
       }
       await refreshList(uid);
@@ -183,6 +186,7 @@ export default function DocumentsPageInner() {
     const { data, error } = await supabase.storage
       .from("clients")
       .createSignedUrl(`${uid}/${name}`, 60);
+
     if (error || !data?.signedUrl) {
       alert(t.error_list);
       return;
@@ -196,9 +200,7 @@ export default function DocumentsPageInner() {
 
     setBusy(true);
     try {
-      const { error } = await supabase.storage
-        .from("clients")
-        .remove([`${uid}/${name}`]);
+      const { error } = await supabase.storage.from("clients").remove([`${uid}/${name}`]);
       if (error) throw error;
       await refreshList(uid);
     } catch (e) {
@@ -216,7 +218,9 @@ export default function DocumentsPageInner() {
         <div className="card container">
           <Header />
           <h1>{t.title}</h1>
-          <p className="note" style={{ color: "red" }}>{t.error_auth}</p>
+          <p className="note" style={{ color: "red" }}>
+            {t.error_auth}
+          </p>
         </div>
       </main>
     );
@@ -270,14 +274,18 @@ export default function DocumentsPageInner() {
                   {rows.map((r) => (
                     <tr key={r.name} style={{ borderTop: "1px solid #eef2f7" }}>
                       <Td>{r.name}</Td>
-                      <Td>{formatSize(r.size)}</Td>
-                      <Td>{r.updatedAt ? formatDate(r.updatedAt) : "—"}</Td>
+                      <Td>{formatSize(r.size, lang)}</Td>
+                      <Td>{r.updatedAt ? formatDate(r.updatedAt, lang) : "—"}</Td>
                       <Td>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <button className="btn btn-outline" onClick={() => download(r.name)}>
                             {t.action_download}
                           </button>
-                          <button className="btn btn-outline" onClick={() => remove(r.name)} disabled={busy}>
+                          <button
+                            className="btn btn-outline"
+                            onClick={() => remove(r.name)}
+                            disabled={busy}
+                          >
                             {t.action_delete}
                           </button>
                         </div>
@@ -359,18 +367,38 @@ function Td({
 
 /* ───────────── Helpers ───────────── */
 
-function formatSize(n: number): string {
-  if (!n || n < 0) return "—";
-  const kb = n / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
-  const mb = kb / 1024;
-  return `${mb.toFixed(2)} MB`;
+function localeFor(lang: Lang): string {
+  if (lang === "fr") return "fr-CA";
+  if (lang === "en") return "en-CA";
+  return "es-ES";
 }
 
-function formatDate(iso: string): string {
+function formatSize(n: number, lang: Lang): string {
+  if (!n || n < 0) return "—";
+
+  const loc = localeFor(lang);
+  const fmt1 = new Intl.NumberFormat(loc, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const fmt2 = new Intl.NumberFormat(loc, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+
+  const kb = n / 1024;
+  if (kb < 1024) return `${fmt1.format(kb)} KB`;
+
+  const mb = kb / 1024;
+  return `${fmt2.format(mb)} MB`;
+}
+
+function formatDate(iso: string, lang: Lang): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleString();
+    const loc = localeFor(lang);
+
+    return d.toLocaleString(loc, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return iso;
   }
