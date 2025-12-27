@@ -1,5 +1,6 @@
 /* espace-client.css */
 
+/* ===== Page ===== */
 .login-bg {
   min-height: 100vh;
   background: #f1f5f9;
@@ -65,7 +66,7 @@
   margin-top: 12px;
   display: block;
   color: #0f172a;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .input {
@@ -91,7 +92,7 @@
   border-radius: 14px;
   background: #004aad; /* ✅ couleur ComptaNet */
   color: white;
-  font-weight: 700;
+  font-weight: 800;
   border: none;
   cursor: pointer;
   transition: transform 0.06s ease, filter 0.15s ease, opacity 0.15s ease;
@@ -118,7 +119,7 @@
   background: white;
   border: 1px solid #cbd5e1;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,13 +178,13 @@
   z-index: 1;
 }
 
-/* ===== Link ===== */
+/* ===== Links ===== */
 .link {
   margin-top: 12px;
   background: none;
   border: none;
   color: #004aad; /* ✅ couleur ComptaNet */
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   padding: 0;
 }
@@ -208,6 +209,43 @@
   border: 1px solid rgba(0, 74, 173, 0.18);
 }
 
+/* =========================================================
+   ✅ AJOUTS: Bloc “Créer un compte” (sous Mot de passe oublié)
+   - Un texte + un bouton style lien
+   - Spacing propre et look ComptaNet
+========================================================= */
+
+.signup-row {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  color: #475569;
+  font-size: 13px;
+}
+
+.signup-text {
+  color: #475569;
+}
+
+.signup-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #004aad;
+  font-weight: 900;
+  text-decoration: underline;
+}
+
+.signup-link:hover {
+  filter: brightness(0.95);
+}
+
 /* ===== Mobile ===== */
 @media (max-width: 420px) {
   .login-card {
@@ -217,5 +255,10 @@
 
   .login-title {
     font-size: 20px;
+  }
+
+  .signup-row {
+    margin-top: 12px;
+    padding-top: 12px;
   }
 }
