@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -24,14 +24,9 @@ type Copy = {
   subtitle: string;
   disclaimerTop: string;
   disclaimerBottom: string;
-  langLabel: string;
   back: string;
-  ctaContact: string;
   ctaEstimate: string;
   estimateHint: string;
-  phoneLabel: string;
-  emailLabel: string;
-  websiteLabel: string;
   currencyNote: string;
   sections: Array<{
     title: string;
@@ -47,14 +42,9 @@ const COPY: Record<Lang, Copy> = {
     disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
     disclaimerBottom:
       "Prix avant taxes. Les dossiers plus complexes (plusieurs activités, inventaire, volume élevé, etc.) peuvent nécessiter une évaluation.",
-    langLabel: "Langue",
     back: "Retour à l’accueil",
-    ctaContact: "Nous contacter",
     ctaEstimate: "Estimer mon dossier",
     estimateHint: "Répondez à 4 questions dans votre espace client (30 secondes).",
-    phoneLabel: "Téléphone",
-    emailLabel: "Courriel",
-    websiteLabel: "Site web",
     currencyNote: "Tous les montants sont en CAD.",
     sections: [
       {
@@ -83,14 +73,9 @@ const COPY: Record<Lang, Copy> = {
     disclaimerTop: "Prices may change depending on your file.",
     disclaimerBottom:
       "Prices before taxes. More complex files (multiple activities, inventory, high volume, etc.) may require an assessment.",
-    langLabel: "Language",
     back: "Back to Home",
-    ctaContact: "Contact us",
     ctaEstimate: "Estimate my file",
     estimateHint: "Answer 4 quick questions in your client portal (30 seconds).",
-    phoneLabel: "Phone",
-    emailLabel: "Email",
-    websiteLabel: "Website",
     currencyNote: "All amounts are in CAD.",
     sections: [
       {
@@ -119,14 +104,9 @@ const COPY: Record<Lang, Copy> = {
     disclaimerTop: "Según su expediente, los precios pueden cambiar.",
     disclaimerBottom:
       "Precios antes de impuestos. Casos más complejos (varias actividades, inventario, gran volumen, etc.) pueden requerir evaluación.",
-    langLabel: "Idioma",
     back: "Volver al inicio",
-    ctaContact: "Contactarnos",
     ctaEstimate: "Estimar mi caso",
     estimateHint: "Responde 4 preguntas rápidas en tu área de cliente (30 segundos).",
-    phoneLabel: "Teléfono",
-    emailLabel: "Correo",
-    websiteLabel: "Sitio web",
     currencyNote: "Todos los montos están en CAD.",
     sections: [
       {
@@ -158,10 +138,16 @@ export default function TravAutonomePricingPage() {
   const lang = useMemo(() => getLang(new URLSearchParams(sp.toString())), [sp]);
   const t = COPY[lang];
 
-  const switchLang = (l: Lang) => {
-    const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), l);
-    router.push(`${pathname}?${nextQuery}`);
-  };
+  // ✅ Corrige l’URL si lang invalide
+  useEffect(() => {
+    const raw = (sp.get("lang") || "fr").toLowerCase();
+    const normalized = getLang(new URLSearchParams(sp.toString()));
+    if (raw !== normalized) {
+      const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), normalized);
+      router.replace(`${pathname}?${nextQuery}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, router]);
 
   // 👉 Page protégée dans l’espace client
   const estimateHref = `/espace-client/devis-autonome?lang=${lang}`;
@@ -169,35 +155,10 @@ export default function TravAutonomePricingPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-10">
-        {/* Top bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-900">ComptaNet Québec</span>{" "}
-            <span className="ml-2">{t.currencyNote}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">{t.langLabel}</span>
-            <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-white">
-              {LANGS.map((l) => {
-                const active = l === lang;
-                return (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => switchLang(l)}
-                    className={[
-                      "px-3 py-2 text-xs font-semibold",
-                      active ? "bg-[#004aad] text-white" : "text-slate-700 hover:bg-slate-50",
-                    ].join(" ")}
-                    aria-pressed={active}
-                  >
-                    {l.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        {/* Top bar (sans switch langues) */}
+        <div className="text-sm text-slate-600">
+          <span className="font-semibold text-slate-900">ComptaNet Québec</span>{" "}
+          <span className="ml-2">{t.currencyNote}</span>
         </div>
 
         {/* Header */}
@@ -241,7 +202,9 @@ export default function TravAutonomePricingPage() {
                       {line.note && <div className="mt-1 text-xs text-slate-500">{line.note}</div>}
                     </div>
                     {line.price ? (
-                      <div className="text-sm font-bold text-slate-900 sm:text-right">{line.price}</div>
+                      <div className="text-sm font-bold text-slate-900 sm:text-right">
+                        {line.price}
+                      </div>
                     ) : (
                       <div className="text-sm text-slate-400 sm:text-right">—</div>
                     )}
@@ -252,40 +215,16 @@ export default function TravAutonomePricingPage() {
           ))}
         </div>
 
-        {/* Contact + Back */}
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-bold text-slate-900">{t.ctaContact}</div>
-            <div className="mt-3 space-y-2 text-sm text-slate-700">
-              <div>
-                <span className="text-slate-500">{t.phoneLabel}:</span>{" "}
-                <a className="font-semibold text-[#004aad] hover:underline" href="tel:5819852599">
-                  581-985-2599
-                </a>
-              </div>
-              <div>
-                <span className="text-slate-500">{t.emailLabel}:</span>{" "}
-                <a className="font-semibold text-[#004aad] hover:underline" href="mailto:comptanetquebec@gmail.com">
-                  comptanetquebec@gmail.com
-                </a>
-              </div>
-              <div>
-                <span className="text-slate-500">{t.websiteLabel}:</span>{" "}
-                <span className="font-semibold">comptanetquebec.ca</span>
-              </div>
-            </div>
-            <p className="mt-4 text-xs text-slate-500">{t.disclaimerBottom}</p>
-          </div>
+        {/* Bas de page (sans infos perso) */}
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
+          <p className="text-xs text-slate-500">{t.disclaimerBottom}</p>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
-            <div className="text-sm text-slate-600">849, boulevard Pie XII, Québec (QC) G1X 3T2</div>
-            <Link
-              href={`/?lang=${lang}`}
-              className="inline-flex items-center justify-center rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
-            >
-              {t.back}
-            </Link>
-          </div>
+          <Link
+            href={`/?lang=${lang}`}
+            className="inline-flex items-center justify-center rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
+          >
+            {t.back}
+          </Link>
         </div>
       </div>
     </main>
