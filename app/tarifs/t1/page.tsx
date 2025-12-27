@@ -22,20 +22,9 @@ type Copy = {
   subtitle: string;
   disclaimerTop: string;
   disclaimerBottom: string;
-  langLabel: string;
   back: string;
-  ctaContact: string;
-  phoneLabel: string;
-  emailLabel: string;
-  websiteLabel: string;
   currencyNote: string;
   sections: Section[];
-  contact: {
-    phone: string;
-    email: string;
-    website: string;
-    addressLine: string;
-  };
 };
 
 const LANGS: Lang[] = ["fr", "en", "es"];
@@ -60,19 +49,8 @@ const COPY: Record<Lang, Copy> = {
     disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
     disclaimerBottom:
       "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
-    langLabel: "Langue",
     back: "Retour à l’accueil",
-    ctaContact: "Nous contacter",
-    phoneLabel: "Téléphone",
-    emailLabel: "Courriel",
-    websiteLabel: "Site web",
     currencyNote: "Tous les montants sont en CAD.",
-    contact: {
-      phone: "(xxx) xxx-xxxx",
-      email: "info@votresite.com",
-      website: "votresite.com",
-      addressLine: "Votre adresse (ville, province)",
-    },
     sections: [
       {
         title: "Déclarations de base",
@@ -95,8 +73,7 @@ const COPY: Record<Lang, Copy> = {
           {
             label: "Crédit achat 1ère habitation (si plus d’un propriétaire)",
             price: "45 $",
-            note:
-              "Le crédit est applicable à une seule personne : calculs et simulations pour optimiser.",
+            note: "Le crédit est applicable à une seule personne : calculs et simulations pour optimiser.",
           },
           { label: "Revenus locatifs (prix par propriétaire)", price: "150 $" },
           { label: "Immeuble additionnel (ajout par immeuble, par propriétaire)", price: "+ 90 $" },
@@ -145,19 +122,8 @@ const COPY: Record<Lang, Copy> = {
       "Prices before taxes. Final pricing may vary based on your situation and documents provided.",
     disclaimerTop: "Prices may change depending on your file.",
     disclaimerBottom: "Prices before taxes. Complex cases may require an assessment.",
-    langLabel: "Language",
     back: "Back to Home",
-    ctaContact: "Contact us",
-    phoneLabel: "Phone",
-    emailLabel: "Email",
-    websiteLabel: "Website",
     currencyNote: "All amounts are in CAD.",
-    contact: {
-      phone: "(xxx) xxx-xxxx",
-      email: "info@yoursite.com",
-      website: "yoursite.com",
-      addressLine: "Your address (city, province)",
-    },
     sections: [
       {
         title: "Basic returns",
@@ -222,19 +188,8 @@ const COPY: Record<Lang, Copy> = {
       "Precios antes de impuestos. El precio final puede variar según su situación y documentos.",
     disclaimerTop: "Según su expediente, los precios pueden cambiar.",
     disclaimerBottom: "Precios antes de impuestos. Los casos complejos pueden requerir evaluación.",
-    langLabel: "Idioma",
     back: "Volver al inicio",
-    ctaContact: "Contactarnos",
-    phoneLabel: "Teléfono",
-    emailLabel: "Correo",
-    websiteLabel: "Sitio web",
     currencyNote: "Todos los montos están en CAD.",
-    contact: {
-      phone: "(xxx) xxx-xxxx",
-      email: "info@tusitio.com",
-      website: "tusitio.com",
-      addressLine: "Tu dirección (ciudad, provincia)",
-    },
     sections: [
       {
         title: "Declaraciones básicas",
@@ -313,43 +268,13 @@ export default function T1PricingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, router]);
 
-  const switchLang = (l: Lang) => {
-    const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), l);
-    router.push(`${pathname}?${nextQuery}`);
-  };
-
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-10">
-        {/* Top bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-900">ComptaNet Québec</span>{" "}
-            <span className="ml-2">{t.currencyNote}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">{t.langLabel}</span>
-            <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-white">
-              {LANGS.map((l) => {
-                const active = l === lang;
-                return (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => switchLang(l)}
-                    className={[
-                      "px-3 py-2 text-xs font-semibold",
-                      active ? "bg-[#004aad] text-white" : "text-slate-700 hover:bg-slate-50",
-                    ].join(" ")}
-                    aria-pressed={active}
-                  >
-                    {l.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        {/* Top bar (sans switch langues) */}
+        <div className="text-sm text-slate-600">
+          <span className="font-semibold text-slate-900">ComptaNet Québec</span>{" "}
+          <span className="ml-2">{t.currencyNote}</span>
         </div>
 
         {/* Header */}
@@ -376,9 +301,7 @@ export default function T1PricingPage() {
                   >
                     <div className="pr-4">
                       <div className="text-sm font-medium text-slate-900">{line.label}</div>
-                      {line.note && (
-                        <div className="mt-1 text-xs text-slate-500">{line.note}</div>
-                      )}
+                      {line.note && <div className="mt-1 text-xs text-slate-500">{line.note}</div>}
                     </div>
                     <div className="text-sm font-bold text-slate-900 sm:text-right">
                       {line.price}
@@ -390,36 +313,16 @@ export default function T1PricingPage() {
           ))}
         </div>
 
-        {/* Contact + Back (sans tes infos personnelles) */}
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-bold text-slate-900">{t.ctaContact}</div>
-            <div className="mt-3 space-y-2 text-sm text-slate-700">
-              <div>
-                <span className="text-slate-500">{t.phoneLabel}:</span>{" "}
-                <span className="font-semibold">{t.contact.phone}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">{t.emailLabel}:</span>{" "}
-                <span className="font-semibold">{t.contact.email}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">{t.websiteLabel}:</span>{" "}
-                <span className="font-semibold">{t.contact.website}</span>
-              </div>
-            </div>
-            <p className="mt-4 text-xs text-slate-500">{t.disclaimerBottom}</p>
-          </div>
+        {/* Bas de page (sans infos perso) */}
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
+          <p className="text-xs text-slate-500">{t.disclaimerBottom}</p>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
-            <div className="text-sm text-slate-600">{t.contact.addressLine}</div>
-            <Link
-              href={`/?lang=${lang}`}
-              className="inline-flex items-center justify-center rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
-            >
-              {t.back}
-            </Link>
-          </div>
+          <Link
+            href={`/?lang=${lang}`}
+            className="inline-flex items-center justify-center rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
+          >
+            {t.back}
+          </Link>
         </div>
       </div>
     </main>
