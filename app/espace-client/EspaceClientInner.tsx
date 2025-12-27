@@ -13,6 +13,7 @@ type Lang = (typeof LANGS)[number];
 const TXT: Record<
   Lang,
   {
+    brandSub: string;
     title: string;
     intro: string;
     email: string;
@@ -27,9 +28,11 @@ const TXT: Record<
     invalid: string;
     noAccount: string;
     createAccount: string;
+    emailPh: string;
   }
 > = {
   fr: {
+    brandSub: "Portail sécurisé",
     title: "Espace client",
     intro: "Connectez-vous à votre portail sécurisé.",
     email: "Courriel",
@@ -44,8 +47,10 @@ const TXT: Record<
     invalid: "Identifiants invalides.",
     noAccount: "Pas encore de compte ?",
     createAccount: "Créer un compte",
+    emailPh: "vous@example.com",
   },
   en: {
+    brandSub: "Secure portal",
     title: "Client Area",
     intro: "Log in to your secure portal.",
     email: "Email",
@@ -60,8 +65,10 @@ const TXT: Record<
     invalid: "Invalid credentials.",
     noAccount: "No account yet?",
     createAccount: "Create an account",
+    emailPh: "you@example.com",
   },
   es: {
+    brandSub: "Portal seguro",
     title: "Área de cliente",
     intro: "Accede a tu portal seguro.",
     email: "Correo electrónico",
@@ -76,6 +83,7 @@ const TXT: Record<
     invalid: "Credenciales inválidas.",
     noAccount: "¿Aún no tienes cuenta?",
     createAccount: "Crear una cuenta",
+    emailPh: "tu@ejemplo.com",
   },
 };
 
@@ -87,6 +95,7 @@ export default function EspaceClientInner() {
   const lang: Lang = (LANGS as readonly string[]).includes(urlLangRaw)
     ? (urlLangRaw as Lang)
     : "fr";
+
   const t = TXT[lang];
 
   const [email, setEmail] = useState("");
@@ -96,7 +105,7 @@ export default function EspaceClientInner() {
 
   const redirecting = useRef(false);
 
-  // où envoyer après connexion (tu peux changer si tu veux)
+  // où envoyer après connexion
   const next = `/dossiers/nouveau?lang=${lang}`;
 
   useEffect(() => {
@@ -164,23 +173,35 @@ export default function EspaceClientInner() {
     <main className="login-bg">
       <div className="login-card">
         <header className="login-header">
-          <Image src="/logo-cq.png" alt="ComptaNet Québec" width={42} height={42} />
+          <Image
+            src="/logo-cq.png"
+            alt="ComptaNet Québec"
+            width={42}
+            height={42}
+            priority
+          />
           <div className="login-header-text">
             <strong>ComptaNet Québec</strong>
-            <span>Portail sécurisé</span>
+            <span>{t.brandSub}</span>
           </div>
         </header>
 
         <h1 className="login-title">{t.title}</h1>
         <p className="intro">{t.intro}</p>
 
-        <button className="btn-google" onClick={google} disabled={loading} type="button">
+        <button
+          className="btn-google"
+          onClick={google}
+          disabled={loading}
+          type="button"
+        >
           <Image
             src="/google-g.png"
             alt="Google"
             width={18}
             height={18}
             className="google-icon"
+            priority
           />
           {t.google}
         </button>
@@ -196,7 +217,7 @@ export default function EspaceClientInner() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="vous@example.com"
+            placeholder={t.emailPh}
             autoComplete="email"
             required
           />
@@ -221,10 +242,15 @@ export default function EspaceClientInner() {
           {t.forgot}
         </button>
 
-        {/* ✅ IMPORTANT : chemin “pas de compte” */}
+        {/* ✅ “Pas de compte ? Créer un compte” */}
         <div className="signup-row">
           <span className="signup-text">{t.noAccount}</span>
-          <button className="btn-create" onClick={goCreateAccount} disabled={loading} type="button">
+          <button
+            className="signup-link"
+            onClick={goCreateAccount}
+            disabled={loading}
+            type="button"
+          >
             {t.createAccount}
           </button>
         </div>
