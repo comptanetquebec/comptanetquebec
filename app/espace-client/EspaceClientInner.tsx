@@ -10,32 +10,30 @@ import "./espace-client.css";
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = (typeof LANGS)[number];
 
-type Copy = {
-  title: string;
-  intro: string;
-  email: string;
-  emailPh: string;
-  password: string;
-  passwordPh: string;
-  login: string;
-  loading: string;
-  forgot: string;
-  google: string;
-  or: string;
-  resetSent: string;
-  needEmail: string;
-  invalid: string;
-  generic: string;
-};
-
-const TXT: Record<Lang, Copy> = {
+const TXT: Record<
+  Lang,
+  {
+    title: string;
+    intro: string;
+    email: string;
+    password: string;
+    login: string;
+    loading: string;
+    forgot: string;
+    google: string;
+    or: string;
+    resetSent: string;
+    needEmail: string;
+    invalid: string;
+    noAccount: string;
+    createAccount: string;
+  }
+> = {
   fr: {
     title: "Espace client",
     intro: "Connectez-vous à votre portail sécurisé.",
     email: "Courriel",
-    emailPh: "vous@example.com",
     password: "Mot de passe",
-    passwordPh: "••••••••",
     login: "Se connecter",
     loading: "Connexion…",
     forgot: "Mot de passe oublié ?",
@@ -44,15 +42,14 @@ const TXT: Record<Lang, Copy> = {
     resetSent: "Un courriel de réinitialisation a été envoyé.",
     needEmail: "Veuillez entrer votre courriel.",
     invalid: "Identifiants invalides.",
-    generic: "Une erreur est survenue. Réessayez.",
+    noAccount: "Pas encore de compte ?",
+    createAccount: "Créer un compte",
   },
   en: {
     title: "Client Area",
     intro: "Log in to your secure portal.",
     email: "Email",
-    emailPh: "you@example.com",
     password: "Password",
-    passwordPh: "••••••••",
     login: "Log in",
     loading: "Logging in…",
     forgot: "Forgot password?",
@@ -61,15 +58,14 @@ const TXT: Record<Lang, Copy> = {
     resetSent: "A reset email has been sent.",
     needEmail: "Please enter your email.",
     invalid: "Invalid credentials.",
-    generic: "Something went wrong. Please try again.",
+    noAccount: "No account yet?",
+    createAccount: "Create an account",
   },
   es: {
     title: "Área de cliente",
     intro: "Accede a tu portal seguro.",
     email: "Correo electrónico",
-    emailPh: "tu@ejemplo.com",
     password: "Contraseña",
-    passwordPh: "••••••••",
     login: "Iniciar sesión",
     loading: "Conectando…",
     forgot: "¿Olvidaste tu contraseña?",
@@ -78,32 +74,19 @@ const TXT: Record<Lang, Copy> = {
     resetSent: "Correo de restablecimiento enviado.",
     needEmail: "Introduce tu correo.",
     invalid: "Credenciales inválidas.",
-    generic: "Ocurrió un error. Inténtalo de nuevo.",
+    noAccount: "¿Aún no tienes cuenta?",
+    createAccount: "Crear una cuenta",
   },
 };
 
-function sanitizeLang(v: string | null): Lang {
-  const x = (v || "").toLowerCase();
-  return (LANGS as readonly string[]).includes(x) ? (x as Lang) : "fr";
-}
-
-function withLang(path: string, lang: Lang) {
-  return path.includes("?") ? `${path}&lang=${lang}` : `${path}?lang=${lang}`;
-}
-
-function mapAuthError(message: string, t: Copy) {
-  const m = (message || "").toLowerCase();
-  if (m.includes("invalid login credentials")) return t.invalid;
-  if (m.includes("invalid_credentials")) return t.invalid;
-  return t.generic;
-}
-
-export default function EspaceClient() {
+export default function EspaceClientInner() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // ✅ Lang doit suivre la langue de la page (query ?lang=)
-  const lang = sanitizeLang(params.get("lang"));
+  const urlLangRaw = (params.get("lang") || "fr").toLowerCase();
+  const lang: Lang = (LANGS as readonly string[]).includes(urlLangRaw)
+    ? (urlLangRaw as Lang)
+    : "fr";
   const t = TXT[lang];
 
   const [email, setEmail] = useState("");
@@ -113,35 +96,17 @@ export default function EspaceClient() {
 
   const redirecting = useRef(false);
 
-  // ✅ Si déjà connecté → redirige vers le portail
-  useEffect(() => {
-    let mounted = true;
+  // où envoyer après connexion (tu peux changer si tu veux)
+  const next = `/dossiers/nouveau?lang=${lang}`;
 
+  useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!mounted) return;
       if (data.user && !redirecting.current) {
         redirecting.current = true;
-        router.replace(withLang("/dossiers/nouveau", lang));
+        router.replace(next);
       }
     });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const isLogged = !!session?.user;
-      if (isLogged && !redirecting.current) {
-        redirecting.current = true;
-        router.replace(withLang("/dossiers/nouveau", lang));
-      }
-    });
-
-    return () => {
-      mounted = false;
-      try {
-        sub?.subscription?.unsubscribe?.();
-      } catch {
-        /* ignore */
-      }
-    };
-  }, [router, lang]);
+  }, [router, next]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -154,7 +119,7 @@ export default function EspaceClient() {
     });
 
     setLoading(false);
-    if (error) setMsg(mapAuthError(error.message, t));
+    if (error) setMsg(t.invalid);
   }
 
   async function google() {
@@ -169,7 +134,7 @@ export default function EspaceClient() {
     });
 
     setLoading(false);
-    if (error) setMsg(mapAuthError(error.message, t));
+    if (error) setMsg(error.message);
   }
 
   async function forgot() {
@@ -187,21 +152,19 @@ export default function EspaceClient() {
     });
     setLoading(false);
 
-    if (error) setMsg(mapAuthError(error.message, t));
+    if (error) setMsg(error.message);
     else setMsg(t.resetSent);
+  }
+
+  function goCreateAccount() {
+    router.push(`/compte?lang=${lang}`);
   }
 
   return (
     <main className="login-bg">
       <div className="login-card">
         <header className="login-header">
-          <Image
-            src="/logo-cq.png"
-            alt="ComptaNet Québec"
-            width={44}
-            height={44}
-            priority
-          />
+          <Image src="/logo-cq.png" alt="ComptaNet Québec" width={42} height={42} />
           <div className="login-header-text">
             <strong>ComptaNet Québec</strong>
             <span>Portail sécurisé</span>
@@ -211,21 +174,15 @@ export default function EspaceClient() {
         <h1 className="login-title">{t.title}</h1>
         <p className="intro">{t.intro}</p>
 
-        {/* ✅ Bouton Google avec G officiel */}
-        <button
-          className="btn-google"
-          onClick={google}
-          type="button"
-          disabled={loading}
-        >
-          <img
+        <button className="btn-google" onClick={google} disabled={loading} type="button">
+          <Image
             src="/google-g.png"
             alt="Google"
-            className="google-icon"
             width={18}
             height={18}
+            className="google-icon"
           />
-          <span>{t.google}</span>
+          {t.google}
         </button>
 
         <div className="divider">
@@ -238,8 +195,8 @@ export default function EspaceClient() {
             className="input"
             type="email"
             value={email}
-            placeholder={t.emailPh}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="vous@example.com"
             autoComplete="email"
             required
           />
@@ -249,8 +206,8 @@ export default function EspaceClient() {
             className="input"
             type="password"
             value={password}
-            placeholder={t.passwordPh}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
             autoComplete="current-password"
             required
           />
@@ -260,9 +217,17 @@ export default function EspaceClient() {
           </button>
         </form>
 
-        <button className="link" onClick={forgot} type="button" disabled={loading}>
+        <button className="link" onClick={forgot} disabled={loading} type="button">
           {t.forgot}
         </button>
+
+        {/* ✅ IMPORTANT : chemin “pas de compte” */}
+        <div className="signup-row">
+          <span className="signup-text">{t.noAccount}</span>
+          <button className="btn-create" onClick={goCreateAccount} disabled={loading} type="button">
+            {t.createAccount}
+          </button>
+        </div>
 
         {msg && <div className="message">{msg}</div>}
       </div>
