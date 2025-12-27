@@ -28,8 +28,6 @@ type Copy = {
   disclaimerBottom: string;
   back: string;
   currencyNote: string;
-  ctaEstimate: string;
-  estimateHint: string;
   sections: Section[];
 };
 
@@ -43,8 +41,6 @@ const COPY: Record<Lang, Copy> = {
       "Prix avant taxes. Les dossiers comportant des particularités peuvent nécessiter une évaluation.",
     back: "Retour à l’accueil",
     currencyNote: "Tous les montants sont en CAD.",
-    ctaEstimate: "Estimer mon dossier",
-    estimateHint: "Quelques questions rapides dans votre espace client (≈ 30 secondes).",
     sections: [
       {
         title: "Forfait de base",
@@ -88,8 +84,6 @@ const COPY: Record<Lang, Copy> = {
       "Prices before taxes. Files with specific circumstances may require an assessment.",
     back: "Back to Home",
     currencyNote: "All amounts are in CAD.",
-    ctaEstimate: "Estimate my file",
-    estimateHint: "A few quick questions in your client portal (≈ 30 seconds).",
     sections: [
       {
         title: "Base package",
@@ -129,12 +123,9 @@ const COPY: Record<Lang, Copy> = {
     subtitle:
       "Precios antes de impuestos. El precio final se confirma tras una revisión breve del expediente.",
     disclaimerTop: "Los precios pueden variar según su situación.",
-    disclaimerBottom:
-      "Precios antes de impuestos. Algunos casos pueden requerir evaluación.",
+    disclaimerBottom: "Precios antes de impuestos. Algunos casos pueden requerir evaluación.",
     back: "Volver al inicio",
     currencyNote: "Todos los montos están en CAD.",
-    ctaEstimate: "Estimar mi caso",
-    estimateHint: "Algunas preguntas rápidas en su área de cliente (≈ 30 segundos).",
     sections: [
       {
         title: "Paquete base",
@@ -178,6 +169,7 @@ export default function T2PricingPage() {
   const lang = useMemo(() => getLang(new URLSearchParams(sp.toString())), [sp]);
   const t = COPY[lang];
 
+  // ✅ Corrige l’URL si lang invalide
   useEffect(() => {
     const raw = (sp.get("lang") || "fr").toLowerCase();
     const normalized = getLang(new URLSearchParams(sp.toString()));
@@ -186,8 +178,6 @@ export default function T2PricingPage() {
       router.replace(`${pathname}?${nextQuery}`);
     }
   }, [pathname, router, sp]);
-
-  const estimateHref = `/espace-client/devis-t2?lang=${lang}`;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -200,23 +190,9 @@ export default function T2PricingPage() {
 
         {/* Header */}
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{t.pageTitle}</h1>
-              <p className="mt-2 text-sm text-slate-600">{t.subtitle}</p>
-              <p className="mt-3 text-xs text-slate-500">{t.disclaimerTop}</p>
-            </div>
-
-            <div>
-              <Link
-                href={estimateHref}
-                className="inline-flex rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
-              >
-                {t.ctaEstimate}
-              </Link>
-              <div className="mt-2 text-xs text-slate-500">{t.estimateHint}</div>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900">{t.pageTitle}</h1>
+          <p className="mt-2 text-sm text-slate-600">{t.subtitle}</p>
+          <p className="mt-3 text-xs text-slate-500">{t.disclaimerTop}</p>
         </div>
 
         {/* Sections */}
@@ -227,19 +203,27 @@ export default function T2PricingPage() {
               className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
             >
               <h2 className="text-lg font-bold text-slate-900">{sec.title}</h2>
+
               <div className="mt-4 divide-y divide-slate-100">
                 {sec.lines.map((line, idx) => (
                   <div
-                    key={idx}
-                    className="flex flex-col sm:flex-row sm:justify-between py-3"
+                    key={`${sec.title}-${idx}`}
+                    className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between"
                   >
-                    <div>
+                    <div className="pr-4">
                       <div className="text-sm font-medium text-slate-900">{line.label}</div>
                       {line.note && (
                         <div className="mt-1 text-xs text-slate-500">{line.note}</div>
                       )}
                     </div>
-                    <div className="text-sm font-bold text-slate-900">{line.price}</div>
+
+                    {line.price ? (
+                      <div className="text-sm font-bold text-slate-900 sm:text-right">
+                        {line.price}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-400 sm:text-right">—</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -248,11 +232,12 @@ export default function T2PricingPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex justify-between">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
           <p className="text-xs text-slate-500">{t.disclaimerBottom}</p>
+
           <Link
             href={`/?lang=${lang}`}
-            className="rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white"
+            className="rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
           >
             {t.back}
           </Link>
