@@ -1,19 +1,27 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
   try {
-    // On effectue une toute petite requête vers Supabase
-    const { error } = await supabase.from("users").select("id").limit(1);
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // 🔴 REQUÊTE RÉELLE (c’est ça qui empêche la pause)
+    const { error } = await supabase
+      .from("clients")
+      .select("id")
+      .limit(1);
 
     if (error) {
-      console.error("Erreur Supabase Keep-Alive:", error.message);
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      console.error("Supabase keep-alive error:", error.message);
+      return NextResponse.json({ ok: false }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, message: "Ping Supabase réussi ✅" });
-  } catch (err: any) {
-    console.error("Erreur Keep-Alive:", err.message);
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (e) {
+    console.error("Keep-alive crash:", e);
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
