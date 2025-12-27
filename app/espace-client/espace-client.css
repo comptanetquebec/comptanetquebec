@@ -1,3 +1,5 @@
+/* espace-client.css */
+
 .login-bg {
   min-height: 100vh;
   background: #f1f5f9;
@@ -13,87 +15,207 @@
   background: #ffffff;
   border-radius: 18px;
   padding: 28px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
 }
 
+/* ===== Header ===== */
 .login-header {
   display: flex;
   gap: 12px;
   align-items: center;
 }
 
-.login-header span {
+.login-header-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.login-header-text strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.login-header-text span {
   font-size: 12px;
   color: #64748b;
 }
 
-h1 {
-  margin-top: 20px;
+/* ===== Titres / texte ===== */
+.login-title {
+  margin-top: 18px;
   font-size: 22px;
+  color: #0f172a;
 }
 
 .intro {
   font-size: 14px;
   color: #475569;
-  margin-bottom: 20px;
+  margin: 10px 0 18px;
 }
 
-label {
+/* ===== Form ===== */
+.login-form {
+  margin-top: 6px;
+}
+
+.label {
   font-size: 13px;
   margin-top: 12px;
   display: block;
+  color: #0f172a;
+  font-weight: 600;
 }
 
-input {
+.input {
   width: 100%;
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #cbd5e1;
-  margin-top: 4px;
+  margin-top: 6px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.input:focus {
+  border-color: #004aad; /* ✅ couleur ComptaNet */
+  box-shadow: 0 0 0 4px rgba(0, 74, 173, 0.12);
+}
+
+/* ===== Boutons ===== */
 .btn-primary {
   margin-top: 18px;
   width: 100%;
   padding: 14px;
   border-radius: 14px;
-  background: #0f172a;
+  background: #004aad; /* ✅ couleur ComptaNet */
   color: white;
-  font-weight: 600;
+  font-weight: 700;
   border: none;
   cursor: pointer;
+  transition: transform 0.06s ease, filter 0.15s ease, opacity 0.15s ease;
 }
 
-.btn-outline {
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Google button (avec icône G) ===== */
+.btn-google {
   width: 100%;
   padding: 14px;
   border-radius: 14px;
   background: white;
   border: 1px solid #cbd5e1;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.06s ease, background 0.15s ease, opacity 0.15s ease;
 }
 
+.btn-google:hover {
+  background: #f8fafc;
+}
+
+.btn-google:active {
+  transform: translateY(1px);
+}
+
+.btn-google:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  display: block;
+}
+
+/* ===== Divider "ou" ===== */
 .divider {
+  position: relative;
   text-align: center;
   margin: 18px 0;
   font-size: 12px;
   color: #64748b;
 }
 
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.divider span {
+  background: #ffffff;
+  padding: 0 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Link ===== */
 .link {
   margin-top: 12px;
   background: none;
   border: none;
-  color: #0f172a;
-  font-weight: 600;
+  color: #004aad; /* ✅ couleur ComptaNet */
+  font-weight: 700;
   cursor: pointer;
+  padding: 0;
 }
 
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Message ===== */
 .message {
   margin-top: 14px;
   padding: 12px;
   background: #e5f3ff;
   border-radius: 10px;
   font-size: 13px;
+  color: #0f172a;
+  border: 1px solid rgba(0, 74, 173, 0.18);
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 420px) {
+  .login-card {
+    padding: 22px;
+    border-radius: 16px;
+  }
+
+  .login-title {
+    font-size: 20px;
+  }
 }
