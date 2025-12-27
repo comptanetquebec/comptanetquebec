@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -30,13 +30,19 @@ type Copy = {
   websiteLabel: string;
   currencyNote: string;
   sections: Section[];
+  contact: {
+    phone: string;
+    email: string;
+    website: string;
+    addressLine: string;
+  };
 };
 
 const LANGS: Lang[] = ["fr", "en", "es"];
 
-function getLang(params: URLSearchParams): Lang {
-  const raw = (params.get("lang") || "fr").toLowerCase();
-  return (LANGS as readonly string[]).includes(raw) ? (raw as Lang) : "fr";
+function safeLang(raw: string | null): Lang {
+  const v = (raw || "fr").toLowerCase();
+  return (LANGS as readonly string[]).includes(v as Lang) ? (v as Lang) : "fr";
 }
 
 function setLangQuery(params: URLSearchParams, lang: Lang) {
@@ -52,7 +58,8 @@ const COPY: Record<Lang, Copy> = {
     subtitle:
       "Prix avant taxes. Les prix finaux peuvent varier selon votre dossier et les documents fournis.",
     disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
-    disclaimerBottom: "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
+    disclaimerBottom:
+      "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
     langLabel: "Langue",
     back: "Retour à l’accueil",
     ctaContact: "Nous contacter",
@@ -60,6 +67,12 @@ const COPY: Record<Lang, Copy> = {
     emailLabel: "Courriel",
     websiteLabel: "Site web",
     currencyNote: "Tous les montants sont en CAD.",
+    contact: {
+      phone: "(xxx) xxx-xxxx",
+      email: "info@votresite.com",
+      website: "votresite.com",
+      addressLine: "Votre adresse (ville, province)",
+    },
     sections: [
       {
         title: "Déclarations de base",
@@ -96,14 +109,12 @@ const COPY: Record<Lang, Copy> = {
           { label: "T5008 — État des opérations sur titres (prix par formulaire)", price: "20 $" },
           { label: "Conversion USD → CAD (prix par formulaire)", price: "30 $" },
           {
-            label: "Dépenses d’emploi (salarié : camionneur, télétravail salarié, représentant, etc.)",
+            label:
+              "Dépenses d’emploi (salarié : camionneur, télétravail salarié, représentant, etc.)",
             price: "70 $",
             note: "Ne pas confondre avec un travailleur autonome.",
           },
-          {
-            label: "Frais de déménagement (formulaire rempli ou chiffres cumulés)",
-            price: "90 $",
-          },
+          { label: "Frais de déménagement (formulaire rempli ou chiffres cumulés)", price: "90 $" },
           { label: "Déclaration de cryptomonnaie", price: "70 $" },
           {
             label: "Division des frais médicaux",
@@ -141,6 +152,12 @@ const COPY: Record<Lang, Copy> = {
     emailLabel: "Email",
     websiteLabel: "Website",
     currencyNote: "All amounts are in CAD.",
+    contact: {
+      phone: "(xxx) xxx-xxxx",
+      email: "info@yoursite.com",
+      website: "yoursite.com",
+      addressLine: "Your address (city, province)",
+    },
     sections: [
       {
         title: "Basic returns",
@@ -173,7 +190,8 @@ const COPY: Record<Lang, Copy> = {
           { label: "T5008 — Securities transactions (per form)", price: "$20" },
           { label: "USD → CAD conversion (per form)", price: "$30" },
           {
-            label: "Employment expenses (employee: driver, salaried home office, sales rep, etc.)",
+            label:
+              "Employment expenses (employee: driver, salaried home office, sales rep, etc.)",
             price: "$70",
             note: "Not the same as self-employed.",
           },
@@ -211,6 +229,12 @@ const COPY: Record<Lang, Copy> = {
     emailLabel: "Correo",
     websiteLabel: "Sitio web",
     currencyNote: "Todos los montos están en CAD.",
+    contact: {
+      phone: "(xxx) xxx-xxxx",
+      email: "info@tusitio.com",
+      website: "tusitio.com",
+      addressLine: "Tu dirección (ciudad, provincia)",
+    },
     sections: [
       {
         title: "Declaraciones básicas",
@@ -243,7 +267,8 @@ const COPY: Record<Lang, Copy> = {
           { label: "T5008 — Operaciones en valores (por formulario)", price: "$20" },
           { label: "Conversión USD → CAD (por formulario)", price: "$30" },
           {
-            label: "Gastos de empleo (asalariado: conductor, oficina en casa, representante, etc.)",
+            label:
+              "Gastos de empleo (asalariado: conductor, oficina en casa, representante, etc.)",
             price: "$70",
             note: "No confundir con autónomo.",
           },
@@ -274,8 +299,19 @@ export default function T1PricingPage() {
   const pathname = usePathname();
   const sp = useSearchParams();
 
-  const lang = useMemo(() => getLang(new URLSearchParams(sp.toString())), [sp]);
+  const lang = useMemo(() => safeLang(sp.get("lang")), [sp]);
   const t = COPY[lang];
+
+  // ✅ Si quelqu’un arrive avec un lang invalide, on corrige l’URL vers fr
+  useEffect(() => {
+    const raw = (sp.get("lang") || "fr").toLowerCase();
+    const normalized = safeLang(raw);
+    if (raw !== normalized) {
+      const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), normalized);
+      router.replace(`${pathname}?${nextQuery}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, router]);
 
   const switchLang = (l: Lang) => {
     const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), l);
@@ -339,13 +375,9 @@ export default function T1PricingPage() {
                     className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between"
                   >
                     <div className="pr-4">
-                      <div className="text-sm font-medium text-slate-900">
-                        {line.label}
-                      </div>
+                      <div className="text-sm font-medium text-slate-900">{line.label}</div>
                       {line.note && (
-                        <div className="mt-1 text-xs text-slate-500">
-                          {line.note}
-                        </div>
+                        <div className="mt-1 text-xs text-slate-500">{line.note}</div>
                       )}
                     </div>
                     <div className="text-sm font-bold text-slate-900 sm:text-right">
@@ -358,35 +390,29 @@ export default function T1PricingPage() {
           ))}
         </div>
 
-        {/* Contact + Back */}
+        {/* Contact + Back (sans tes infos personnelles) */}
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="text-sm font-bold text-slate-900">{t.ctaContact}</div>
             <div className="mt-3 space-y-2 text-sm text-slate-700">
               <div>
                 <span className="text-slate-500">{t.phoneLabel}:</span>{" "}
-                <a className="font-semibold text-[#004aad] hover:underline" href="tel:5819852599">
-                  581-985-2599
-                </a>
+                <span className="font-semibold">{t.contact.phone}</span>
               </div>
               <div>
                 <span className="text-slate-500">{t.emailLabel}:</span>{" "}
-                <a className="font-semibold text-[#004aad] hover:underline" href="mailto:comptanetquebec@gmail.com">
-                  comptanetquebec@gmail.com
-                </a>
+                <span className="font-semibold">{t.contact.email}</span>
               </div>
               <div>
                 <span className="text-slate-500">{t.websiteLabel}:</span>{" "}
-                <span className="font-semibold">comptanetquebec.ca</span>
+                <span className="font-semibold">{t.contact.website}</span>
               </div>
             </div>
             <p className="mt-4 text-xs text-slate-500">{t.disclaimerBottom}</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
-            <div className="text-sm text-slate-600">
-              849, boulevard Pie XII, Québec (QC) G1X 3T2
-            </div>
+            <div className="text-sm text-slate-600">{t.contact.addressLine}</div>
             <Link
               href={`/?lang=${lang}`}
               className="inline-flex items-center justify-center rounded-lg bg-[#004aad] px-4 py-2 text-sm font-bold text-white hover:opacity-95"
