@@ -46,6 +46,17 @@ function normalizeLang(v: string) {
   return x === "fr" || x === "en" || x === "es" ? x : "fr";
 }
 
+// petites normalisations “qualité”
+function normalizeNAS(v: string) {
+  return (v || "").replace(/\D+/g, "").slice(0, 9);
+}
+function normalizePostal(v: string) {
+  return (v || "").trim().toUpperCase();
+}
+function normalizePhone(v: string) {
+  return (v || "").trim();
+}
+
 export default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -105,18 +116,15 @@ export default function FormulaireFiscalPage() {
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // --- Assurance médicaments (Québec uniquement) ---
-  const [assuranceMedsClient, setAssuranceMedsClient] = useState<
-    "ramq" | "prive" | "conjoint" | ""
-  >("");
-  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState([
-    { debut: "", fin: "" },
-  ]);
+  const [assuranceMedsClient, setAssuranceMedsClient] = useState<"ramq" | "prive" | "conjoint" | "">(
+    ""
+  );
+  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState([{ debut: "", fin: "" }]);
 
-  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<
-    "ramq" | "prive" | "conjoint" | ""
-  >("");
-  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] =
-    useState([{ debut: "", fin: "" }]);
+  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<"ramq" | "prive" | "conjoint" | "">(
+    ""
+  );
+  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState([{ debut: "", fin: "" }]);
 
   // --- Enfants / personnes à charge ---
   const [enfants, setEnfants] = useState<Child[]>([]);
@@ -124,7 +132,6 @@ export default function FormulaireFiscalPage() {
   function ajouterEnfant() {
     setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
   }
-
   function updateEnfant(i: number, field: keyof Child, value: string) {
     setEnfants((prev) => {
       const copy = [...prev];
@@ -132,7 +139,6 @@ export default function FormulaireFiscalPage() {
       return copy;
     });
   }
-
   function removeEnfant(i: number) {
     setEnfants((prev) => prev.filter((_, idx) => idx !== i));
   }
@@ -159,13 +165,14 @@ export default function FormulaireFiscalPage() {
       if (!alive) return;
 
       if (error || !data.user) {
-        // pas connecté -> retour login
         if (!redirected.current) {
           redirected.current = true;
-          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(
-            lang
-          )}`;
-          router.replace(`/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`);
+
+          // IMPORTANT: stop booting avant de naviguer
+          setBooting(false);
+
+          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
+          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
         }
         return;
       }
@@ -181,7 +188,7 @@ export default function FormulaireFiscalPage() {
 
   const logout = async () => {
     await supabase.auth.signOut();
-    router.replace(`/espace-client?lang=${lang}`);
+    router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   };
 
   // --- Soumission ---
@@ -191,47 +198,47 @@ export default function FormulaireFiscalPage() {
 
     if (!userId) {
       setMsg("Veuillez vous reconnecter.");
-      router.replace(`/espace-client?lang=${lang}`);
+      router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
       return;
     }
 
     const payload = {
       dossierType: type,
       client: {
-        prenom,
-        nom,
-        nas,
-        dob,
+        prenom: prenom.trim(),
+        nom: nom.trim(),
+        nas: normalizeNAS(nas),
+        dob: dob.trim(),
         etatCivil,
         etatCivilChange,
-        ancienEtatCivil,
-        dateChangementEtatCivil,
-        tel,
-        telCell,
-        adresse,
-        app,
-        ville,
+        ancienEtatCivil: ancienEtatCivil.trim(),
+        dateChangementEtatCivil: dateChangementEtatCivil.trim(),
+        tel: normalizePhone(tel),
+        telCell: normalizePhone(telCell),
+        adresse: adresse.trim(),
+        app: app.trim(),
+        ville: ville.trim(),
         province,
-        codePostal,
-        courriel,
+        codePostal: normalizePostal(codePostal),
+        courriel: courriel.trim().toLowerCase(),
       },
       conjoint: aUnConjoint
         ? {
             traiterConjoint,
-            prenomConjoint,
-            nomConjoint,
-            nasConjoint,
-            dobConjoint,
-            telConjoint,
-            telCellConjoint,
-            courrielConjoint,
+            prenomConjoint: prenomConjoint.trim(),
+            nomConjoint: nomConjoint.trim(),
+            nasConjoint: normalizeNAS(nasConjoint),
+            dobConjoint: dobConjoint.trim(),
+            telConjoint: normalizePhone(telConjoint),
+            telCellConjoint: normalizePhone(telCellConjoint),
+            courrielConjoint: courrielConjoint.trim().toLowerCase(),
             adresseConjointeIdentique,
-            adresseConjoint: adresseConjointeIdentique ? adresse : adresseConjoint,
-            appConjoint: adresseConjointeIdentique ? app : appConjoint,
-            villeConjoint: adresseConjointeIdentique ? ville : villeConjoint,
+            adresseConjoint: (adresseConjointeIdentique ? adresse : adresseConjoint).trim(),
+            appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
+            villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
             provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
-            codePostalConjoint: adresseConjointeIdentique ? codePostal : codePostalConjoint,
-            revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint,
+            codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
+            revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
           }
         : null,
       assuranceMedicamenteuse:
@@ -243,10 +250,16 @@ export default function FormulaireFiscalPage() {
                 : null,
             }
           : null,
-      personnesACharge: enfants,
+      personnesACharge: enfants.map((e) => ({
+        prenom: e.prenom.trim(),
+        nom: e.nom.trim(),
+        dob: e.dob.trim(),
+        nas: normalizeNAS(e.nas),
+        sexe: e.sexe,
+      })),
       questionsGenerales: {
         habiteSeulTouteAnnee,
-        nbPersonnesMaison3112,
+        nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
         biensEtranger100k,
         citoyenCanadien,
         nonResident,
@@ -273,7 +286,7 @@ export default function FormulaireFiscalPage() {
       return;
     }
 
-    router.push(`/dossiers/nouveau?lang=${lang}`);
+    router.push(`/merci?lang=${encodeURIComponent(lang)}`);
   }
 
   if (booting) {
@@ -315,8 +328,8 @@ export default function FormulaireFiscalPage() {
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
-            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour
-            préparer vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
+            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour préparer
+            vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
           </p>
         </div>
 
@@ -344,13 +357,7 @@ export default function FormulaireFiscalPage() {
                 placeholder="___-___-___"
                 required
               />
-              <Field
-                label="Date de naissance (JJ/MM/AAAA)"
-                value={dob}
-                onChange={setDob}
-                placeholder="01/01/1990"
-                required
-              />
+              <Field label="Date de naissance (JJ/MM/AAAA)" value={dob} onChange={setDob} placeholder="01/01/1990" required />
             </div>
 
             <div className="ff-grid2 ff-mt">
@@ -379,18 +386,8 @@ export default function FormulaireFiscalPage() {
 
             {etatCivilChange && (
               <div className="ff-grid2 ff-mt">
-                <Field
-                  label="Ancien état civil"
-                  value={ancienEtatCivil}
-                  onChange={setAncienEtatCivil}
-                  placeholder="ex.: Célibataire"
-                />
-                <Field
-                  label="Date du changement (JJ/MM/AAAA)"
-                  value={dateChangementEtatCivil}
-                  onChange={setDateChangementEtatCivil}
-                  placeholder="15/07/2024"
-                />
+                <Field label="Ancien état civil" value={ancienEtatCivil} onChange={setAncienEtatCivil} placeholder="ex.: Célibataire" />
+                <Field label="Date du changement (JJ/MM/AAAA)" value={dateChangementEtatCivil} onChange={setDateChangementEtatCivil} placeholder="15/07/2024" />
               </div>
             )}
 
@@ -410,16 +407,10 @@ export default function FormulaireFiscalPage() {
                   label="Province"
                   value={province}
                   onChange={(v) => setProvince(v as ProvinceCode)}
-                  options={PROVINCES}
+                  options={PROVINCES as any}
                   required
                 />
-                <Field
-                  label="Code postal"
-                  value={codePostal}
-                  onChange={setCodePostal}
-                  placeholder="A1A 1A1"
-                  required
-                />
+                <Field label="Code postal" value={codePostal} onChange={setCodePostal} placeholder="A1A 1A1" required />
               </div>
             </div>
           </section>
@@ -458,12 +449,7 @@ export default function FormulaireFiscalPage() {
                   <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required />
                   <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required />
                   <Field label="NAS (conjoint)" value={nasConjoint} onChange={setNasConjoint} placeholder="___-___-___" />
-                  <Field
-                    label="Date de naissance (JJ/MM/AAAA)"
-                    value={dobConjoint}
-                    onChange={setDobConjoint}
-                    placeholder="01/01/1990"
-                  />
+                  <Field label="Date de naissance (JJ/MM/AAAA)" value={dobConjoint} onChange={setDobConjoint} placeholder="01/01/1990" />
                 </div>
 
                 <div className="ff-grid2 ff-mt">
@@ -491,7 +477,7 @@ export default function FormulaireFiscalPage() {
                         label="Province"
                         value={provinceConjoint}
                         onChange={(v) => setProvinceConjoint(v as ProvinceCode)}
-                        options={PROVINCES}
+                        options={PROVINCES as any}
                       />
                       <Field label="Code postal" value={codePostalConjoint} onChange={setCodePostalConjoint} placeholder="A1A 1A1" />
                     </div>
@@ -634,18 +620,8 @@ export default function FormulaireFiscalPage() {
                     <div className="ff-grid2">
                       <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
                       <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
-                      <Field
-                        label="Date de naissance (JJ/MM/AAAA)"
-                        value={enf.dob}
-                        onChange={(v) => updateEnfant(i, "dob", v)}
-                        placeholder="01/01/2020"
-                      />
-                      <Field
-                        label="NAS (si attribué)"
-                        value={enf.nas}
-                        onChange={(v) => updateEnfant(i, "nas", v)}
-                        placeholder="___-___-___"
-                      />
+                      <Field label="Date de naissance (JJ/MM/AAAA)" value={enf.dob} onChange={(v) => updateEnfant(i, "dob", v)} placeholder="01/01/2020" />
+                      <Field label="NAS (si attribué)" value={enf.nas} onChange={(v) => updateEnfant(i, "nas", v)} placeholder="___-___-___" />
                     </div>
 
                     <div className="ff-mt-sm">
@@ -700,11 +676,7 @@ export default function FormulaireFiscalPage() {
                 onChange={setBiensEtranger100k}
               />
 
-              <YesNoField
-                label="Êtes-vous citoyen(ne) canadien(ne) ?"
-                value={citoyenCanadien}
-                onChange={setCitoyenCanadien}
-              />
+              <YesNoField label="Êtes-vous citoyen(ne) canadien(ne) ?" value={citoyenCanadien} onChange={setCitoyenCanadien} />
 
               <YesNoField
                 label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
@@ -718,11 +690,7 @@ export default function FormulaireFiscalPage() {
                 onChange={setMaisonAcheteeOuVendue}
               />
 
-              <YesNoField
-                label="Souhaitez-vous qu'un technicien vous appelle ?"
-                value={appelerTechnicien}
-                onChange={setAppelerTechnicien}
-              />
+              <YesNoField label="Souhaitez-vous qu'un technicien vous appelle ?" value={appelerTechnicien} onChange={setAppelerTechnicien} />
 
               <SelectField
                 label="Comment voulez-vous recevoir votre copie d'impôt ?"
@@ -750,11 +718,7 @@ export default function FormulaireFiscalPage() {
 
           {/* SUBMIT */}
           <div className="ff-submit">
-            <button
-              type="submit"
-              className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={submitting}
-            >
+            <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting}>
               {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
             </button>
 
@@ -859,23 +823,11 @@ function YesNoField({
       <div className="ff-label">{label}</div>
       <div className="ff-yn-row">
         <label className="ff-radio">
-          <input
-            type="radio"
-            name={name}
-            value="oui"
-            checked={value === "oui"}
-            onChange={(e) => onChange(e.target.value)}
-          />
+          <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={(e) => onChange(e.target.value)} />
           <span>Oui</span>
         </label>
         <label className="ff-radio">
-          <input
-            type="radio"
-            name={name}
-            value="non"
-            checked={value === "non"}
-            onChange={(e) => onChange(e.target.value)}
-          />
+          <input type="radio" name={name} value="non" checked={value === "non"} onChange={(e) => onChange(e.target.value)} />
           <span>Non</span>
         </label>
       </div>
@@ -902,12 +854,7 @@ function SelectField({
         {label}
         {required ? " *" : ""}
       </span>
-      <select
-        className="ff-select"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-      >
+      <select className="ff-select" value={value} onChange={(e) => onChange(e.target.value)} required={required}>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
