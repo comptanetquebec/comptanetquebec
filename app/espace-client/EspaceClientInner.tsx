@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -87,16 +87,44 @@ const TXT: Record<
   },
 };
 
+function normalizeLang(v?: string | null): Lang {
+  const x = (v || "fr").toLowerCase();
+  return (LANGS as readonly string[]).includes(x) ? (x as Lang) : "fr";
+}
+
+function safeNext(v?: string | null): string {
+  // sécurité: on accepte seulement un chemin interne
+  const raw = (v || "").trim();
+  if (!raw) return "/dossiers/nouveau";
+  if (!raw.startsWith("/")) return "/dossiers/nouveau";
+  if (raw.startsWith("//")) return "/dossiers/nouveau";
+  return raw;
+}
+
+function withLang(href: string, lang: Lang): string {
+  try {
+    const u = new URL(href, "http://dummy.local");
+    u.searchParams.set("lang", lang);
+    return u.pathname + u.search;
+  } catch {
+    const sep = href.includes("?") ? "&" : "?";
+    return `${href}${sep}lang=${lang}`;
+  }
+}
+
 export default function EspaceClientInner() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const urlLangRaw = (params.get("lang") || "fr").toLowerCase();
-  const lang: Lang = (LANGS as readonly string[]).includes(urlLangRaw)
-    ? (urlLangRaw as Lang)
-    : "fr";
-
+  const lang = useMemo(() => normalizeLang(params.get("lang")), [params]);
   const t = TXT[lang];
+
+  // ✅ next dynamique: /espace-client?lang=fr&next=/formulaire-fiscal
+  const nextRaw = useMemo(() => params.get("next"), [params]);
+  const next = useMemo(() => safeNext(nextRaw), [nextRaw]);
+
+  // ✅ on force toujours le lang sur la destination finale
+  const nextWithLang = useMemo(() => withLang(next, lang), [next, lang]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -105,17 +133,23 @@ export default function EspaceClientInner() {
 
   const redirecting = useRef(false);
 
-  // où envoyer après connexion
-  const next = `/dossiers/nouveau?lang=${lang}`;
-
+  // ✅ si déjà connecté -> redirige immédiatement vers next
   useEffect(() => {
+    let alive = true;
+
     supabase.auth.getUser().then(({ data }) => {
+      if (!alive) return;
+
       if (data.user && !redirecting.current) {
         redirecting.current = true;
-        router.replace(next);
+        router.replace(nextWithLang);
       }
     });
-  }, [router, next]);
+
+    return () => {
+      alive = false;
+    };
+  }, [router, nextWithLang]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -128,7 +162,13 @@ export default function EspaceClientInner() {
     });
 
     setLoading(false);
-    if (error) setMsg(t.invalid);
+
+    if (error) {
+      setMsg(t.invalid);
+      return;
+    }
+
+    router.replace(nextWithLang);
   }
 
   async function google() {
@@ -138,7 +178,10 @@ export default function EspaceClientInner() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/espace-client?lang=${lang}`,
+        // ✅ on revient sur /espace-client avec lang+next
+        redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(
+          next
+        )}`,
       },
     });
 
@@ -157,7 +200,10 @@ export default function EspaceClientInner() {
 
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(eaddr, {
-      redirectTo: `${window.location.origin}/espace-client?lang=${lang}`,
+      // ✅ pareil: on garde lang+next
+      redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(
+        next
+      )}`,
     });
     setLoading(false);
 
@@ -166,20 +212,14 @@ export default function EspaceClientInner() {
   }
 
   function goCreateAccount() {
-    router.push(`/compte?lang=${lang}`);
+    router.push(`/compte?lang=${lang}&next=${encodeURIComponent(next)}`);
   }
 
   return (
     <main className="login-bg">
       <div className="login-card">
         <header className="login-header">
-          <Image
-            src="/logo-cq.png"
-            alt="ComptaNet Québec"
-            width={42}
-            height={42}
-            priority
-          />
+          <Image src="/logo-cq.png" alt="ComptaNet Québec" width={42} height={42} priority />
           <div className="login-header-text">
             <strong>ComptaNet Québec</strong>
             <span>{t.brandSub}</span>
@@ -189,12 +229,7 @@ export default function EspaceClientInner() {
         <h1 className="login-title">{t.title}</h1>
         <p className="intro">{t.intro}</p>
 
-        <button
-          className="btn-google"
-          onClick={google}
-          disabled={loading}
-          type="button"
-        >
+        <button className="btn-google" onClick={google} disabled={loading} type="button">
           <Image
             src="/google-g.png"
             alt="Google"
@@ -242,15 +277,9 @@ export default function EspaceClientInner() {
           {t.forgot}
         </button>
 
-        {/* ✅ “Pas de compte ? Créer un compte” */}
         <div className="signup-row">
           <span className="signup-text">{t.noAccount}</span>
-          <button
-            className="signup-link"
-            onClick={goCreateAccount}
-            disabled={loading}
-            type="button"
-          >
+          <button className="signup-link" onClick={goCreateAccount} disabled={loading} type="button">
             {t.createAccount}
           </button>
         </div>
@@ -259,4 +288,4 @@ export default function EspaceClientInner() {
       </div>
     </main>
   );
-}
+          }
