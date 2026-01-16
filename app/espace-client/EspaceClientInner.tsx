@@ -119,11 +119,10 @@ export default function EspaceClientInner() {
   const lang = useMemo(() => normalizeLang(params.get("lang")), [params]);
   const t = TXT[lang];
 
-  // ✅ next dynamique: /espace-client?lang=fr&next=/formulaire-fiscal
-  const nextRaw = useMemo(() => params.get("next"), [params]);
+  const nextRaw = params.get("next"); // string | null
   const next = useMemo(() => safeNext(nextRaw), [nextRaw]);
 
-  // ✅ on force toujours le lang sur la destination finale
+  // destination finale (lang forcé)
   const nextWithLang = useMemo(() => withLang(next, lang), [next, lang]);
 
   const [email, setEmail] = useState("");
@@ -137,14 +136,15 @@ export default function EspaceClientInner() {
   useEffect(() => {
     let alive = true;
 
-    supabase.auth.getUser().then(({ data }) => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
       if (!alive) return;
 
       if (data.user && !redirecting.current) {
         redirecting.current = true;
         router.replace(nextWithLang);
       }
-    });
+    })();
 
     return () => {
       alive = false;
@@ -178,7 +178,7 @@ export default function EspaceClientInner() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // ✅ on revient sur /espace-client avec lang+next
+        // ✅ on revient sur /espace-client avec lang + next
         redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(
           next
         )}`,
@@ -200,7 +200,7 @@ export default function EspaceClientInner() {
 
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(eaddr, {
-      // ✅ pareil: on garde lang+next
+      // ✅ on garde lang + next
       redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(
         next
       )}`,
@@ -288,4 +288,4 @@ export default function EspaceClientInner() {
       </div>
     </main>
   );
-          }
+}
