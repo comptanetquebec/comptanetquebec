@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -35,26 +35,41 @@ function titleFromType(type: string) {
   return "Particulier (T1)";
 }
 
+function normalizeType(v: string) {
+  const x = (v || "").toLowerCase();
+  if (x === "t1" || x === "autonome" || x === "t2") return x;
+  return "t1";
+}
+
+function normalizeLang(v: string) {
+  const x = (v || "").toLowerCase();
+  return x === "fr" || x === "en" || x === "es" ? x : "fr";
+}
+
 export default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const type = (params.get("type") || "t1").toLowerCase(); // "t1" | "autonome" | "t2"
-  const lang = (params.get("lang") || "fr").toLowerCase(); // au cas où tu gardes lang partout
+  const type = normalizeType(params.get("type") || "t1");
+  const lang = normalizeLang(params.get("lang") || "fr");
+
+  const formTitle = useMemo(() => titleFromType(type), [type]);
+
+  const [booting, setBooting] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const redirected = useRef(false);
 
   // --- Infos client principal ---
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [nas, setNas] = useState("");
-  const [dob, setDob] = useState(""); // JJ/MM/AAAA
+  const [dob, setDob] = useState("");
   const [etatCivil, setEtatCivil] = useState<
-    | "celibataire"
-    | "conjointDefait"
-    | "marie"
-    | "separe"
-    | "divorce"
-    | "veuf"
-    | ""
+    "celibataire" | "conjointDefait" | "marie" | "separe" | "divorce" | "veuf" | ""
   >("");
 
   const [etatCivilChange, setEtatCivilChange] = useState(false);
@@ -81,8 +96,7 @@ export default function FormulaireFiscalPage() {
   const [telConjoint, setTelConjoint] = useState("");
   const [telCellConjoint, setTelCellConjoint] = useState("");
   const [courrielConjoint, setCourrielConjoint] = useState("");
-  const [adresseConjointeIdentique, setAdresseConjointeIdentique] =
-    useState(true);
+  const [adresseConjointeIdentique, setAdresseConjointeIdentique] = useState(true);
   const [adresseConjoint, setAdresseConjoint] = useState("");
   const [appConjoint, setAppConjoint] = useState("");
   const [villeConjoint, setVilleConjoint] = useState("");
@@ -94,8 +108,9 @@ export default function FormulaireFiscalPage() {
   const [assuranceMedsClient, setAssuranceMedsClient] = useState<
     "ramq" | "prive" | "conjoint" | ""
   >("");
-  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] =
-    useState([{ debut: "", fin: "" }]);
+  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState([
+    { debut: "", fin: "" },
+  ]);
 
   const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<
     "ramq" | "prive" | "conjoint" | ""
@@ -107,10 +122,7 @@ export default function FormulaireFiscalPage() {
   const [enfants, setEnfants] = useState<Child[]>([]);
 
   function ajouterEnfant() {
-    setEnfants((prev) => [
-      ...prev,
-      { prenom: "", nom: "", dob: "", nas: "", sexe: "" },
-    ]);
+    setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
   }
 
   function updateEnfant(i: number, field: keyof Child, value: string) {
@@ -126,30 +138,46 @@ export default function FormulaireFiscalPage() {
   }
 
   // --- Questions générales ---
-  const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<
-    "oui" | "non" | ""
-  >("");
+  const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<"oui" | "non" | "">("");
   const [nbPersonnesMaison3112, setNbPersonnesMaison3112] = useState("");
-  const [biensEtranger100k, setBiensEtranger100k] = useState<
-    "oui" | "non" | ""
-  >("");
-  const [citoyenCanadien, setCitoyenCanadien] = useState<"oui" | "non" | "">(
-    ""
-  );
+  const [biensEtranger100k, setBiensEtranger100k] = useState<"oui" | "non" | "">("");
+  const [citoyenCanadien, setCitoyenCanadien] = useState<"oui" | "non" | "">("");
   const [nonResident, setNonResident] = useState<"oui" | "non" | "">("");
-  const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<
-    "oui" | "non" | ""
-  >("");
-  const [appelerTechnicien, setAppelerTechnicien] = useState<
-    "oui" | "non" | ""
-  >("");
+  const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<"oui" | "non" | "">("");
+  const [appelerTechnicien, setAppelerTechnicien] = useState<"oui" | "non" | "">("");
 
-  const [copieImpots, setCopieImpots] = useState<
-    "espaceClient" | "courriel" | ""
-  >("");
+  const [copieImpots, setCopieImpots] = useState<"espaceClient" | "courriel" | "">("");
   const [paiement, setPaiement] = useState<"interac" | "carte" | "">("");
 
-  const formTitle = useMemo(() => titleFromType(type), [type]);
+  // ✅ Auth guard
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (!alive) return;
+
+      if (error || !data.user) {
+        // pas connecté -> retour login
+        if (!redirected.current) {
+          redirected.current = true;
+          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(
+            lang
+          )}`;
+          router.replace(`/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`);
+        }
+        return;
+      }
+
+      setUserId(data.user.id);
+      setBooting(false);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [router, lang, type]);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -159,6 +187,13 @@ export default function FormulaireFiscalPage() {
   // --- Soumission ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setMsg(null);
+
+    if (!userId) {
+      setMsg("Veuillez vous reconnecter.");
+      router.replace(`/espace-client?lang=${lang}`);
+      return;
+    }
 
     const payload = {
       dossierType: type,
@@ -191,31 +226,20 @@ export default function FormulaireFiscalPage() {
             telCellConjoint,
             courrielConjoint,
             adresseConjointeIdentique,
-            adresseConjoint:
-              adresseConjointeIdentique ? adresse : adresseConjoint,
+            adresseConjoint: adresseConjointeIdentique ? adresse : adresseConjoint,
             appConjoint: adresseConjointeIdentique ? app : appConjoint,
             villeConjoint: adresseConjointeIdentique ? ville : villeConjoint,
-            provinceConjoint: adresseConjointeIdentique
-              ? province
-              : provinceConjoint,
-            codePostalConjoint: adresseConjointeIdentique
-              ? codePostal
-              : codePostalConjoint,
+            provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
+            codePostalConjoint: adresseConjointeIdentique ? codePostal : codePostalConjoint,
             revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint,
           }
         : null,
       assuranceMedicamenteuse:
         province === "QC"
           ? {
-              client: {
-                regime: assuranceMedsClient,
-                periodes: assuranceMedsClientPeriodes,
-              },
+              client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
               conjoint: aUnConjoint
-                ? {
-                    regime: assuranceMedsConjoint,
-                    periodes: assuranceMedsConjointPeriodes,
-                  }
+                ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes }
                 : null,
             }
           : null,
@@ -233,10 +257,33 @@ export default function FormulaireFiscalPage() {
       },
     };
 
-    console.log("FORM SUBMIT", payload);
+    setSubmitting(true);
 
-    // TODO: remplacer par ton API / insert Supabase
+    const { error } = await supabase.from("formulaires_fiscaux").insert({
+      user_id: userId,
+      dossier_type: type,
+      lang,
+      payload,
+    });
+
+    setSubmitting(false);
+
+    if (error) {
+      setMsg(`Erreur: ${error.message}`);
+      return;
+    }
+
     router.push(`/dossiers/nouveau?lang=${lang}`);
+  }
+
+  if (booting) {
+    return (
+      <main className="ff-bg">
+        <div className="ff-container">
+          <div style={{ padding: 24 }}>Chargement…</div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -268,11 +315,16 @@ export default function FormulaireFiscalPage() {
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
-            Merci de remplir ce formulaire après avoir créé votre compte. Nous
-            utilisons ces informations pour préparer vos déclarations d’impôt au
-            Canada (fédéral) et, si applicable, au Québec.
+            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour
+            préparer vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
           </p>
         </div>
+
+        {msg && (
+          <div className="ff-card" style={{ padding: 14 }}>
+            {msg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
@@ -343,25 +395,9 @@ export default function FormulaireFiscalPage() {
             )}
 
             <div className="ff-grid2 ff-mt">
-              <Field
-                label="Téléphone"
-                value={tel}
-                onChange={setTel}
-                placeholder="(xxx) xxx-xxxx"
-              />
-              <Field
-                label="Cellulaire"
-                value={telCell}
-                onChange={setTelCell}
-                placeholder="(xxx) xxx-xxxx"
-              />
-              <Field
-                label="Courriel"
-                value={courriel}
-                onChange={setCourriel}
-                type="email"
-                required
-              />
+              <Field label="Téléphone" value={tel} onChange={setTel} placeholder="(xxx) xxx-xxxx" />
+              <Field label="Cellulaire" value={telCell} onChange={setTelCell} placeholder="(xxx) xxx-xxxx" />
+              <Field label="Courriel" value={courriel} onChange={setCourriel} type="email" required />
             </div>
 
             <div className="ff-mt">
@@ -395,11 +431,7 @@ export default function FormulaireFiscalPage() {
               <p>À remplir seulement si applicable.</p>
             </div>
 
-            <CheckboxField
-              label="J'ai un conjoint / conjointe"
-              checked={aUnConjoint}
-              onChange={setAUnConjoint}
-            />
+            <CheckboxField label="J'ai un conjoint / conjointe" checked={aUnConjoint} onChange={setAUnConjoint} />
 
             {aUnConjoint && (
               <>
@@ -423,24 +455,9 @@ export default function FormulaireFiscalPage() {
                 )}
 
                 <div className="ff-grid2 ff-mt">
-                  <Field
-                    label="Prénom (conjoint)"
-                    value={prenomConjoint}
-                    onChange={setPrenomConjoint}
-                    required={aUnConjoint}
-                  />
-                  <Field
-                    label="Nom (conjoint)"
-                    value={nomConjoint}
-                    onChange={setNomConjoint}
-                    required={aUnConjoint}
-                  />
-                  <Field
-                    label="NAS (conjoint)"
-                    value={nasConjoint}
-                    onChange={setNasConjoint}
-                    placeholder="___-___-___"
-                  />
+                  <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required />
+                  <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required />
+                  <Field label="NAS (conjoint)" value={nasConjoint} onChange={setNasConjoint} placeholder="___-___-___" />
                   <Field
                     label="Date de naissance (JJ/MM/AAAA)"
                     value={dobConjoint}
@@ -450,24 +467,9 @@ export default function FormulaireFiscalPage() {
                 </div>
 
                 <div className="ff-grid2 ff-mt">
-                  <Field
-                    label="Téléphone (conjoint)"
-                    value={telConjoint}
-                    onChange={setTelConjoint}
-                    placeholder="(xxx) xxx-xxxx"
-                  />
-                  <Field
-                    label="Cellulaire (conjoint)"
-                    value={telCellConjoint}
-                    onChange={setTelCellConjoint}
-                    placeholder="(xxx) xxx-xxxx"
-                  />
-                  <Field
-                    label="Courriel (conjoint)"
-                    value={courrielConjoint}
-                    onChange={setCourrielConjoint}
-                    type="email"
-                  />
+                  <Field label="Téléphone (conjoint)" value={telConjoint} onChange={setTelConjoint} placeholder="(xxx) xxx-xxxx" />
+                  <Field label="Cellulaire (conjoint)" value={telCellConjoint} onChange={setTelCellConjoint} placeholder="(xxx) xxx-xxxx" />
+                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
                 </div>
 
                 <div className="ff-mt">
@@ -480,11 +482,7 @@ export default function FormulaireFiscalPage() {
 
                 {!adresseConjointeIdentique && (
                   <div className="ff-mt">
-                    <Field
-                      label="Adresse (rue) - conjoint"
-                      value={adresseConjoint}
-                      onChange={setAdresseConjoint}
-                    />
+                    <Field label="Adresse (rue) - conjoint" value={adresseConjoint} onChange={setAdresseConjoint} />
 
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
@@ -495,12 +493,7 @@ export default function FormulaireFiscalPage() {
                         onChange={(v) => setProvinceConjoint(v as ProvinceCode)}
                         options={PROVINCES}
                       />
-                      <Field
-                        label="Code postal"
-                        value={codePostalConjoint}
-                        onChange={setCodePostalConjoint}
-                        placeholder="A1A 1A1"
-                      />
+                      <Field label="Code postal" value={codePostalConjoint} onChange={setCodePostalConjoint} placeholder="A1A 1A1" />
                     </div>
                   </div>
                 )}
@@ -508,7 +501,7 @@ export default function FormulaireFiscalPage() {
             )}
           </section>
 
-          {/* SECTION ASSURANCE MÉDICAMENTS QC */}
+          {/* ASSURANCE MEDS */}
           {province === "QC" && (
             <section className="ff-card">
               <div className="ff-card-head">
@@ -558,9 +551,7 @@ export default function FormulaireFiscalPage() {
                 <button
                   type="button"
                   className="ff-btn ff-btn-soft"
-                  onClick={() =>
-                    setAssuranceMedsClientPeriodes((prev) => [...prev, { debut: "", fin: "" }])
-                  }
+                  onClick={() => setAssuranceMedsClientPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
                 >
                   + Ajouter une période
                 </button>
@@ -610,9 +601,7 @@ export default function FormulaireFiscalPage() {
                     <button
                       type="button"
                       className="ff-btn ff-btn-soft"
-                      onClick={() =>
-                        setAssuranceMedsConjointPeriodes((prev) => [...prev, { debut: "", fin: "" }])
-                      }
+                      onClick={() => setAssuranceMedsConjointPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
                     >
                       + Ajouter une période
                     </button>
@@ -622,7 +611,7 @@ export default function FormulaireFiscalPage() {
             </section>
           )}
 
-          {/* PERSONNES À CHARGE */}
+          {/* PERSONNES A CHARGE */}
           <section className="ff-card">
             <div className="ff-card-head">
               <h2>Personnes à charge</h2>
@@ -637,26 +626,14 @@ export default function FormulaireFiscalPage() {
                   <div key={i} className="ff-childbox">
                     <div className="ff-childhead">
                       <div className="ff-childtitle">Personne à charge #{i + 1}</div>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-link"
-                        onClick={() => removeEnfant(i)}
-                      >
+                      <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
                         Supprimer
                       </button>
                     </div>
 
                     <div className="ff-grid2">
-                      <Field
-                        label="Prénom"
-                        value={enf.prenom}
-                        onChange={(v) => updateEnfant(i, "prenom", v)}
-                      />
-                      <Field
-                        label="Nom"
-                        value={enf.nom}
-                        onChange={(v) => updateEnfant(i, "nom", v)}
-                      />
+                      <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
+                      <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
                       <Field
                         label="Date de naissance (JJ/MM/AAAA)"
                         value={enf.dob}
@@ -696,7 +673,7 @@ export default function FormulaireFiscalPage() {
             </div>
           </section>
 
-          {/* QUESTIONS GÉNÉRALES */}
+          {/* QUESTIONS */}
           <section className="ff-card">
             <div className="ff-card-head">
               <h2>Informations fiscales additionnelles</h2>
@@ -773,9 +750,14 @@ export default function FormulaireFiscalPage() {
 
           {/* SUBMIT */}
           <div className="ff-submit">
-            <button type="submit" className="ff-btn ff-btn-primary ff-btn-big">
-              Soumettre mes informations fiscales
+            <button
+              type="submit"
+              className="ff-btn ff-btn-primary ff-btn-big"
+              disabled={submitting}
+            >
+              {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
             </button>
+
             <p className="ff-footnote">
               Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1
               (particulier / travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la
@@ -870,11 +852,7 @@ function YesNoField({
   value: string;
   onChange: (v: string) => void;
 }) {
-  // name stable (évite conflits si 2 labels identiques un jour)
-  const name = useMemo(
-    () => `yn_${label.replace(/\W+/g, "_").toLowerCase()}`,
-    [label]
-  );
+  const name = useMemo(() => `yn_${label.replace(/\W+/g, "_").toLowerCase()}`, [label]);
 
   return (
     <div className="ff-yn">
