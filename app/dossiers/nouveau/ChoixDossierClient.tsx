@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -116,36 +116,46 @@ const I18N: Record<Lang, Dict> = {
   },
 };
 
-/* ---------- Page ---------- */
+function normalizeLang(v?: string | null): Lang {
+  const x = (v || "fr").toLowerCase();
+  return (LANGS as readonly string[]).includes(x) ? (x as Lang) : "fr";
+}
+
 export default function ChoixDossierClient() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // langue via ?lang=fr|en|es (fr par défaut)
-  const qp = (sp.get("lang") || "fr").toLowerCase();
-  const lang: Lang = (LANGS as readonly string[]).includes(qp as Lang) ? (qp as Lang) : "fr";
+  const lang = useMemo(() => normalizeLang(sp.get("lang")), [sp]);
   const t = I18N[lang];
 
   const [email, setEmail] = useState<string | null>(null);
+  const checked = useRef(false);
 
-  // Protection: si pas connecté -> /espace-client?next=/dossiers/nouveau
+  // ✅ Protection: si pas connecté -> /espace-client?lang=...&next=/dossiers/nouveau?lang=...
   useEffect(() => {
-    let mounted = true;
+    if (checked.current) return;
+    checked.current = true;
+
     (async () => {
       const { data } = await supabase.auth.getUser();
       const u = data.user;
+
       if (!u) {
-        router.replace(`/espace-client?lang=${lang}&next=/dossiers/nouveau`);
-      } else if (mounted) {
-        setEmail(u.email ?? null);
+        const next = `/dossiers/nouveau?lang=${lang}`;
+        router.replace(
+          `/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`
+        );
+        return;
       }
+
+      setEmail(u.email ?? null);
     })();
-    return () => {
-      mounted = false;
-    };
   }, [router, lang]);
 
-  const go = (href: string) => router.push(`${href}${href.includes("?") ? "&" : "?"}lang=${lang}`);
+  const go = (href: string) => {
+    const sep = href.includes("?") ? "&" : "?";
+    router.push(`${href}${sep}lang=${lang}`);
+  };
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -155,8 +165,10 @@ export default function ChoixDossierClient() {
   return (
     <main className="hero">
       <div className="container">
-        {/* En-tête */}
-        <header className="brand" style={{ justifyContent: "space-between", width: "100%" }}>
+        <header
+          className="brand"
+          style={{ justifyContent: "space-between", width: "100%" }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Image
               src="/logo-cq.png"
@@ -175,12 +187,22 @@ export default function ChoixDossierClient() {
           </button>
         </header>
 
-        <h1 style={{ margin: "8px 0 4px", fontSize: "clamp(24px,3.5vw,34px)" }}>{t.title}</h1>
+        <h1
+          style={{
+            margin: "8px 0 4px",
+            fontSize: "clamp(24px,3.5vw,34px)",
+          }}
+        >
+          {t.title}
+        </h1>
         <p className="lead">{t.intro}</p>
 
         <section
           className="cards"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", marginTop: 16 }}
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            marginTop: 16,
+          }}
         >
           <Card
             title={t.t1.title}
@@ -208,8 +230,10 @@ export default function ChoixDossierClient() {
           />
         </section>
 
-        {/* Mention légale */}
-        <p className="note" style={{ marginTop: 14, opacity: 0.85, maxWidth: 980 }}>
+        <p
+          className="note"
+          style={{ marginTop: 14, opacity: 0.85, maxWidth: 980 }}
+        >
           {t.legal}
         </p>
       </div>
@@ -231,7 +255,13 @@ function Card({ title, desc, deposit, balance, cta, onClick }: CardProps) {
   return (
     <div
       className="card"
-      style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10, minHeight: 200 }}
+      style={{
+        padding: 18,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        minHeight: 200,
+      }}
     >
       <h3 style={{ margin: 0 }}>{title}</h3>
 
