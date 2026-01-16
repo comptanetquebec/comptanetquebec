@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -26,16 +26,8 @@ function withLang(href: string, lang: Lang): string {
 export default function MerciPage() {
   const sp = useSearchParams();
 
-  // ✅ Lang depuis l’URL
-  const lang = useMemo(() => normalizeLang(sp.get("lang")), [sp]);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  const langParam = sp.get("lang");
+  const lang = useMemo(() => normalizeLang(langParam), [langParam]);
 
   const bleu = "#004aad";
 
@@ -72,29 +64,24 @@ export default function MerciPage() {
     },
   }[lang];
 
-  // ✅ Liens qui gardent lang
   const homeHref = withLang("/", lang);
-  const newFormHref = withLang("/dossiers/nouveau", lang);
+  const newFormHref = withLang("/dossiers/nouveau", lang); // ou /formulaire-fiscal si tu préfères
 
-  // ✅ Switcher -> change l’URL (pas juste un state)
   function langHref(l: Lang) {
-    const path = "/merci";
-    return withLang(path, l);
+    return withLang("/merci", l);
   }
 
   return (
     <main
       style={{
         maxWidth: 900,
-        margin: "30px auto",
-        padding: "0 16px",
+        margin: "clamp(16px, 4vw, 30px) auto",
+        padding: "0 clamp(12px, 3vw, 16px)",
         fontFamily: "Arial, sans-serif",
       }}
     >
       <style jsx global>{`
-        *,
-        *::before,
-        *::after {
+        * {
           box-sizing: border-box;
         }
         html,
@@ -103,11 +90,8 @@ export default function MerciPage() {
           max-width: 100%;
           overflow-x: hidden;
         }
-        img,
-        video {
-          max-width: 100%;
-          height: auto;
-          display: block;
+        a {
+          -webkit-tap-highlight-color: transparent;
         }
       `}</style>
 
@@ -117,16 +101,35 @@ export default function MerciPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: 8,
+          gap: 10,
           marginBottom: 16,
+          flexWrap: "wrap",
         }}
       >
-        <Link href={homeHref} style={{ textDecoration: "none", color: "#374151", whiteSpace: "nowrap" }}>
+        <Link
+          href={homeHref}
+          style={{
+            textDecoration: "none",
+            color: "#374151",
+            whiteSpace: "nowrap",
+            padding: "8px 6px",
+            borderRadius: 10,
+          }}
+        >
           {T.back}
         </Link>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
           <span style={{ fontSize: 12, color: "#6b7280" }}>{T.lang}</span>
+
           {(LANGS as Lang[]).map((l) => (
             <Link
               key={l}
@@ -135,12 +138,14 @@ export default function MerciPage() {
                 border: `1px solid ${l === lang ? bleu : "#e5e7eb"}`,
                 background: l === lang ? bleu : "white",
                 color: l === lang ? "white" : "#374151",
-                padding: "6px 10px",
-                borderRadius: 8,
+                padding: "8px 12px",
+                borderRadius: 10,
                 fontSize: 12,
                 textDecoration: "none",
                 fontWeight: 700,
                 whiteSpace: "nowrap",
+                minWidth: 52,
+                textAlign: "center",
               }}
               aria-current={l === lang ? "page" : undefined}
             >
@@ -158,28 +163,46 @@ export default function MerciPage() {
             border: "1px solid #e5e7eb",
             borderRadius: 16,
             boxShadow: "0 10px 30px rgba(0,0,0,.08)",
-            padding: isMobile ? 18 : 28,
+            padding: "clamp(18px, 3vw, 28px)",
             maxWidth: 720,
             width: "100%",
             textAlign: "center",
           }}
         >
-          <h1 style={{ color: bleu, margin: 0, fontSize: "clamp(24px,6vw,36px)" }}>{T.title}</h1>
-          <p style={{ color: "#111827", marginTop: 10, fontWeight: 700 }}>{T.subtitle}</p>
-          <p style={{ color: "#4b5563", marginTop: 6 }}>{T.text}</p>
-          <p style={{ color: "#6b7280", marginTop: 6 }}>{T.hint}</p>
+          <h1 style={{ color: bleu, margin: 0, fontSize: "clamp(24px, 6vw, 36px)" }}>{T.title}</h1>
 
-          <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+          <p style={{ color: "#111827", marginTop: 10, fontWeight: 700, fontSize: "clamp(14px, 2.2vw, 16px)" }}>
+            {T.subtitle}
+          </p>
+
+          <p style={{ color: "#4b5563", marginTop: 6, fontSize: "clamp(13px, 2.1vw, 15px)", lineHeight: 1.5 }}>
+            {T.text}
+          </p>
+
+          <p style={{ color: "#6b7280", marginTop: 6, fontSize: "clamp(12px, 2vw, 14px)", lineHeight: 1.5 }}>
+            {T.hint}
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 10,
+              marginTop: 16,
+              alignItems: "stretch",
+            }}
+          >
             <Link
               href={homeHref}
               style={{
                 background: bleu,
                 color: "white",
-                padding: "10px 16px",
-                borderRadius: 10,
+                padding: "12px 16px",
+                borderRadius: 12,
                 textDecoration: "none",
                 fontWeight: 700,
-                whiteSpace: "nowrap",
+                textAlign: "center",
+                display: "block",
               }}
             >
               {T.homeBtn}
@@ -190,11 +213,12 @@ export default function MerciPage() {
               style={{
                 border: `2px solid ${bleu}`,
                 color: bleu,
-                padding: "8px 14px",
-                borderRadius: 10,
+                padding: "10px 16px",
+                borderRadius: 12,
                 textDecoration: "none",
                 fontWeight: 700,
-                whiteSpace: "nowrap",
+                textAlign: "center",
+                display: "block",
               }}
             >
               {T.form}
