@@ -6,31 +6,37 @@
    Variables & reset léger
    ========================= */
 :root{
-  --blue:#0b3b8a;         /* bleu principal */
-  --blue-2:#113c80;       /* bleu foncé variante */
-  --ink:#0b1020;          /* texte principal */
-  --muted:#5e6470;        /* texte secondaire */
-  --bg:#ffffff;           /* fond */
-  --bg-soft:#f3f6fb;      /* sections */
+  --blue:#0b3b8a;
+  --blue-2:#113c80;
+  --ink:#0b1020;
+  --muted:#5e6470;
+  --bg:#ffffff;
+  --bg-soft:#f3f6fb;
   --radius:14px;
+  --border:#e6ecf5;
 }
 
-*{ box-sizing:border-box }
+*{ box-sizing:border-box; }
 html,body{
-  padding:0; margin:0; background:var(--bg); color:var(--ink);
+  padding:0;
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
   line-height:1.5;
 }
 
-a{ color:var(--blue); text-decoration:none }
-a:hover{ text-decoration:underline }
+a{ color:var(--blue); text-decoration:none; }
+a:hover{ text-decoration:underline; }
 
 /* =========================
-   Couche "components" Tailwind
-   (évite la purge et permet @apply)
+   UI réutilisable (global)
    ========================= */
 @layer components {
-  /* Boutons */
+  .container{
+    @apply max-w-[1040px] mx-auto px-5;
+  }
+
   .btn{
     @apply inline-flex items-center justify-center gap-2
            px-4 py-2 rounded-full font-semibold border transition
@@ -42,120 +48,100 @@ a:hover{ text-decoration:underline }
     @apply text-white;
     background: var(--blue);
   }
-  .btn-primary:hover{
-    background: var(--blue-2);
-    text-decoration: none;
-  }
+  .btn-primary:hover{ background: var(--blue-2); text-decoration:none; }
+
   .btn-outline{
     @apply bg-white;
     color: var(--blue);
     border-color: var(--blue);
   }
-  .btn-outline:hover{
-    background:#eef3ff; text-decoration: none;
-  }
+  .btn-outline:hover{ background:#eef3ff; text-decoration:none; }
+
   .btn-link{
     @apply underline underline-offset-2 font-medium;
     color: var(--blue);
   }
 
-  /* Cartes */
   .card{
     @apply bg-white border p-4 rounded-[14px];
-    border-color:#e6ecf5;
+    border-color: var(--border);
   }
 
-  /* Conteneur principal */
-  .container{
-    @apply max-w-[1040px] mx-auto px-5;
-  }
-
-  /* Grille perso (⚠️ pas .grid pour éviter la boucle) */
-  .cq-grid{
-    display:grid;            /* pas @apply grid */
-    gap:0.75rem;             /* ≈ gap-3 */
-    grid-template-columns: repeat(2, minmax(0,1fr));
-  }
-
-  /* Notes / textes secondaires */
   .note{
     @apply text-sm;
     color: var(--muted);
   }
+
+  .form{ margin-top:12px; display:grid; gap:12px; }
 }
 
 /* =========================
-   En-tête & navigation
+   Header / nav (global)
    ========================= */
 header{
-  position:sticky; top:0; background:rgba(255,255,255,0.9);
+  position:sticky;
+  top:0;
+  background:rgba(255,255,255,0.9);
   backdrop-filter:saturate(140%) blur(6px);
-  border-bottom:1px solid #e8ecf3; z-index:20;
-}
-.brand{ display:flex; align-items:center; gap:12px; padding:14px 0 }
-.brand-text{ font-weight:700; font-size:18px }
-.nav{ display:flex; align-items:center; gap:18px }
-header .container{ display:flex; justify-content:space-between; align-items:center }
-
-/* =========================
-   Sections / héros
-   ========================= */
-.hero{
-  background:linear-gradient(180deg,var(--bg),var(--bg-soft));
-  padding:64px 20px 56px; text-align:center;
-}
-.hero h1{ font-size:clamp(28px,4vw,40px); margin:0 0 10px }
-.lead{ color:var(--muted); max-width:800px; margin:0 auto }
-
-/* =========================
-   CTA row
-   ========================= */
-.cta-row{
-  margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  border-bottom:1px solid #e8ecf3;
+  z-index:20;
 }
 
-/* =========================
-   Sections génériques
-   ========================= */
-.section{ padding:56px 0 }
-.section h2{ font-size:28px; margin:0 0 14px }
+header .container{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 0;
+}
+.brand-text{ font-weight:700; font-size:18px; }
+
+.nav{ display:flex; align-items:center; gap:18px; }
 
 /* =========================
-   Cartes / listes
+   Inputs (global)
    ========================= */
-.cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px }
-.card h3{ margin:0 0 6px }
+label{ display:grid; gap:6px; font-weight:600; }
 
-.prices{ list-style:none; padding:0; margin:0 0 8px }
-.prices li{ padding:10px 0; border-bottom:1px dashed #e1e6ef }
-
-/* =========================
-   Formulaires
-   ========================= */
-.form{ margin-top:12px; display:grid; gap:12px }
-label{ display:grid; gap:6px; font-weight:600 }
 input,textarea{
-  border:1px solid #d8deea; border-radius:10px; padding:10px; font:inherit
+  border:1px solid #d8deea;
+  border-radius:10px;
+  padding:10px;
+  font:inherit;
 }
+
 input:focus,textarea:focus{
-  outline:2px solid #cfe0ff; border-color:#cfe0ff
+  outline:2px solid #cfe0ff;
+  border-color:#cfe0ff;
 }
 
 /* =========================
-   Pied de page
+   Footer (global)
    ========================= */
 .footer{
-  border-top:1px solid #e8ecf3; background:#fbfcff; margin-top:42px
+  border-top:1px solid #e8ecf3;
+  background:#fbfcff;
+  margin-top:42px;
 }
+
 .footer-inner{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:16px 0; color:var(--muted); font-size:14px
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 0;
+  color:var(--muted);
+  font-size:14px;
 }
 
 /* =========================
-   Responsive
+   Responsive (global)
    ========================= */
 @media (max-width:900px){
-  .cards{ grid-template-columns:1fr }
-  .cq-grid{ grid-template-columns:1fr }
+  .nav{ gap:12px; }
+  .footer-inner{ flex-direction:column; gap:10px; }
 }
