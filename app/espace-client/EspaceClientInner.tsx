@@ -89,15 +89,22 @@ const TXT: Record<
 
 function normalizeLang(v?: string | null): Lang {
   const x = (v || "fr").toLowerCase();
-  return (LANGS as readonly string[]).includes(x) ? (x as Lang) : "fr";
+  return (LANGS as readonly string[]).includes(x as any) ? (x as Lang) : "fr";
 }
 
 function safeNext(v?: string | null): string {
   // sécurité: on accepte seulement un chemin interne
   const raw = (v || "").trim();
   if (!raw) return "/dossiers/nouveau";
+
+  // bloque les URLs externes ou protocoles
+  const lower = raw.toLowerCase();
+  if (lower.startsWith("http:") || lower.startsWith("https:")) return "/dossiers/nouveau";
+  if (lower.startsWith("javascript:")) return "/dossiers/nouveau";
+
   if (!raw.startsWith("/")) return "/dossiers/nouveau";
   if (raw.startsWith("//")) return "/dossiers/nouveau";
+
   return raw;
 }
 
@@ -130,6 +137,7 @@ export default function EspaceClientInner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // anti double redirect
   const redirecting = useRef(false);
 
   // ✅ si déjà connecté -> redirige immédiatement vers next
@@ -153,8 +161,8 @@ export default function EspaceClientInner() {
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setMsg(null);
+    setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -168,20 +176,21 @@ export default function EspaceClientInner() {
       return;
     }
 
-    router.replace(nextWithLang);
+    if (!redirecting.current) {
+      redirecting.current = true;
+      router.replace(nextWithLang);
+    }
   }
 
   async function google() {
-    setLoading(true);
     setMsg(null);
+    setLoading(true);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // ✅ on revient sur /espace-client avec lang + next
-        redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(
-          next
-        )}`,
+        // ✅ on revient sur /espace-client avec lang + next (puis getUser() redirect vers nextWithLang)
+        redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`,
       },
     });
 
@@ -201,9 +210,7 @@ export default function EspaceClientInner() {
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(eaddr, {
       // ✅ on garde lang + next
-      redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(
-        next
-      )}`,
+      redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`,
     });
     setLoading(false);
 
@@ -230,14 +237,7 @@ export default function EspaceClientInner() {
         <p className="intro">{t.intro}</p>
 
         <button className="btn-google" onClick={google} disabled={loading} type="button">
-          <Image
-            src="/google-g.png"
-            alt="Google"
-            width={18}
-            height={18}
-            className="google-icon"
-            priority
-          />
+          <Image src="/google-g.png" alt="Google" width={18} height={18} className="google-icon" priority />
           {t.google}
         </button>
 
