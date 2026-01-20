@@ -56,7 +56,6 @@ const I18N: Record<Lang, Dict> = {
       "L’acompte est non remboursable et sera appliqué au montant total. Le prix final dépend de la complexité du dossier et sera confirmé avant la signature.",
     logout: "Se déconnecter",
   },
-
   en: {
     title: "Start a file",
     intro: "Choose the type of tax return you want to submit.",
@@ -85,7 +84,6 @@ const I18N: Record<Lang, Dict> = {
       "The deposit is non-refundable and will be applied to the total amount. The final price depends on the complexity of the file and will be confirmed before signature.",
     logout: "Log out",
   },
-
   es: {
     title: "Iniciar un expediente",
     intro: "Elige el tipo de declaración que quieres enviar.",
@@ -118,7 +116,33 @@ const I18N: Record<Lang, Dict> = {
 
 function normalizeLang(v?: string | null): Lang {
   const x = (v || "fr").toLowerCase();
-  return (LANGS as readonly string[]).includes(x) ? (x as Lang) : "fr";
+  return (LANGS as readonly string[]).includes(x as any) ? (x as Lang) : "fr";
+}
+
+function safeNext(v?: string | null): string {
+  const raw = (v || "").trim();
+  if (!raw) return "/dossiers/nouveau";
+
+  const lower = raw.toLowerCase();
+  if (lower.startsWith("http:") || lower.startsWith("https:")) return "/dossiers/nouveau";
+  if (lower.startsWith("javascript:")) return "/dossiers/nouveau";
+
+  if (!raw.startsWith("/")) return "/dossiers/nouveau";
+  if (raw.startsWith("//")) return "/dossiers/nouveau";
+
+  return raw;
+}
+
+/** Ajoute/écrase ?lang= dans un lien interne (garde les autres query) */
+function withLang(href: string, lang: Lang): string {
+  try {
+    const u = new URL(href, "http://dummy.local");
+    u.searchParams.set("lang", lang);
+    return u.pathname + u.search;
+  } catch {
+    const sep = href.includes("?") ? "&" : "?";
+    return `${href}${sep}lang=${lang}`;
+  }
 }
 
 export default function ChoixDossierClient() {
@@ -131,7 +155,7 @@ export default function ChoixDossierClient() {
   const [email, setEmail] = useState<string | null>(null);
   const checked = useRef(false);
 
-  // ✅ Protection: si pas connecté -> /espace-client?lang=...&next=/dossiers/nouveau?lang=...
+  // ✅ Protection: si pas connecté -> /espace-client?lang=...&next=/dossiers/nouveau (lang ajouté plus tard)
   useEffect(() => {
     if (checked.current) return;
     checked.current = true;
@@ -141,10 +165,11 @@ export default function ChoixDossierClient() {
       const u = data.user;
 
       if (!u) {
-        const next = `/dossiers/nouveau?lang=${lang}`;
-        router.replace(
-          `/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`
-        );
+        // IMPORTANT: next doit être un chemin interne SANS doubler lang
+        const next = safeNext("/dossiers/nouveau");
+        const nextWithLang = withLang(next, lang);
+
+        router.replace(`/espace-client?lang=${lang}&next=${encodeURIComponent(nextWithLang)}`);
         return;
       }
 
@@ -153,8 +178,8 @@ export default function ChoixDossierClient() {
   }, [router, lang]);
 
   const go = (href: string) => {
-    const sep = href.includes("?") ? "&" : "?";
-    router.push(`${href}${sep}lang=${lang}`);
+    const safe = safeNext(href);
+    router.push(withLang(safe, lang));
   };
 
   const logout = async () => {
@@ -165,10 +190,7 @@ export default function ChoixDossierClient() {
   return (
     <main className="hero">
       <div className="container">
-        <header
-          className="brand"
-          style={{ justifyContent: "space-between", width: "100%" }}
-        >
+        <header className="brand" style={{ justifyContent: "space-between", width: "100%" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Image
               src="/logo-cq.png"
@@ -187,12 +209,7 @@ export default function ChoixDossierClient() {
           </button>
         </header>
 
-        <h1
-          style={{
-            margin: "8px 0 4px",
-            fontSize: "clamp(24px,3.5vw,34px)",
-          }}
-        >
+        <h1 style={{ margin: "8px 0 4px", fontSize: "clamp(24px,3.5vw,34px)" }}>
           {t.title}
         </h1>
         <p className="lead">{t.intro}</p>
@@ -230,10 +247,7 @@ export default function ChoixDossierClient() {
           />
         </section>
 
-        <p
-          className="note"
-          style={{ marginTop: 14, opacity: 0.85, maxWidth: 980 }}
-        >
+        <p className="note" style={{ marginTop: 14, opacity: 0.85, maxWidth: 980 }}>
           {t.legal}
         </p>
       </div>
@@ -283,4 +297,4 @@ function Card({ title, desc, deposit, balance, cta, onClick }: CardProps) {
       </div>
     </div>
   );
-}
+    }
