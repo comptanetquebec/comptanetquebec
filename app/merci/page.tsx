@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type Lang = "fr" | "en" | "es";
+type ClientType = "t1" | "ta" | "t2";
+
 const LANGS: Lang[] = ["fr", "en", "es"];
 
 function normalizeLang(v?: string | null): Lang {
@@ -12,220 +14,310 @@ function normalizeLang(v?: string | null): Lang {
   return (LANGS as readonly string[]).includes(x as Lang) ? (x as Lang) : "fr";
 }
 
-function withLang(href: string, lang: Lang): string {
-  try {
-    const u = new URL(href, "http://dummy.local");
-    u.searchParams.set("lang", lang);
-    return u.pathname + u.search;
-  } catch {
-    const sep = href.includes("?") ? "&" : "?";
-    return `${href}${sep}lang=${lang}`;
-  }
-}
+export default function FormulairePage() {
+  const bleu = "#004aad" as const;
 
-export default function MerciPage() {
   const sp = useSearchParams();
+  const router = useRouter();
 
-  const langParam = sp.get("lang");
-  const lang = useMemo(() => normalizeLang(langParam), [langParam]);
-
-  const bleu = "#004aad";
+  // ✅ Lang suit l’URL
+  const lang = useMemo(() => normalizeLang(sp.get("lang")), [sp]);
 
   const T = {
     fr: {
-      title: "Merci !",
-      subtitle: "Votre formulaire a été envoyé avec succès.",
-      text: "Nous vous répondrons rapidement par courriel avec les prochaines étapes pour déposer vos documents.",
-      hint: "Vous pouvez revenir à l’accueil ou ouvrir un autre formulaire.",
-      back: "← Retour à l’accueil",
-      homeBtn: "Retour à l’accueil",
-      form: "Remplir un autre formulaire",
-      lang: "Langue",
+      title: "Créer votre compte / Demande de prise en charge",
+      intro:
+        "Répondez à ces questions et nous ouvrons votre dossier sécurisé. Vous recevrez un courriel de confirmation.",
+      labels: {
+        firstName: "Prénom",
+        lastName: "Nom",
+        email: "Courriel",
+        phone: "Téléphone (optionnel)",
+        type: "Type de client",
+        t1: "Impôt des particuliers (T1)",
+        ta: "Travailleur autonome",
+        t2: "Société incorporée (T2 / PME)",
+        message: "Message / précisions (optionnel)",
+        consent: "J’accepte d’être contacté par courriel.",
+        submit: "Envoyer la demande",
+        back: "Retour à l’accueil",
+        lang: "Langue",
+      },
     },
     en: {
-      title: "Thank you!",
-      subtitle: "Your form was sent successfully.",
-      text: "We will reply by email shortly with the next steps to upload your documents.",
-      hint: "You can go back home or open another form.",
-      back: "← Back to home",
-      homeBtn: "Back to home",
-      form: "Fill another form",
-      lang: "Language",
+      title: "Create your account / Intake form",
+      intro:
+        "Answer these questions and we will open your secure file. You will receive a confirmation email.",
+      labels: {
+        firstName: "First name",
+        lastName: "Last name",
+        email: "Email",
+        phone: "Phone (optional)",
+        type: "Client type",
+        t1: "Personal income tax (T1)",
+        ta: "Self-employed",
+        t2: "Incorporated company (T2 / SMB)",
+        message: "Message / details (optional)",
+        consent: "I agree to be contacted by email.",
+        submit: "Submit request",
+        back: "Back to home",
+        lang: "Language",
+      },
     },
     es: {
-      title: "¡Gracias!",
-      subtitle: "Su formulario se envió correctamente.",
-      text: "Le responderemos por correo con los próximos pasos para subir sus documentos.",
-      hint: "Puede volver al inicio o abrir otro formulario.",
-      back: "← Volver al inicio",
-      homeBtn: "Volver al inicio",
-      form: "Completar otro formulario",
-      lang: "Idioma",
+      title: "Crear su cuenta / Formulario de inicio",
+      intro:
+        "Responda estas preguntas y abriremos su expediente seguro. Recibirá un correo de confirmación.",
+      labels: {
+        firstName: "Nombre",
+        lastName: "Apellido",
+        email: "Correo",
+        phone: "Teléfono (opcional)",
+        type: "Tipo de cliente",
+        t1: "Impuesto personal (T1)",
+        ta: "Autónomo",
+        t2: "Sociedad (T2 / PyME)",
+        message: "Mensaje / detalles (opcional)",
+        consent: "Acepto ser contactado por correo electrónico.",
+        submit: "Enviar solicitud",
+        back: "Volver al inicio",
+        lang: "Idioma",
+      },
     },
   }[lang];
 
-  const homeHref = withLang("/", lang);
-  const newFormHref = withLang("/dossiers/nouveau", lang); // ou /formulaire-fiscal si tu préfères
+  // champs visibles
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [clientType, setClientType] = useState<ClientType>("t1");
+  const [message, setMessage] = useState("");
+  const [consent, setConsent] = useState(false);
 
-  function langHref(l: Lang) {
-    return withLang("/merci", l);
+  // champs API attendus par /api/contact
+  const fullName = `${firstName} ${lastName}`.trim();
+  const apiMessage = `Type: ${clientType.toUpperCase()}
+Téléphone: ${phone || "-"}
+Consentement courriel: ${consent ? "oui" : "non"}
+
+Message:
+${message || "-"}`;
+
+  // ✅ switch langue en gardant la page + params
+  function switchLang(l: Lang) {
+    const qs = new URLSearchParams(sp.toString());
+    qs.set("lang", l);
+    router.push(`/demande-prise-en-charge?${qs.toString()}`);
   }
 
   return (
-    <main
-      style={{
-        maxWidth: 900,
-        margin: "clamp(16px, 4vw, 30px) auto",
-        padding: "0 clamp(12px, 3vw, 16px)",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <style jsx global>{`
-        * {
-          box-sizing: border-box;
-        }
-        html,
-        body {
-          width: 100%;
-          max-width: 100%;
-          overflow-x: hidden;
-        }
-        a {
-          -webkit-tap-highlight-color: transparent;
-        }
-      `}</style>
+    <main style={{ fontFamily: "Arial, sans-serif", color: "#111827" }}>
+      <script async defer src="https://www.google.com/recaptcha/api.js"></script>
 
-      {/* Header */}
-      <div
+      <header
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 16,
-          flexWrap: "wrap",
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          background: "white",
+          borderBottom: "1px solid #eee",
         }}
       >
-        <Link
-          href={homeHref}
-          style={{
-            textDecoration: "none",
-            color: "#374151",
-            whiteSpace: "nowrap",
-            padding: "8px 6px",
-            borderRadius: 10,
-          }}
-        >
-          {T.back}
-        </Link>
-
         <div
           style={{
+            maxWidth: 900,
+            margin: "0 auto",
+            padding: "10px 16px",
             display: "flex",
-            gap: 8,
             alignItems: "center",
-            flexWrap: "wrap",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
+            gap: 12,
           }}
         >
-          <span style={{ fontSize: 12, color: "#6b7280" }}>{T.lang}</span>
+          <Link href={`/?lang=${lang}`} style={{ textDecoration: "none", color: bleu, fontWeight: 800 }}>
+            ComptaNet Québec
+          </Link>
 
-          {(LANGS as Lang[]).map((l) => (
-            <Link
-              key={l}
-              href={langHref(l)}
-              style={{
-                border: `1px solid ${l === lang ? bleu : "#e5e7eb"}`,
-                background: l === lang ? bleu : "white",
-                color: l === lang ? "white" : "#374151",
-                padding: "8px 12px",
-                borderRadius: 10,
-                fontSize: 12,
-                textDecoration: "none",
-                fontWeight: 700,
-                whiteSpace: "nowrap",
-                minWidth: 52,
-                textAlign: "center",
-              }}
-              aria-current={l === lang ? "page" : undefined}
-            >
-              {l.toUpperCase()}
-            </Link>
-          ))}
+          <select
+            aria-label={T.labels.lang}
+            value={lang}
+            onChange={(e) => switchLang(e.target.value as Lang)}
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              padding: "6px 10px",
+              fontSize: 12,
+              background: "white",
+              color: "#374151",
+            }}
+          >
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
         </div>
-      </div>
+      </header>
 
-      {/* Carte */}
-      <section style={{ display: "grid", placeItems: "center" }}>
-        <div
+      <section style={{ maxWidth: 900, margin: "32px auto", padding: "0 16px" }}>
+        <h1 style={{ fontSize: 26, marginBottom: 8 }}>{T.title}</h1>
+        <p style={{ color: "#4b5563", marginBottom: 18 }}>{T.intro}</p>
+
+        <form
+          method="POST"
+          action="/api/contact"
           style={{
-            background: "white",
             border: "1px solid #e5e7eb",
-            borderRadius: 16,
-            boxShadow: "0 10px 30px rgba(0,0,0,.08)",
-            padding: "clamp(18px, 3vw, 28px)",
-            maxWidth: 720,
-            width: "100%",
-            textAlign: "center",
+            borderRadius: 12,
+            padding: 18,
+            background: "white",
           }}
         >
-          <h1 style={{ color: bleu, margin: 0, fontSize: "clamp(24px, 6vw, 36px)" }}>{T.title}</h1>
-
-          <p style={{ color: "#111827", marginTop: 10, fontWeight: 700, fontSize: "clamp(14px, 2.2vw, 16px)" }}>
-            {T.subtitle}
-          </p>
-
-          <p style={{ color: "#4b5563", marginTop: 6, fontSize: "clamp(13px, 2.1vw, 15px)", lineHeight: 1.5 }}>
-            {T.text}
-          </p>
-
-          <p style={{ color: "#6b7280", marginTop: 6, fontSize: "clamp(12px, 2vw, 14px)", lineHeight: 1.5 }}>
-            {T.hint}
-          </p>
-
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 10,
-              marginTop: 16,
-              alignItems: "stretch",
+              gap: 12,
             }}
           >
-            <Link
-              href={homeHref}
+            <div>
+              <label style={lbl}>{T.labels.firstName}</label>
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                autoComplete="given-name"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.lastName}</label>
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                autoComplete="family-name"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.email}</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.phone}</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel"
+                style={input}
+              />
+            </div>
+
+            <div>
+              <label style={lbl}>{T.labels.type}</label>
+              <select
+                value={clientType}
+                onChange={(e) => setClientType(e.target.value as ClientType)}
+                style={input as React.CSSProperties}
+              >
+                <option value="t1">{T.labels.t1}</option>
+                <option value="ta">{T.labels.ta}</option>
+                <option value="t2">{T.labels.t2}</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={lbl}>{T.labels.message}</label>
+            <textarea
+              rows={5}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              style={{ ...input, resize: "vertical" }}
+            />
+          </div>
+
+          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              style={{ width: 18, height: 18 }}
+            />
+            <span style={{ fontSize: 14, color: "#374151" }}>{T.labels.consent}</span>
+          </div>
+
+          {/* champs API */}
+          <input type="hidden" name="name" value={fullName} />
+          <input type="hidden" name="email" value={email} />
+          <textarea name="message" value={apiMessage} hidden readOnly />
+
+          <div style={{ marginTop: 14 }}>
+            <div className="g-recaptcha" data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7" />
+          </div>
+
+          <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              type="submit"
               style={{
                 background: bleu,
                 color: "white",
-                padding: "12px 16px",
-                borderRadius: 12,
-                textDecoration: "none",
+                border: 0,
+                padding: "12px 18px",
+                borderRadius: 10,
                 fontWeight: 700,
-                textAlign: "center",
-                display: "block",
+                cursor: "pointer",
               }}
             >
-              {T.homeBtn}
-            </Link>
+              {T.labels.submit}
+            </button>
 
             <Link
-              href={newFormHref}
+              href={`/?lang=${lang}`}
               style={{
+                display: "inline-block",
+                background: "white",
                 border: `2px solid ${bleu}`,
                 color: bleu,
                 padding: "10px 16px",
-                borderRadius: 12,
+                borderRadius: 10,
                 textDecoration: "none",
                 fontWeight: 700,
-                textAlign: "center",
-                display: "block",
               }}
             >
-              {T.form}
+              {T.labels.back}
             </Link>
           </div>
-        </div>
+        </form>
       </section>
     </main>
   );
 }
+
+const input: React.CSSProperties = {
+  width: "100%",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: "12px 14px",
+  outline: "none",
+  fontSize: 14,
+};
+
+const lbl: React.CSSProperties = {
+  display: "block",
+  marginBottom: 6,
+  fontSize: 13,
+  color: "#374151",
+};
