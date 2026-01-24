@@ -916,9 +916,9 @@ export default function FormulaireFiscalPage() {
 
 <div className="ff-stack" style={{ marginTop: 12 }}>
   <a
-    href="/docs/liste-documents-requis.pdf"
+    href="/docs/liste-documents-requis-cliquable.pdf"
     target="_blank"
-    rel="noreferrer"
+    rel="noopener noreferrer"
     className="ff-btn ff-btn-primary"
     style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
   >
@@ -928,7 +928,7 @@ export default function FormulaireFiscalPage() {
   <a
     href="/docs/mandat-autorisation.pdf"
     target="_blank"
-    rel="noreferrer"
+    rel="noopener noreferrer"
     className="ff-btn ff-btn-soft"
     style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
   >
