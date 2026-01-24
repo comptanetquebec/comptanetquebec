@@ -988,38 +988,31 @@ export default function FormulaireFiscalPage() {
     </div>
   ) : (
     <div className="ff-stack">
-      <button
-        type="button"
+      <a
+        href={`/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
+          type
+        )}&lang=${encodeURIComponent(lang)}`}
         className="ff-btn ff-btn-primary"
-        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-        onClick={() =>
-          router.push(
-            `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
-              type
-            )}&lang=${encodeURIComponent(lang)}`
-          )
-        }
+        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16, textAlign: "center" }}
       >
         Déposer mes documents →
-      </button>
+      </a>
 
       <div className="ff-rowbox" style={{ marginTop: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>
-            ID : {formulaireId}
-          </div>
+          <div style={{ opacity: 0.8, fontSize: 13 }}>ID : {formulaireId}</div>
         </div>
       </div>
 
       <div className="ff-mt">
-        <button
-          type="button"
+        <a
+          href={`/merci?lang=${encodeURIComponent(lang)}`}
           className="ff-btn ff-btn-soft"
-          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+          style={{ textAlign: "center" }}
         >
           Terminer
-        </button>
+        </a>
       </div>
     </div>
   )}
