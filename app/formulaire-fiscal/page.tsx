@@ -28,6 +28,12 @@ type ProvinceCode =
   | "NT"
   | "NU";
 
+type YesNo = "oui" | "non" | "";
+type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
+type CopieImpots = "espaceClient" | "courriel" | "";
+type Periode = { debut: string; fin: string };
+type InsertIdRow = { id: string };
+
 type Child = {
   prenom: string;
   nom: string;
@@ -118,6 +124,15 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "NU", label: "NU" },
 ];
 
+type EtatCivil =
+  | "celibataire"
+  | "conjointDefait"
+  | "marie"
+  | "separe"
+  | "divorce"
+  | "veuf"
+  | "";
+
 export default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -147,9 +162,7 @@ export default function FormulaireFiscalPage() {
   const [nom, setNom] = useState("");
   const [nas, setNas] = useState("");
   const [dob, setDob] = useState("");
-  const [etatCivil, setEtatCivil] = useState<
-    "celibataire" | "conjointDefait" | "marie" | "separe" | "divorce" | "veuf" | ""
-  >("");
+  const [etatCivil, setEtatCivil] = useState<EtatCivil>("");
 
   const [etatCivilChange, setEtatCivilChange] = useState(false);
   const [ancienEtatCivil, setAncienEtatCivil] = useState("");
@@ -184,11 +197,15 @@ export default function FormulaireFiscalPage() {
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // --- Assurance médicaments (Québec uniquement) ---
-  const [assuranceMedsClient, setAssuranceMedsClient] = useState<"ramq" | "prive" | "conjoint" | "">("");
-  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState([{ debut: "", fin: "" }]);
+  const [assuranceMedsClient, setAssuranceMedsClient] = useState<AssuranceMeds>("");
+  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState<Periode[]>([
+    { debut: "", fin: "" },
+  ]);
 
-  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<"ramq" | "prive" | "conjoint" | "">("");
-  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState([{ debut: "", fin: "" }]);
+  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<AssuranceMeds>("");
+  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState<Periode[]>([
+    { debut: "", fin: "" },
+  ]);
 
   // --- Enfants / personnes à charge ---
   const [enfants, setEnfants] = useState<Child[]>([]);
@@ -208,15 +225,15 @@ export default function FormulaireFiscalPage() {
   }
 
   // --- Questions générales ---
-  const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<"oui" | "non" | "">("");
+  const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<YesNo>("");
   const [nbPersonnesMaison3112, setNbPersonnesMaison3112] = useState("");
-  const [biensEtranger100k, setBiensEtranger100k] = useState<"oui" | "non" | "">("");
-  const [citoyenCanadien, setCitoyenCanadien] = useState<"oui" | "non" | "">("");
-  const [nonResident, setNonResident] = useState<"oui" | "non" | "">("");
-  const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<"oui" | "non" | "">("");
-  const [appelerTechnicien, setAppelerTechnicien] = useState<"oui" | "non" | "">("");
+  const [biensEtranger100k, setBiensEtranger100k] = useState<YesNo>("");
+  const [citoyenCanadien, setCitoyenCanadien] = useState<YesNo>("");
+  const [nonResident, setNonResident] = useState<YesNo>("");
+  const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
+  const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
 
-  const [copieImpots, setCopieImpots] = useState<"espaceClient" | "courriel" | "">("");
+  const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
 
   // ✅ Auth guard
   useEffect(() => {
@@ -433,7 +450,7 @@ export default function FormulaireFiscalPage() {
       return;
     }
 
-    const fid = (data as any)?.id as string;
+    const fid = (data as InsertIdRow).id;
     setFormulaireId(fid);
     setMsg("✅ Formulaire reçu. Téléversez vos documents en bas de la page.");
     await loadDocs(fid);
@@ -523,12 +540,11 @@ export default function FormulaireFiscalPage() {
             </div>
 
             <div className="ff-grid2 ff-mt">
-              <SelectField
+              <SelectField<EtatCivil>
                 label="État civil"
                 value={etatCivil}
                 onChange={setEtatCivil}
                 options={[
-                  { value: "", label: "Sélectionnez..." },
                   { value: "celibataire", label: "Célibataire" },
                   { value: "conjointDefait", label: "Conjoint de fait" },
                   { value: "marie", label: "Marié(e)" },
@@ -548,7 +564,12 @@ export default function FormulaireFiscalPage() {
 
             {etatCivilChange && (
               <div className="ff-grid2 ff-mt">
-                <Field label="Ancien état civil" value={ancienEtatCivil} onChange={setAncienEtatCivil} placeholder="ex.: Célibataire" />
+                <Field
+                  label="Ancien état civil"
+                  value={ancienEtatCivil}
+                  onChange={setAncienEtatCivil}
+                  placeholder="ex.: Célibataire"
+                />
                 <Field
                   label="Date du changement (JJ/MM/AAAA)"
                   value={dateChangementEtatCivil}
@@ -570,10 +591,10 @@ export default function FormulaireFiscalPage() {
               <div className="ff-grid4 ff-mt-sm">
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
                 <Field label="Ville" value={ville} onChange={setVille} required />
-                <SelectField
+                <SelectField<ProvinceCode>
                   label="Province"
                   value={province}
-                  onChange={(v) => setProvince(v as ProvinceCode)}
+                  onChange={setProvince}
                   options={PROVINCES}
                   required
                 />
@@ -625,7 +646,12 @@ export default function FormulaireFiscalPage() {
                 </div>
 
                 <div className="ff-grid2 ff-mt">
-                  <Field label="Téléphone (conjoint)" value={telConjoint} onChange={setTelConjoint} placeholder="(xxx) xxx-xxxx" />
+                  <Field
+                    label="Téléphone (conjoint)"
+                    value={telConjoint}
+                    onChange={setTelConjoint}
+                    placeholder="(xxx) xxx-xxxx"
+                  />
                   <Field
                     label="Cellulaire (conjoint)"
                     value={telCellConjoint}
@@ -650,10 +676,10 @@ export default function FormulaireFiscalPage() {
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
                       <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
-                      <SelectField
+                      <SelectField<ProvinceCode>
                         label="Province"
                         value={provinceConjoint}
-                        onChange={(v) => setProvinceConjoint(v as ProvinceCode)}
+                        onChange={setProvinceConjoint}
                         options={PROVINCES}
                       />
                       <Field
@@ -678,12 +704,11 @@ export default function FormulaireFiscalPage() {
               </div>
 
               <div className="ff-subtitle">Couverture du client</div>
-              <SelectField
+              <SelectField<AssuranceMeds>
                 label="Votre couverture médicaments"
                 value={assuranceMedsClient}
-                onChange={(v) => setAssuranceMedsClient(v as any)}
+                onChange={setAssuranceMedsClient}
                 options={[
-                  { value: "", label: "Sélectionnez..." },
                   { value: "ramq", label: "Régime public (RAMQ)" },
                   { value: "prive", label: "Mon régime collectif privé" },
                   { value: "conjoint", label: "Régime du conjoint / d'un parent" },
@@ -697,9 +722,9 @@ export default function FormulaireFiscalPage() {
                       label="De (JJ/MM/AAAA)"
                       value={p.debut}
                       onChange={(val) => {
-                        const copy = [...assuranceMedsClientPeriodes];
-                        copy[idx].debut = val;
-                        setAssuranceMedsClientPeriodes(copy);
+                        setAssuranceMedsClientPeriodes((prev) =>
+                          prev.map((x, i) => (i === idx ? { ...x, debut: val } : x))
+                        );
                       }}
                       placeholder="01/01/2024"
                     />
@@ -707,9 +732,9 @@ export default function FormulaireFiscalPage() {
                       label="À (JJ/MM/AAAA)"
                       value={p.fin}
                       onChange={(val) => {
-                        const copy = [...assuranceMedsClientPeriodes];
-                        copy[idx].fin = val;
-                        setAssuranceMedsClientPeriodes(copy);
+                        setAssuranceMedsClientPeriodes((prev) =>
+                          prev.map((x, i) => (i === idx ? { ...x, fin: val } : x))
+                        );
                       }}
                       placeholder="31/12/2024"
                     />
@@ -728,12 +753,11 @@ export default function FormulaireFiscalPage() {
               {aUnConjoint && (
                 <>
                   <div className="ff-subtitle ff-mt">Couverture du conjoint</div>
-                  <SelectField
+                  <SelectField<AssuranceMeds>
                     label="Couverture médicaments du conjoint"
                     value={assuranceMedsConjoint}
-                    onChange={(v) => setAssuranceMedsConjoint(v as any)}
+                    onChange={setAssuranceMedsConjoint}
                     options={[
-                      { value: "", label: "Sélectionnez..." },
                       { value: "ramq", label: "Régime public (RAMQ)" },
                       { value: "prive", label: "Régime collectif privé" },
                       { value: "conjoint", label: "Régime du conjoint / d'un parent" },
@@ -747,9 +771,9 @@ export default function FormulaireFiscalPage() {
                           label="De (JJ/MM/AAAA)"
                           value={p.debut}
                           onChange={(val) => {
-                            const copy = [...assuranceMedsConjointPeriodes];
-                            copy[idx].debut = val;
-                            setAssuranceMedsConjointPeriodes(copy);
+                            setAssuranceMedsConjointPeriodes((prev) =>
+                              prev.map((x, i) => (i === idx ? { ...x, debut: val } : x))
+                            );
                           }}
                           placeholder="01/01/2024"
                         />
@@ -757,9 +781,9 @@ export default function FormulaireFiscalPage() {
                           label="À (JJ/MM/AAAA)"
                           value={p.fin}
                           onChange={(val) => {
-                            const copy = [...assuranceMedsConjointPeriodes];
-                            copy[idx].fin = val;
-                            setAssuranceMedsConjointPeriodes(copy);
+                            setAssuranceMedsConjointPeriodes((prev) =>
+                              prev.map((x, i) => (i === idx ? { ...x, fin: val } : x))
+                            );
                           }}
                           placeholder="31/12/2024"
                         />
@@ -779,69 +803,68 @@ export default function FormulaireFiscalPage() {
             </section>
           )}
 
-         {/* PERSONNES A CHARGE */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Personnes à charge</h2>
-    <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
-  </div>
+          {/* PERSONNES A CHARGE */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Personnes à charge</h2>
+              <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
+            </div>
 
-  {enfants.length === 0 ? (
-    <div className="ff-empty">Aucune personne à charge ajoutée.</div>
-  ) : (
-    <div className="ff-stack">
-      {enfants.map((enf, i) => (
-        <div key={i} className="ff-childbox">
-          <div className="ff-childhead">
-            <div className="ff-childtitle">Personne à charge #{i + 1}</div>
-            <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
-              Supprimer
-            </button>
-          </div>
+            {enfants.length === 0 ? (
+              <div className="ff-empty">Aucune personne à charge ajoutée.</div>
+            ) : (
+              <div className="ff-stack">
+                {enfants.map((enf, i) => (
+                  <div key={i} className="ff-childbox">
+                    <div className="ff-childhead">
+                      <div className="ff-childtitle">Personne à charge #{i + 1}</div>
+                      <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
+                        Supprimer
+                      </button>
+                    </div>
 
-          <div className="ff-grid2">
-            <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
-            <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
+                    <div className="ff-grid2">
+                      <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
+                      <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
 
-            <Field
-              label="Date de naissance (JJ/MM/AAAA)"
-              value={enf.dob}
-              onChange={(v) => updateEnfant(i, "dob", v)}
-              placeholder="01/01/2020"
-            />
+                      <Field
+                        label="Date de naissance (JJ/MM/AAAA)"
+                        value={enf.dob}
+                        onChange={(v) => updateEnfant(i, "dob", v)}
+                        placeholder="01/01/2020"
+                      />
 
-            <Field
-              label="NAS (si attribué)"
-              value={enf.nas}
-              onChange={(v) => updateEnfant(i, "nas", v)}
-              placeholder="___-___-___"
-            />
-          </div>
+                      <Field
+                        label="NAS (si attribué)"
+                        value={enf.nas}
+                        onChange={(v) => updateEnfant(i, "nas", v)}
+                        placeholder="___-___-___"
+                      />
+                    </div>
 
-          <div className="ff-mt-sm">
-            <SelectField
-              label="Sexe"
-              value={enf.sexe}
-              onChange={(v) => updateEnfant(i, "sexe", v)}
-              options={[
-                { value: "", label: "Sélectionnez..." },
-                { value: "M", label: "M" },
-                { value: "F", label: "F" },
-                { value: "X", label: "Autre / préfère ne pas dire" },
-              ]}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
+                    <div className="ff-mt-sm">
+                      <SelectField<string>
+                        label="Sexe"
+                        value={enf.sexe}
+                        onChange={(v) => updateEnfant(i, "sexe", v)}
+                        options={[
+                          { value: "M", label: "M" },
+                          { value: "F", label: "F" },
+                          { value: "X", label: "Autre / préfère ne pas dire" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-  <div className="ff-mt">
-    <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
-      + Ajouter une personne à charge
-    </button>
-  </div>
-</section>
+            <div className="ff-mt">
+              <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
+                + Ajouter une personne à charge
+              </button>
+            </div>
+          </section>
 
 {/* QUESTIONS */}
 <section className="ff-card">
@@ -897,9 +920,8 @@ export default function FormulaireFiscalPage() {
     <SelectField
       label="Comment voulez-vous recevoir votre copie d'impôt ?"
       value={copieImpots}
-      onChange={(v) => setCopieImpots(v as any)}
+      onChange={(v) => setCopieImpots(v as CopieImpots)}
       options={[
-        { value: "", label: "Sélectionnez..." },
         { value: "espaceClient", label: "Espace client" },
         { value: "courriel", label: "Courriel" },
       ]}
@@ -940,18 +962,26 @@ export default function FormulaireFiscalPage() {
 
 {/* SUBMIT */}
 <div className="ff-submit">
-  <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting || !!formulaireId}>
+  <button
+    type="submit"
+    className="ff-btn ff-btn-primary ff-btn-big"
+    disabled={submitting || !!formulaireId}
+  >
     {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
   </button>
 
   <p className="ff-footnote">
-    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier / travail autonome)
-    et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
+    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
+    travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
   </p>
 </div>
 
 {/* UPLOAD EN BAS (FACILE) */}
-<section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
+<section
+  id="ff-upload-section"
+  className="ff-card"
+  style={{ opacity: formulaireId ? 1 : 0.65 }}
+>
   <div className="ff-card-head">
     <h2>Documents</h2>
     <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
@@ -969,9 +999,9 @@ export default function FormulaireFiscalPage() {
           multiple
           disabled={uploading}
           onChange={async (e) => {
-            const files = e.target.files;
+            const files = e.currentTarget.files;
             await handleUploadFiles(files);
-            e.target.value = "";
+            e.currentTarget.value = "";
           }}
         />
       </label>
@@ -989,11 +1019,19 @@ export default function FormulaireFiscalPage() {
           {docs.map((d) => (
             <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {d.original_name}
                 </div>
                 <div style={{ opacity: 0.8, fontSize: 13 }}>
-                  {new Date(d.created_at).toLocaleString()} {d.size_bytes ? `• ${formatBytes(d.size_bytes)}` : ""}
+                  {new Date(d.created_at).toLocaleString()}
+                  {d.size_bytes ? ` • ${formatBytes(d.size_bytes)}` : ""}
                 </div>
               </div>
 
@@ -1005,28 +1043,24 @@ export default function FormulaireFiscalPage() {
         </div>
       )}
 
-      {!!formulaireId && (
-        <div className="ff-mt">
-          <button
-            type="button"
-            className="ff-btn ff-btn-primary"
-            onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-          >
-            Terminer
-          </button>
-        </div>
-      )}
+      <div className="ff-mt">
+        <button
+          type="button"
+          className="ff-btn ff-btn-primary"
+          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+        >
+          Terminer
+        </button>
+      </div>
     </div>
   )}
 </section>
 
-</form>
-</div>
-</main>
-);
-}
-
 /* ----------------- Réutilisables ----------------- */
+
+// ✅ Types (mets-les en haut du fichier, pas ici)
+type YesNo = "oui" | "non" | "";
+type CopieImpots = "espaceClient" | "courriel" | "";
 
 function Field({
   label,
@@ -1052,7 +1086,7 @@ function Field({
       <input
         className="ff-input"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.currentTarget.value)}
         placeholder={placeholder}
         required={required}
         type={type}
@@ -1076,7 +1110,7 @@ function CheckboxField({
         type="checkbox"
         className="ff-checkbox"
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={(e) => onChange(e.currentTarget.checked)}
       />
       <span>{label}</span>
     </label>
@@ -1089,8 +1123,8 @@ function YesNoField({
   onChange,
 }: {
   label: string;
-  value: string;
-  onChange: (v: string) => void;
+  value: YesNo;
+  onChange: (v: YesNo) => void;
 }) {
   const name = `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
 
@@ -1104,7 +1138,7 @@ function YesNoField({
             name={name}
             value="oui"
             checked={value === "oui"}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(e.currentTarget.value as YesNo)}
           />
           <span>Oui</span>
         </label>
@@ -1115,7 +1149,7 @@ function YesNoField({
             name={name}
             value="non"
             checked={value === "non"}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(e.currentTarget.value as YesNo)}
           />
           <span>Non</span>
         </label>
@@ -1124,7 +1158,7 @@ function YesNoField({
   );
 }
 
-function SelectField({
+function SelectField<T extends string>({
   label,
   value,
   onChange,
@@ -1132,9 +1166,9 @@ function SelectField({
   required,
 }: {
   label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: Exclude<T, "">; label: string }[];
   required?: boolean;
 }) {
   return (
@@ -1147,7 +1181,7 @@ function SelectField({
       <select
         className="ff-select"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.currentTarget.value as T)}
         required={required}
       >
         <option value="">Choisir…</option>
