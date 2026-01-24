@@ -943,7 +943,7 @@ export default function FormulaireFiscalPage() {
 
     <div className="ff-stack" style={{ marginTop: 12 }}>
       <a
-        href="/docs/liste-documents-requis-cliquable.pdf"
+        href={`/depot-documents?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`}
         target="_blank"
         rel="noopener noreferrer"
         className="ff-btn ff-btn-primary"
