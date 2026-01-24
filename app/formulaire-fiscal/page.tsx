@@ -949,20 +949,14 @@ export default function FormulaireFiscalPage() {
 </div>
 
 {/* UPLOAD EN BAS (FACILE) */}
-<section
-  id="ff-upload-section"
-  className="ff-card"
-  style={{ opacity: formulaireId ? 1 : 0.65 }}
->
+<section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
   <div className="ff-card-head">
     <h2>Documents</h2>
     <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
   </div>
 
   {!formulaireId ? (
-    <div className="ff-empty">
-      Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.
-    </div>
+    <div className="ff-empty">Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.</div>
   ) : (
     <div className="ff-stack">
       <label className="ff-field">
@@ -993,19 +987,11 @@ export default function FormulaireFiscalPage() {
           {docs.map((d) => (
             <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {d.original_name}
                 </div>
                 <div style={{ opacity: 0.8, fontSize: 13 }}>
-                  {new Date(d.created_at).toLocaleString()}{" "}
-                  {d.size_bytes ? `• ${formatBytes(d.size_bytes)}` : ""}
+                  {new Date(d.created_at).toLocaleString()} {d.size_bytes ? `• ${formatBytes(d.size_bytes)}` : ""}
                 </div>
               </div>
 
@@ -1017,7 +1003,7 @@ export default function FormulaireFiscalPage() {
         </div>
       )}
 
-      {showFinishButton && (
+      {!!formulaireId && (
         <div className="ff-mt">
           <button
             type="button"
