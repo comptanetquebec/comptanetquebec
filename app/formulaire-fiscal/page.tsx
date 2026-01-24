@@ -1003,18 +1003,17 @@ export default function FormulaireFiscalPage() {
         </div>
       )}
 
-      {showFinishButton && (
-  <div className="ff-mt">
-    <button
-      type="button"
-      className="ff-btn ff-btn-primary"
-      onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-    >
-      Terminer
-    </button>
-  </div>
-)}
-
+       {showFinishButton && (
+    <div className="ff-mt">
+      <button
+        type="button"
+        className="ff-btn ff-btn-primary"
+        onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+      >
+        Terminer
+      </button>
+    </div>
+  )}
 </section>
 
 </form>
@@ -1026,109 +1025,134 @@ export default function FormulaireFiscalPage() {
 /* ----------------- Réutilisables ----------------- */
 
 function Field({
-label,
-value,
-onChange,
-required,
-placeholder,
-type = "text",
+  label,
+  value,
+  onChange,
+  required,
+  placeholder,
+  type = "text",
 }: {
-label: string;
-value: string;
-onChange: (v: string) => void;
-required?: boolean;
-placeholder?: string;
-type?: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  placeholder?: string;
+  type?: string;
 }) {
-return (
-<label className="ff-field">
-  <span className="ff-label">
-    {label}
-    {required ? " *" : ""}
-  </span>
-  <input
-    className="ff-input"
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    placeholder={placeholder}
-    required={required}
-    type={type}
-  />
-</label>
-);
+  return (
+    <label className="ff-field">
+      <span className="ff-label">
+        {label}
+        {required ? " *" : ""}
+      </span>
+      <input
+        className="ff-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        type={type}
+      />
+    </label>
+  );
 }
 
 function CheckboxField({
-label,
-checked,
-onChange,
+  label,
+  checked,
+  onChange,
 }: {
-label: string;
-checked: boolean;
-onChange: (v: boolean) => void;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
 }) {
-return (
-<label className="ff-check">
-  <input type="checkbox" className="ff-checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-  <span>{label}</span>
-</label>
-);
+  return (
+    <label className="ff-check">
+      <input
+        type="checkbox"
+        className="ff-checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
 }
 
 function YesNoField({
-label,
-value,
-onChange,
+  label,
+  value,
+  onChange,
 }: {
-label: string;
-value: string;
-onChange: (v: string) => void;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
 }) {
-const name = useMemo(() => `yn_${label.replace(/\W+/g, "_").toLowerCase()}`, [label]);
+  const name = `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
 
-return (
-<div className="ff-yn">
-  <div className="ff-label">{label}</div>
-  <div className="ff-yn-row">
-    <label className="ff-radio">
-      <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={(e) => onChange(e.target.value)} />
-      <span>Oui</span>
-    </label>
-    <label className="ff-radio">
-      <input type="radio" name={name} value="non" checked={value === "non"} onChange={(e) => onChange(e.target.value)} />
-      <span>Non</span>
-    </label>
-  </div>
-</div>
-);
+  return (
+    <div className="ff-yn">
+      <div className="ff-label">{label}</div>
+      <div className="ff-yn-row">
+        <label className="ff-radio">
+          <input
+            type="radio"
+            name={name}
+            value="oui"
+            checked={value === "oui"}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          <span>Oui</span>
+        </label>
+
+        <label className="ff-radio">
+          <input
+            type="radio"
+            name={name}
+            value="non"
+            checked={value === "non"}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          <span>Non</span>
+        </label>
+      </div>
+    </div>
+  );
 }
 
 function SelectField({
-label,
-value,
-onChange,
-options,
-required,
+  label,
+  value,
+  onChange,
+  options,
+  required,
 }: {
-label: string;
-value: string;
-onChange: (v: string) => void;
-options: { value: string; label: string }[];
-required?: boolean;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  required?: boolean;
 }) {
-return (
-<label className="ff-field">
-  <span className="ff-label">
-    {label}
-    {required ? " *" : ""}
-  </span>
-  <select className="ff-select" value={value} onChange={(e) => onChange(e.target.value)} required={required}>
-    {options.map((opt) => (
-      <option key={opt.value} value={opt.value}>
-        {opt.label}
-      </option>
-    ))}
-  </select>
-</label>
-);
+  return (
+    <label className="ff-field">
+      <span className="ff-label">
+        {label}
+        {required ? " *" : ""}
+      </span>
+
+      <select
+        className="ff-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+      >
+        <option value="">Choisir…</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
