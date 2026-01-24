@@ -905,36 +905,38 @@ export default function FormulaireFiscalPage() {
       ]}
     />
 
-   <div className="ff-rowbox" style={{ marginTop: 12 }}>
-  <div style={{ flex: 1, minWidth: 0 }}>
-    <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
-    <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-      Ouvrez et téléchargez les documents requis. Vous pouvez les imprimer ou les conserver pour votre dossier.
+    <div className="ff-rowbox" style={{ marginTop: 12 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
+        <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
+          Ouvrez et téléchargez les documents requis. Vous pouvez les imprimer ou les conserver pour votre dossier.
+        </div>
+      </div>
+    </div>
+
+    <div className="ff-stack" style={{ marginTop: 12 }}>
+      <a
+        href="/docs/liste-documents-requis-cliquable.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="ff-btn ff-btn-primary"
+        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+      >
+        Ouvrir la liste des documents requis (PDF) →
+      </a>
+
+      <a
+        href="/docs/mandat-autorisation.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="ff-btn ff-btn-soft"
+        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+      >
+        Ouvrir le mandat / autorisation (PDF) →
+      </a>
     </div>
   </div>
-</div>
-
-<div className="ff-stack" style={{ marginTop: 12 }}>
-  <a
-    href="/docs/liste-documents-requis-cliquable.pdf"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="ff-btn ff-btn-primary"
-    style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-  >
-    Ouvrir la liste des documents requis (PDF) →
-  </a>
-
-  <a
-    href="/docs/mandat-autorisation.pdf"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="ff-btn ff-btn-soft"
-    style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-  >
-    Ouvrir le mandat / autorisation (PDF) →
-  </a>
-</div>
+</section>
 
 {/* SUBMIT */}
 <div className="ff-submit">
