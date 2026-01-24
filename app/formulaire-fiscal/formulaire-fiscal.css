@@ -463,3 +463,37 @@
     justify-content:flex-start;
   }
 }
+.ff-dropzone {
+  border: 2px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 16px;
+  padding: 22px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.7);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.ff-dropzone:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.ff-dropzone--over {
+  border-color: rgba(0, 0, 0, 0.55);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.ff-dropzone--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ff-dropzone__title {
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.ff-dropzone__hint {
+  margin-top: 6px;
+  opacity: 0.8;
+  line-height: 1.4;
+}
