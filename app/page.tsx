@@ -6,7 +6,81 @@ import Image from "next/image";
 import Script from "next/script";
 import styles from "./page.module.css";
 
-declare const grecaptcha: any;
+/* ===== reCAPTCHA (sans any) ===== */
+type Grecaptcha = {
+  getResponse: () => string;
+  reset: () => void;
+};
+declare const grecaptcha: Grecaptcha | undefined;
+
+/* ===== Types (pour enlever les any dans les .map) ===== */
+type Lang = "fr" | "en" | "es";
+
+type FAQItem = { q: string; a: string };
+type ServiceItem = { t: string; d: string };
+type StepItem = { n: string; t: string; d: string };
+type PlanItem = { t: string; p: string; pts: string[]; href: string };
+type WhyItem = { t: string; d: string };
+
+type CopyDict = {
+  brand: string;
+  nav: { services: string; steps: string; pricing: string; faq: string; contact: string; client: string };
+  ctaMain: string;
+  heroTitle: React.ReactNode;
+  heroSub: string;
+
+  chooseType: string;
+  t1Title: string;
+  t1Desc: string;
+  t1Btn: string;
+  autoTitle: string;
+  autoDesc: string;
+  autoBtn: string;
+  t2Title: string;
+  t2Desc: string;
+  t2Btn: string;
+
+  servicesTitle: string;
+  servicesSub: string;
+  services: ServiceItem[];
+
+  stepsTitle: string;
+  steps: StepItem[];
+
+  pricingTitle: string;
+  pricingSub: string;
+  plans: PlanItem[];
+  getPrice: string;
+
+  whyTitle: string;
+  whyPoints: WhyItem[];
+
+  faqTitle: string;
+  faq: FAQItem[];
+
+  contactTitle: string;
+  contactHint: string;
+  send: string;
+  sending: string;
+  sentOk: string;
+  sentErr: string;
+  contactPlaceholders: { name: string; email: string; msg: string };
+
+  langLabel: string;
+  langNames: Record<Lang, string>;
+
+  footerLinks: {
+    services: string;
+    pricing: string;
+    contact: string;
+    legal: {
+      privacy: string;
+      terms: string;
+      disclaimer: string;
+      note: string;
+    };
+  };
+};
 
 function TaxChoiceCard({
   title,
@@ -33,7 +107,7 @@ function TaxChoiceCard({
   );
 }
 
-function FAQ({ items }: { items: { q: string; a: string }[] }) {
+function FAQ({ items }: { items: FAQItem[] }) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
@@ -63,7 +137,6 @@ function FAQ({ items }: { items: { q: string; a: string }[] }) {
 export default function Home() {
   const bleu = "#004aad" as const;
 
-  type Lang = "fr" | "en" | "es";
   const [lang, setLang] = useState<Lang>("fr");
 
   const [contactName, setContactName] = useState("");
@@ -78,11 +151,13 @@ export default function Home() {
       const params = new URLSearchParams(window.location.search);
       const q = (params.get("lang") || "").toLowerCase();
       if (q === "fr" || q === "en" || q === "es") setLang(q);
-    } catch {}
+    } catch {
+      // rien
+    }
   }, []);
 
   const COPY = useMemo(() => {
-    return {
+    const dict: Record<Lang, CopyDict> = {
       fr: {
         brand: "ComptaNet Québec",
         nav: { services: "Services", steps: "Étapes", pricing: "Tarifs", faq: "FAQ", contact: "Contact", client: "Espace client" },
@@ -353,7 +428,9 @@ export default function Home() {
           },
         },
       },
-    } as const;
+    };
+
+    return dict;
   }, [bleu]);
 
   const T = COPY[lang];
@@ -363,12 +440,11 @@ export default function Home() {
   const toT2 = `/espace-client?lang=${lang}&next=/T2`;
 
   const LangSwitcher = () => {
-    // On garde simple: boutons sur desktop, select sur petits écrans via CSS
     return (
       <div className={styles.langRow}>
         <span className={styles.langLabel}>{T.langLabel}</span>
 
-        {(["fr", "en", "es"] as Lang[]).map((l) => (
+        {(["fr", "en", "es"] as const).map((l) => (
           <button
             key={l}
             onClick={() => setLang(l)}
@@ -390,10 +466,11 @@ export default function Home() {
 
     let token = "";
     try {
-      token = typeof grecaptcha !== "undefined" ? grecaptcha.getResponse() : "";
+      token = grecaptcha ? grecaptcha.getResponse() : "";
     } catch {
       token = "";
     }
+
     if (!token) {
       setContactErr(
         lang === "fr"
@@ -414,8 +491,7 @@ export default function Home() {
           name: contactName,
           email: contactEmail,
           message: contactMsg,
-          lang,
-          recaptchaToken: token,
+          token, // ✅ IMPORTANT: ton API attend "token"
         }),
       });
 
@@ -428,8 +504,10 @@ export default function Home() {
       setContactEmail("");
       setContactMsg("");
       try {
-        if (typeof grecaptcha !== "undefined") grecaptcha.reset();
-      } catch {}
+        if (grecaptcha) grecaptcha.reset();
+      } catch {
+        // rien
+      }
     } catch {
       setContactErr(T.sentErr);
     } finally {
@@ -445,7 +523,14 @@ export default function Home() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
-            <Image src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} priority />
+            <Image
+              src="/logo-cq.png"
+              alt="Logo ComptaNet Québec"
+              width={36}
+              height={36}
+              style={{ borderRadius: 6 }}
+              priority
+            />
             <strong className={styles.brandName}>{T.brand}</strong>
           </div>
 
@@ -470,14 +555,7 @@ export default function Home() {
       {/* HERO */}
       <section className={styles.hero}>
         <div className={styles.heroBg}>
-          <Image
-            src="/banniere.png"
-            alt="Bannière"
-            fill
-            priority
-            sizes="100vw"
-            className={styles.heroBgImg}
-          />
+          <Image src="/banniere.png" alt="Bannière" fill priority sizes="100vw" className={styles.heroBgImg} />
         </div>
 
         <div className={styles.heroCenter}>
@@ -519,7 +597,7 @@ export default function Home() {
         <p className={styles.sectionSub}>{T.servicesSub}</p>
 
         <div className={styles.gridCards}>
-          {T.services?.map((svc: any, i: number) => (
+          {T.services.map((svc, i) => (
             <div key={i} className={styles.cardBox}>
               <h3>{svc.t}</h3>
               <p>{svc.d}</p>
@@ -534,7 +612,7 @@ export default function Home() {
           <h2 className={styles.sectionTitle}>{T.stepsTitle}</h2>
 
           <div className={styles.gridCards}>
-            {T.steps?.map((step: any, i: number) => (
+            {T.steps.map((step, i) => (
               <div key={i} className={styles.cardBox}>
                 <div className={styles.stepNum}>{step.n}</div>
                 <h3>{step.t}</h3>
@@ -551,13 +629,13 @@ export default function Home() {
         <p className={styles.sectionSub}>{T.pricingSub}</p>
 
         <div className={styles.gridCards}>
-          {T.plans?.map((plan: any, i: number) => (
+          {T.plans.map((plan, i) => (
             <div key={i} className={styles.cardBox} style={{ display: "flex", flexDirection: "column" }}>
               <h3>{plan.t}</h3>
               <div className={styles.planPrice}>{plan.p}</div>
 
               <ul className={styles.planList}>
-                {plan.pts.map((pt: string, j: number) => (
+                {plan.pts.map((pt, j) => (
                   <li key={j}>{pt}</li>
                 ))}
               </ul>
@@ -580,7 +658,7 @@ export default function Home() {
         <h2 className={styles.sectionTitle}>{T.whyTitle}</h2>
 
         <div className={styles.gridCards}>
-          {T.whyPoints?.map((pt: any, i: number) => (
+          {T.whyPoints.map((pt, i) => (
             <div key={i} className={styles.cardBox}>
               <h3 style={{ marginBottom: 6 }}>{pt.t}</h3>
               <p>{pt.d}</p>
@@ -592,7 +670,7 @@ export default function Home() {
       {/* FAQ */}
       <section id="faq" className={styles.section}>
         <h2 className={styles.faqTitle}>{T.faqTitle}</h2>
-        <FAQ items={T.faq || []} />
+        <FAQ items={T.faq} />
       </section>
 
       {/* CONTACT */}
@@ -603,7 +681,7 @@ export default function Home() {
           <form onSubmit={onContactSubmit} className={styles.contactForm}>
             <input
               name="name"
-              placeholder={T.contactPlaceholders?.name}
+              placeholder={T.contactPlaceholders.name}
               required
               className={styles.input}
               value={contactName}
@@ -611,7 +689,7 @@ export default function Home() {
             />
             <input
               name="email"
-              placeholder={T.contactPlaceholders?.email}
+              placeholder={T.contactPlaceholders.email}
               type="email"
               required
               className={styles.input}
@@ -620,7 +698,7 @@ export default function Home() {
             />
             <textarea
               name="message"
-              placeholder={T.contactPlaceholders?.msg}
+              placeholder={T.contactPlaceholders.msg}
               rows={5}
               className={styles.input}
               value={contactMsg}
@@ -656,7 +734,10 @@ export default function Home() {
               <a href="#services">{T.footerLinks.services}</a>
               <a href="#tarifs">{T.footerLinks.pricing}</a>
               <a href="#contact">{T.footerLinks.contact}</a>
-              <Link href={`/espace-client?lang=${lang}`} style={{ fontWeight: 800, color: "#cbd5e1", textDecoration: "none" }}>
+              <Link
+                href={`/espace-client?lang=${lang}`}
+                style={{ fontWeight: 800, color: "#cbd5e1", textDecoration: "none" }}
+              >
                 {T.nav.client}
               </Link>
             </div>
@@ -683,4 +764,4 @@ export default function Home() {
       </footer>
     </main>
   );
-              }
+}
