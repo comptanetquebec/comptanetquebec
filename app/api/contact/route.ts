@@ -36,6 +36,17 @@ function escapeHtml(str: string) {
     .replaceAll("'", "&#039;");
 }
 
+type RecaptchaVerifyResponse = {
+  success?: boolean;
+  "error-codes"?: string[];
+};
+
+function getErrorMessage(err: unknown) {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Erreur inconnue.";
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Body;
@@ -77,7 +88,7 @@ export async function POST(req: Request) {
       }),
     });
 
-    const recaptcha = (await verifyRes.json()) as { success?: boolean; "error-codes"?: string[] };
+    const recaptcha = (await verifyRes.json()) as RecaptchaVerifyResponse;
 
     if (!recaptcha?.success) {
       return NextResponse.json(
@@ -119,7 +130,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message ?? "Erreur inconnue." }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ ok: false, error: getErrorMessage(e) }, { status: 500 });
   }
 }
