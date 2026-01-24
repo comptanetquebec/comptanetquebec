@@ -319,3 +319,147 @@
     grid-template-columns: 1fr;
   }
 }
+/* ===============================
+   Documents (Upload)
+================================ */
+
+.ff-docs{
+  display:grid;
+  gap: 12px;
+}
+
+.ff-drop{
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background:#f8fafc;
+  padding: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease;
+}
+
+.ff-drop:hover{
+  border-color:#94a3b8;
+  background:#f1f5f9;
+}
+
+.ff-drop--disabled{
+  opacity:.55;
+  pointer-events:none;
+}
+
+.ff-drop__text{
+  display:grid;
+  gap: 4px;
+}
+
+.ff-drop__title{
+  font-weight: 900;
+  color:#0f172a;
+  font-size: 13px;
+  margin: 0;
+}
+
+.ff-drop__hint{
+  color:#64748b;
+  font-size: 12px;
+  margin: 0;
+}
+
+.ff-file-input{
+  display:none;
+}
+
+.ff-doc-actions{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ff-doc-note{
+  font-size: 12px;
+  color:#64748b;
+  margin: 0;
+}
+
+/* Liste des fichiers */
+.ff-files{
+  display:grid;
+  gap: 10px;
+}
+
+.ff-file{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background:#ffffff;
+}
+
+.ff-file__left{
+  display:grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ff-file__name{
+  font-weight: 900;
+  color:#0f172a;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.ff-file__meta{
+  font-size: 12px;
+  color:#64748b;
+  margin: 0;
+}
+
+.ff-badge{
+  display:inline-flex;
+  align-items:center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  border: 1px solid rgba(0,74,173,.18);
+  background:#e5f3ff;
+  color:#0f172a;
+}
+
+.ff-file__right{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ff-progress{
+  font-size: 12px;
+  color:#64748b;
+  font-weight: 800;
+}
+
+/* Mobile */
+@media (max-width: 640px){
+  .ff-drop{
+    flex-direction: column;
+    align-items:flex-start;
+  }
+  .ff-file{
+    flex-direction: column;
+    align-items:flex-start;
+  }
+  .ff-file__right{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
