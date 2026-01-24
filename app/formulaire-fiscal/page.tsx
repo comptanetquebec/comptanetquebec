@@ -1003,17 +1003,18 @@ export default function FormulaireFiscalPage() {
         </div>
       )}
 
-      <div className="ff-mt">
-        <button
-          type="button"
-          className="ff-btn ff-btn-primary"
-          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-        >
-          Terminer
-        </button>
-      </div>
-    </div>
-  )}
+      {showFinishButton && (
+  <div className="ff-mt">
+    <button
+      type="button"
+      className="ff-btn ff-btn-primary"
+      onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+    >
+      Terminer
+    </button>
+  </div>
+)}
+
 </section>
 
 </form>
