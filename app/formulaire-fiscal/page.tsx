@@ -53,6 +53,15 @@ type DocRow = {
   created_at: string;
 };
 
+type EtatCivil =
+  | "celibataire"
+  | "conjointDefait"
+  | "marie"
+  | "separe"
+  | "divorce"
+  | "veuf"
+  | "";
+
 function titleFromType(type: string) {
   if (type === "autonome") return "Travailleur autonome (T1)";
   if (type === "t2") return "Société (T2)";
@@ -123,15 +132,6 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "NT", label: "NT" },
   { value: "NU", label: "NU" },
 ];
-
-type EtatCivil =
-  | "celibataire"
-  | "conjointDefait"
-  | "marie"
-  | "separe"
-  | "divorce"
-  | "veuf"
-  | "";
 
 export default function FormulaireFiscalPage() {
   const router = useRouter();
@@ -455,7 +455,6 @@ export default function FormulaireFiscalPage() {
     setMsg("✅ Formulaire reçu. Téléversez vos documents en bas de la page.");
     await loadDocs(fid);
 
-    // Scroll vers la zone upload
     setTimeout(() => {
       const el = document.getElementById("ff-upload-section");
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -602,7 +601,6 @@ export default function FormulaireFiscalPage() {
               </div>
             </div>
           </section>
-
           {/* SECTION CONJOINT */}
           <section className="ff-card">
             <div className="ff-card-head">
@@ -658,7 +656,12 @@ export default function FormulaireFiscalPage() {
                     onChange={setTelCellConjoint}
                     placeholder="(xxx) xxx-xxxx"
                   />
-                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
+                  <Field
+                    label="Courriel (conjoint)"
+                    value={courrielConjoint}
+                    onChange={setCourrielConjoint}
+                    type="email"
+                  />
                 </div>
 
                 <div className="ff-mt">
@@ -866,201 +869,202 @@ export default function FormulaireFiscalPage() {
             </div>
           </section>
 
-{/* QUESTIONS */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Informations fiscales additionnelles</h2>
-    <p>Questions générales pour compléter correctement le dossier.</p>
-  </div>
+          {/* QUESTIONS */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Informations fiscales additionnelles</h2>
+              <p>Questions générales pour compléter correctement le dossier.</p>
+            </div>
 
-  <div className="ff-stack">
-    <YesNoField
-      label="Avez-vous habité seul(e) toute l'année (sans personne à charge)?"
-      value={habiteSeulTouteAnnee}
-      onChange={setHabiteSeulTouteAnnee}
-    />
+            <div className="ff-stack">
+              <YesNoField
+                label="Avez-vous habité seul(e) toute l'année (sans personne à charge)?"
+                value={habiteSeulTouteAnnee}
+                onChange={setHabiteSeulTouteAnnee}
+              />
 
-    <Field
-      label="Au 31/12, combien de personnes vivaient avec vous ?"
-      value={nbPersonnesMaison3112}
-      onChange={setNbPersonnesMaison3112}
-      placeholder="ex.: 1, 2, 3..."
-    />
+              <Field
+                label="Au 31/12, combien de personnes vivaient avec vous ?"
+                value={nbPersonnesMaison3112}
+                onChange={setNbPersonnesMaison3112}
+                placeholder="ex.: 1, 2, 3..."
+              />
 
-    <YesNoField
-      label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
-      value={biensEtranger100k}
-      onChange={setBiensEtranger100k}
-    />
+              <YesNoField
+                label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
+                value={biensEtranger100k}
+                onChange={setBiensEtranger100k}
+              />
 
-    <YesNoField
-      label="Êtes-vous citoyen(ne) canadien(ne) ?"
-      value={citoyenCanadien}
-      onChange={setCitoyenCanadien}
-    />
+              <YesNoField
+                label="Êtes-vous citoyen(ne) canadien(ne) ?"
+                value={citoyenCanadien}
+                onChange={setCitoyenCanadien}
+              />
 
-    <YesNoField
-      label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
-      value={nonResident}
-      onChange={setNonResident}
-    />
+              <YesNoField
+                label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
+                value={nonResident}
+                onChange={setNonResident}
+              />
 
-    <YesNoField
-      label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
-      value={maisonAcheteeOuVendue}
-      onChange={setMaisonAcheteeOuVendue}
-    />
+              <YesNoField
+                label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
+                value={maisonAcheteeOuVendue}
+                onChange={setMaisonAcheteeOuVendue}
+              />
 
-    <YesNoField
-      label="Souhaitez-vous qu'un technicien vous appelle ?"
-      value={appelerTechnicien}
-      onChange={setAppelerTechnicien}
-    />
+              <YesNoField
+                label="Souhaitez-vous qu'un technicien vous appelle ?"
+                value={appelerTechnicien}
+                onChange={setAppelerTechnicien}
+              />
 
-    <SelectField
-      label="Comment voulez-vous recevoir votre copie d'impôt ?"
-      value={copieImpots}
-      onChange={(v) => setCopieImpots(v as CopieImpots)}
-      options={[
-        { value: "espaceClient", label: "Espace client" },
-        { value: "courriel", label: "Courriel" },
-      ]}
-    />
+              <SelectField<CopieImpots>
+                label="Comment voulez-vous recevoir votre copie d'impôt ?"
+                value={copieImpots}
+                onChange={setCopieImpots}
+                options={[
+                  { value: "espaceClient", label: "Espace client" },
+                  { value: "courriel", label: "Courriel" },
+                ]}
+              />
 
-    <div className="ff-rowbox" style={{ marginTop: 12 }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
-        <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-          Ouvrez et téléchargez les documents requis. Vous pouvez les imprimer ou les conserver pour votre dossier.
-        </div>
-      </div>
-    </div>
-
-    <div className="ff-stack" style={{ marginTop: 12 }}>
-      <a
-        href="/docs/liste-documents-requis-cliquable.pdf"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="ff-btn ff-btn-primary"
-        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-      >
-        Ouvrir la liste des documents requis (PDF) →
-      </a>
-
-      <a
-        href="/docs/mandat-autorisation.pdf"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="ff-btn ff-btn-soft"
-        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-      >
-        Ouvrir le mandat / autorisation (PDF) →
-      </a>
-    </div>
-  </div>
-</section>
-
-{/* SUBMIT */}
-<div className="ff-submit">
-  <button
-    type="submit"
-    className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting || !!formulaireId}
-  >
-    {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
-  </button>
-
-  <p className="ff-footnote">
-    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
-    travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
-  </p>
-</div>
-
-{/* UPLOAD EN BAS (FACILE) */}
-<section
-  id="ff-upload-section"
-  className="ff-card"
-  style={{ opacity: formulaireId ? 1 : 0.65 }}
->
-  <div className="ff-card-head">
-    <h2>Documents</h2>
-    <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
-  </div>
-
-  {!formulaireId ? (
-    <div className="ff-empty">Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.</div>
-  ) : (
-    <div className="ff-stack">
-      <label className="ff-field">
-        <span className="ff-label">Téléverser des fichiers</span>
-        <input
-          className="ff-input"
-          type="file"
-          multiple
-          disabled={uploading}
-          onChange={async (e) => {
-            const files = e.currentTarget.files;
-            await handleUploadFiles(files);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
-
-      {uploading && <div className="ff-empty">Téléversement en cours…</div>}
-
-      <div className="ff-subtitle">Documents envoyés</div>
-
-      {docsLoading ? (
-        <div className="ff-empty">Chargement…</div>
-      ) : docs.length === 0 ? (
-        <div className="ff-empty">Aucun document pour l’instant.</div>
-      ) : (
-        <div className="ff-stack">
-          {docs.map((d) => (
-            <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {d.original_name}
-                </div>
-                <div style={{ opacity: 0.8, fontSize: 13 }}>
-                  {new Date(d.created_at).toLocaleString()}
-                  {d.size_bytes ? ` • ${formatBytes(d.size_bytes)}` : ""}
+              <div className="ff-rowbox" style={{ marginTop: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
+                  <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
+                    Ouvrez et téléchargez les documents requis. Vous pouvez les imprimer ou les conserver pour votre dossier.
+                  </div>
                 </div>
               </div>
 
-              <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
-                Voir / Télécharger
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+              <div className="ff-stack" style={{ marginTop: 12 }}>
+                <a
+                  href="/docs/liste-documents-requis-cliquable.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ff-btn ff-btn-primary"
+                  style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+                >
+                  Ouvrir la liste des documents requis (PDF) →
+                </a>
 
-      <div className="ff-mt">
-        <button
-          type="button"
-          className="ff-btn ff-btn-primary"
-          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-        >
-          Terminer
-        </button>
+                <a
+                  href="/docs/mandat-autorisation.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ff-btn ff-btn-soft"
+                  style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+                >
+                  Ouvrir le mandat / autorisation (PDF) →
+                </a>
+              </div>
+            </div>
+          </section>
+
+          {/* SUBMIT */}
+          <div className="ff-submit">
+            <button
+              type="submit"
+              className="ff-btn ff-btn-primary ff-btn-big"
+              disabled={submitting || !!formulaireId}
+            >
+              {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
+            </button>
+
+            <p className="ff-footnote">
+              Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
+              travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
+            </p>
+          </div>
+
+          {/* UPLOAD EN BAS (FACILE) */}
+          <section
+            id="ff-upload-section"
+            className="ff-card"
+            style={{ opacity: formulaireId ? 1 : 0.65 }}
+          >
+            <div className="ff-card-head">
+              <h2>Documents</h2>
+              <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
+            </div>
+
+            {!formulaireId ? (
+              <div className="ff-empty">Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.</div>
+            ) : (
+              <div className="ff-stack">
+                <label className="ff-field">
+                  <span className="ff-label">Téléverser des fichiers</span>
+                  <input
+                    className="ff-input"
+                    type="file"
+                    multiple
+                    disabled={uploading}
+                    onChange={async (e) => {
+                      const files = e.currentTarget.files;
+                      await handleUploadFiles(files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+
+                {uploading && <div className="ff-empty">Téléversement en cours…</div>}
+
+                <div className="ff-subtitle">Documents envoyés</div>
+
+                {docsLoading ? (
+                  <div className="ff-empty">Chargement…</div>
+                ) : docs.length === 0 ? (
+                  <div className="ff-empty">Aucun document pour l’instant.</div>
+                ) : (
+                  <div className="ff-stack">
+                    {docs.map((d) => (
+                      <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {d.original_name}
+                          </div>
+                          <div style={{ opacity: 0.8, fontSize: 13 }}>
+                            {new Date(d.created_at).toLocaleString()}
+                            {d.size_bytes ? ` • ${formatBytes(d.size_bytes)}` : ""}
+                          </div>
+                        </div>
+
+                        <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                          Voir / Télécharger
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="ff-mt">
+                  <button
+                    type="button"
+                    className="ff-btn ff-btn-primary"
+                    onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+                  >
+                    Terminer
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </form>
       </div>
-    </div>
-  )}
-</section>
+    </main>
+  );
+}
 
 /* ----------------- Réutilisables ----------------- */
-
-// ✅ Types (mets-les en haut du fichier, pas ici)
-type YesNo = "oui" | "non" | "";
-type CopieImpots = "espaceClient" | "courriel" | "";
 
 function Field({
   label,
