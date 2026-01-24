@@ -6,6 +6,13 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import "./formulaire-fiscal.css";
 
+/**
+ * IMPORTANT (à ajuster si tes noms sont différents)
+ */
+const STORAGE_BUCKET = "client-documents";
+const DOCS_TABLE = "formulaire_documents";
+const FORMS_TABLE = "formulaires_fiscaux";
+
 type ProvinceCode =
   | "QC"
   | "ON"
@@ -27,6 +34,17 @@ type Child = {
   dob: string; // JJ/MM/AAAA
   nas: string;
   sexe: string;
+};
+
+type DocRow = {
+  id: string;
+  formulaire_id: string;
+  user_id: string;
+  original_name: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
 };
 
 function titleFromType(type: string) {
@@ -57,13 +75,39 @@ function normalizePhone(v: string) {
   return (v || "").trim();
 }
 
+function isAllowedFile(file: File) {
+  const n = file.name.toLowerCase();
+  return (
+    n.endsWith(".pdf") ||
+    n.endsWith(".jpg") ||
+    n.endsWith(".jpeg") ||
+    n.endsWith(".png") ||
+    n.endsWith(".zip") ||
+    n.endsWith(".doc") ||
+    n.endsWith(".docx") ||
+    n.endsWith(".xls") ||
+    n.endsWith(".xlsx")
+  );
+}
+
+function safeFilename(name: string) {
+  return name.replace(/[^\w.\-()\s]/g, "_");
+}
+
+function formatBytes(bytes?: number | null) {
+  if (!bytes || bytes <= 0) return "";
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  const mb = kb / 1024;
+  return `${mb.toFixed(1)} MB`;
+}
+
 export default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
 
   const type = normalizeType(params.get("type") || "t1");
   const lang = normalizeLang(params.get("lang") || "fr");
-
   const formTitle = useMemo(() => titleFromType(type), [type]);
 
   const [booting, setBooting] = useState(true);
@@ -73,6 +117,14 @@ export default function FormulaireFiscalPage() {
   const [msg, setMsg] = useState<string | null>(null);
 
   const redirected = useRef(false);
+
+  // ✅ Dossier créé après submit (permet d’uploader en bas)
+  const [formulaireId, setFormulaireId] = useState<string | null>(null);
+
+  // --- Upload docs state ---
+  const [uploading, setUploading] = useState(false);
+  const [docs, setDocs] = useState<DocRow[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
 
   // --- Infos client principal ---
   const [prenom, setPrenom] = useState("");
@@ -116,14 +168,10 @@ export default function FormulaireFiscalPage() {
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // --- Assurance médicaments (Québec uniquement) ---
-  const [assuranceMedsClient, setAssuranceMedsClient] = useState<"ramq" | "prive" | "conjoint" | "">(
-    ""
-  );
+  const [assuranceMedsClient, setAssuranceMedsClient] = useState<"ramq" | "prive" | "conjoint" | "">("");
   const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState([{ debut: "", fin: "" }]);
 
-  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<"ramq" | "prive" | "conjoint" | "">(
-    ""
-  );
+  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<"ramq" | "prive" | "conjoint" | "">("");
   const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState([{ debut: "", fin: "" }]);
 
   // --- Enfants / personnes à charge ---
@@ -167,8 +215,6 @@ export default function FormulaireFiscalPage() {
       if (error || !data.user) {
         if (!redirected.current) {
           redirected.current = true;
-
-          // IMPORTANT: stop booting avant de naviguer
           setBooting(false);
 
           const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
@@ -190,6 +236,90 @@ export default function FormulaireFiscalPage() {
     await supabase.auth.signOut();
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   };
+
+  async function loadDocs(fid: string) {
+    setDocsLoading(true);
+    const { data, error } = await supabase
+      .from(DOCS_TABLE)
+      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
+      .eq("formulaire_id", fid)
+      .order("created_at", { ascending: false });
+
+    setDocsLoading(false);
+
+    if (error) {
+      setMsg(`Erreur docs: ${error.message}`);
+      return;
+    }
+    setDocs((data as DocRow[]) || []);
+  }
+
+  async function uploadOne(file: File) {
+    if (!userId || !formulaireId) throw new Error("Veuillez soumettre le formulaire d’abord.");
+    if (!isAllowedFile(file)) throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
+    if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
+
+    const safe = safeFilename(file.name);
+    const storage_path = `${userId}/${formulaireId}/${Date.now()}-${safe}`;
+
+    const { error: upErr } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(storage_path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (upErr) throw upErr;
+
+    const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
+      formulaire_id: formulaireId,
+      user_id: userId,
+      original_name: file.name,
+      storage_path,
+      mime_type: file.type || null,
+      size_bytes: file.size,
+    });
+
+    if (dbErr) throw dbErr;
+  }
+
+  async function handleUploadFiles(fileList: FileList | null) {
+    setMsg(null);
+    if (!fileList || fileList.length === 0) return;
+    if (!formulaireId) {
+      setMsg("Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const files = Array.from(fileList);
+      for (const f of files) {
+        await uploadOne(f);
+      }
+      await loadDocs(formulaireId);
+      setMsg("✅ Documents téléversés.");
+    } catch (err: any) {
+      setMsg(err?.message || "Erreur upload.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function getSignedUrl(path: string) {
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10); // 10 min
+    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
+    return data.signedUrl;
+  }
+
+  async function openDoc(doc: DocRow) {
+    try {
+      const url = await getSignedUrl(doc.storage_path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      setMsg(e?.message || "Impossible d’ouvrir le fichier.");
+    }
+  }
 
   // --- Soumission ---
   async function handleSubmit(e: React.FormEvent) {
@@ -245,17 +375,15 @@ export default function FormulaireFiscalPage() {
         province === "QC"
           ? {
               client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
-              conjoint: aUnConjoint
-                ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes }
-                : null,
+              conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
             }
           : null,
-      personnesACharge: enfants.map((e) => ({
-        prenom: e.prenom.trim(),
-        nom: e.nom.trim(),
-        dob: e.dob.trim(),
-        nas: normalizeNAS(e.nas),
-        sexe: e.sexe,
+      personnesACharge: enfants.map((x) => ({
+        prenom: x.prenom.trim(),
+        nom: x.nom.trim(),
+        dob: x.dob.trim(),
+        nas: normalizeNAS(x.nas),
+        sexe: x.sexe,
       })),
       questionsGenerales: {
         habiteSeulTouteAnnee,
@@ -272,12 +400,17 @@ export default function FormulaireFiscalPage() {
 
     setSubmitting(true);
 
-    const { error } = await supabase.from("formulaires_fiscaux").insert({
-      user_id: userId,
-      dossier_type: type,
-      lang,
-      payload,
-    });
+    // ✅ On récupère l’ID du dossier pour activer l’upload en bas
+    const { data, error } = await supabase
+      .from(FORMS_TABLE)
+      .insert({
+        user_id: userId,
+        dossier_type: type,
+        lang,
+        payload,
+      })
+      .select("id")
+      .single();
 
     setSubmitting(false);
 
@@ -286,7 +419,16 @@ export default function FormulaireFiscalPage() {
       return;
     }
 
-    router.push(`/merci?lang=${encodeURIComponent(lang)}`);
+    const fid = (data as any)?.id as string;
+    setFormulaireId(fid);
+    setMsg("✅ Formulaire reçu. Téléversez vos documents en bas de la page.");
+    await loadDocs(fid);
+
+    // Scroll vers la zone upload
+    setTimeout(() => {
+      const el = document.getElementById("ff-upload-section");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
   }
 
   if (booting) {
@@ -386,8 +528,18 @@ export default function FormulaireFiscalPage() {
 
             {etatCivilChange && (
               <div className="ff-grid2 ff-mt">
-                <Field label="Ancien état civil" value={ancienEtatCivil} onChange={setAncienEtatCivil} placeholder="ex.: Célibataire" />
-                <Field label="Date du changement (JJ/MM/AAAA)" value={dateChangementEtatCivil} onChange={setDateChangementEtatCivil} placeholder="15/07/2024" />
+                <Field
+                  label="Ancien état civil"
+                  value={ancienEtatCivil}
+                  onChange={setAncienEtatCivil}
+                  placeholder="ex.: Célibataire"
+                />
+                <Field
+                  label="Date du changement (JJ/MM/AAAA)"
+                  value={dateChangementEtatCivil}
+                  onChange={setDateChangementEtatCivil}
+                  placeholder="15/07/2024"
+                />
               </div>
             )}
 
@@ -449,12 +601,22 @@ export default function FormulaireFiscalPage() {
                   <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required />
                   <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required />
                   <Field label="NAS (conjoint)" value={nasConjoint} onChange={setNasConjoint} placeholder="___-___-___" />
-                  <Field label="Date de naissance (JJ/MM/AAAA)" value={dobConjoint} onChange={setDobConjoint} placeholder="01/01/1990" />
+                  <Field
+                    label="Date de naissance (JJ/MM/AAAA)"
+                    value={dobConjoint}
+                    onChange={setDobConjoint}
+                    placeholder="01/01/1990"
+                  />
                 </div>
 
                 <div className="ff-grid2 ff-mt">
                   <Field label="Téléphone (conjoint)" value={telConjoint} onChange={setTelConjoint} placeholder="(xxx) xxx-xxxx" />
-                  <Field label="Cellulaire (conjoint)" value={telCellConjoint} onChange={setTelCellConjoint} placeholder="(xxx) xxx-xxxx" />
+                  <Field
+                    label="Cellulaire (conjoint)"
+                    value={telCellConjoint}
+                    onChange={setTelCellConjoint}
+                    placeholder="(xxx) xxx-xxxx"
+                  />
                   <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
                 </div>
 
@@ -479,7 +641,12 @@ export default function FormulaireFiscalPage() {
                         onChange={(v) => setProvinceConjoint(v as ProvinceCode)}
                         options={PROVINCES as any}
                       />
-                      <Field label="Code postal" value={codePostalConjoint} onChange={setCodePostalConjoint} placeholder="A1A 1A1" />
+                      <Field
+                        label="Code postal"
+                        value={codePostalConjoint}
+                        onChange={setCodePostalConjoint}
+                        placeholder="A1A 1A1"
+                      />
                     </div>
                   </div>
                 )}
@@ -620,8 +787,18 @@ export default function FormulaireFiscalPage() {
                     <div className="ff-grid2">
                       <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
                       <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
-                      <Field label="Date de naissance (JJ/MM/AAAA)" value={enf.dob} onChange={(v) => updateEnfant(i, "dob", v)} placeholder="01/01/2020" />
-                      <Field label="NAS (si attribué)" value={enf.nas} onChange={(v) => updateEnfant(i, "nas", v)} placeholder="___-___-___" />
+                      <Field
+                        label="Date de naissance (JJ/MM/AAAA)"
+                        value={enf.dob}
+                        onChange={(v) => updateEnfant(i, "dob", v)}
+                        placeholder="01/01/2020"
+                      />
+                      <Field
+                        label="NAS (si attribué)"
+                        value={enf.nas}
+                        onChange={(v) => updateEnfant(i, "nas", v)}
+                        placeholder="___-___-___"
+                      />
                     </div>
 
                     <div className="ff-mt-sm">
@@ -718,16 +895,88 @@ export default function FormulaireFiscalPage() {
 
           {/* SUBMIT */}
           <div className="ff-submit">
-            <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting}>
-              {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
+            <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting || !!formulaireId}>
+              {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
             </button>
 
             <p className="ff-footnote">
-              Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1
-              (particulier / travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la
-              déclaration provinciale.
+              Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier / travail autonome)
+              et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
             </p>
           </div>
+
+          {/* UPLOAD EN BAS (FACILE) */}
+          <section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
+            <div className="ff-card-head">
+              <h2>Documents</h2>
+              <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
+            </div>
+
+            {!formulaireId ? (
+              <div className="ff-empty">
+                Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.
+              </div>
+            ) : (
+              <>
+                <div className="ff-stack">
+                  <label className="ff-field">
+                    <span className="ff-label">Téléverser des fichiers</span>
+                    <input
+                      className="ff-input"
+                      type="file"
+                      multiple
+                      disabled={uploading}
+                      onChange={async (e) => {
+                        const files = e.target.files;
+                        await handleUploadFiles(files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+
+                  <div className="ff-empty" style={{ display: uploading ? "block" : "none" }}>
+                    Téléversement en cours…
+                  </div>
+
+                  <div className="ff-subtitle">Documents envoyés</div>
+
+                  {docsLoading ? (
+                    <div className="ff-empty">Chargement…</div>
+                  ) : docs.length === 0 ? (
+                    <div className="ff-empty">Aucun document pour l’instant.</div>
+                  ) : (
+                    <div className="ff-stack">
+                      {docs.map((d) => (
+                        <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {d.original_name}
+                            </div>
+                            <div style={{ opacity: 0.8, fontSize: 13 }}>
+                              {new Date(d.created_at).toLocaleString()} {d.size_bytes ? `• ${formatBytes(d.size_bytes)}` : ""}
+                            </div>
+                          </div>
+                          <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                            Voir / Télécharger
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="ff-mt">
+                    <button
+                      type="button"
+                      className="ff-btn ff-btn-primary"
+                      onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+                    >
+                      Terminer
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
         </form>
       </div>
     </main>
@@ -796,12 +1045,7 @@ function CheckboxField({
 }) {
   return (
     <label className="ff-check">
-      <input
-        type="checkbox"
-        className="ff-checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-      />
+      <input type="checkbox" className="ff-checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>{label}</span>
     </label>
   );
@@ -823,11 +1067,23 @@ function YesNoField({
       <div className="ff-label">{label}</div>
       <div className="ff-yn-row">
         <label className="ff-radio">
-          <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={(e) => onChange(e.target.value)} />
+          <input
+            type="radio"
+            name={name}
+            value="oui"
+            checked={value === "oui"}
+            onChange={(e) => onChange(e.target.value)}
+          />
           <span>Oui</span>
         </label>
         <label className="ff-radio">
-          <input type="radio" name={name} value="non" checked={value === "non"} onChange={(e) => onChange(e.target.value)} />
+          <input
+            type="radio"
+            name={name}
+            value="non"
+            checked={value === "non"}
+            onChange={(e) => onChange(e.target.value)}
+          />
           <span>Non</span>
         </label>
       </div>
