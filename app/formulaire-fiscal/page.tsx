@@ -102,6 +102,22 @@ function formatBytes(bytes?: number | null) {
   return `${mb.toFixed(1)} MB`;
 }
 
+const PROVINCES: { value: ProvinceCode; label: string }[] = [
+  { value: "QC", label: "QC" },
+  { value: "ON", label: "ON" },
+  { value: "NB", label: "NB" },
+  { value: "NS", label: "NS" },
+  { value: "PE", label: "PE" },
+  { value: "NL", label: "NL" },
+  { value: "MB", label: "MB" },
+  { value: "SK", label: "SK" },
+  { value: "AB", label: "AB" },
+  { value: "BC", label: "BC" },
+  { value: "YT", label: "YT" },
+  { value: "NT", label: "NT" },
+  { value: "NU", label: "NU" },
+];
+
 export default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -201,7 +217,6 @@ export default function FormulaireFiscalPage() {
   const [appelerTechnicien, setAppelerTechnicien] = useState<"oui" | "non" | "">("");
 
   const [copieImpots, setCopieImpots] = useState<"espaceClient" | "courriel" | "">("");
-  const [paiement, setPaiement] = useState<"interac" | "carte" | "">("");
 
   // ✅ Auth guard
   useEffect(() => {
@@ -239,6 +254,7 @@ export default function FormulaireFiscalPage() {
 
   async function loadDocs(fid: string) {
     setDocsLoading(true);
+
     const { data, error } = await supabase
       .from(DOCS_TABLE)
       .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
@@ -262,12 +278,10 @@ export default function FormulaireFiscalPage() {
     const safe = safeFilename(file.name);
     const storage_path = `${userId}/${formulaireId}/${Date.now()}-${safe}`;
 
-    const { error: upErr } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(storage_path, file, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
+    const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
 
     if (upErr) throw upErr;
 
@@ -299,8 +313,9 @@ export default function FormulaireFiscalPage() {
       }
       await loadDocs(formulaireId);
       setMsg("✅ Documents téléversés.");
-    } catch (err: any) {
-      setMsg(err?.message || "Erreur upload.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur upload.";
+      setMsg(message);
     } finally {
       setUploading(false);
     }
@@ -316,8 +331,9 @@ export default function FormulaireFiscalPage() {
     try {
       const url = await getSignedUrl(doc.storage_path);
       window.open(url, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      setMsg(e?.message || "Impossible d’ouvrir le fichier.");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Impossible d’ouvrir le fichier.";
+      setMsg(message);
     }
   }
 
@@ -394,13 +410,11 @@ export default function FormulaireFiscalPage() {
         maisonAcheteeOuVendue,
         appelerTechnicien,
         copieImpots,
-        paiement,
       },
     };
 
     setSubmitting(true);
 
-    // ✅ On récupère l’ID du dossier pour activer l’upload en bas
     const { data, error } = await supabase
       .from(FORMS_TABLE)
       .insert({
@@ -499,7 +513,13 @@ export default function FormulaireFiscalPage() {
                 placeholder="___-___-___"
                 required
               />
-              <Field label="Date de naissance (JJ/MM/AAAA)" value={dob} onChange={setDob} placeholder="01/01/1990" required />
+              <Field
+                label="Date de naissance (JJ/MM/AAAA)"
+                value={dob}
+                onChange={setDob}
+                placeholder="01/01/1990"
+                required
+              />
             </div>
 
             <div className="ff-grid2 ff-mt">
@@ -528,12 +548,7 @@ export default function FormulaireFiscalPage() {
 
             {etatCivilChange && (
               <div className="ff-grid2 ff-mt">
-                <Field
-                  label="Ancien état civil"
-                  value={ancienEtatCivil}
-                  onChange={setAncienEtatCivil}
-                  placeholder="ex.: Célibataire"
-                />
+                <Field label="Ancien état civil" value={ancienEtatCivil} onChange={setAncienEtatCivil} placeholder="ex.: Célibataire" />
                 <Field
                   label="Date du changement (JJ/MM/AAAA)"
                   value={dateChangementEtatCivil}
@@ -559,7 +574,7 @@ export default function FormulaireFiscalPage() {
                   label="Province"
                   value={province}
                   onChange={(v) => setProvince(v as ProvinceCode)}
-                  options={PROVINCES as any}
+                  options={PROVINCES}
                   required
                 />
                 <Field label="Code postal" value={codePostal} onChange={setCodePostal} placeholder="A1A 1A1" required />
@@ -639,7 +654,7 @@ export default function FormulaireFiscalPage() {
                         label="Province"
                         value={provinceConjoint}
                         onChange={(v) => setProvinceConjoint(v as ProvinceCode)}
-                        options={PROVINCES as any}
+                        options={PROVINCES}
                       />
                       <Field
                         label="Code postal"
@@ -764,359 +779,336 @@ export default function FormulaireFiscalPage() {
             </section>
           )}
 
-          {/* PERSONNES A CHARGE */}
-          <section className="ff-card">
-            <div className="ff-card-head">
-              <h2>Personnes à charge</h2>
-              <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
-            </div>
+         {/* PERSONNES A CHARGE */}
+<section className="ff-card">
+  <div className="ff-card-head">
+    <h2>Personnes à charge</h2>
+    <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
+  </div>
 
-            {enfants.length === 0 ? (
-              <div className="ff-empty">Aucune personne à charge ajoutée.</div>
-            ) : (
-              <div className="ff-stack">
-                {enfants.map((enf, i) => (
-                  <div key={i} className="ff-childbox">
-                    <div className="ff-childhead">
-                      <div className="ff-childtitle">Personne à charge #{i + 1}</div>
-                      <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
-                        Supprimer
-                      </button>
-                    </div>
-
-                    <div className="ff-grid2">
-                      <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
-                      <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
-                      <Field
-                        label="Date de naissance (JJ/MM/AAAA)"
-                        value={enf.dob}
-                        onChange={(v) => updateEnfant(i, "dob", v)}
-                        placeholder="01/01/2020"
-                      />
-                      <Field
-                        label="NAS (si attribué)"
-                        value={enf.nas}
-                        onChange={(v) => updateEnfant(i, "nas", v)}
-                        placeholder="___-___-___"
-                      />
-                    </div>
-
-                    <div className="ff-mt-sm">
-                      <SelectField
-                        label="Sexe"
-                        value={enf.sexe}
-                        onChange={(v) => updateEnfant(i, "sexe", v)}
-                        options={[
-                          { value: "", label: "Sélectionnez..." },
-                          { value: "M", label: "M" },
-                          { value: "F", label: "F" },
-                          { value: "X", label: "Autre / préfère ne pas dire" },
-                        ]}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="ff-mt">
-              <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
-                + Ajouter une personne à charge
-              </button>
-            </div>
-          </section>
-
-          {/* QUESTIONS */}
-          <section className="ff-card">
-            <div className="ff-card-head">
-              <h2>Informations fiscales additionnelles</h2>
-              <p>Questions générales pour compléter correctement le dossier.</p>
-            </div>
-
-            <div className="ff-stack">
-              <YesNoField
-                label="Avez-vous habité seul(e) toute l'année (sans personne à charge)?"
-                value={habiteSeulTouteAnnee}
-                onChange={setHabiteSeulTouteAnnee}
-              />
-
-              <Field
-                label="Au 31/12, combien de personnes vivaient avec vous ?"
-                value={nbPersonnesMaison3112}
-                onChange={setNbPersonnesMaison3112}
-                placeholder="ex.: 1, 2, 3..."
-              />
-
-              <YesNoField
-                label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
-                value={biensEtranger100k}
-                onChange={setBiensEtranger100k}
-              />
-
-              <YesNoField label="Êtes-vous citoyen(ne) canadien(ne) ?" value={citoyenCanadien} onChange={setCitoyenCanadien} />
-
-              <YesNoField
-                label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
-                value={nonResident}
-                onChange={setNonResident}
-              />
-
-              <YesNoField
-                label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
-                value={maisonAcheteeOuVendue}
-                onChange={setMaisonAcheteeOuVendue}
-              />
-
-              <YesNoField label="Souhaitez-vous qu'un technicien vous appelle ?" value={appelerTechnicien} onChange={setAppelerTechnicien} />
-
-              <SelectField
-                label="Comment voulez-vous recevoir votre copie d'impôt ?"
-                value={copieImpots}
-                onChange={(v) => setCopieImpots(v as any)}
-                options={[
-                  { value: "", label: "Sélectionnez..." },
-                  { value: "espaceClient", label: "Espace client" },
-                  { value: "courriel", label: "Courriel" },
-                ]}
-              />
-
-              <SelectField
-                label="Mode de paiement prévu"
-                value={paiement}
-                onChange={(v) => setPaiement(v as any)}
-                options={[
-                  { value: "", label: "Sélectionnez..." },
-                  { value: "interac", label: "Virement Interac" },
-                  { value: "carte", label: "Carte de crédit" },
-                ]}
-              />
-            </div>
-          </section>
-
-          {/* SUBMIT */}
-          <div className="ff-submit">
-            <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting || !!formulaireId}>
-              {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
+  {enfants.length === 0 ? (
+    <div className="ff-empty">Aucune personne à charge ajoutée.</div>
+  ) : (
+    <div className="ff-stack">
+      {enfants.map((enf, i) => (
+        <div key={i} className="ff-childbox">
+          <div className="ff-childhead">
+            <div className="ff-childtitle">Personne à charge #{i + 1}</div>
+            <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
+              Supprimer
             </button>
-
-            <p className="ff-footnote">
-              Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier / travail autonome)
-              et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
-            </p>
           </div>
 
-          {/* UPLOAD EN BAS (FACILE) */}
-          <section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
-            <div className="ff-card-head">
-              <h2>Documents</h2>
-              <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
-            </div>
+          <div className="ff-grid2">
+            <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
+            <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
 
-            {!formulaireId ? (
-              <div className="ff-empty">
-                Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.
-              </div>
-            ) : (
-              <>
-                <div className="ff-stack">
-                  <label className="ff-field">
-                    <span className="ff-label">Téléverser des fichiers</span>
-                    <input
-                      className="ff-input"
-                      type="file"
-                      multiple
-                      disabled={uploading}
-                      onChange={async (e) => {
-                        const files = e.target.files;
-                        await handleUploadFiles(files);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
+            <Field
+              label="Date de naissance (JJ/MM/AAAA)"
+              value={enf.dob}
+              onChange={(v) => updateEnfant(i, "dob", v)}
+              placeholder="01/01/2020"
+            />
 
-                  <div className="ff-empty" style={{ display: uploading ? "block" : "none" }}>
-                    Téléversement en cours…
-                  </div>
+            <Field
+              label="NAS (si attribué)"
+              value={enf.nas}
+              onChange={(v) => updateEnfant(i, "nas", v)}
+              placeholder="___-___-___"
+            />
+          </div>
 
-                  <div className="ff-subtitle">Documents envoyés</div>
+          <div className="ff-mt-sm">
+            <SelectField
+              label="Sexe"
+              value={enf.sexe}
+              onChange={(v) => updateEnfant(i, "sexe", v)}
+              options={[
+                { value: "", label: "Sélectionnez..." },
+                { value: "M", label: "M" },
+                { value: "F", label: "F" },
+                { value: "X", label: "Autre / préfère ne pas dire" },
+              ]}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
 
-                  {docsLoading ? (
-                    <div className="ff-empty">Chargement…</div>
-                  ) : docs.length === 0 ? (
-                    <div className="ff-empty">Aucun document pour l’instant.</div>
-                  ) : (
-                    <div className="ff-stack">
-                      {docs.map((d) => (
-                        <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {d.original_name}
-                            </div>
-                            <div style={{ opacity: 0.8, fontSize: 13 }}>
-                              {new Date(d.created_at).toLocaleString()} {d.size_bytes ? `• ${formatBytes(d.size_bytes)}` : ""}
-                            </div>
-                          </div>
-                          <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
-                            Voir / Télécharger
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+  <div className="ff-mt">
+    <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
+      + Ajouter une personne à charge
+    </button>
+  </div>
+</section>
 
-                  <div className="ff-mt">
-                    <button
-                      type="button"
-                      className="ff-btn ff-btn-primary"
-                      onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-                    >
-                      Terminer
-                    </button>
-                  </div>
+{/* QUESTIONS */}
+<section className="ff-card">
+  <div className="ff-card-head">
+    <h2>Informations fiscales additionnelles</h2>
+    <p>Questions générales pour compléter correctement le dossier.</p>
+  </div>
+
+  <div className="ff-stack">
+    <YesNoField
+      label="Avez-vous habité seul(e) toute l'année (sans personne à charge)?"
+      value={habiteSeulTouteAnnee}
+      onChange={setHabiteSeulTouteAnnee}
+    />
+
+    <Field
+      label="Au 31/12, combien de personnes vivaient avec vous ?"
+      value={nbPersonnesMaison3112}
+      onChange={setNbPersonnesMaison3112}
+      placeholder="ex.: 1, 2, 3..."
+    />
+
+    <YesNoField
+      label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
+      value={biensEtranger100k}
+      onChange={setBiensEtranger100k}
+    />
+
+    <YesNoField
+      label="Êtes-vous citoyen(ne) canadien(ne) ?"
+      value={citoyenCanadien}
+      onChange={setCitoyenCanadien}
+    />
+
+    <YesNoField
+      label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
+      value={nonResident}
+      onChange={setNonResident}
+    />
+
+    <YesNoField
+      label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
+      value={maisonAcheteeOuVendue}
+      onChange={setMaisonAcheteeOuVendue}
+    />
+
+    <YesNoField
+      label="Souhaitez-vous qu'un technicien vous appelle ?"
+      value={appelerTechnicien}
+      onChange={setAppelerTechnicien}
+    />
+
+    <SelectField
+      label="Comment voulez-vous recevoir votre copie d'impôt ?"
+      value={copieImpots}
+      onChange={(v) => setCopieImpots(v as any)}
+      options={[
+        { value: "", label: "Sélectionnez..." },
+        { value: "espaceClient", label: "Espace client" },
+        { value: "courriel", label: "Courriel" },
+      ]}
+    />
+
+    <div className="ff-subtitle">Documents à télécharger</div>
+
+    <a className="ff-btn ff-btn-soft" href="/docs/liste-documents-requis.pdf" target="_blank" rel="noreferrer">
+      Télécharger — Liste des documents requis (PDF)
+    </a>
+
+    <a className="ff-btn ff-btn-soft" href="/docs/mandat-autorisation.pdf" target="_blank" rel="noreferrer">
+      Télécharger — Mandat / Autorisation (PDF)
+    </a>
+  </div>
+</section>
+
+{/* SUBMIT */}
+<div className="ff-submit">
+  <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting || !!formulaireId}>
+    {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
+  </button>
+
+  <p className="ff-footnote">
+    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier / travail autonome)
+    et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
+  </p>
+</div>
+
+{/* UPLOAD EN BAS (FACILE) */}
+<section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
+  <div className="ff-card-head">
+    <h2>Documents</h2>
+    <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
+  </div>
+
+  {!formulaireId ? (
+    <div className="ff-empty">Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.</div>
+  ) : (
+    <div className="ff-stack">
+      <label className="ff-field">
+        <span className="ff-label">Téléverser des fichiers</span>
+        <input
+          className="ff-input"
+          type="file"
+          multiple
+          disabled={uploading}
+          onChange={async (e) => {
+            const files = e.target.files;
+            await handleUploadFiles(files);
+            e.target.value = "";
+          }}
+        />
+      </label>
+
+      {uploading && <div className="ff-empty">Téléversement en cours…</div>}
+
+      <div className="ff-subtitle">Documents envoyés</div>
+
+      {docsLoading ? (
+        <div className="ff-empty">Chargement…</div>
+      ) : docs.length === 0 ? (
+        <div className="ff-empty">Aucun document pour l’instant.</div>
+      ) : (
+        <div className="ff-stack">
+          {docs.map((d) => (
+            <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {d.original_name}
                 </div>
-              </>
-            )}
-          </section>
-        </form>
+                <div style={{ opacity: 0.8, fontSize: 13 }}>
+                  {new Date(d.created_at).toLocaleString()} {d.size_bytes ? `• ${formatBytes(d.size_bytes)}` : ""}
+                </div>
+              </div>
+
+              <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                Voir / Télécharger
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="ff-mt">
+        <button
+          type="button"
+          className="ff-btn ff-btn-primary"
+          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+        >
+          Terminer
+        </button>
       </div>
-    </main>
-  );
+    </div>
+  )}
+</section>
+
+</form>
+</div>
+</main>
+);
 }
 
 /* ----------------- Réutilisables ----------------- */
 
-const PROVINCES = [
-  { value: "QC", label: "QC" },
-  { value: "ON", label: "ON" },
-  { value: "NB", label: "NB" },
-  { value: "NS", label: "NS" },
-  { value: "PE", label: "PE" },
-  { value: "NL", label: "NL" },
-  { value: "MB", label: "MB" },
-  { value: "SK", label: "SK" },
-  { value: "AB", label: "AB" },
-  { value: "BC", label: "BC" },
-  { value: "YT", label: "YT" },
-  { value: "NT", label: "NT" },
-  { value: "NU", label: "NU" },
-] as const;
-
 function Field({
-  label,
-  value,
-  onChange,
-  required,
-  placeholder,
-  type = "text",
+label,
+value,
+onChange,
+required,
+placeholder,
+type = "text",
 }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  required?: boolean;
-  placeholder?: string;
-  type?: string;
+label: string;
+value: string;
+onChange: (v: string) => void;
+required?: boolean;
+placeholder?: string;
+type?: string;
 }) {
-  return (
-    <label className="ff-field">
-      <span className="ff-label">
-        {label}
-        {required ? " *" : ""}
-      </span>
-      <input
-        className="ff-input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        type={type}
-      />
-    </label>
-  );
+return (
+<label className="ff-field">
+  <span className="ff-label">
+    {label}
+    {required ? " *" : ""}
+  </span>
+  <input
+    className="ff-input"
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    required={required}
+    type={type}
+  />
+</label>
+);
 }
 
 function CheckboxField({
-  label,
-  checked,
-  onChange,
+label,
+checked,
+onChange,
 }: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
+label: string;
+checked: boolean;
+onChange: (v: boolean) => void;
 }) {
-  return (
-    <label className="ff-check">
-      <input type="checkbox" className="ff-checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span>{label}</span>
-    </label>
-  );
+return (
+<label className="ff-check">
+  <input type="checkbox" className="ff-checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+  <span>{label}</span>
+</label>
+);
 }
 
 function YesNoField({
-  label,
-  value,
-  onChange,
+label,
+value,
+onChange,
 }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
+label: string;
+value: string;
+onChange: (v: string) => void;
 }) {
-  const name = useMemo(() => `yn_${label.replace(/\W+/g, "_").toLowerCase()}`, [label]);
+const name = useMemo(() => `yn_${label.replace(/\W+/g, "_").toLowerCase()}`, [label]);
 
-  return (
-    <div className="ff-yn">
-      <div className="ff-label">{label}</div>
-      <div className="ff-yn-row">
-        <label className="ff-radio">
-          <input
-            type="radio"
-            name={name}
-            value="oui"
-            checked={value === "oui"}
-            onChange={(e) => onChange(e.target.value)}
-          />
-          <span>Oui</span>
-        </label>
-        <label className="ff-radio">
-          <input
-            type="radio"
-            name={name}
-            value="non"
-            checked={value === "non"}
-            onChange={(e) => onChange(e.target.value)}
-          />
-          <span>Non</span>
-        </label>
-      </div>
-    </div>
-  );
+return (
+<div className="ff-yn">
+  <div className="ff-label">{label}</div>
+  <div className="ff-yn-row">
+    <label className="ff-radio">
+      <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={(e) => onChange(e.target.value)} />
+      <span>Oui</span>
+    </label>
+    <label className="ff-radio">
+      <input type="radio" name={name} value="non" checked={value === "non"} onChange={(e) => onChange(e.target.value)} />
+      <span>Non</span>
+    </label>
+  </div>
+</div>
+);
 }
 
 function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-  required,
+label,
+value,
+onChange,
+options,
+required,
 }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-  required?: boolean;
+label: string;
+value: string;
+onChange: (v: string) => void;
+options: { value: string; label: string }[];
+required?: boolean;
 }) {
-  return (
-    <label className="ff-field">
-      <span className="ff-label">
-        {label}
-        {required ? " *" : ""}
-      </span>
-      <select className="ff-select" value={value} onChange={(e) => onChange(e.target.value)} required={required}>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
+return (
+<label className="ff-field">
+  <span className="ff-label">
+    {label}
+    {required ? " *" : ""}
+  </span>
+  <select className="ff-select" value={value} onChange={(e) => onChange(e.target.value)} required={required}>
+    {options.map((opt) => (
+      <option key={opt.value} value={opt.value}>
+        {opt.label}
+      </option>
+    ))}
+  </select>
+</label>
+);
 }
