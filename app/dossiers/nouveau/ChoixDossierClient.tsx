@@ -114,9 +114,13 @@ const I18N: Record<Lang, Dict> = {
   },
 };
 
+function isLang(v: string): v is Lang {
+  return (LANGS as readonly string[]).includes(v);
+}
+
 function normalizeLang(v?: string | null): Lang {
   const x = (v || "fr").toLowerCase();
-  return (LANGS as readonly string[]).includes(x as any) ? (x as Lang) : "fr";
+  return isLang(x) ? x : "fr";
 }
 
 function safeNext(v?: string | null): string {
@@ -155,7 +159,7 @@ export default function ChoixDossierClient() {
   const [email, setEmail] = useState<string | null>(null);
   const checked = useRef(false);
 
-  // ✅ Protection: si pas connecté -> /espace-client?lang=...&next=/dossiers/nouveau (lang ajouté plus tard)
+  // ✅ Protection: si pas connecté -> /espace-client?lang=...&next=/dossiers/nouveau
   useEffect(() => {
     if (checked.current) return;
     checked.current = true;
@@ -165,10 +169,8 @@ export default function ChoixDossierClient() {
       const u = data.user;
 
       if (!u) {
-        // IMPORTANT: next doit être un chemin interne SANS doubler lang
         const next = safeNext("/dossiers/nouveau");
         const nextWithLang = withLang(next, lang);
-
         router.replace(`/espace-client?lang=${lang}&next=${encodeURIComponent(nextWithLang)}`);
         return;
       }
@@ -209,9 +211,7 @@ export default function ChoixDossierClient() {
           </button>
         </header>
 
-        <h1 style={{ margin: "8px 0 4px", fontSize: "clamp(24px,3.5vw,34px)" }}>
-          {t.title}
-        </h1>
+        <h1 style={{ margin: "8px 0 4px", fontSize: "clamp(24px,3.5vw,34px)" }}>{t.title}</h1>
         <p className="lead">{t.intro}</p>
 
         <section
@@ -297,4 +297,4 @@ function Card({ title, desc, deposit, balance, cta, onClick }: CardProps) {
       </div>
     </div>
   );
-    }
+}
