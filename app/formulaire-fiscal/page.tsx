@@ -930,11 +930,13 @@ export default function FormulaireFiscalPage() {
       ]}
     />
 
+    {/* Documents à télécharger (PDF) */}
     <div className="ff-rowbox" style={{ marginTop: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
         <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-          Ouvrez et téléchargez les documents requis. Vous pouvez les imprimer ou les conserver pour votre dossier.
+          Ouvrez et téléchargez la liste des documents requis. Vous pourrez ensuite déposer vos fichiers dans la page
+          de dépôt.
         </div>
       </div>
     </div>
@@ -947,7 +949,7 @@ export default function FormulaireFiscalPage() {
         className="ff-btn ff-btn-primary"
         style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
       >
-        Télécharger vos documents →
+        Télécharger la liste des documents →
       </a>
     </div>
   </div>
@@ -969,72 +971,51 @@ export default function FormulaireFiscalPage() {
   </p>
 </div>
 
-{/* UPLOAD EN BAS (FACILE) */}
-<section
-  id="ff-upload-section"
-  className="ff-card"
-  style={{ opacity: formulaireId ? 1 : 0.65 }}
->
+{/* DÉPÔT DOCUMENTS (PAGE DROPZONE) */}
+<section className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
   <div className="ff-card-head">
-    <h2>Documents</h2>
-    <p>Ajoutez vos documents (PDF, JPG, PNG, ZIP, Word, Excel). Vous pouvez en envoyer plusieurs.</p>
+    <h2>Déposer vos documents</h2>
+    <p>
+      Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
+      <br />
+      Vous serez dirigé(e) vers une page avec une zone “glisser-déposer”.
+    </p>
   </div>
 
   {!formulaireId ? (
     <div className="ff-empty">
-      Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible ici.
+      Soumettez d’abord le formulaire ci-dessus. Ensuite, le bouton de dépôt de documents sera activé.
     </div>
   ) : (
     <div className="ff-stack">
-      <label className="ff-field">
-        <span className="ff-label">Téléverser des fichiers</span>
-        <input
-          className="ff-input"
-          type="file"
-          multiple
-          disabled={uploading}
-          onChange={async (e) => {
-            const files = e.currentTarget.files;
-            await handleUploadFiles(files);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
+      <button
+        type="button"
+        className="ff-btn ff-btn-primary"
+        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+        onClick={() =>
+          router.push(
+            `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
+              type
+            )}&lang=${encodeURIComponent(lang)}`
+          )
+        }
+      >
+        Déposer mes documents →
+      </button>
 
-      {uploading && <div className="ff-empty">Téléversement en cours…</div>}
-
-      <div className="ff-subtitle">Documents envoyés</div>
-
-      {docsLoading ? (
-        <div className="ff-empty">Chargement…</div>
-      ) : docs.length === 0 ? (
-        <div className="ff-empty">Aucun document pour l’instant.</div>
-      ) : (
-        <div className="ff-stack">
-          {docs.map((d) => (
-            <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {d.original_name}
-                </div>
-                <div style={{ opacity: 0.8, fontSize: 13 }}>
-                  {new Date(d.created_at).toLocaleString()}
-                  {d.size_bytes ? ` • ${formatBytes(d.size_bytes)}` : ""}
-                </div>
-              </div>
-
-              <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
-                Voir / Télécharger
-              </button>
-            </div>
-          ))}
+      <div className="ff-rowbox" style={{ marginTop: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700 }}>Dossier créé</div>
+          <div style={{ opacity: 0.8, fontSize: 13 }}>
+            ID : {formulaireId}
+          </div>
         </div>
-      )}
+      </div>
 
       <div className="ff-mt">
         <button
           type="button"
-          className="ff-btn ff-btn-primary"
+          className="ff-btn ff-btn-soft"
           onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
         >
           Terminer
