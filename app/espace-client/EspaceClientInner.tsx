@@ -87,9 +87,13 @@ const TXT: Record<
   },
 };
 
+function isLang(v: string): v is Lang {
+  return (LANGS as readonly string[]).includes(v);
+}
+
 function normalizeLang(v?: string | null): Lang {
   const x = (v || "fr").toLowerCase();
-  return (LANGS as readonly string[]).includes(x as any) ? (x as Lang) : "fr";
+  return isLang(x) ? x : "fr";
 }
 
 function safeNext(v?: string | null): string {
@@ -237,7 +241,14 @@ export default function EspaceClientInner() {
         <p className="intro">{t.intro}</p>
 
         <button className="btn-google" onClick={google} disabled={loading} type="button">
-          <Image src="/google-g.png" alt="Google" width={18} height={18} className="google-icon" priority />
+          <Image
+            src="/google-g.png"
+            alt="Google"
+            width={18}
+            height={18}
+            className="google-icon"
+            priority
+          />
           {t.google}
         </button>
 
