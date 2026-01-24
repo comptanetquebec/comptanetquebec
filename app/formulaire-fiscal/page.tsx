@@ -905,17 +905,36 @@ export default function FormulaireFiscalPage() {
       ]}
     />
 
-    <div className="ff-subtitle">Documents à télécharger</div>
-
-    <a className="ff-btn ff-btn-soft" href="/docs/liste-documents-requis.pdf" target="_blank" rel="noreferrer">
-      Télécharger — Liste des documents requis (PDF)
-    </a>
-
-    <a className="ff-btn ff-btn-soft" href="/docs/mandat-autorisation.pdf" target="_blank" rel="noreferrer">
-      Télécharger — Mandat / Autorisation (PDF)
-    </a>
+   <div className="ff-rowbox" style={{ marginTop: 12 }}>
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
+    <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
+      Ouvrez et téléchargez les documents requis. Vous pouvez les imprimer ou les conserver pour votre dossier.
+    </div>
   </div>
-</section>
+</div>
+
+<div className="ff-stack" style={{ marginTop: 12 }}>
+  <a
+    href="/docs/liste-documents-requis.pdf"
+    target="_blank"
+    rel="noreferrer"
+    className="ff-btn ff-btn-primary"
+    style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+  >
+    Ouvrir la liste des documents requis (PDF) →
+  </a>
+
+  <a
+    href="/docs/mandat-autorisation.pdf"
+    target="_blank"
+    rel="noreferrer"
+    className="ff-btn ff-btn-soft"
+    style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+  >
+    Ouvrir le mandat / autorisation (PDF) →
+  </a>
+</div>
 
 {/* SUBMIT */}
 <div className="ff-submit">
