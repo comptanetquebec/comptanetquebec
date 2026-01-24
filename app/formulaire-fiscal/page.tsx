@@ -978,7 +978,7 @@ export default function FormulaireFiscalPage() {
     <p>
       Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
       <br />
-      Vous serez dirigé(e) vers une page avec une zone “glisser-déposer”.
+      Une page “glisser-déposer” s’ouvrira pour téléverser vos documents.
     </p>
   </div>
 
@@ -988,31 +988,56 @@ export default function FormulaireFiscalPage() {
     </div>
   ) : (
     <div className="ff-stack">
-      <a
-        href={`/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
-          type
-        )}&lang=${encodeURIComponent(lang)}`}
+      <button
+        type="button"
         className="ff-btn ff-btn-primary"
-        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16, textAlign: "center" }}
+        style={{
+          padding: "14px 16px",
+          borderRadius: 14,
+          fontWeight: 900,
+          fontSize: 16,
+          textAlign: "center",
+          width: "100%",
+        }}
+        onClick={() => {
+          const url = `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
+            type
+          )}&lang=${encodeURIComponent(lang)}`;
+          router.push(url);
+        }}
       >
         Déposer mes documents →
-      </a>
+      </button>
 
       <div className="ff-rowbox" style={{ marginTop: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div style={{ opacity: 0.8, fontSize: 13 }}>ID : {formulaireId}</div>
+          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>
+            ID : {formulaireId}
+          </div>
         </div>
+
+        <button
+          type="button"
+          className="ff-btn ff-btn-soft"
+          onClick={() => {
+            navigator.clipboard?.writeText(formulaireId);
+            setMsg("✅ ID copié.");
+          }}
+        >
+          Copier l’ID
+        </button>
       </div>
 
       <div className="ff-mt">
-        <a
-          href={`/merci?lang=${encodeURIComponent(lang)}`}
+        <button
+          type="button"
           className="ff-btn ff-btn-soft"
-          style={{ textAlign: "center" }}
+          style={{ width: "100%", textAlign: "center" }}
+          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
         >
           Terminer
-        </a>
+        </button>
       </div>
     </div>
   )}
