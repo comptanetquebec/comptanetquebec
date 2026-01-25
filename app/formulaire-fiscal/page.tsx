@@ -9,7 +9,7 @@ import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "./ui"
 
 /**
  * IMPORTANT (à ajuster si tes noms sont différents)
- 
+ */
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
