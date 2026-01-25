@@ -119,10 +119,7 @@ function formatPhoneInput(v: string) {
 }
 
 function formatPostalInput(v: string) {
-  const s = (v || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 6);
+  const s = (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
   if (s.length <= 3) return s;
   return `${s.slice(0, 3)} ${s.slice(3, 6)}`;
 }
@@ -208,11 +205,10 @@ export default function FormulaireFiscalPage() {
 
   const redirected = useRef(false);
 
-  // ✅ Dossier créé après submit (permet d’uploader en bas)
+  // ✅ Dossier (sert aussi de “mémoire”)
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
 
-  // --- Upload docs state ---
-  const [uploading, setUploading] = useState(false);
+  // --- Docs state (pour afficher la liste / ouverture)
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
 
@@ -247,8 +243,7 @@ export default function FormulaireFiscalPage() {
   const [telConjoint, setTelConjoint] = useState("");
   const [telCellConjoint, setTelCellConjoint] = useState("");
   const [courrielConjoint, setCourrielConjoint] = useState("");
-  const [adresseConjointeIdentique, setAdresseConjointeIdentique] =
-    useState(true);
+  const [adresseConjointeIdentique, setAdresseConjointeIdentique] = useState(true);
   const [adresseConjoint, setAdresseConjoint] = useState("");
   const [appConjoint, setAppConjoint] = useState("");
   const [villeConjoint, setVilleConjoint] = useState("");
@@ -257,24 +252,21 @@ export default function FormulaireFiscalPage() {
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // --- Assurance médicaments (Québec uniquement) ---
-  const [assuranceMedsClient, setAssuranceMedsClient] =
-    useState<AssuranceMeds>("");
-  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] =
-    useState<Periode[]>([{ debut: "", fin: "" }]);
+  const [assuranceMedsClient, setAssuranceMedsClient] = useState<AssuranceMeds>("");
+  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState<Periode[]>([
+    { debut: "", fin: "" },
+  ]);
 
-  const [assuranceMedsConjoint, setAssuranceMedsConjoint] =
-    useState<AssuranceMeds>("");
-  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] =
-    useState<Periode[]>([{ debut: "", fin: "" }]);
+  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<AssuranceMeds>("");
+  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState<Periode[]>([
+    { debut: "", fin: "" },
+  ]);
 
   // --- Enfants / personnes à charge ---
   const [enfants, setEnfants] = useState<Child[]>([]);
 
   function ajouterEnfant() {
-    setEnfants((prev) => [
-      ...prev,
-      { prenom: "", nom: "", dob: "", nas: "", sexe: "" },
-    ]);
+    setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
   }
   function updateEnfant(i: number, field: keyof Child, value: string) {
     setEnfants((prev) => {
@@ -298,54 +290,16 @@ export default function FormulaireFiscalPage() {
 
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
 
-  // ✅ Auth guard
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!alive) return;
-
-      if (error || !data.user) {
-        if (!redirected.current) {
-          redirected.current = true;
-          setBooting(false);
-
-          const next = `/formulaire-fiscal?type=${encodeURIComponent(
-            type
-          )}&lang=${encodeURIComponent(lang)}`;
-          router.replace(
-            `/espace-client?lang=${encodeURIComponent(
-              lang
-            )}&next=${encodeURIComponent(next)}`
-          );
-        }
-        return;
-      }
-
-      setUserId(data.user.id);
-      setBooting(false);
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [router, lang, type]);
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
-  };
+  /* ===========================
+     Data helpers
+  =========================== */
 
   async function loadDocs(fid: string) {
     setDocsLoading(true);
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
-      .select(
-        "id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at"
-      )
+      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
       .eq("formulaire_id", fid)
       .order("created_at", { ascending: false });
 
@@ -358,70 +312,9 @@ export default function FormulaireFiscalPage() {
     setDocs((data as DocRow[]) || []);
   }
 
-  async function uploadOne(file: File) {
-    if (!userId || !formulaireId)
-      throw new Error("Veuillez soumettre le formulaire d’abord.");
-    if (!isAllowedFile(file))
-      throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
-    if (file.size > 50 * 1024 * 1024)
-      throw new Error("Fichier trop lourd (max 50 MB).");
-
-    const safe = safeFilename(file.name);
-    const storage_path = `${userId}/${formulaireId}/${Date.now()}-${safe}`;
-
-    const { error: upErr } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(storage_path, file, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
-
-    if (upErr) throw upErr;
-
-    const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
-      formulaire_id: formulaireId,
-      user_id: userId,
-      original_name: file.name,
-      storage_path,
-      mime_type: file.type || null,
-      size_bytes: file.size,
-    });
-
-    if (dbErr) throw dbErr;
-  }
-
-  async function handleUploadFiles(fileList: FileList | null) {
-    setMsg(null);
-    if (!fileList || fileList.length === 0) return;
-    if (!formulaireId) {
-      setMsg(
-        "Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible."
-      );
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const files = Array.from(fileList);
-      for (const f of files) {
-        await uploadOne(f);
-      }
-      await loadDocs(formulaireId);
-      setMsg("✅ Documents téléversés.");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erreur upload.";
-      setMsg(message);
-    } finally {
-      setUploading(false);
-    }
-  }
-
   async function getSignedUrl(path: string) {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrl(path, 60 * 10); // 10 min
-    if (error || !data?.signedUrl)
-      throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
     return data.signedUrl;
   }
 
@@ -435,7 +328,187 @@ export default function FormulaireFiscalPage() {
     }
   }
 
-  // --- Soumission ---
+  // ✅ charge le dernier formulaire de ce user (mémoire)
+  async function loadLastForm(uid: string) {
+    const { data, error } = await supabase
+      .from(FORMS_TABLE)
+      .select("id, payload, created_at")
+      .eq("user_id", uid)
+      .eq("dossier_type", type)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      setMsg(`Erreur chargement: ${error.message}`);
+      return;
+    }
+    if (!data) return;
+
+    const fid = (data as any).id as string;
+    const payload = (data as any).payload as any;
+
+    setFormulaireId(fid);
+
+    // --- Client
+    setPrenom(payload?.client?.prenom ?? "");
+    setNom(payload?.client?.nom ?? "");
+    setNas(payload?.client?.nas ? formatNASInput(payload.client.nas) : "");
+    setDob(payload?.client?.dob ?? "");
+    setEtatCivil(payload?.client?.etatCivil ?? "");
+
+    setEtatCivilChange(!!payload?.client?.etatCivilChange);
+    setAncienEtatCivil(payload?.client?.ancienEtatCivil ?? "");
+    setDateChangementEtatCivil(payload?.client?.dateChangementEtatCivil ?? "");
+
+    setTel(payload?.client?.tel ? formatPhoneInput(payload.client.tel) : "");
+    setTelCell(payload?.client?.telCell ? formatPhoneInput(payload.client.telCell) : "");
+    setAdresse(payload?.client?.adresse ?? "");
+    setApp(payload?.client?.app ?? "");
+    setVille(payload?.client?.ville ?? "");
+    setProvince(payload?.client?.province ?? "QC");
+    setCodePostal(payload?.client?.codePostal ? formatPostalInput(payload.client.codePostal) : "");
+    setCourriel(payload?.client?.courriel ?? "");
+
+    // --- Conjoint
+    const cj = payload?.conjoint;
+    setAUnConjoint(!!cj);
+    if (cj) {
+      setTraiterConjoint(!!cj.traiterConjoint);
+      setPrenomConjoint(cj.prenomConjoint ?? "");
+      setNomConjoint(cj.nomConjoint ?? "");
+      setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
+      setDobConjoint(cj.dobConjoint ?? "");
+      setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+      setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+      setCourrielConjoint(cj.courrielConjoint ?? "");
+
+      setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
+      setAdresseConjoint(cj.adresseConjoint ?? "");
+      setAppConjoint(cj.appConjoint ?? "");
+      setVilleConjoint(cj.villeConjoint ?? "");
+      setProvinceConjoint(cj.provinceConjoint ?? "QC");
+      setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
+      setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+    } else {
+      // reset si pas de conjoint
+      setTraiterConjoint(true);
+      setPrenomConjoint("");
+      setNomConjoint("");
+      setNasConjoint("");
+      setDobConjoint("");
+      setTelConjoint("");
+      setTelCellConjoint("");
+      setCourrielConjoint("");
+      setAdresseConjointeIdentique(true);
+      setAdresseConjoint("");
+      setAppConjoint("");
+      setVilleConjoint("");
+      setProvinceConjoint("QC");
+      setCodePostalConjoint("");
+      setRevenuNetConjoint("");
+    }
+
+    // --- Assurance meds
+    const meds = payload?.assuranceMedicamenteuse;
+    if (meds?.client) {
+      setAssuranceMedsClient(meds.client.regime ?? "");
+      setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
+    }
+    if (meds?.conjoint) {
+      setAssuranceMedsConjoint(meds.conjoint.regime ?? "");
+      setAssuranceMedsConjointPeriodes(meds.conjoint.periodes ?? [{ debut: "", fin: "" }]);
+    }
+
+    // --- Enfants
+    setEnfants(payload?.personnesACharge ?? []);
+
+    // --- Questions
+    setHabiteSeulTouteAnnee(payload?.questionsGenerales?.habiteSeulTouteAnnee ?? "");
+    setNbPersonnesMaison3112(payload?.questionsGenerales?.nbPersonnesMaison3112 ?? "");
+    setBiensEtranger100k(payload?.questionsGenerales?.biensEtranger100k ?? "");
+    setCitoyenCanadien(payload?.questionsGenerales?.citoyenCanadien ?? "");
+    setNonResident(payload?.questionsGenerales?.nonResident ?? "");
+    setMaisonAcheteeOuVendue(payload?.questionsGenerales?.maisonAcheteeOuVendue ?? "");
+    setAppelerTechnicien(payload?.questionsGenerales?.appelerTechnicien ?? "");
+    setCopieImpots(payload?.questionsGenerales?.copieImpots ?? "");
+
+    await loadDocs(fid);
+  }
+
+  /* ===========================
+     Auth guard + preload
+  =========================== */
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!alive) return;
+
+      if (error || !data.user) {
+        if (!redirected.current) {
+          redirected.current = true;
+          setBooting(false);
+
+          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
+          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+        }
+        return;
+      }
+
+      setUserId(data.user.id);
+      setBooting(false);
+
+      // ✅ pré-remplir automatiquement
+      await loadLastForm(data.user.id);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [router, lang, type]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
+  };
+
+  /* ===========================
+     Upload (optionnel) — gardé
+     (tu rediriges vers /depot-documents, mais on garde la logique)
+  =========================== */
+
+  async function uploadOne(file: File) {
+    if (!userId || !formulaireId) throw new Error("Veuillez soumettre le formulaire d’abord.");
+    if (!isAllowedFile(file)) throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
+    if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
+
+    const safe = safeFilename(file.name);
+    const storage_path = `${userId}/${formulaireId}/${Date.now()}-${safe}`;
+
+    const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+    if (upErr) throw upErr;
+
+    const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
+      formulaire_id: formulaireId,
+      user_id: userId,
+      original_name: file.name,
+      storage_path,
+      mime_type: file.type || null,
+      size_bytes: file.size,
+    });
+    if (dbErr) throw dbErr;
+  }
+
+  /* ===========================
+     Submit: INSERT ou UPDATE
+  =========================== */
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -513,6 +586,27 @@ export default function FormulaireFiscalPage() {
 
     setSubmitting(true);
 
+    // ✅ si on a déjà un dossier -> UPDATE
+    if (formulaireId) {
+      const { error } = await supabase
+        .from(FORMS_TABLE)
+        .update({ lang, payload })
+        .eq("id", formulaireId)
+        .eq("user_id", userId);
+
+      setSubmitting(false);
+
+      if (error) {
+        setMsg(`Erreur: ${error.message}`);
+        return;
+      }
+
+      setMsg("✅ Modifications enregistrées.");
+      await loadDocs(formulaireId);
+      return;
+    }
+
+    // ✅ sinon -> INSERT
     const { data, error } = await supabase
       .from(FORMS_TABLE)
       .insert({
@@ -692,33 +786,27 @@ export default function FormulaireFiscalPage() {
               <Field label="Courriel" value={courriel} onChange={setCourriel} type="email" required />
             </div>
 
-           <div className="ff-mt">
-  <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
+            <div className="ff-mt">
+              <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
 
-  <div className="ff-grid4 ff-mt-sm">
-    <Field label="App." value={app} onChange={setApp} placeholder="#201" />
-    <Field label="Ville" value={ville} onChange={setVille} required />
+              <div className="ff-grid4 ff-mt-sm">
+                <Field label="App." value={app} onChange={setApp} placeholder="#201" />
+                <Field label="Ville" value={ville} onChange={setVille} required />
 
-    <SelectField<ProvinceCode>
-      label="Province"
-      value={province}
-      onChange={setProvince}
-      options={PROVINCES}
-      required
-    />
+                <SelectField<ProvinceCode> label="Province" value={province} onChange={setProvince} options={PROVINCES} required />
 
-    <Field
-      label="Code postal"
-      value={codePostal}
-      onChange={setCodePostal}
-      placeholder="G1V 0A6"
-      required
-      formatter={formatPostalInput}
-      maxLength={7}
-      autoComplete="postal-code"
-    />
-  </div>
-</div>
+                <Field
+                  label="Code postal"
+                  value={codePostal}
+                  onChange={setCodePostal}
+                  placeholder="G1V 0A6"
+                  required
+                  formatter={formatPostalInput}
+                  maxLength={7}
+                  autoComplete="postal-code"
+                />
+              </div>
+            </div>
           </section>
 
           {/* SECTION CONJOINT */}
@@ -795,12 +883,7 @@ export default function FormulaireFiscalPage() {
                     formatter={formatPhoneInput}
                     maxLength={14}
                   />
-                  <Field
-                    label="Courriel (conjoint)"
-                    value={courrielConjoint}
-                    onChange={setCourrielConjoint}
-                    type="email"
-                  />
+                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
                 </div>
 
                 <div className="ff-mt">
@@ -818,12 +901,7 @@ export default function FormulaireFiscalPage() {
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
                       <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
-                      <SelectField<ProvinceCode>
-                        label="Province"
-                        value={provinceConjoint}
-                        onChange={setProvinceConjoint}
-                        options={PROVINCES}
-                      />
+                      <SelectField<ProvinceCode> label="Province" value={provinceConjoint} onChange={setProvinceConjoint} options={PROVINCES} />
                       <Field
                         label="Code postal"
                         value={codePostalConjoint}
@@ -839,8 +917,7 @@ export default function FormulaireFiscalPage() {
               </>
             )}
           </section>
-
-          {/* ASSURANCE MEDS */}
+      {/* ASSURANCE MEDS */}
           {province === "QC" && (
             <section className="ff-card">
               <div className="ff-card-head">
@@ -1101,9 +1178,13 @@ export default function FormulaireFiscalPage() {
   <button
     type="submit"
     className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting || !!formulaireId}
+    disabled={submitting}
   >
-    {submitting ? "Envoi…" : formulaireId ? "Formulaire soumis ✅" : "Soumettre mes informations fiscales"}
+    {submitting
+      ? "Envoi…"
+      : formulaireId
+      ? "Enregistrer les modifications"
+      : "Soumettre mes informations fiscales"}
   </button>
 
   <p className="ff-footnote">
