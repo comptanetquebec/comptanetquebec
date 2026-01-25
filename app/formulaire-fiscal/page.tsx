@@ -1320,6 +1320,11 @@ export default function FormulaireFiscalPage() {
     </div>
   )}
 </section>
+        </form>
+      </div>
+    </main>
+  );
+}
 
 /* ----------------- Réutilisables ----------------- */
 
