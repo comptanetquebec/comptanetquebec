@@ -930,20 +930,29 @@ export default function FormulaireFiscalPage() {
       ]}
     />
 
-    {/* Documents à télécharger (PDF) */}
-    <div className="ff-rowbox" style={{ marginTop: 12 }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
-        <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-          Ouvrez et téléchargez la liste des documents requis. Vous pourrez ensuite déposer vos fichiers dans la page
-          de dépôt.
-        </div>
-      </div>
+   {/* Documents à télécharger (PDF) */}
+<div className="ff-rowbox" style={{ marginTop: 12 }}>
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
+    <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
+      Ouvrez et téléchargez la liste des documents requis. Vous pourrez ensuite déposer vos fichiers dans la page de
+      dépôt.
     </div>
+  </div>
+</div>
 
-    <div className="ff-stack" style={{ marginTop: 12 }}>
+<div className="ff-stack" style={{ marginTop: 12 }}>
+  {(() => {
+    const pdfHref =
+      type === "t2"
+        ? "/liste-documents-t2.pdf"
+        : type === "autonome"
+        ? "/liste-documents-autonome.pdf"
+        : "/liste-documents-t1.pdf";
+
+    return (
       <a
-        href={`/depot-documents?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`}
+        href={pdfHref}
         target="_blank"
         rel="noopener noreferrer"
         className="ff-btn ff-btn-primary"
