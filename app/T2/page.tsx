@@ -6,11 +6,11 @@ import { supabase } from "@/lib/supabaseClient";
 
 /* ---------- Types ---------- */
 type Lang = "fr" | "en" | "es";
-type YesNo = "yes" | "no" | ""; // ✅ stable en base (peu importe la langue d'affichage)
+type YesNo = "yes" | "no" | "";
 
 interface FormData {
   companyName: string;
-  craNumber: string; // BN 9 chiffres (idéalement)
+  craNumber: string;
   neq: string;
   incProvince: string;
 
@@ -19,8 +19,8 @@ interface FormData {
   addrProv: string;
   addrPostal: string;
 
-  yearEnd: string; // texte (JJ/MM/AAAA ou DD/MM/YYYY)
-  year: number;
+  yearEnd: string;
+  year: number; // pour cohérence (mais la clé, c’est selectedYear)
 
   hasRevenue: YesNo;
   operatesInQuebec: YesNo;
@@ -105,7 +105,6 @@ const I18N: Record<Lang, Dict> = {
     intro:
       "Ce formulaire nous donne l’information minimale pour préparer la déclaration T2 fédérale et, si requis, la CO-17 au Québec.",
     mustLogin: "Redirection vers l’espace client…",
-
     back: "Retour aux dossiers",
 
     section_company: "1. Société",
@@ -123,15 +122,13 @@ const I18N: Record<Lang, Dict> = {
     year: "Année fiscale (ex.: 2024)",
     yearEnd: "Fin d’exercice (JJ/MM/AAAA)",
     operatesInQuebec: "La société exerce-t-elle au Québec ?",
-    operatesInQuebec_hint:
-      "Si oui, nous préparerons aussi la déclaration du Québec (CO-17).",
+    operatesInQuebec_hint: "Si oui, nous préparerons aussi la déclaration du Québec (CO-17).",
 
     section_activity: "3. Activité de la société",
     hasRevenue: "Avez-vous eu des revenus durant l’année ?",
     paidSalary: "Avez-vous payé des salaires (T4) aux actionnaires / employés ?",
     paidDividends: "Avez-vous versé des dividendes aux actionnaires (T5) ?",
-    hasAssets:
-      "Avez-vous des actifs importants (ordinateur, véhicule, équipement) au nom de la société ?",
+    hasAssets: "Avez-vous des actifs importants (ordinateur, véhicule, équipement) au nom de la société ?",
     hasLoans: "Avez-vous des prêts ou marge de crédit au nom de la société ?",
 
     section_contact: "4. Personne contact pour ce dossier",
@@ -143,8 +140,7 @@ const I18N: Record<Lang, Dict> = {
     revenue: "Revenus ($)",
     expenses: "Dépenses ($)",
     notes: "Notes / précisions",
-    notes_ph:
-      "Ex.: période différente du calendrier, dépenses perso payées par la cie, etc.",
+    notes_ph: "Ex.: période différente du calendrier, dépenses perso payées par la cie, etc.",
 
     yes: "Oui",
     no: "Non",
@@ -162,7 +158,6 @@ const I18N: Record<Lang, Dict> = {
     intro:
       "This form collects the minimum info we need to prepare the federal T2 return and, if required, the Québec CO-17.",
     mustLogin: "Redirecting to client portal…",
-
     back: "Back to files",
 
     section_company: "1. Corporation",
@@ -180,8 +175,7 @@ const I18N: Record<Lang, Dict> = {
     year: "Tax year (e.g. 2024)",
     yearEnd: "Year-end date (DD/MM/YYYY)",
     operatesInQuebec: "Does the company operate in Québec?",
-    operatesInQuebec_hint:
-      "If yes, we'll also prepare the Québec corporate return (CO-17).",
+    operatesInQuebec_hint: "If yes, we'll also prepare the Québec corporate return (CO-17).",
 
     section_activity: "3. Company activity",
     hasRevenue: "Did the company earn revenue during the year?",
@@ -199,8 +193,7 @@ const I18N: Record<Lang, Dict> = {
     revenue: "Revenue ($)",
     expenses: "Expenses ($)",
     notes: "Notes / details",
-    notes_ph:
-      "Ex.: non-calendar year-end, shareholder personal expenses in books, etc.",
+    notes_ph: "Ex.: non-calendar year-end, shareholder personal expenses in books, etc.",
 
     yes: "Yes",
     no: "No",
@@ -218,7 +211,6 @@ const I18N: Record<Lang, Dict> = {
     intro:
       "Este formulario reúne la información mínima para preparar la declaración federal T2 y, si aplica, la CO-17 en Québec.",
     mustLogin: "Redirigiendo al área de cliente…",
-
     back: "Volver a expedientes",
 
     section_company: "1. Sociedad",
@@ -236,8 +228,7 @@ const I18N: Record<Lang, Dict> = {
     year: "Año fiscal (ej.: 2024)",
     yearEnd: "Cierre del ejercicio (DD/MM/AAAA)",
     operatesInQuebec: "¿La sociedad opera en Québec?",
-    operatesInQuebec_hint:
-      "Si es así, también preparamos la declaración provincial CO-17.",
+    operatesInQuebec_hint: "Si es así, también preparamos la declaración provincial CO-17.",
 
     section_activity: "3. Actividad de la sociedad",
     hasRevenue: "¿La sociedad tuvo ingresos este año?",
@@ -255,8 +246,7 @@ const I18N: Record<Lang, Dict> = {
     revenue: "Ingresos ($)",
     expenses: "Gastos ($)",
     notes: "Notas / detalles",
-    notes_ph:
-      "Ej.: año fiscal no calendario, gastos personales pagados por la empresa, etc.",
+    notes_ph: "Ej.: año fiscal no calendario, gastos personales pagados por la empresa, etc.",
 
     yes: "Sí",
     no: "No",
@@ -276,15 +266,10 @@ function localeFor(lang: Lang): string {
   if (lang === "en") return "en-CA";
   return "es-ES";
 }
-
 function formatTime(d: Date, lang: Lang): string {
   try {
-    return d.toLocaleTimeString(localeFor(lang), {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return d.toLocaleTimeString(localeFor(lang), { hour: "2-digit", minute: "2-digit" });
   } catch {
-    // fallback
     return d.toTimeString().slice(0, 5);
   }
 }
@@ -311,9 +296,7 @@ function TextField({
     <label className={`block ${className}`}>
       <span className="text-sm font-medium text-gray-700 flex items-baseline gap-2">
         {label}
-        {hint && (
-          <span className="text-[11px] font-normal text-gray-500">{hint}</span>
-        )}
+        {hint && <span className="text-[11px] font-normal text-gray-500">{hint}</span>}
       </span>
       <input
         value={value}
@@ -345,27 +328,15 @@ function YesNoField({
     <div>
       <span className="text-sm font-medium text-gray-700 flex items-baseline gap-2">
         {label}
-        {hint && (
-          <span className="text-[11px] font-normal text-gray-500">{hint}</span>
-        )}
+        {hint && <span className="text-[11px] font-normal text-gray-500">{hint}</span>}
       </span>
       <div className="mt-1 flex gap-6 text-sm text-gray-700">
         <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            value="yes"
-            checked={value === "yes"}
-            onChange={() => onChange("yes")}
-          />
+          <input type="radio" value="yes" checked={value === "yes"} onChange={() => onChange("yes")} />
           <span>{yesLabel}</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            value="no"
-            checked={value === "no"}
-            onChange={() => onChange("no")}
-          />
+          <input type="radio" value="no" checked={value === "no"} onChange={() => onChange("no")} />
           <span>{noLabel}</span>
         </label>
       </div>
@@ -378,32 +349,34 @@ export default function T2Page() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // Langue via ?lang=fr|en|es
   const urlLang = (params.get("lang") || "fr").toLowerCase();
-  const lang: Lang = (["fr", "en", "es"] as const).includes(urlLang as Lang)
-    ? (urlLang as Lang)
-    : "fr";
+  const lang: Lang = (["fr", "en", "es"] as const).includes(urlLang as Lang) ? (urlLang as Lang) : "fr";
   const t = I18N[lang];
 
-  // Auth
+  // ✅ Auth
   const [uid, setUid] = useState<string | null>(null);
 
-  // Form state
+  // ✅ Année sélectionnée (clé de brouillon)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
+
+  // ✅ Form state
   const [form, setForm] = useState<FormData>({
     companyName: "",
     craNumber: "",
     neq: "",
     incProvince: "",
+
     addrStreet: "",
     addrCity: "",
     addrProv: "",
     addrPostal: "",
 
     yearEnd: "",
-    year: new Date().getFullYear() - 1,
-    operatesInQuebec: "",
+    year: new Date().getFullYear() - 1, // on garde cohérent, mais la clé est selectedYear
 
+    operatesInQuebec: "",
     hasRevenue: "",
+
     paidSalary: "",
     paidDividends: "",
     hasAssets: "",
@@ -433,8 +406,8 @@ export default function T2Page() {
       const user = data.user;
 
       if (!user) {
-        // ✅ conserve la langue + indique la page de retour
-        router.replace(`/espace-client?lang=${lang}&next=/T2`);
+        const next = `/t2?lang=${lang}`;
+        router.replace(`/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`);
         return;
       }
 
@@ -446,14 +419,20 @@ export default function T2Page() {
           .from("t2_forms")
           .select("payload, year, updated_at")
           .eq("user_id", user.id)
-          .eq("year", form.year)
+          .eq("year", selectedYear)
           .order("updated_at", { ascending: false })
           .limit(1);
 
         if (error) throw error;
 
         if (!cancelled && rows && rows[0]?.payload) {
-          setForm(rows[0].payload as FormData);
+          const payload = rows[0].payload as FormData;
+
+          // ✅ important : on force la cohérence avec l’année sélectionnée
+          setForm({ ...payload, year: selectedYear });
+        } else if (!cancelled) {
+          // pas de brouillon -> reset propre (garde l’année sélectionnée)
+          setForm((prev) => ({ ...prev, year: selectedYear }));
         }
       } catch (e) {
         console.error(e);
@@ -466,16 +445,12 @@ export default function T2Page() {
     return () => {
       cancelled = true;
     };
-    // ✅ recharge quand lang change OU quand l’année change
-  }, [router, lang, form.year, t.error_load]);
+  }, [router, lang, selectedYear, t.error_load]);
 
   /* --- helpers pour set --- */
-  const setField = useCallback(
-    <K extends keyof FormData>(key: K, value: FormData[K]) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
+  const setField = useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const save = useCallback(async () => {
     if (!uid) return;
@@ -484,11 +459,14 @@ export default function T2Page() {
     try {
       const row: SaveRow = {
         user_id: uid,
-        year: form.year,
-        payload: form,
+        year: selectedYear,
+        payload: { ...form, year: selectedYear },
       };
 
-      const { error } = await supabase.from("t2_forms").upsert(row);
+      const { error } = await supabase
+        .from("t2_forms")
+        .upsert(row, { onConflict: "user_id,year" });
+
       if (error) throw error;
 
       setSavedAt(new Date());
@@ -498,7 +476,7 @@ export default function T2Page() {
     } finally {
       setSaving(false);
     }
-  }, [uid, form, t.error_save]);
+  }, [uid, form, selectedYear, t.error_save]);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -520,15 +498,11 @@ export default function T2Page() {
 
         {!uid && <p className="text-sm text-gray-600 mb-4">{t.mustLogin}</p>}
 
-        {loadingDraft && uid && (
-          <p className="text-sm text-gray-600 mb-4">…</p>
-        )}
+        {loadingDraft && uid && <p className="text-sm text-gray-600 mb-4">…</p>}
 
         {/* SECTION 1 - Société */}
         <section className="bg-white border rounded shadow-sm p-5 mb-6">
-          <h2 className="text-lg font-medium text-blue-800 mb-4">
-            {t.section_company}
-          </h2>
+          <h2 className="text-lg font-medium text-blue-800 mb-4">{t.section_company}</h2>
 
           <div className="grid gap-4">
             <TextField
@@ -595,17 +569,13 @@ export default function T2Page() {
 
         {/* SECTION 2 - Exercice fiscal */}
         <section className="bg-white border rounded shadow-sm p-5 mb-6">
-          <h2 className="text-lg font-medium text-blue-800 mb-4">
-            {t.section_year}
-          </h2>
+          <h2 className="text-lg font-medium text-blue-800 mb-4">{t.section_year}</h2>
 
           <div className="grid md:grid-cols-2 gap-4">
             <TextField
               label={t.year}
-              value={form.year}
-              onChange={(v) =>
-                setField("year", parseInt(v || "0", 10) || form.year)
-              }
+              value={selectedYear}
+              onChange={(v) => setSelectedYear(parseInt(v || "0", 10) || selectedYear)}
               type="number"
               placeholder="2024"
             />
@@ -614,7 +584,7 @@ export default function T2Page() {
               label={t.yearEnd}
               value={form.yearEnd}
               onChange={(v) => setField("yearEnd", v)}
-              placeholder={lang === "en" ? "31/12/2024" : "31/12/2024"}
+              placeholder="31/12/2024"
             />
           </div>
 
@@ -632,9 +602,7 @@ export default function T2Page() {
 
         {/* SECTION 3 - Activité */}
         <section className="bg-white border rounded shadow-sm p-5 mb-6">
-          <h2 className="text-lg font-medium text-blue-800 mb-4">
-            {t.section_activity}
-          </h2>
+          <h2 className="text-lg font-medium text-blue-800 mb-4">{t.section_activity}</h2>
 
           <div className="grid gap-6">
             <YesNoField
@@ -681,9 +649,7 @@ export default function T2Page() {
 
         {/* SECTION 4 - Contact */}
         <section className="bg-white border rounded shadow-sm p-5 mb-6">
-          <h2 className="text-lg font-medium text-blue-800 mb-4">
-            {t.section_contact}
-          </h2>
+          <h2 className="text-lg font-medium text-blue-800 mb-4">{t.section_contact}</h2>
 
           <div className="grid md:grid-cols-2 gap-4">
             <TextField
@@ -718,9 +684,7 @@ export default function T2Page() {
 
         {/* SECTION 5 - Résumé financier */}
         <section className="bg-white border rounded shadow-sm p-5 mb-6">
-          <h2 className="text-lg font-medium text-blue-800 mb-4">
-            {t.section_financials}
-          </h2>
+          <h2 className="text-lg font-medium text-blue-800 mb-4">{t.section_financials}</h2>
 
           <div className="grid md:grid-cols-2 gap-4">
             <TextField
@@ -771,3 +735,4 @@ export default function T2Page() {
     </main>
   );
 }
+
