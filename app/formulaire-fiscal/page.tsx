@@ -71,10 +71,10 @@ type EtatCivil =
   | "";
 
 /* ===========================
-   Types payload (PAS DE any)
+   Types data (PAS DE any)
 =========================== */
 
-type FormClientPayload = {
+type FormClientdata = {
   prenom?: string;
   nom?: string;
   nas?: string; // normalisé (9 chiffres)
@@ -94,7 +94,7 @@ type FormClientPayload = {
   courriel?: string;
 };
 
-type FormConjointPayload = {
+type FormConjointdata = {
   traiterConjoint?: boolean;
   prenomConjoint?: string;
   nomConjoint?: string;
@@ -114,12 +114,12 @@ type FormConjointPayload = {
   revenuNetConjoint?: string;
 };
 
-type FormMedsPayload = {
+type FormMedsdata = {
   client?: { regime?: AssuranceMeds; periodes?: Periode[] };
   conjoint?: { regime?: AssuranceMeds; periodes?: Periode[] } | null;
 };
 
-type FormQuestionsPayload = {
+type FormQuestionsdata = {
   habiteSeulTouteAnnee?: YesNo;
   nbPersonnesMaison3112?: string;
   biensEtranger100k?: YesNo;
@@ -130,18 +130,18 @@ type FormQuestionsPayload = {
   copieImpots?: CopieImpots;
 };
 
-type FormPayload = {
+type Formdata = {
   dossierType?: string;
-  client?: FormClientPayload;
-  conjoint?: FormConjointPayload | null;
-  assuranceMedicamenteuse?: FormMedsPayload | null;
+  client?: FormClientdata;
+  conjoint?: FormConjointdata | null;
+  assuranceMedicamenteuse?: FormMedsdata | null;
   personnesACharge?: Child[];
-  questionsGenerales?: FormQuestionsPayload;
+  questionsGenerales?: FormQuestionsdata;
 };
 
 type FormRow = {
   id: string;
-  payload: FormPayload | null;
+  data: Formdata | null;
   created_at: string;
 };
 
@@ -419,7 +419,7 @@ export default function FormulaireFiscalPage() {
 
       const { data, error } = await supabase
         .from(FORMS_TABLE)
-        .select("id, payload, created_at")
+        .select("id, data, created_at")
         .eq("user_id", uid)
         .eq("dossier_type", type)
         .order("created_at", { ascending: false })
@@ -437,32 +437,32 @@ export default function FormulaireFiscalPage() {
       }
 
       const fid = data.id;
-      const payload: FormPayload = (data.payload ?? {}) as FormPayload;
+      const data: Formdata = (data.data ?? {}) as Formdata;
 
       setFormulaireId(fid);
 
       // --- Client
-      setPrenom(payload.client?.prenom ?? "");
-      setNom(payload.client?.nom ?? "");
-      setNas(payload.client?.nas ? formatNASInput(payload.client.nas) : "");
-      setDob(payload.client?.dob ?? "");
-      setEtatCivil(payload.client?.etatCivil ?? "");
+      setPrenom(data.client?.prenom ?? "");
+      setNom(data.client?.nom ?? "");
+      setNas(data.client?.nas ? formatNASInput(data.client.nas) : "");
+      setDob(data.client?.dob ?? "");
+      setEtatCivil(data.client?.etatCivil ?? "");
 
-      setEtatCivilChange(!!payload.client?.etatCivilChange);
-      setAncienEtatCivil(payload.client?.ancienEtatCivil ?? "");
-      setDateChangementEtatCivil(payload.client?.dateChangementEtatCivil ?? "");
+      setEtatCivilChange(!!data.client?.etatCivilChange);
+      setAncienEtatCivil(data.client?.ancienEtatCivil ?? "");
+      setDateChangementEtatCivil(data.client?.dateChangementEtatCivil ?? "");
 
-      setTel(payload.client?.tel ? formatPhoneInput(payload.client.tel) : "");
-      setTelCell(payload.client?.telCell ? formatPhoneInput(payload.client.telCell) : "");
-      setAdresse(payload.client?.adresse ?? "");
-      setApp(payload.client?.app ?? "");
-      setVille(payload.client?.ville ?? "");
-      setProvince(payload.client?.province ?? "QC");
-      setCodePostal(payload.client?.codePostal ? formatPostalInput(payload.client.codePostal) : "");
-      setCourriel(payload.client?.courriel ?? "");
+      setTel(data.client?.tel ? formatPhoneInput(data.client.tel) : "");
+      setTelCell(data.client?.telCell ? formatPhoneInput(data.client.telCell) : "");
+      setAdresse(data.client?.adresse ?? "");
+      setApp(data.client?.app ?? "");
+      setVille(data.client?.ville ?? "");
+      setProvince(data.client?.province ?? "QC");
+      setCodePostal(data.client?.codePostal ? formatPostalInput(data.client.codePostal) : "");
+      setCourriel(data.client?.courriel ?? "");
 
       // --- Conjoint
-      const cj = payload.conjoint ?? null;
+      const cj = data.conjoint ?? null;
       setAUnConjoint(!!cj);
 
       if (cj) {
@@ -501,7 +501,7 @@ export default function FormulaireFiscalPage() {
       }
 
       // --- Assurance meds
-      const meds = payload.assuranceMedicamenteuse;
+      const meds = data.assuranceMedicamenteuse;
       if (meds?.client) {
         setAssuranceMedsClient(meds.client.regime ?? "");
         setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
@@ -519,17 +519,17 @@ export default function FormulaireFiscalPage() {
       }
 
       // --- Enfants
-      setEnfants(payload.personnesACharge ?? []);
+      setEnfants(data.personnesACharge ?? []);
 
       // --- Questions
-      setHabiteSeulTouteAnnee(payload.questionsGenerales?.habiteSeulTouteAnnee ?? "");
-      setNbPersonnesMaison3112(payload.questionsGenerales?.nbPersonnesMaison3112 ?? "");
-      setBiensEtranger100k(payload.questionsGenerales?.biensEtranger100k ?? "");
-      setCitoyenCanadien(payload.questionsGenerales?.citoyenCanadien ?? "");
-      setNonResident(payload.questionsGenerales?.nonResident ?? "");
-      setMaisonAcheteeOuVendue(payload.questionsGenerales?.maisonAcheteeOuVendue ?? "");
-      setAppelerTechnicien(payload.questionsGenerales?.appelerTechnicien ?? "");
-      setCopieImpots(payload.questionsGenerales?.copieImpots ?? "");
+      setHabiteSeulTouteAnnee(data.questionsGenerales?.habiteSeulTouteAnnee ?? "");
+      setNbPersonnesMaison3112(data.questionsGenerales?.nbPersonnesMaison3112 ?? "");
+      setBiensEtranger100k(data.questionsGenerales?.biensEtranger100k ?? "");
+      setCitoyenCanadien(data.questionsGenerales?.citoyenCanadien ?? "");
+      setNonResident(data.questionsGenerales?.nonResident ?? "");
+      setMaisonAcheteeOuVendue(data.questionsGenerales?.maisonAcheteeOuVendue ?? "");
+      setAppelerTechnicien(data.questionsGenerales?.appelerTechnicien ?? "");
+      setCopieImpots(data.questionsGenerales?.copieImpots ?? "");
 
       await loadDocs(fid);
 
@@ -544,7 +544,7 @@ export default function FormulaireFiscalPage() {
     if (hydrating.current) return;
     if (submitting) return;
 
-    const payload: FormPayload = {
+    const data: Formdata = {
       dossierType: type,
       client: {
         prenom: prenom.trim(),
@@ -613,7 +613,7 @@ export default function FormulaireFiscalPage() {
     if (formulaireId) {
       await supabase
         .from(FORMS_TABLE)
-        .update({ lang, payload })
+        .update({ lang, data })
         .eq("id", formulaireId)
         .eq("user_id", userId);
       return;
@@ -626,7 +626,7 @@ export default function FormulaireFiscalPage() {
         user_id: userId,
         dossier_type: type,
         lang,
-        payload,
+        data,
       })
       .select("id")
       .single<InsertIdRow>();
