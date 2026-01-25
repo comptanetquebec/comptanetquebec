@@ -1488,9 +1488,9 @@ export default function FormulaireFiscalPage() {
 
 /* ===========================
    UI COMPONENTS
-   ✅ signatures safe (pas de props:{...} inline)
-   ✅ YesNoField: name stable obligatoire
-   ✅ SelectField: options typées simplement
+   - signatures safe (pas de props inline)
+   - YesNoField: name stable obligatoire
+   - SelectField: options typées simplement
 =========================== */
 
 type FieldProps = {
