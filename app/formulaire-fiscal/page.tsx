@@ -630,7 +630,7 @@ const loadLastForm = useCallback(
     user_id: userId,
     dossier_type: type,
     lang,
-    data: payload,
+    data,
   })
   .select("id")
   .single<InsertIdRow>();
