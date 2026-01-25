@@ -437,7 +437,7 @@ export default function FormulaireFiscalPage() {
       }
 
       const fid = data.id;
-      const data: Formdata = (data.data ?? {}) as Formdata;
+const payload: FormPayload = (data.payload ?? {}) as FormPayload;
 
       setFormulaireId(fid);
 
@@ -620,16 +620,20 @@ export default function FormulaireFiscalPage() {
     }
 
     // INSERT (brouillon) dès la première saisie
-    const { data, error } = await supabase
-      .from(FORMS_TABLE)
-      .insert({
-        user_id: userId,
-        dossier_type: type,
-        lang,
-        data,
-      })
-      .select("id")
-      .single<InsertIdRow>();
+    const { data: dataInsert, error: errorInsert } = await supabase
+  .from(FORMS_TABLE)
+  .insert({
+    user_id: userId,
+    dossier_type: type,
+    lang,
+    payload,
+  })
+  .select("id")
+  .single<InsertIdRow>();
+
+if (!errorInsert && dataInsert?.id) {
+  setFormulaireId(dataInsert.id);
+}
 
     if (!error && data?.id) {
       setFormulaireId(data.id);
