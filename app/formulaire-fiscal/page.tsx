@@ -29,8 +29,11 @@ type ProvinceCode =
   | "NT"
   | "NU";
 
+type Sexe = "M" | "F" | "X" | "";
+
 type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 type CopieImpots = "espaceClient" | "courriel" | "";
+
 type Periode = { debut: string; fin: string };
 
 function updatePeriode(list: Periode[], idx: number, patch: Partial<Periode>) {
@@ -43,8 +46,8 @@ type Child = {
   prenom: string;
   nom: string;
   dob: string; // JJ/MM/AAAA
-  nas: string;
-  sexe: string;
+  nas: string; // formaté pendant saisie
+  sexe: Sexe;
 };
 
 type DocRow = {
