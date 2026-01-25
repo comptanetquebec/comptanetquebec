@@ -161,14 +161,6 @@ function safeFilename(name: string) {
   return name.replace(/[^\w.\-()\s]/g, "_");
 }
 
-function formatBytes(bytes?: number | null) {
-  if (!bytes || bytes <= 0) return "";
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${Math.round(kb)} KB`;
-  const mb = kb / 1024;
-  return `${mb.toFixed(1)} MB`;
-}
-
 const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "QC", label: "QC" },
   { value: "ON", label: "ON" },
@@ -204,6 +196,11 @@ export default function FormulaireFiscalPage() {
   const [msg, setMsg] = useState<string | null>(null);
 
   const redirected = useRef(false);
+
+  // ✅ “Mémoire” : évite autosave pendant le preload
+  const hydrating = useRef(false);
+  // ✅ debounce autosave
+  const saveTimer = useRef<number | null>(null);
 
   // ✅ Dossier (sert aussi de “mémoire”)
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
@@ -330,6 +327,8 @@ export default function FormulaireFiscalPage() {
 
   // ✅ charge le dernier formulaire de ce user (mémoire)
   async function loadLastForm(uid: string) {
+    hydrating.current = true;
+
     const { data, error } = await supabase
       .from(FORMS_TABLE)
       .select("id, payload, created_at")
@@ -341,12 +340,16 @@ export default function FormulaireFiscalPage() {
 
     if (error) {
       setMsg(`Erreur chargement: ${error.message}`);
+      hydrating.current = false;
       return;
     }
-    if (!data) return;
+    if (!data) {
+      hydrating.current = false;
+      return;
+    }
 
-    const fid = (data as any).id as string;
-    const payload = (data as any).payload as any;
+    const fid = data.id;
+    const payload = (data.payload ?? {}) as any;
 
     setFormulaireId(fid);
 
@@ -391,7 +394,6 @@ export default function FormulaireFiscalPage() {
       setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
       setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
     } else {
-      // reset si pas de conjoint
       setTraiterConjoint(true);
       setPrenomConjoint("");
       setNomConjoint("");
@@ -434,90 +436,15 @@ export default function FormulaireFiscalPage() {
     setCopieImpots(payload?.questionsGenerales?.copieImpots ?? "");
 
     await loadDocs(fid);
+
+    hydrating.current = false;
   }
 
-  /* ===========================
-     Auth guard + preload
-  =========================== */
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!alive) return;
-
-      if (error || !data.user) {
-        if (!redirected.current) {
-          redirected.current = true;
-          setBooting(false);
-
-          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
-          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
-        }
-        return;
-      }
-
-      setUserId(data.user.id);
-      setBooting(false);
-
-      // ✅ pré-remplir automatiquement
-      await loadLastForm(data.user.id);
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [router, lang, type]);
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
-  };
-
-  /* ===========================
-     Upload (optionnel) — gardé
-     (tu rediriges vers /depot-documents, mais on garde la logique)
-  =========================== */
-
-  async function uploadOne(file: File) {
-    if (!userId || !formulaireId) throw new Error("Veuillez soumettre le formulaire d’abord.");
-    if (!isAllowedFile(file)) throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
-    if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
-
-    const safe = safeFilename(file.name);
-    const storage_path = `${userId}/${formulaireId}/${Date.now()}-${safe}`;
-
-    const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
-      contentType: file.type || "application/octet-stream",
-      upsert: false,
-    });
-    if (upErr) throw upErr;
-
-    const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
-      formulaire_id: formulaireId,
-      user_id: userId,
-      original_name: file.name,
-      storage_path,
-      mime_type: file.type || null,
-      size_bytes: file.size,
-    });
-    if (dbErr) throw dbErr;
-  }
-
-  /* ===========================
-     Submit: INSERT ou UPDATE
-  =========================== */
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-
-    if (!userId) {
-      setMsg("Veuillez vous reconnecter.");
-      router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
-      return;
-    }
+  // ✅ autosave brouillon (insert/update sans bouton)
+  async function saveDraft() {
+    if (!userId) return;
+    if (hydrating.current) return;
+    if (submitting) return;
 
     const payload = {
       dossierType: type,
@@ -584,29 +511,17 @@ export default function FormulaireFiscalPage() {
       },
     };
 
-    setSubmitting(true);
-
-    // ✅ si on a déjà un dossier -> UPDATE
+    // UPDATE si dossier existe
     if (formulaireId) {
-      const { error } = await supabase
+      await supabase
         .from(FORMS_TABLE)
         .update({ lang, payload })
         .eq("id", formulaireId)
         .eq("user_id", userId);
-
-      setSubmitting(false);
-
-      if (error) {
-        setMsg(`Erreur: ${error.message}`);
-        return;
-      }
-
-      setMsg("✅ Modifications enregistrées.");
-      await loadDocs(formulaireId);
       return;
     }
 
-    // ✅ sinon -> INSERT
+    // INSERT (brouillon) dès la première saisie
     const { data, error } = await supabase
       .from(FORMS_TABLE)
       .insert({
@@ -618,23 +533,125 @@ export default function FormulaireFiscalPage() {
       .select("id")
       .single();
 
-    setSubmitting(false);
-
-    if (error) {
-      setMsg(`Erreur: ${error.message}`);
-      return;
+    if (!error && data?.id) {
+      setFormulaireId((data as InsertIdRow).id);
     }
-
-    const fid = (data as InsertIdRow).id;
-    setFormulaireId(fid);
-    setMsg("✅ Formulaire reçu. Téléversez vos documents en bas de la page.");
-    await loadDocs(fid);
-
-    setTimeout(() => {
-      const el = document.getElementById("ff-upload-section");
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
   }
+
+  /* ===========================
+     Auth guard + preload
+  =========================== */
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!alive) return;
+
+      if (error || !data.user) {
+        if (!redirected.current) {
+          redirected.current = true;
+          setBooting(false);
+
+          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
+          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+        }
+        return;
+      }
+
+      setUserId(data.user.id);
+      setBooting(false);
+
+      // ✅ pré-remplir automatiquement
+      await loadLastForm(data.user.id);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [router, lang, type]);
+
+  // ✅ autosave debounce
+  useEffect(() => {
+    if (!userId) return;
+    if (hydrating.current) return;
+
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+
+    saveTimer.current = window.setTimeout(() => {
+      saveDraft().catch(() => {});
+    }, 800);
+
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    userId,
+    type,
+    lang,
+
+    prenom,
+    nom,
+    nas,
+    dob,
+    etatCivil,
+    etatCivilChange,
+    ancienEtatCivil,
+    dateChangementEtatCivil,
+
+    tel,
+    telCell,
+    adresse,
+    app,
+    ville,
+    province,
+    codePostal,
+    courriel,
+
+    aUnConjoint,
+    traiterConjoint,
+    prenomConjoint,
+    nomConjoint,
+    nasConjoint,
+    dobConjoint,
+    telConjoint,
+    telCellConjoint,
+    courrielConjoint,
+    adresseConjointeIdentique,
+    adresseConjoint,
+    appConjoint,
+    villeConjoint,
+    provinceConjoint,
+    codePostalConjoint,
+    revenuNetConjoint,
+
+    assuranceMedsClient,
+    assuranceMedsClientPeriodes,
+    assuranceMedsConjoint,
+    assuranceMedsConjointPeriodes,
+
+    enfants,
+
+    habiteSeulTouteAnnee,
+    nbPersonnesMaison3112,
+    biensEtranger100k,
+    citoyenCanadien,
+    nonResident,
+    maisonAcheteeOuVendue,
+    appelerTechnicien,
+    copieImpots,
+  ]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
+  };
+
+  /* ===========================
+     ... (le reste de ton code)
+  =========================== */
 
   if (booting) {
     return (
@@ -671,7 +688,8 @@ export default function FormulaireFiscalPage() {
           </button>
         </header>
 
-        {/* Title */}
+
+               {/* Title */}
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
@@ -793,7 +811,13 @@ export default function FormulaireFiscalPage() {
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
                 <Field label="Ville" value={ville} onChange={setVille} required />
 
-                <SelectField<ProvinceCode> label="Province" value={province} onChange={setProvince} options={PROVINCES} required />
+                <SelectField<ProvinceCode>
+                  label="Province"
+                  value={province}
+                  onChange={setProvince}
+                  options={PROVINCES}
+                  required
+                />
 
                 <Field
                   label="Code postal"
@@ -883,7 +907,12 @@ export default function FormulaireFiscalPage() {
                     formatter={formatPhoneInput}
                     maxLength={14}
                   />
-                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
+                  <Field
+                    label="Courriel (conjoint)"
+                    value={courrielConjoint}
+                    onChange={setCourrielConjoint}
+                    type="email"
+                  />
                 </div>
 
                 <div className="ff-mt">
@@ -901,7 +930,12 @@ export default function FormulaireFiscalPage() {
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
                       <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
-                      <SelectField<ProvinceCode> label="Province" value={provinceConjoint} onChange={setProvinceConjoint} options={PROVINCES} />
+                      <SelectField<ProvinceCode>
+                        label="Province"
+                        value={provinceConjoint}
+                        onChange={setProvinceConjoint}
+                        options={PROVINCES}
+                      />
                       <Field
                         label="Code postal"
                         value={codePostalConjoint}
@@ -917,7 +951,8 @@ export default function FormulaireFiscalPage() {
               </>
             )}
           </section>
-      {/* ASSURANCE MEDS */}
+
+          {/* ASSURANCE MEDS */}
           {province === "QC" && (
             <section className="ff-card">
               <div className="ff-card-head">
@@ -1102,172 +1137,191 @@ export default function FormulaireFiscalPage() {
             </div>
           </section>
 
-{/* QUESTIONS */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Informations fiscales additionnelles</h2>
-    <p>Questions générales pour compléter correctement le dossier.</p>
-  </div>
+          {/* QUESTIONS */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Informations fiscales additionnelles</h2>
+              <p>Questions générales pour compléter correctement le dossier.</p>
+            </div>
 
-  <div className="ff-stack">
-    <YesNoField
-      nameKey="habiteSeulTouteAnnee"
-      label="Avez-vous habité seul(e) toute l'année (sans personne à charge) ?"
-      value={habiteSeulTouteAnnee}
-      onChange={setHabiteSeulTouteAnnee}
-    />
+            <div className="ff-stack">
+              <YesNoField
+                nameKey="habiteSeulTouteAnnee"
+                label="Avez-vous habité seul(e) toute l'année (sans personne à charge) ?"
+                value={habiteSeulTouteAnnee}
+                onChange={setHabiteSeulTouteAnnee}
+              />
 
-    <Field
-      label="Au 31/12, combien de personnes vivaient avec vous ?"
-      value={nbPersonnesMaison3112}
-      onChange={setNbPersonnesMaison3112}
-      placeholder="ex.: 1"
-      inputMode="numeric"
-    />
+              <Field
+                label="Au 31/12, combien de personnes vivaient avec vous ?"
+                value={nbPersonnesMaison3112}
+                onChange={setNbPersonnesMaison3112}
+                placeholder="ex.: 1"
+                inputMode="numeric"
+              />
 
-    <YesNoField
-      nameKey="biensEtranger100k"
-      label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
-      value={biensEtranger100k}
-      onChange={setBiensEtranger100k}
-    />
+              <YesNoField
+                nameKey="biensEtranger100k"
+                label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
+                value={biensEtranger100k}
+                onChange={setBiensEtranger100k}
+              />
 
-    <YesNoField
-      nameKey="citoyenCanadien"
-      label="Êtes-vous citoyen(ne) canadien(ne) ?"
-      value={citoyenCanadien}
-      onChange={setCitoyenCanadien}
-    />
+              <YesNoField
+                nameKey="citoyenCanadien"
+                label="Êtes-vous citoyen(ne) canadien(ne) ?"
+                value={citoyenCanadien}
+                onChange={setCitoyenCanadien}
+              />
 
-    <YesNoField
-      nameKey="nonResident"
-      label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
-      value={nonResident}
-      onChange={setNonResident}
-    />
+              <YesNoField
+                nameKey="nonResident"
+                label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
+                value={nonResident}
+                onChange={setNonResident}
+              />
 
-    <YesNoField
-      nameKey="maisonAcheteeOuVendue"
-      label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
-      value={maisonAcheteeOuVendue}
-      onChange={setMaisonAcheteeOuVendue}
-    />
+              <YesNoField
+                nameKey="maisonAcheteeOuVendue"
+                label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
+                value={maisonAcheteeOuVendue}
+                onChange={setMaisonAcheteeOuVendue}
+              />
 
-    <YesNoField
-      nameKey="appelerTechnicien"
-      label="Souhaitez-vous qu'un technicien vous appelle ?"
-      value={appelerTechnicien}
-      onChange={setAppelerTechnicien}
-    />
+              <YesNoField
+                nameKey="appelerTechnicien"
+                label="Souhaitez-vous qu'un technicien vous appelle ?"
+                value={appelerTechnicien}
+                onChange={setAppelerTechnicien}
+              />
 
-    <SelectField<CopieImpots>
-      label="Comment voulez-vous recevoir votre copie d'impôt ?"
-      value={copieImpots}
-      onChange={setCopieImpots}
-      required
-      options={[
-        { value: "espaceClient", label: "Espace client" },
-        { value: "courriel", label: "Courriel" },
-      ]}
-    />
-  </div>
-</section>
+              <SelectField<CopieImpots>
+                label="Comment voulez-vous recevoir votre copie d'impôt ?"
+                value={copieImpots}
+                onChange={setCopieImpots}
+                required
+                options={[
+                  { value: "espaceClient", label: "Espace client" },
+                  { value: "courriel", label: "Courriel" },
+                ]}
+              />
+            </div>
+          </section>
 
-{/* SUBMIT */}
-<div className="ff-submit">
-  <button
-    type="submit"
-    className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting}
-  >
-    {submitting
-      ? "Envoi…"
-      : formulaireId
-      ? "Enregistrer les modifications"
-      : "Soumettre mes informations fiscales"}
-  </button>
+          {/* SUBMIT */}
+          <div className="ff-submit">
+            <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting}>
+              {submitting
+                ? "Envoi…"
+                : formulaireId
+                ? "Enregistrer les modifications"
+                : "Soumettre mes informations fiscales"}
+            </button>
 
-  <p className="ff-footnote">
-    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
-    travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
-  </p>
-</div>
-
-{/* DÉPÔT DOCUMENTS (BOUTON VERS PAGE DROPZONE) */}
-<section
-  id="ff-upload-section"
-  className="ff-card"
-  style={{ opacity: formulaireId ? 1 : 0.65 }}
->
-  <div className="ff-card-head">
-    <h2>Déposer vos documents</h2>
-    <p>
-      Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
-      <br />
-      Une page “glisser-déposer” s’ouvrira pour téléverser vos documents.
-    </p>
-  </div>
-
-  {!formulaireId ? (
-    <div className="ff-empty">
-      Soumettez d’abord le formulaire ci-dessus. Ensuite, le bouton de dépôt de documents sera activé.
-    </div>
-  ) : (
-    <div className="ff-stack">
-      <button
-        type="button"
-        className="ff-btn ff-btn-primary"
-        style={{
-          padding: "14px 16px",
-          borderRadius: 14,
-          fontWeight: 900,
-          fontSize: 16,
-          textAlign: "center",
-          width: "100%",
-        }}
-        onClick={() => {
-          const url = `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
-            type
-          )}&lang=${encodeURIComponent(lang)}`;
-          router.push(url);
-        }}
-      >
-        Déposer mes documents →
-      </button>
-
-      <div className="ff-rowbox" style={{ marginTop: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>
-            ID : {formulaireId}
+            <p className="ff-footnote">
+              Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1
+              (particulier / travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration
+              provinciale.
+            </p>
           </div>
-        </div>
 
-        <button
-          type="button"
-          className="ff-btn ff-btn-soft"
-          onClick={() => {
-            navigator.clipboard?.writeText(formulaireId);
-            setMsg("✅ ID copié.");
-          }}
-        >
-          Copier l’ID
-        </button>
-      </div>
+          {/* DÉPÔT DOCUMENTS (BOUTON VERS PAGE DROPZONE) */}
+          <section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
+            <div className="ff-card-head">
+              <h2>Déposer vos documents</h2>
+              <p>
+                Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
+                <br />
+                Une page “glisser-déposer” s’ouvrira pour téléverser vos documents.
+              </p>
+            </div>
 
-      <div className="ff-mt">
-        <button
-          type="button"
-          className="ff-btn ff-btn-soft"
-          style={{ width: "100%", textAlign: "center" }}
-          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-        >
-          Terminer
-        </button>
-      </div>
-    </div>
-  )}
-</section>
+            {!formulaireId ? (
+              <div className="ff-empty">
+                Soumettez d’abord le formulaire ci-dessus. Ensuite, le bouton de dépôt de documents sera activé.
+              </div>
+            ) : (
+              <div className="ff-stack">
+                <button
+                  type="button"
+                  className="ff-btn ff-btn-primary"
+                  style={{
+                    padding: "14px 16px",
+                    borderRadius: 14,
+                    fontWeight: 900,
+                    fontSize: 16,
+                    textAlign: "center",
+                    width: "100%",
+                  }}
+                  onClick={() => {
+                    const url = `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
+                      type
+                    )}&lang=${encodeURIComponent(lang)}`;
+                    router.push(url);
+                  }}
+                >
+                  Déposer mes documents →
+                </button>
+
+                <div className="ff-rowbox" style={{ marginTop: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700 }}>Dossier créé</div>
+                    <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>ID : {formulaireId}</div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="ff-btn ff-btn-soft"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(formulaireId);
+                      setMsg("✅ ID copié.");
+                    }}
+                  >
+                    Copier l’ID
+                  </button>
+                </div>
+
+                {/* ✅ Liste des documents déjà téléversés */}
+                <div className="ff-mt">
+                  <div className="ff-subtitle">Documents téléversés</div>
+
+                  {docsLoading ? (
+                    <div className="ff-empty">Chargement des documents…</div>
+                  ) : docs.length === 0 ? (
+                    <div className="ff-empty">Aucun document pour l’instant.</div>
+                  ) : (
+                    <div className="ff-stack">
+                      {docs.map((d) => (
+                        <div key={d.id} className="ff-rowbox" style={{ alignItems: "center", gap: 12 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {d.original_name}
+                            </div>
+                            <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>{d.storage_path}</div>
+                          </div>
+
+                          <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                            Ouvrir
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="ff-mt">
+                  <button
+                    type="button"
+                    className="ff-btn ff-btn-soft"
+                    style={{ width: "100%", textAlign: "center" }}
+                    onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+                  >
+                    Terminer
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
         </form>
       </div>
     </main>
@@ -1355,7 +1409,7 @@ function YesNoField({
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  nameKey?: string; // ✅ évite collisions de name si labels identiques
+  nameKey?: string;
 }) {
   const name = nameKey || `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
 
@@ -1365,34 +1419,18 @@ function YesNoField({
 
       <div className="ff-yn-row">
         <label className="ff-radio">
-          <input
-            type="radio"
-            name={name}
-            value="oui"
-            checked={value === "oui"}
-            onChange={() => onChange("oui")}
-          />
+          <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={() => onChange("oui")} />
           <span>Oui</span>
         </label>
 
         <label className="ff-radio">
-          <input
-            type="radio"
-            name={name}
-            value="non"
-            checked={value === "non"}
-            onChange={() => onChange("non")}
-          />
+          <input type="radio" name={name} value="non" checked={value === "non"} onChange={() => onChange("non")} />
           <span>Non</span>
         </label>
       </div>
 
       {value !== "" && (
-        <button
-          type="button"
-          className="ff-btn ff-btn-link"
-          onClick={() => onChange("")}
-        >
+        <button type="button" className="ff-btn ff-btn-link" onClick={() => onChange("")}>
           Effacer
         </button>
       )}
@@ -1420,13 +1458,7 @@ function SelectField<T extends string>({
         {required ? " *" : ""}
       </span>
 
-      <select
-        className="ff-select"
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.value as T)}
-        required={required}
-      >
-        {/* ✅ pour les required: valeur vide forcée */}
+      <select className="ff-select" value={value} onChange={(e) => onChange(e.currentTarget.value as T)} required={required}>
         <option value="">{required ? "Choisir…" : "—"}</option>
 
         {options.map((opt) => (
