@@ -995,37 +995,7 @@ export default function FormulaireFiscalPage() {
             </div>
           </section>
 
-        /* ===========================
-   SECTIONS (Conjoint / RAMQ / Enfants / Questions / Submit / Upload)
-   ✅ corrigé: types, required conditionnel, radio names stables,
-   ✅ pas de SelectField<string>, pas de casts dangereux,
-   ✅ formatDate/NAS appliqué au bon endroit,
-   ✅ enfant.sexe typé, options propres
-=========================== */
-
-type Sexe = "M" | "F" | "X" | "";
-
-/* remplace ton type Child par celui-ci */
-type Child = {
-  prenom: string;
-  nom: string;
-  dob: string; // JJ/MM/AAAA (affiché)
-  nas: string; // affiché formaté
-  sexe: Sexe;
-};
-
-/* ---------- Helpers update périodes ---------- */
-function updatePeriode(list: Periode[], idx: number, patch: Partial<Periode>) {
-  return list.map((p, i) => (i === idx ? { ...p, ...patch } : p));
-}
-
-/* ===========================
-   ✅ Dans ton JSX du <form> …
-=========================== */
-
-{
-  /* SECTION CONJOINT */
-}
+{/* SECTION CONJOINT */}
 <section className="ff-card">
   <div className="ff-card-head">
     <h2>Conjoint</h2>
