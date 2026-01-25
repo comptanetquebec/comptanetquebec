@@ -930,41 +930,45 @@ export default function FormulaireFiscalPage() {
       ]}
     />
 
- {/* Documents à télécharger (PDF) */}
+ {/* Dépôt de documents */}
 <div className="ff-rowbox" style={{ marginTop: 12 }}>
   <div style={{ flex: 1, minWidth: 0 }}>
-    <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
+    <div style={{ fontWeight: 900, fontSize: 18 }}>📎 Dépôt de documents</div>
     <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-      Ouvrez et téléchargez la liste des documents requis. Vous pourrez ensuite déposer vos fichiers dans la page de dépôt.
+      Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
     </div>
   </div>
 </div>
 
 <div className="ff-stack" style={{ marginTop: 12 }}>
-  {(() => {
-    const pdfHref =
-      type === "t2"
-        ? "/liste-documents-t2.pdf"
-        : type === "autonome"
-        ? "/liste-documents-autonome.pdf"
-        : "/liste-documents-t1.pdf";
+  <button
+    type="button"
+    className="ff-btn ff-btn-primary"
+    style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+    disabled={!formulaireId}
+    onClick={() => {
+      if (!formulaireId) {
+        setMsg("Soumettez d’abord le formulaire ci-dessus. Ensuite, le dépôt de documents sera activé.");
+        return;
+      }
 
-    return (
-      <a
-        href={pdfHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="ff-btn ff-btn-primary"
-        style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-      >
-        Télécharger la liste des documents →
-      </a>
-    );
-  })()}
+      const url = `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
+        type
+      )}&lang=${encodeURIComponent(lang)}`;
+
+      router.push(url);
+    }}
+  >
+    Déposer mes documents →
+  </button>
+
+  {!formulaireId && (
+    <div style={{ fontSize: 13, opacity: 0.75 }}>
+      Soumettez d’abord le formulaire pour créer votre dossier.
+    </div>
+  )}
 </div>
 
-  </div>
-</section>
 {/* SUBMIT */}
 <div className="ff-submit">
   <button
