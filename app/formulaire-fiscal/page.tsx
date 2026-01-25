@@ -437,8 +437,11 @@ export default function FormulaireFiscalPage() {
       }
 
       const fid = data.id;
+setFormulaireId(fid);
 
-      setFormulaireId(fid);
+const payload = (data.payload ?? {}) as FormPayload;
+const client = payload.client ?? {};
+
 
       // --- Client
       setPrenom(data.client?.prenom ?? "");
