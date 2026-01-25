@@ -930,13 +930,12 @@ export default function FormulaireFiscalPage() {
       ]}
     />
 
-   {/* Documents à télécharger (PDF) */}
+ {/* Documents à télécharger (PDF) */}
 <div className="ff-rowbox" style={{ marginTop: 12 }}>
   <div style={{ flex: 1, minWidth: 0 }}>
     <div style={{ fontWeight: 900, fontSize: 18 }}>📄 Documents à télécharger</div>
     <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-      Ouvrez et téléchargez la liste des documents requis. Vous pourrez ensuite déposer vos fichiers dans la page de
-      dépôt.
+      Ouvrez et téléchargez la liste des documents requis. Vous pourrez ensuite déposer vos fichiers dans la page de dépôt.
     </div>
   </div>
 </div>
@@ -960,9 +959,9 @@ export default function FormulaireFiscalPage() {
       >
         Télécharger la liste des documents →
       </a>
-    </div>
-  </div>
-</section>
+    );
+  })()}
+</div>
 
 {/* SUBMIT */}
 <div className="ff-submit">
