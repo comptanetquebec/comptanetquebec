@@ -929,45 +929,8 @@ export default function FormulaireFiscalPage() {
         { value: "courriel", label: "Courriel" },
       ]}
     />
-
- {/* Dépôt de documents */}
-<div className="ff-rowbox" style={{ marginTop: 12 }}>
-  <div style={{ flex: 1, minWidth: 0 }}>
-    <div style={{ fontWeight: 900, fontSize: 18 }}>📎 Dépôt de documents</div>
-    <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.4 }}>
-      Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
-    </div>
   </div>
-</div>
-
-<div className="ff-stack" style={{ marginTop: 12 }}>
-  <button
-    type="button"
-    className="ff-btn ff-btn-primary"
-    style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
-    disabled={!formulaireId}
-    onClick={() => {
-      if (!formulaireId) {
-        setMsg("Soumettez d’abord le formulaire ci-dessus. Ensuite, le dépôt de documents sera activé.");
-        return;
-      }
-
-      const url = `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
-        type
-      )}&lang=${encodeURIComponent(lang)}`;
-
-      router.push(url);
-    }}
-  >
-    Déposer mes documents →
-  </button>
-
-  {!formulaireId && (
-    <div style={{ fontSize: 13, opacity: 0.75 }}>
-      Soumettez d’abord le formulaire pour créer votre dossier.
-    </div>
-  )}
-</div>
+</section>
 
 {/* SUBMIT */}
 <div className="ff-submit">
@@ -985,7 +948,7 @@ export default function FormulaireFiscalPage() {
   </p>
 </div>
 
-{/* DÉPÔT DOCUMENTS (PAGE DROPZONE) */}
+{/* DÉPÔT DOCUMENTS (BOUTON VERS PAGE DROPZONE) */}
 <section className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
