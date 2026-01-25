@@ -33,6 +33,10 @@ type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 type CopieImpots = "espaceClient" | "courriel" | "";
 type Periode = { debut: string; fin: string };
 
+function updatePeriode(list: Periode[], idx: number, patch: Partial<Periode>) {
+  return list.map((p, i) => (i === idx ? { ...p, ...patch } : p));
+}
+
 type InsertIdRow = { id: string };
 
 type Child = {
