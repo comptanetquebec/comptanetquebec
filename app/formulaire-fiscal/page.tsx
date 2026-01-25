@@ -1404,11 +1404,18 @@ if (!errorInsert && dataInsert?.id) {
     {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
   </button>
 
+ <div className="ff-submit">
+  <button
+    type="submit"
+    className="ff-btn ff-btn-primary ff-btn-big"
+    disabled={submitting || !formulaireId || docsCount === 0}
+  >
+    {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
+  </button>
+
   {formulaireId && docsCount === 0 && (
     <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>
   )}
-</div>
-
 
   <p className="ff-footnote">
     Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
@@ -1416,9 +1423,7 @@ if (!errorInsert && dataInsert?.id) {
   </p>
 </div>
 
-{
-  /* DÉPÔT DOCUMENTS */
-}
+  {/* DÉPÔT DOCUMENTS */}
 <section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
