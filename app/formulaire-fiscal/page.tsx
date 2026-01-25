@@ -290,8 +290,10 @@ export default function FormulaireFiscalPage() {
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
 
   // --- Docs state (pour afficher la liste / ouverture)
-  const [docs, setDocs] = useState<DocRow[]>([]);
-  const [docsLoading, setDocsLoading] = useState(false);
+const [docs, setDocs] = useState<DocRow[]>([]);
+const [docsLoading, setDocsLoading] = useState(false);
+
+const docsCount = docs.length;
 
   // --- Infos client principal ---
   const [prenom, setPrenom] = useState("");
@@ -437,7 +439,10 @@ const loadLastForm = useCallback(
     }
 
     const fid = row.id;
-    setFormulaireId(fid);
+setFormulaireId(fid);
+
+await loadDocs(fid);
+
 
     // ✅ Ton JSONB est ici
     const form = row.data;
@@ -1390,12 +1395,20 @@ if (!errorInsert && dataInsert?.id) {
 </section>
 
 {
-  /* SUBMIT */
-}
-<div className="ff-submit">
-  <button type="submit" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting}>
-    {submitting ? "Envoi…" : formulaireId ? "Enregistrer les modifications" : "Soumettre mes informations fiscales"}
+ <div className="ff-submit">
+  <button
+    type="submit"
+    className="ff-btn ff-btn-primary ff-btn-big"
+    disabled={submitting || !formulaireId || docsCount === 0}
+  >
+    {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
   </button>
+
+  {formulaireId && docsCount === 0 && (
+    <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>
+  )}
+</div>
+
 
   <p className="ff-footnote">
     Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
