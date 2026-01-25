@@ -29,7 +29,6 @@ type ProvinceCode =
   | "NT"
   | "NU";
 
-type YesNo = "oui" | "non" | "";
 type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 type CopieImpots = "espaceClient" | "courriel" | "";
 type Periode = { debut: string; fin: string };
