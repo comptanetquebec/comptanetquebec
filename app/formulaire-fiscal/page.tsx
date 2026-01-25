@@ -62,6 +62,10 @@ type EtatCivil =
   | "veuf"
   | "";
 
+/* ===========================
+   Helpers (title / normalize)
+=========================== */
+
 function titleFromType(type: string) {
   if (type === "autonome") return "Travailleur autonome (T1)";
   if (type === "t2") return "Société (T2)";
@@ -79,16 +83,67 @@ function normalizeLang(v: string) {
   return x === "fr" || x === "en" || x === "es" ? x : "fr";
 }
 
-// petites normalisations “qualité”
+/* ===========================
+   FORMAT LIVE (pendant saisie)
+=========================== */
+
+function formatNASInput(v: string) {
+  const d = (v || "").replace(/\D+/g, "").slice(0, 9);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 9);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+function formatDateInput(v: string) {
+  const d = (v || "").replace(/\D+/g, "").slice(0, 8);
+  const dd = d.slice(0, 2);
+  const mm = d.slice(2, 4);
+  const yyyy = d.slice(4, 8);
+  if (d.length <= 2) return dd;
+  if (d.length <= 4) return `${dd}/${mm}`;
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function formatPhoneInput(v: string) {
+  const d = (v || "").replace(/\D+/g, "").slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length === 0) return "";
+  if (d.length <= 3) return `(${a}`;
+  if (d.length <= 6) return `(${a}) ${b}`;
+  return `(${a}) ${b}-${c}`;
+}
+
+function formatPostalInput(v: string) {
+  const s = (v || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
+  if (s.length <= 3) return s;
+  return `${s.slice(0, 3)} ${s.slice(3, 6)}`;
+}
+
+/* ===========================
+   NORMALIZE (valeur “propre”)
+=========================== */
+
 function normalizeNAS(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 9);
 }
 function normalizePostal(v: string) {
-  return (v || "").trim().toUpperCase();
+  return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 }
 function normalizePhone(v: string) {
-  return (v || "").trim();
+  return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
+
+/* ===========================
+   Upload helpers
+=========================== */
 
 function isAllowedFile(file: File) {
   const n = file.name.toLowerCase();
@@ -132,6 +187,143 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "NT", label: "NT" },
   { value: "NU", label: "NU" },
 ];
+
+/* ===========================
+   UI Components
+=========================== */
+
+function Field({
+  label,
+  value,
+  onChange,
+  required,
+  placeholder,
+  type = "text",
+  inputMode,
+  autoComplete,
+  formatter,
+  maxLength,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  placeholder?: string;
+  type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
+  formatter?: (v: string) => string;
+  maxLength?: number;
+}) {
+  return (
+    <label className="ff-field">
+      <span className="ff-label">
+        {label}
+        {required ? " *" : ""}
+      </span>
+      <input
+        className="ff-input"
+        value={value}
+        onChange={(e) => {
+          const raw = e.currentTarget.value;
+          onChange(formatter ? formatter(raw) : raw);
+        }}
+        placeholder={placeholder}
+        required={required}
+        type={type}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        maxLength={maxLength}
+      />
+    </label>
+  );
+}
+
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="ff-check">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.currentTarget.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function SelectField<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  required,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  required?: boolean;
+}) {
+  return (
+    <label className="ff-field">
+      <span className="ff-label">
+        {label}
+        {required ? " *" : ""}
+      </span>
+      <select
+        className="ff-select"
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value as T)}
+        required={required}
+      >
+        <option value={"" as T}>—</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function YesNoField({
+  label,
+  value,
+  onChange,
+  required,
+}: {
+  label: string;
+  value: YesNo;
+  onChange: (v: YesNo) => void;
+  required?: boolean;
+}) {
+  return (
+    <SelectField<YesNo>
+      label={label}
+      value={value}
+      onChange={onChange}
+      required={required}
+      options={[
+        { value: "oui", label: "Oui" },
+        { value: "non", label: "Non" },
+      ]}
+    />
+  );
+}
+
+/* ===========================
+   Page
+=========================== */
 
 export default function FormulaireFiscalPage() {
   const router = useRouter();
@@ -188,7 +380,8 @@ export default function FormulaireFiscalPage() {
   const [telConjoint, setTelConjoint] = useState("");
   const [telCellConjoint, setTelCellConjoint] = useState("");
   const [courrielConjoint, setCourrielConjoint] = useState("");
-  const [adresseConjointeIdentique, setAdresseConjointeIdentique] = useState(true);
+  const [adresseConjointeIdentique, setAdresseConjointeIdentique] =
+    useState(true);
   const [adresseConjoint, setAdresseConjoint] = useState("");
   const [appConjoint, setAppConjoint] = useState("");
   const [villeConjoint, setVilleConjoint] = useState("");
@@ -197,21 +390,24 @@ export default function FormulaireFiscalPage() {
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // --- Assurance médicaments (Québec uniquement) ---
-  const [assuranceMedsClient, setAssuranceMedsClient] = useState<AssuranceMeds>("");
-  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState<Periode[]>([
-    { debut: "", fin: "" },
-  ]);
+  const [assuranceMedsClient, setAssuranceMedsClient] =
+    useState<AssuranceMeds>("");
+  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] =
+    useState<Periode[]>([{ debut: "", fin: "" }]);
 
-  const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<AssuranceMeds>("");
-  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState<Periode[]>([
-    { debut: "", fin: "" },
-  ]);
+  const [assuranceMedsConjoint, setAssuranceMedsConjoint] =
+    useState<AssuranceMeds>("");
+  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] =
+    useState<Periode[]>([{ debut: "", fin: "" }]);
 
   // --- Enfants / personnes à charge ---
   const [enfants, setEnfants] = useState<Child[]>([]);
 
   function ajouterEnfant() {
-    setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
+    setEnfants((prev) => [
+      ...prev,
+      { prenom: "", nom: "", dob: "", nas: "", sexe: "" },
+    ]);
   }
   function updateEnfant(i: number, field: keyof Child, value: string) {
     setEnfants((prev) => {
@@ -249,8 +445,14 @@ export default function FormulaireFiscalPage() {
           redirected.current = true;
           setBooting(false);
 
-          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
-          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+          const next = `/formulaire-fiscal?type=${encodeURIComponent(
+            type
+          )}&lang=${encodeURIComponent(lang)}`;
+          router.replace(
+            `/espace-client?lang=${encodeURIComponent(
+              lang
+            )}&next=${encodeURIComponent(next)}`
+          );
         }
         return;
       }
@@ -274,7 +476,9 @@ export default function FormulaireFiscalPage() {
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
-      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
+      .select(
+        "id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at"
+      )
       .eq("formulaire_id", fid)
       .order("created_at", { ascending: false });
 
@@ -288,17 +492,22 @@ export default function FormulaireFiscalPage() {
   }
 
   async function uploadOne(file: File) {
-    if (!userId || !formulaireId) throw new Error("Veuillez soumettre le formulaire d’abord.");
-    if (!isAllowedFile(file)) throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
-    if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
+    if (!userId || !formulaireId)
+      throw new Error("Veuillez soumettre le formulaire d’abord.");
+    if (!isAllowedFile(file))
+      throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
+    if (file.size > 50 * 1024 * 1024)
+      throw new Error("Fichier trop lourd (max 50 MB).");
 
     const safe = safeFilename(file.name);
     const storage_path = `${userId}/${formulaireId}/${Date.now()}-${safe}`;
 
-    const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
-      contentType: file.type || "application/octet-stream",
-      upsert: false,
-    });
+    const { error: upErr } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(storage_path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
 
     if (upErr) throw upErr;
 
@@ -318,7 +527,9 @@ export default function FormulaireFiscalPage() {
     setMsg(null);
     if (!fileList || fileList.length === 0) return;
     if (!formulaireId) {
-      setMsg("Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible.");
+      setMsg(
+        "Soumettez d’abord le formulaire ci-dessus. Ensuite, l’upload sera disponible."
+      );
       return;
     }
 
@@ -339,8 +550,11 @@ export default function FormulaireFiscalPage() {
   }
 
   async function getSignedUrl(path: string) {
-    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10); // 10 min
-    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(path, 60 * 10); // 10 min
+    if (error || !data?.signedUrl)
+      throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
     return data.signedUrl;
   }
 
@@ -522,19 +736,27 @@ export default function FormulaireFiscalPage() {
             <div className="ff-grid2">
               <Field label="Prénom" value={prenom} onChange={setPrenom} required />
               <Field label="Nom" value={nom} onChange={setNom} required />
+
               <Field
                 label="Numéro d’assurance sociale (NAS)"
                 value={nas}
                 onChange={setNas}
-                placeholder="___-___-___"
+                placeholder="123-456-789"
                 required
+                inputMode="numeric"
+                formatter={formatNASInput}
+                maxLength={11}
               />
+
               <Field
                 label="Date de naissance (JJ/MM/AAAA)"
                 value={dob}
                 onChange={setDob}
                 placeholder="01/01/1990"
                 required
+                inputMode="numeric"
+                formatter={formatDateInput}
+                maxLength={10}
               />
             </div>
 
@@ -574,13 +796,32 @@ export default function FormulaireFiscalPage() {
                   value={dateChangementEtatCivil}
                   onChange={setDateChangementEtatCivil}
                   placeholder="15/07/2024"
+                  inputMode="numeric"
+                  formatter={formatDateInput}
+                  maxLength={10}
                 />
               </div>
             )}
 
             <div className="ff-grid2 ff-mt">
-              <Field label="Téléphone" value={tel} onChange={setTel} placeholder="(xxx) xxx-xxxx" />
-              <Field label="Cellulaire" value={telCell} onChange={setTelCell} placeholder="(xxx) xxx-xxxx" />
+              <Field
+                label="Téléphone"
+                value={tel}
+                onChange={setTel}
+                placeholder="(418) 555-1234"
+                inputMode="tel"
+                formatter={formatPhoneInput}
+                maxLength={14}
+              />
+              <Field
+                label="Cellulaire"
+                value={telCell}
+                onChange={setTelCell}
+                placeholder="(418) 555-1234"
+                inputMode="tel"
+                formatter={formatPhoneInput}
+                maxLength={14}
+              />
               <Field label="Courriel" value={courriel} onChange={setCourriel} type="email" required />
             </div>
 
@@ -590,17 +831,27 @@ export default function FormulaireFiscalPage() {
               <div className="ff-grid4 ff-mt-sm">
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
                 <Field label="Ville" value={ville} onChange={setVille} required />
-                <SelectField<ProvinceCode>
+                <SelectField<ProvinceCode
                   label="Province"
                   value={province}
                   onChange={setProvince}
                   options={PROVINCES}
                   required
                 />
-                <Field label="Code postal" value={codePostal} onChange={setCodePostal} placeholder="A1A 1A1" required />
+                <Field
+                  label="Code postal"
+                  value={codePostal}
+                  onChange={setCodePostal}
+                  placeholder="G1V 0A6"
+                  required
+                  formatter={formatPostalInput}
+                  maxLength={7}
+                  autoComplete="postal-code"
+                />
               </div>
             </div>
           </section>
+
           {/* SECTION CONJOINT */}
           <section className="ff-card">
             <div className="ff-card-head">
@@ -634,12 +885,25 @@ export default function FormulaireFiscalPage() {
                 <div className="ff-grid2 ff-mt">
                   <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required />
                   <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required />
-                  <Field label="NAS (conjoint)" value={nasConjoint} onChange={setNasConjoint} placeholder="___-___-___" />
+
+                  <Field
+                    label="NAS (conjoint)"
+                    value={nasConjoint}
+                    onChange={setNasConjoint}
+                    placeholder="123-456-789"
+                    inputMode="numeric"
+                    formatter={formatNASInput}
+                    maxLength={11}
+                  />
+
                   <Field
                     label="Date de naissance (JJ/MM/AAAA)"
                     value={dobConjoint}
                     onChange={setDobConjoint}
                     placeholder="01/01/1990"
+                    inputMode="numeric"
+                    formatter={formatDateInput}
+                    maxLength={10}
                   />
                 </div>
 
@@ -648,13 +912,19 @@ export default function FormulaireFiscalPage() {
                     label="Téléphone (conjoint)"
                     value={telConjoint}
                     onChange={setTelConjoint}
-                    placeholder="(xxx) xxx-xxxx"
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
                   />
                   <Field
                     label="Cellulaire (conjoint)"
                     value={telCellConjoint}
                     onChange={setTelCellConjoint}
-                    placeholder="(xxx) xxx-xxxx"
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
                   />
                   <Field
                     label="Courriel (conjoint)"
@@ -689,7 +959,10 @@ export default function FormulaireFiscalPage() {
                         label="Code postal"
                         value={codePostalConjoint}
                         onChange={setCodePostalConjoint}
-                        placeholder="A1A 1A1"
+                        placeholder="G1V 0A6"
+                        formatter={formatPostalInput}
+                        maxLength={7}
+                        autoComplete="postal-code"
                       />
                     </div>
                   </div>
@@ -726,20 +999,24 @@ export default function FormulaireFiscalPage() {
                       value={p.debut}
                       onChange={(val) => {
                         setAssuranceMedsClientPeriodes((prev) =>
-                          prev.map((x, i) => (i === idx ? { ...x, debut: val } : x))
+                          prev.map((x, i) => (i === idx ? { ...x, debut: formatDateInput(val) } : x))
                         );
                       }}
                       placeholder="01/01/2024"
+                      inputMode="numeric"
+                      maxLength={10}
                     />
                     <Field
                       label="À (JJ/MM/AAAA)"
                       value={p.fin}
                       onChange={(val) => {
                         setAssuranceMedsClientPeriodes((prev) =>
-                          prev.map((x, i) => (i === idx ? { ...x, fin: val } : x))
+                          prev.map((x, i) => (i === idx ? { ...x, fin: formatDateInput(val) } : x))
                         );
                       }}
                       placeholder="31/12/2024"
+                      inputMode="numeric"
+                      maxLength={10}
                     />
                   </div>
                 ))}
@@ -775,20 +1052,24 @@ export default function FormulaireFiscalPage() {
                           value={p.debut}
                           onChange={(val) => {
                             setAssuranceMedsConjointPeriodes((prev) =>
-                              prev.map((x, i) => (i === idx ? { ...x, debut: val } : x))
+                              prev.map((x, i) => (i === idx ? { ...x, debut: formatDateInput(val) } : x))
                             );
                           }}
                           placeholder="01/01/2024"
+                          inputMode="numeric"
+                          maxLength={10}
                         />
                         <Field
                           label="À (JJ/MM/AAAA)"
                           value={p.fin}
                           onChange={(val) => {
                             setAssuranceMedsConjointPeriodes((prev) =>
-                              prev.map((x, i) => (i === idx ? { ...x, fin: val } : x))
+                              prev.map((x, i) => (i === idx ? { ...x, fin: formatDateInput(val) } : x))
                             );
                           }}
                           placeholder="31/12/2024"
+                          inputMode="numeric"
+                          maxLength={10}
                         />
                       </div>
                     ))}
@@ -835,13 +1116,19 @@ export default function FormulaireFiscalPage() {
                         value={enf.dob}
                         onChange={(v) => updateEnfant(i, "dob", v)}
                         placeholder="01/01/2020"
+                        inputMode="numeric"
+                        formatter={formatDateInput}
+                        maxLength={10}
                       />
 
                       <Field
                         label="NAS (si attribué)"
                         value={enf.nas}
                         onChange={(v) => updateEnfant(i, "nas", v)}
-                        placeholder="___-___-___"
+                        placeholder="123-456-789"
+                        inputMode="numeric"
+                        formatter={formatNASInput}
+                        maxLength={11}
                       />
                     </div>
 
@@ -878,7 +1165,8 @@ export default function FormulaireFiscalPage() {
 
   <div className="ff-stack">
     <YesNoField
-      label="Avez-vous habité seul(e) toute l'année (sans personne à charge)?"
+      nameKey="habiteSeulTouteAnnee"
+      label="Avez-vous habité seul(e) toute l'année (sans personne à charge) ?"
       value={habiteSeulTouteAnnee}
       onChange={setHabiteSeulTouteAnnee}
     />
@@ -887,34 +1175,40 @@ export default function FormulaireFiscalPage() {
       label="Au 31/12, combien de personnes vivaient avec vous ?"
       value={nbPersonnesMaison3112}
       onChange={setNbPersonnesMaison3112}
-      placeholder="ex.: 1, 2, 3..."
+      placeholder="ex.: 1"
+      inputMode="numeric"
     />
 
     <YesNoField
+      nameKey="biensEtranger100k"
       label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
       value={biensEtranger100k}
       onChange={setBiensEtranger100k}
     />
 
     <YesNoField
+      nameKey="citoyenCanadien"
       label="Êtes-vous citoyen(ne) canadien(ne) ?"
       value={citoyenCanadien}
       onChange={setCitoyenCanadien}
     />
 
     <YesNoField
+      nameKey="nonResident"
       label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
       value={nonResident}
       onChange={setNonResident}
     />
 
     <YesNoField
+      nameKey="maisonAcheteeOuVendue"
       label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
       value={maisonAcheteeOuVendue}
       onChange={setMaisonAcheteeOuVendue}
     />
 
     <YesNoField
+      nameKey="appelerTechnicien"
       label="Souhaitez-vous qu'un technicien vous appelle ?"
       value={appelerTechnicien}
       onChange={setAppelerTechnicien}
@@ -924,6 +1218,7 @@ export default function FormulaireFiscalPage() {
       label="Comment voulez-vous recevoir votre copie d'impôt ?"
       value={copieImpots}
       onChange={setCopieImpots}
+      required
       options={[
         { value: "espaceClient", label: "Espace client" },
         { value: "courriel", label: "Courriel" },
@@ -989,9 +1284,7 @@ export default function FormulaireFiscalPage() {
       <div className="ff-rowbox" style={{ marginTop: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>
-            ID : {formulaireId}
-          </div>
+          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>ID : {formulaireId}</div>
         </div>
 
         <button
@@ -1020,12 +1313,6 @@ export default function FormulaireFiscalPage() {
   )}
 </section>
 
-        </form>
-      </div>
-    </main>
-  );
-}
-
 /* ----------------- Réutilisables ----------------- */
 
 function Field({
@@ -1035,6 +1322,9 @@ function Field({
   required,
   placeholder,
   type = "text",
+  inputMode,
+  maxLength,
+  formatter,
 }: {
   label: string;
   value: string;
@@ -1042,6 +1332,9 @@ function Field({
   required?: boolean;
   placeholder?: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
+  formatter?: (v: string) => string;
 }) {
   return (
     <label className="ff-field">
@@ -1052,10 +1345,15 @@ function Field({
       <input
         className="ff-input"
         value={value}
-        onChange={(e) => onChange(e.currentTarget.value)}
+        onChange={(e) => {
+          const raw = e.currentTarget.value;
+          onChange(formatter ? formatter(raw) : raw);
+        }}
         placeholder={placeholder}
         required={required}
         type={type}
+        inputMode={inputMode}
+        maxLength={maxLength}
       />
     </label>
   );
@@ -1087,12 +1385,14 @@ function YesNoField({
   label,
   value,
   onChange,
+  nameKey,
 }: {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
+  nameKey?: string; // ✅ pour éviter collisions
 }) {
-  const name = `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
+  const name = nameKey || `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
 
   return (
     <div className="ff-yn">
@@ -1104,7 +1404,7 @@ function YesNoField({
             name={name}
             value="oui"
             checked={value === "oui"}
-            onChange={(e) => onChange(e.currentTarget.value as YesNo)}
+            onChange={() => onChange("oui")}
           />
           <span>Oui</span>
         </label>
@@ -1115,11 +1415,18 @@ function YesNoField({
             name={name}
             value="non"
             checked={value === "non"}
-            onChange={(e) => onChange(e.currentTarget.value as YesNo)}
+            onChange={() => onChange("non")}
           />
           <span>Non</span>
         </label>
       </div>
+
+      {/* ✅ Petit bouton "vider" (optionnel) */}
+      {value !== "" && (
+        <button type="button" className="ff-btn ff-btn-link" onClick={() => onChange("")}>
+          Effacer
+        </button>
+      )}
     </div>
   );
 }
@@ -1150,7 +1457,7 @@ function SelectField<T extends string>({
         onChange={(e) => onChange(e.currentTarget.value as T)}
         required={required}
       >
-        <option value="">Choisir…</option>
+        <option value="">{required ? "Choisir…" : "—"}</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
