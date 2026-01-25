@@ -9,7 +9,7 @@ import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "./ui"
 
 /**
  * IMPORTANT (à ajuster si tes noms sont différents)
- */
+ 
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
@@ -1387,16 +1387,6 @@ if (!errorInsert && dataInsert?.id) {
     />
   </div>
 </section>
-
-{
- <div className="ff-submit">
-  <button
-    type="submit"
-    className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting || !formulaireId || docsCount === 0}
-  >
-    {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
-  </button>
 
  <div className="ff-submit">
   <button
