@@ -439,9 +439,8 @@ export default function FormulaireFiscalPage() {
       const fid = data.id;
 setFormulaireId(fid);
 
-const payload = (data.payload ?? {}) as FormPayload;
+const payload = (data.data ?? {}) as FormPayload;
 const client = payload.client ?? {};
-
 
       // --- Client
       setPrenom(data.client?.prenom ?? "");
@@ -628,7 +627,7 @@ const client = payload.client ?? {};
     user_id: userId,
     dossier_type: type,
     lang,
-    payload,
+    data: payload,
   })
   .select("id")
   .single<InsertIdRow>();
