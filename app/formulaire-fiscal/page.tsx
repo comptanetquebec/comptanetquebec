@@ -189,139 +189,6 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
 ];
 
 /* ===========================
-   UI Components
-=========================== */
-
-function Field({
-  label,
-  value,
-  onChange,
-  required,
-  placeholder,
-  type = "text",
-  inputMode,
-  autoComplete,
-  formatter,
-  maxLength,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  required?: boolean;
-  placeholder?: string;
-  type?: string;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  autoComplete?: string;
-  formatter?: (v: string) => string;
-  maxLength?: number;
-}) {
-  return (
-    <label className="ff-field">
-      <span className="ff-label">
-        {label}
-        {required ? " *" : ""}
-      </span>
-      <input
-        className="ff-input"
-        value={value}
-        onChange={(e) => {
-          const raw = e.currentTarget.value;
-          onChange(formatter ? formatter(raw) : raw);
-        }}
-        placeholder={placeholder}
-        required={required}
-        type={type}
-        inputMode={inputMode}
-        autoComplete={autoComplete}
-        maxLength={maxLength}
-      />
-    </label>
-  );
-}
-
-function CheckboxField({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="ff-check">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.currentTarget.checked)}
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-function SelectField<T extends string>({
-  label,
-  value,
-  onChange,
-  options,
-  required,
-}: {
-  label: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: T; label: string }[];
-  required?: boolean;
-}) {
-  return (
-    <label className="ff-field">
-      <span className="ff-label">
-        {label}
-        {required ? " *" : ""}
-      </span>
-      <select
-        className="ff-select"
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.value as T)}
-        required={required}
-      >
-        <option value={"" as T}>—</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function YesNoField({
-  label,
-  value,
-  onChange,
-  required,
-}: {
-  label: string;
-  value: YesNo;
-  onChange: (v: YesNo) => void;
-  required?: boolean;
-}) {
-  return (
-    <SelectField<YesNo>
-      label={label}
-      value={value}
-      onChange={onChange}
-      required={required}
-      options={[
-        { value: "oui", label: "Oui" },
-        { value: "non", label: "Non" },
-      ]}
-    />
-  );
-}
-
-/* ===========================
    Page
 =========================== */
 
@@ -1326,7 +1193,7 @@ export default function FormulaireFiscalPage() {
   );
 }
 
-/* ----------------- Réutilisables ----------------- */
+/* ----------------- Réutilisables (UI Components) ----------------- */
 
 function Field({
   label,
@@ -1357,6 +1224,7 @@ function Field({
         {label}
         {required ? " *" : ""}
       </span>
+
       <input
         className="ff-input"
         value={value}
@@ -1406,13 +1274,14 @@ function YesNoField({
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  nameKey?: string;
+  nameKey?: string; // ✅ évite collisions de name si labels identiques
 }) {
   const name = nameKey || `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
 
   return (
     <div className="ff-yn">
       <div className="ff-label">{label}</div>
+
       <div className="ff-yn-row">
         <label className="ff-radio">
           <input
@@ -1438,7 +1307,11 @@ function YesNoField({
       </div>
 
       {value !== "" && (
-        <button type="button" className="ff-btn ff-btn-link" onClick={() => onChange("")}>
+        <button
+          type="button"
+          className="ff-btn ff-btn-link"
+          onClick={() => onChange("")}
+        >
           Effacer
         </button>
       )}
@@ -1472,7 +1345,9 @@ function SelectField<T extends string>({
         onChange={(e) => onChange(e.currentTarget.value as T)}
         required={required}
       >
+        {/* ✅ pour les required: valeur vide forcée */}
         <option value="">{required ? "Choisir…" : "—"}</option>
+
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
