@@ -3,20 +3,10 @@
 import React from "react";
 
 export type YesNo = "oui" | "non" | "";
-export type ProvinceCode =
-  | "QC"
-  | "ON"
-  | "NB"
-  | "NS"
-  | "PE"
-  | "NL"
-  | "MB"
-  | "SK"
-  | "AB"
-  | "BC"
-  | "YT"
-  | "NT"
-  | "NU";
+
+/* ===========================
+   Field
+=========================== */
 
 export type FieldProps = {
   label: string;
@@ -35,7 +25,7 @@ export function Field({
   label,
   value,
   onChange,
-  required,
+  required = false,
   placeholder,
   type = "text",
   inputMode,
@@ -68,15 +58,17 @@ export function Field({
   );
 }
 
-export function CheckboxField({
-  label,
-  checked,
-  onChange,
-}: {
+/* ===========================
+   CheckboxField
+=========================== */
+
+export type CheckboxFieldProps = {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
-}) {
+};
+
+export function CheckboxField({ label, checked, onChange }: CheckboxFieldProps) {
   return (
     <label className="ff-check">
       <input
@@ -90,29 +82,42 @@ export function CheckboxField({
   );
 }
 
-export function YesNoField({
-  label,
-  value,
-  onChange,
-  name,
-}: {
+/* ===========================
+   YesNoField
+=========================== */
+
+export type YesNoFieldProps = {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  name: string;
-}) {
+  name: string; // important: stable
+};
+
+export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
   return (
     <div className="ff-yn">
       <div className="ff-label">{label}</div>
 
       <div className="ff-yn-row">
         <label className="ff-radio">
-          <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={() => onChange("oui")} />
+          <input
+            type="radio"
+            name={name}
+            value="oui"
+            checked={value === "oui"}
+            onChange={() => onChange("oui")}
+          />
           <span>Oui</span>
         </label>
 
         <label className="ff-radio">
-          <input type="radio" name={name} value="non" checked={value === "non"} onChange={() => onChange("non")} />
+          <input
+            type="radio"
+            name={name}
+            value="non"
+            checked={value === "non"}
+            onChange={() => onChange("non")}
+          />
           <span>Non</span>
         </label>
       </div>
@@ -126,21 +131,29 @@ export function YesNoField({
   );
 }
 
+/* ===========================
+   SelectField
+=========================== */
+
+export type SelectOption<T extends string> = { value: Exclude<T, "">; label: string };
+
+export type SelectFieldProps<T extends string> = {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: Array<SelectOption<T>>;
+  required?: boolean;
+  placeholderText?: string;
+};
+
 export function SelectField<T extends string>({
   label,
   value,
   onChange,
   options,
-  required,
+  required = false,
   placeholderText,
-}: {
-  label: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: Exclude<T, "">; label: string }[];
-  required?: boolean;
-  placeholderText?: string;
-}) {
+}: SelectFieldProps<T>) {
   return (
     <label className="ff-field">
       <span className="ff-label">
@@ -148,7 +161,12 @@ export function SelectField<T extends string>({
         {required ? " *" : ""}
       </span>
 
-      <select className="ff-select" value={value} onChange={(e) => onChange(e.currentTarget.value as T)} required={required}>
+      <select
+        className="ff-select"
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value as T)}
+        required={required}
+      >
         <option value="">{placeholderText ?? (required ? "Choisir…" : "—")}</option>
 
         {options.map((opt) => (
