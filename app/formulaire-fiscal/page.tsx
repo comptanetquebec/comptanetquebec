@@ -1487,12 +1487,13 @@ export default function FormulaireFiscalPage() {
 </section>
 
 /* ===========================
-   UI COMPONENTS (corrigés)
-   ✅ SelectField accepte options incluant "" si tu veux
-   ✅ YesNoField: name stable (pas basé sur label)
+   UI COMPONENTS
+   ✅ signatures safe (pas de props:{...} inline)
+   ✅ YesNoField: name stable obligatoire
+   ✅ SelectField: options typées simplement
 =========================== */
 
-function Field(props: {
+type FieldProps = {
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -1503,20 +1504,20 @@ function Field(props: {
   maxLength?: number;
   formatter?: (v: string) => string;
   autoComplete?: string;
-}) {
-  const {
-    label,
-    value,
-    onChange,
-    required,
-    placeholder,
-    type = "text",
-    inputMode,
-    maxLength,
-    formatter,
-    autoComplete,
-  } = props;
+};
 
+const Field = ({
+  label,
+  value,
+  onChange,
+  required,
+  placeholder,
+  type = "text",
+  inputMode,
+  maxLength,
+  formatter,
+  autoComplete,
+}: FieldProps) => {
   return (
     <label className="ff-field">
       <span className="ff-label">
@@ -1540,10 +1541,15 @@ function Field(props: {
       />
     </label>
   );
-}
+};
 
-function CheckboxField(props: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  const { label, checked, onChange } = props;
+type CheckboxFieldProps = {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+};
+
+const CheckboxField = ({ label, checked, onChange }: CheckboxFieldProps) => {
   return (
     <label className="ff-check">
       <input
@@ -1555,28 +1561,40 @@ function CheckboxField(props: { label: string; checked: boolean; onChange: (v: b
       <span>{label}</span>
     </label>
   );
-}
+};
 
-function YesNoField(props: {
+type YesNoFieldProps = {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  name: string; // ✅ obligatoire: évite collisions
-}) {
-  const { label, value, onChange, name } = props;
+  name: string; // obligatoire
+};
 
+const YesNoField = ({ label, value, onChange, name }: YesNoFieldProps) => {
   return (
     <div className="ff-yn">
       <div className="ff-label">{label}</div>
 
       <div className="ff-yn-row">
         <label className="ff-radio">
-          <input type="radio" name={name} value="oui" checked={value === "oui"} onChange={() => onChange("oui")} />
+          <input
+            type="radio"
+            name={name}
+            value="oui"
+            checked={value === "oui"}
+            onChange={() => onChange("oui")}
+          />
           <span>Oui</span>
         </label>
 
         <label className="ff-radio">
-          <input type="radio" name={name} value="non" checked={value === "non"} onChange={() => onChange("non")} />
+          <input
+            type="radio"
+            name={name}
+            value="non"
+            checked={value === "non"}
+            onChange={() => onChange("non")}
+          />
           <span>Non</span>
         </label>
       </div>
@@ -1588,18 +1606,27 @@ function YesNoField(props: {
       )}
     </div>
   );
-}
+};
 
-function SelectField<T extends string>(props: {
+type SelectOption<T extends string> = { value: Exclude<T, "">; label: string };
+
+type SelectFieldProps<T extends string> = {
   label: string;
   value: T;
   onChange: (v: T) => void;
-  options: { value: T extends "" ? never : Exclude<T, never>; label: string }[] | { value: Exclude<T, "">; label: string }[];
+  options: Array<SelectOption<T>>;
   required?: boolean;
-  placeholderText?: string; // ✅ custom
-}) {
-  const { label, value, onChange, options, required, placeholderText } = props;
+  placeholderText?: string;
+};
 
+const SelectField = <T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  required,
+  placeholderText,
+}: SelectFieldProps<T>) => {
   return (
     <label className="ff-field">
       <span className="ff-label">
@@ -1623,4 +1650,4 @@ function SelectField<T extends string>(props: {
       </select>
     </label>
   );
-}
+};
