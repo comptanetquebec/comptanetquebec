@@ -1,0 +1,16 @@
+const pdfHref =
+  type === "t2"
+    ? "/liste-documents-t2.pdf"
+    : type === "autonome"
+    ? "/liste-documents-autonome.pdf"
+    : "/liste-documents-t1.pdf";
+
+<a
+  href={pdfHref}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="ff-btn ff-btn-primary"
+  style={{ padding: "14px 16px", borderRadius: 14, fontWeight: 900, fontSize: 16 }}
+>
+  Télécharger la liste des documents →
+</a>
