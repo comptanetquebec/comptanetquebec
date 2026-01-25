@@ -412,129 +412,135 @@ export default function FormulaireFiscalPage() {
     [getSignedUrl]
   );
 
-  // ✅ charge le dernier formulaire de ce user (mémoire)
-  const loadLastForm = useCallback(
-    async (uid: string) => {
-      hydrating.current = true;
+// ✅ charge le dernier formulaire de ce user (mémoire)
+const loadLastForm = useCallback(
+  async (uid: string) => {
+    hydrating.current = true;
 
-      const { data, error } = await supabase
-        .from(FORMS_TABLE)
-        .select("id, data, created_at")
-        .eq("user_id", uid)
-        .eq("dossier_type", type)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle<FormRow>();
+    const { data: row, error } = await supabase
+      .from(FORMS_TABLE)
+      .select("id, data, created_at")
+      .eq("user_id", uid)
+      .eq("dossier_type", type)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<FormRow>();
 
-      if (error) {
-        setMsg(`Erreur chargement: ${error.message}`);
-        hydrating.current = false;
-        return;
-      }
-      if (!data) {
-        hydrating.current = false;
-        return;
-      }
-
-      const fid = data.id;
-setFormulaireId(fid);
-
-      // --- Client
-      setPrenom(data.client?.prenom ?? "");
-      setNom(data.client?.nom ?? "");
-      setNas(data.client?.nas ? formatNASInput(data.client.nas) : "");
-      setDob(data.client?.dob ?? "");
-      setEtatCivil(data.client?.etatCivil ?? "");
-
-      setEtatCivilChange(!!data.client?.etatCivilChange);
-      setAncienEtatCivil(data.client?.ancienEtatCivil ?? "");
-      setDateChangementEtatCivil(data.client?.dateChangementEtatCivil ?? "");
-
-      setTel(data.client?.tel ? formatPhoneInput(data.client.tel) : "");
-      setTelCell(data.client?.telCell ? formatPhoneInput(data.client.telCell) : "");
-      setAdresse(data.client?.adresse ?? "");
-      setApp(data.client?.app ?? "");
-      setVille(data.client?.ville ?? "");
-      setProvince(data.client?.province ?? "QC");
-      setCodePostal(data.client?.codePostal ? formatPostalInput(data.client.codePostal) : "");
-      setCourriel(data.client?.courriel ?? "");
-
-      // --- Conjoint
-      const cj = data.conjoint ?? null;
-      setAUnConjoint(!!cj);
-
-      if (cj) {
-        setTraiterConjoint(!!cj.traiterConjoint);
-        setPrenomConjoint(cj.prenomConjoint ?? "");
-        setNomConjoint(cj.nomConjoint ?? "");
-        setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
-        setDobConjoint(cj.dobConjoint ?? "");
-        setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
-        setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
-        setCourrielConjoint(cj.courrielConjoint ?? "");
-
-        setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
-        setAdresseConjoint(cj.adresseConjoint ?? "");
-        setAppConjoint(cj.appConjoint ?? "");
-        setVilleConjoint(cj.villeConjoint ?? "");
-        setProvinceConjoint(cj.provinceConjoint ?? "QC");
-        setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
-        setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
-      } else {
-        setTraiterConjoint(true);
-        setPrenomConjoint("");
-        setNomConjoint("");
-        setNasConjoint("");
-        setDobConjoint("");
-        setTelConjoint("");
-        setTelCellConjoint("");
-        setCourrielConjoint("");
-        setAdresseConjointeIdentique(true);
-        setAdresseConjoint("");
-        setAppConjoint("");
-        setVilleConjoint("");
-        setProvinceConjoint("QC");
-        setCodePostalConjoint("");
-        setRevenuNetConjoint("");
-      }
-
-      // --- Assurance meds
-      const meds = data.assuranceMedicamenteuse;
-      if (meds?.client) {
-        setAssuranceMedsClient(meds.client.regime ?? "");
-        setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
-      } else {
-        setAssuranceMedsClient("");
-        setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
-      }
-
-      if (meds?.conjoint) {
-        setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
-        setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
-      } else {
-        setAssuranceMedsConjoint("");
-        setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
-      }
-
-      // --- Enfants
-      setEnfants(data.personnesACharge ?? []);
-
-      // --- Questions
-      setHabiteSeulTouteAnnee(data.questionsGenerales?.habiteSeulTouteAnnee ?? "");
-      setNbPersonnesMaison3112(data.questionsGenerales?.nbPersonnesMaison3112 ?? "");
-      setBiensEtranger100k(data.questionsGenerales?.biensEtranger100k ?? "");
-      setCitoyenCanadien(data.questionsGenerales?.citoyenCanadien ?? "");
-      setNonResident(data.questionsGenerales?.nonResident ?? "");
-      setMaisonAcheteeOuVendue(data.questionsGenerales?.maisonAcheteeOuVendue ?? "");
-      setAppelerTechnicien(data.questionsGenerales?.appelerTechnicien ?? "");
-      setCopieImpots(data.questionsGenerales?.copieImpots ?? "");
-
-      await loadDocs(fid);
-
+    if (error) {
+      setMsg(`Erreur chargement: ${error.message}`);
       hydrating.current = false;
-    },
-    [loadDocs, type]
-  );
+      return;
+    }
+    if (!row) {
+      hydrating.current = false;
+      return;
+    }
+
+    const fid = row.id;
+    setFormulaireId(fid);
+
+    // ✅ Ton JSONB est ici
+    const form = row.data;
+
+    // --- Client
+    const client = form?.client ?? {};
+    setPrenom(client.prenom ?? "");
+    setNom(client.nom ?? "");
+    setNas(client.nas ? formatNASInput(client.nas) : "");
+    setDob(client.dob ?? "");
+    setEtatCivil(client.etatCivil ?? "");
+
+    setEtatCivilChange(!!client.etatCivilChange);
+    setAncienEtatCivil(client.ancienEtatCivil ?? "");
+    setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
+
+    setTel(client.tel ? formatPhoneInput(client.tel) : "");
+    setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
+    setAdresse(client.adresse ?? "");
+    setApp(client.app ?? "");
+    setVille(client.ville ?? "");
+    setProvince(client.province ?? "QC");
+    setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
+    setCourriel(client.courriel ?? "");
+
+    // --- Conjoint
+    const cj = form?.conjoint ?? null;
+    setAUnConjoint(!!cj);
+
+    if (cj) {
+      setTraiterConjoint(!!cj.traiterConjoint);
+      setPrenomConjoint(cj.prenomConjoint ?? "");
+      setNomConjoint(cj.nomConjoint ?? "");
+      setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
+      setDobConjoint(cj.dobConjoint ?? "");
+      setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+      setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+      setCourrielConjoint(cj.courrielConjoint ?? "");
+
+      setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
+      setAdresseConjoint(cj.adresseConjoint ?? "");
+      setAppConjoint(cj.appConjoint ?? "");
+      setVilleConjoint(cj.villeConjoint ?? "");
+      setProvinceConjoint(cj.provinceConjoint ?? "QC");
+      setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
+      setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+    } else {
+      setTraiterConjoint(true);
+      setPrenomConjoint("");
+      setNomConjoint("");
+      setNasConjoint("");
+      setDobConjoint("");
+      setTelConjoint("");
+      setTelCellConjoint("");
+      setCourrielConjoint("");
+      setAdresseConjointeIdentique(true);
+      setAdresseConjoint("");
+      setAppConjoint("");
+      setVilleConjoint("");
+      setProvinceConjoint("QC");
+      setCodePostalConjoint("");
+      setRevenuNetConjoint("");
+    }
+
+    // --- Assurance meds
+    const meds = form?.assuranceMedicamenteuse ?? null;
+
+    if (meds?.client) {
+      setAssuranceMedsClient(meds.client.regime ?? "");
+      setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
+    } else {
+      setAssuranceMedsClient("");
+      setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
+    }
+
+    if (meds?.conjoint) {
+      setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
+      setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
+    } else {
+      setAssuranceMedsConjoint("");
+      setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
+    }
+
+    // --- Enfants
+    setEnfants(form?.personnesACharge ?? []);
+
+    // --- Questions
+    const q = form?.questionsGenerales ?? {};
+    setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
+    setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
+    setBiensEtranger100k(q.biensEtranger100k ?? "");
+    setCitoyenCanadien(q.citoyenCanadien ?? "");
+    setNonResident(q.nonResident ?? "");
+    setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
+    setAppelerTechnicien(q.appelerTechnicien ?? "");
+    setCopieImpots(q.copieImpots ?? "");
+
+    await loadDocs(fid);
+
+    hydrating.current = false;
+  },
+  [loadDocs, type]
+);
 
   // ✅ autosave brouillon (insert/update sans bouton)
   const saveDraft = useCallback(async () => {
