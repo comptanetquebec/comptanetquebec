@@ -1142,9 +1142,7 @@ if (!errorInsert && dataInsert?.id) {
   )}
 </section>
 
-{
-  /* ASSURANCE MEDS */
-}
+{/* ASSURANCE MEDS */}
 {province === "QC" && (
   <section className="ff-card">
     <div className="ff-card-head">
@@ -1252,9 +1250,7 @@ if (!errorInsert && dataInsert?.id) {
   </section>
 )}
 
-{
-  /* PERSONNES A CHARGE */
-}
+ {/* PERSONNES A CHARGE */}
 <section className="ff-card">
   <div className="ff-card-head">
     <h2>Personnes à charge</h2>
@@ -1314,16 +1310,14 @@ if (!errorInsert && dataInsert?.id) {
     </div>
   )}
 
-  <div className="ff-mt">
-    <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
-      + Ajouter une personne à charge
-    </button>
-  </div>
+ <div className="ff-mt">
+  <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
+    + Ajouter une personne à charge
+  </button>
+</div>
 </section>
 
-{
-  /* QUESTIONS */
-}
+{/* QUESTIONS */}
 <section className="ff-card">
   <div className="ff-card-head">
     <h2>Informations fiscales additionnelles</h2>
