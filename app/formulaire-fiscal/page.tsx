@@ -42,12 +42,6 @@ function updatePeriode(list: Periode[], idx: number, patch: Partial<Periode>) {
 
 type InsertIdRow = { id: string };
 
-// ✅ AJOUTE ÇA ICI
-type FormPayload = {
-  client?: Record<string, any>;
-  [key: string]: any;
-};
-
 type Child = {
   prenom: string;
   nom: string;
