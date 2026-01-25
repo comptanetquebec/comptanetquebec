@@ -638,9 +638,6 @@ const loadLastForm = useCallback(
 if (!errorInsert && dataInsert?.id) {
   setFormulaireId(dataInsert.id);
 }
-
-    if (!error && data?.id) {
-      setFormulaireId(data.id);
     }
   }, [
     userId,
