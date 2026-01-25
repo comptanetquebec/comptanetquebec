@@ -1246,7 +1246,11 @@ export default function FormulaireFiscalPage() {
 </div>
 
 {/* DÉPÔT DOCUMENTS (BOUTON VERS PAGE DROPZONE) */}
-<section className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
+<section
+  id="ff-upload-section"
+  className="ff-card"
+  style={{ opacity: formulaireId ? 1 : 0.65 }}
+>
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
     <p>
@@ -1286,7 +1290,9 @@ export default function FormulaireFiscalPage() {
       <div className="ff-rowbox" style={{ marginTop: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>ID : {formulaireId}</div>
+          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>
+            ID : {formulaireId}
+          </div>
         </div>
 
         <button
@@ -1327,6 +1333,7 @@ function Field({
   inputMode,
   maxLength,
   formatter,
+  autoComplete,
 }: {
   label: string;
   value: string;
@@ -1337,6 +1344,7 @@ function Field({
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   maxLength?: number;
   formatter?: (v: string) => string;
+  autoComplete?: string;
 }) {
   return (
     <label className="ff-field">
@@ -1356,6 +1364,7 @@ function Field({
         type={type}
         inputMode={inputMode}
         maxLength={maxLength}
+        autoComplete={autoComplete}
       />
     </label>
   );
@@ -1392,7 +1401,7 @@ function YesNoField({
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  nameKey?: string; // ✅ pour éviter collisions
+  nameKey?: string;
 }) {
   const name = nameKey || `yn_${label.replace(/\W+/g, "_").toLowerCase()}`;
 
@@ -1423,7 +1432,6 @@ function YesNoField({
         </label>
       </div>
 
-      {/* ✅ Petit bouton "vider" (optionnel) */}
       {value !== "" && (
         <button type="button" className="ff-btn ff-btn-link" onClick={() => onChange("")}>
           Effacer
