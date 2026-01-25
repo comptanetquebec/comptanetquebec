@@ -825,31 +825,33 @@ export default function FormulaireFiscalPage() {
               <Field label="Courriel" value={courriel} onChange={setCourriel} type="email" required />
             </div>
 
-            <div className="ff-mt">
-              <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
+           <div className="ff-mt">
+  <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
 
-              <div className="ff-grid4 ff-mt-sm">
-                <Field label="App." value={app} onChange={setApp} placeholder="#201" />
-                <Field label="Ville" value={ville} onChange={setVille} required />
-                <SelectField<ProvinceCode
-                  label="Province"
-                  value={province}
-                  onChange={setProvince}
-                  options={PROVINCES}
-                  required
-                />
-                <Field
-                  label="Code postal"
-                  value={codePostal}
-                  onChange={setCodePostal}
-                  placeholder="G1V 0A6"
-                  required
-                  formatter={formatPostalInput}
-                  maxLength={7}
-                  autoComplete="postal-code"
-                />
-              </div>
-            </div>
+  <div className="ff-grid4 ff-mt-sm">
+    <Field label="App." value={app} onChange={setApp} placeholder="#201" />
+    <Field label="Ville" value={ville} onChange={setVille} required />
+
+    <SelectField<ProvinceCode>
+      label="Province"
+      value={province}
+      onChange={setProvince}
+      options={PROVINCES}
+      required
+    />
+
+    <Field
+      label="Code postal"
+      value={codePostal}
+      onChange={setCodePostal}
+      placeholder="G1V 0A6"
+      required
+      formatter={formatPostalInput}
+      maxLength={7}
+      autoComplete="postal-code"
+    />
+  </div>
+</div>
           </section>
 
           {/* SECTION CONJOINT */}
