@@ -963,6 +963,8 @@ export default function FormulaireFiscalPage() {
   })()}
 </div>
 
+  </div>
+</section>
 {/* SUBMIT */}
 <div className="ff-submit">
   <button
