@@ -1545,4 +1545,8 @@ if (!errorInsert && dataInsert?.id) {
     )}
   </div>
 </section>
-
+ </form>
+      </div>
+    </main>
+  );
+}
