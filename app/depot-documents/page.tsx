@@ -3,20 +3,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import "../formulaire-fiscal/formulaire-fiscal.css"; // ajuste si besoin
+import "../formulaire-fiscal/formulaire-fiscal.css";
 
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
-const FORMS_TABLE = "formulaires_fiscaux"; // (optionnel) pour valider que fid appartient au user
+const FORMS_TABLE = "formulaires_fiscaux"; // optionnel: valider que fid appartient au user
 
 type DocRow = {
   id: string;
   formulaire_id: string;
   user_id: string;
-  original_name: string;
-  storage_path: string;
-  mime_type: string | null;
-  size_bytes: number | null;
+  file_name: string | null;
+  file_path: string;
   created_at: string;
 };
 
@@ -28,7 +26,7 @@ function titleFromType(type: string) {
 }
 
 function safeFilename(name: string) {
-  return name.replace(/[^\w.\-()\s]/g, "_");
+  return name.replace(/[^\w.\-()\s]/g, "_").trim();
 }
 
 function isAllowedFile(file: File) {
@@ -44,14 +42,6 @@ function isAllowedFile(file: File) {
     n.endsWith(".xls") ||
     n.endsWith(".xlsx")
   );
-}
-
-function formatBytes(bytes?: number | null) {
-  if (!bytes || bytes <= 0) return "";
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${Math.round(kb)} KB`;
-  const mb = kb / 1024;
-  return `${mb.toFixed(1)} MB`;
 }
 
 export default function DepotDocumentsPage() {
@@ -72,46 +62,39 @@ export default function DepotDocumentsPage() {
 
   const title = useMemo(() => titleFromType(type), [type]);
 
-  const loadDocs = useCallback(
-    async (formulaireId: string) => {
-      if (!formulaireId) return;
+  const loadDocs = useCallback(async (formulaireId: string) => {
+    if (!formulaireId) return;
 
-      setDocsLoading(true);
-      setMsg(null);
+    setDocsLoading(true);
+    setMsg(null);
 
-      const { data, error } = await supabase
-        .from(DOCS_TABLE)
-        .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
-        .eq("formulaire_id", formulaireId)
-        .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from(DOCS_TABLE)
+      .select("id, formulaire_id, user_id, file_name, file_path, created_at")
+      .eq("formulaire_id", formulaireId)
+      .order("created_at", { ascending: false });
 
-      setDocsLoading(false);
+    setDocsLoading(false);
 
-      if (error) {
-        setMsg(`Erreur docs: ${error.message}`);
-        return;
-      }
+    if (error) {
+      setMsg(`Erreur docs: ${error.message}`);
+      return;
+    }
 
-      setDocs((data as DocRow[]) || []);
-    },
-    []
-  );
+    setDocs(((data ?? []) as DocRow[]) || []);
+  }, []);
 
-  const ensureFidBelongsToUser = useCallback(
-    async (uid: string, formulaireId: string) => {
-      // Optionnel mais conseillé: empêche un user de passer un fid d’un autre
-      const { data, error } = await supabase
-        .from(FORMS_TABLE)
-        .select("id, user_id")
-        .eq("id", formulaireId)
-        .maybeSingle<{ id: string; user_id: string }>();
+  const ensureFidBelongsToUser = useCallback(async (uid: string, formulaireId: string) => {
+    const { data, error } = await supabase
+      .from(FORMS_TABLE)
+      .select("id, user_id")
+      .eq("id", formulaireId)
+      .maybeSingle<{ id: string; user_id: string }>();
 
-      if (error) throw new Error(error.message);
-      if (!data?.id) throw new Error("Dossier introuvable.");
-      if (data.user_id !== uid) throw new Error("Accès refusé à ce dossier.");
-    },
-    []
-  );
+    if (error) throw new Error(error.message);
+    if (!data?.id) throw new Error("Dossier introuvable.");
+    if (data.user_id !== uid) throw new Error("Accès refusé à ce dossier.");
+  }, []);
 
   const uploadOne = useCallback(
     async (file: File) => {
@@ -121,25 +104,29 @@ export default function DepotDocumentsPage() {
       if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
 
       const safe = safeFilename(file.name);
-      const storage_path = `${userId}/${fid}/${Date.now()}-${safe}`;
+      const file_path = `${userId}/${fid}/${Date.now()}-${safe}`;
 
-      const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
+      // 1) Upload storage
+      const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(file_path, file, {
         contentType: file.type || "application/octet-stream",
         upsert: false,
       });
 
-      if (upErr) throw new Error(upErr.message);
+      if (upErr) throw new Error(`Upload: ${upErr.message}`);
 
+      // 2) Insert DB (aligné avec ta table)
       const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
         formulaire_id: fid,
         user_id: userId,
-        original_name: file.name,
-        storage_path,
-        mime_type: file.type || null,
-        size_bytes: file.size,
+        file_path,
+        file_name: file.name,
       });
 
-      if (dbErr) throw new Error(dbErr.message);
+      if (dbErr) {
+        // nettoyage: si DB échoue, on retire le fichier pour éviter les orphans
+        await supabase.storage.from(STORAGE_BUCKET).remove([file_path]);
+        throw new Error(`DB: ${dbErr.message}`);
+      }
     },
     [userId, fid]
   );
@@ -175,7 +162,7 @@ export default function DepotDocumentsPage() {
   const openDoc = useCallback(
     async (doc: DocRow) => {
       try {
-        const url = await getSignedUrl(doc.storage_path);
+        const url = await getSignedUrl(doc.file_path);
         window.open(url, "_blank", "noopener,noreferrer");
       } catch (e: unknown) {
         setMsg(e instanceof Error ? e.message : "Impossible d’ouvrir le fichier.");
@@ -190,7 +177,6 @@ export default function DepotDocumentsPage() {
 
     (async () => {
       try {
-        // Si fid manque, on ne bloque pas booting: on affiche l'erreur directement
         if (!fid) {
           if (!alive) return;
           setBooting(false);
@@ -212,9 +198,7 @@ export default function DepotDocumentsPage() {
         const uid = data.user.id;
         setUserId(uid);
 
-        // Optionnel: valider que fid appartient au user
         await ensureFidBelongsToUser(uid, fid);
-
         await loadDocs(fid);
 
         if (!alive) return;
@@ -304,11 +288,10 @@ export default function DepotDocumentsPage() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {d.original_name}
+                        {d.file_name ?? d.file_path}
                       </div>
                       <div style={{ opacity: 0.8, fontSize: 13 }}>
                         {new Date(d.created_at).toLocaleString()}
-                        {d.size_bytes ? ` • ${formatBytes(d.size_bytes)}` : ""}
                       </div>
                     </div>
 
@@ -321,7 +304,11 @@ export default function DepotDocumentsPage() {
             )}
 
             <div className="ff-mt">
-              <button type="button" className="ff-btn ff-btn-primary" onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}>
+              <button
+                type="button"
+                className="ff-btn ff-btn-primary"
+                onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
+              >
                 Terminer
               </button>
             </div>
