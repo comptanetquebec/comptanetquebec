@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import "../formulaire-fiscal/formulaire-fiscal.css"; // ajuste si ton chemin est différent
+import "../formulaire-fiscal/formulaire-fiscal.css"; // ajuste si besoin
 
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
+const FORMS_TABLE = "formulaires_fiscaux"; // (optionnel) pour valider que fid appartient au user
 
 type DocRow = {
   id: string;
@@ -20,8 +21,9 @@ type DocRow = {
 };
 
 function titleFromType(type: string) {
-  if (type === "autonome") return "Travailleur autonome (T1)";
-  if (type === "t2") return "Société (T2)";
+  const t = (type || "").toLowerCase();
+  if (t === "autonome") return "Travailleur autonome (T1)";
+  if (t === "t2") return "Société (T2)";
   return "Particulier (T1)";
 }
 
@@ -56,9 +58,9 @@ export default function DepotDocumentsPage() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const fid = params.get("fid") || "";
-  const type = params.get("type") || "t1";
-  const lang = params.get("lang") || "fr";
+  const fid = useMemo(() => (params.get("fid") || "").trim(), [params]);
+  const type = useMemo(() => (params.get("type") || "t1").trim(), [params]);
+  const lang = useMemo(() => (params.get("lang") || "fr").trim(), [params]);
 
   const [booting, setBooting] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -68,111 +70,166 @@ export default function DepotDocumentsPage() {
   const [docsLoading, setDocsLoading] = useState(false);
   const [docs, setDocs] = useState<DocRow[]>([]);
 
-  // Auth guard
+  const title = useMemo(() => titleFromType(type), [type]);
+
+  const loadDocs = useCallback(
+    async (formulaireId: string) => {
+      if (!formulaireId) return;
+
+      setDocsLoading(true);
+      setMsg(null);
+
+      const { data, error } = await supabase
+        .from(DOCS_TABLE)
+        .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
+        .eq("formulaire_id", formulaireId)
+        .order("created_at", { ascending: false });
+
+      setDocsLoading(false);
+
+      if (error) {
+        setMsg(`Erreur docs: ${error.message}`);
+        return;
+      }
+
+      setDocs((data as DocRow[]) || []);
+    },
+    []
+  );
+
+  const ensureFidBelongsToUser = useCallback(
+    async (uid: string, formulaireId: string) => {
+      // Optionnel mais conseillé: empêche un user de passer un fid d’un autre
+      const { data, error } = await supabase
+        .from(FORMS_TABLE)
+        .select("id, user_id")
+        .eq("id", formulaireId)
+        .maybeSingle<{ id: string; user_id: string }>();
+
+      if (error) throw new Error(error.message);
+      if (!data?.id) throw new Error("Dossier introuvable.");
+      if (data.user_id !== uid) throw new Error("Accès refusé à ce dossier.");
+    },
+    []
+  );
+
+  const uploadOne = useCallback(
+    async (file: File) => {
+      if (!userId) throw new Error("Veuillez vous reconnecter.");
+      if (!fid) throw new Error("ID dossier manquant.");
+      if (!isAllowedFile(file)) throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
+      if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
+
+      const safe = safeFilename(file.name);
+      const storage_path = `${userId}/${fid}/${Date.now()}-${safe}`;
+
+      const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+
+      if (upErr) throw new Error(upErr.message);
+
+      const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
+        formulaire_id: fid,
+        user_id: userId,
+        original_name: file.name,
+        storage_path,
+        mime_type: file.type || null,
+        size_bytes: file.size,
+      });
+
+      if (dbErr) throw new Error(dbErr.message);
+    },
+    [userId, fid]
+  );
+
+  const handleUploadFiles = useCallback(
+    async (fileList: FileList | null) => {
+      setMsg(null);
+      if (!fileList || fileList.length === 0) return;
+
+      setUploading(true);
+      try {
+        const files = Array.from(fileList);
+        for (const f of files) {
+          await uploadOne(f);
+        }
+        await loadDocs(fid);
+        setMsg("✅ Documents téléversés.");
+      } catch (err: unknown) {
+        setMsg(err instanceof Error ? err.message : "Erreur upload.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [fid, loadDocs, uploadOne]
+  );
+
+  const getSignedUrl = useCallback(async (path: string) => {
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
+    return data.signedUrl;
+  }, []);
+
+  const openDoc = useCallback(
+    async (doc: DocRow) => {
+      try {
+        const url = await getSignedUrl(doc.storage_path);
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch (e: unknown) {
+        setMsg(e instanceof Error ? e.message : "Impossible d’ouvrir le fichier.");
+      }
+    },
+    [getSignedUrl]
+  );
+
+  // Auth guard + init
   useEffect(() => {
     let alive = true;
 
     (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!alive) return;
+      try {
+        // Si fid manque, on ne bloque pas booting: on affiche l'erreur directement
+        if (!fid) {
+          if (!alive) return;
+          setBooting(false);
+          return;
+        }
 
-      if (error || !data.user) {
-        const next = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
-        router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
-        return;
+        const { data, error } = await supabase.auth.getUser();
+        if (!alive) return;
+
+        if (error || !data.user) {
+          const next = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
+            type
+          )}&lang=${encodeURIComponent(lang)}`;
+          setBooting(false);
+          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+          return;
+        }
+
+        const uid = data.user.id;
+        setUserId(uid);
+
+        // Optionnel: valider que fid appartient au user
+        await ensureFidBelongsToUser(uid, fid);
+
+        await loadDocs(fid);
+
+        if (!alive) return;
+        setBooting(false);
+      } catch (e: unknown) {
+        if (!alive) return;
+        setMsg(e instanceof Error ? e.message : "Erreur.");
+        setBooting(false);
       }
-
-      setUserId(data.user.id);
-      setBooting(false);
     })();
 
     return () => {
       alive = false;
     };
-  }, [router, fid, type, lang]);
-
-  async function loadDocs(formulaireId: string) {
-    if (!formulaireId) return;
-    setDocsLoading(true);
-
-    const { data, error } = await supabase
-      .from(DOCS_TABLE)
-      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
-      .eq("formulaire_id", formulaireId)
-      .order("created_at", { ascending: false });
-
-    setDocsLoading(false);
-
-    if (error) {
-      setMsg(`Erreur docs: ${error.message}`);
-      return;
-    }
-    setDocs((data as DocRow[]) || []);
-  }
-
-  useEffect(() => {
-    if (fid) loadDocs(fid);
-  }, [fid]);
-
-  async function uploadOne(file: File) {
-    if (!userId) throw new Error("Veuillez vous reconnecter.");
-    if (!fid) throw new Error("ID dossier manquant.");
-    if (!isAllowedFile(file)) throw new Error("Format non accepté (PDF, JPG, PNG, ZIP, Word, Excel).");
-    if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
-
-    const safe = safeFilename(file.name);
-    const storage_path = `${userId}/${fid}/${Date.now()}-${safe}`;
-
-    const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
-      contentType: file.type || "application/octet-stream",
-      upsert: false,
-    });
-
-    if (upErr) throw upErr;
-
-    const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
-      formulaire_id: fid,
-      user_id: userId,
-      original_name: file.name,
-      storage_path,
-      mime_type: file.type || null,
-      size_bytes: file.size,
-    });
-
-    if (dbErr) throw dbErr;
-  }
-
-  async function handleUploadFiles(fileList: FileList | null) {
-    setMsg(null);
-    if (!fileList || fileList.length === 0) return;
-
-    setUploading(true);
-    try {
-      const files = Array.from(fileList);
-      for (const f of files) await uploadOne(f);
-      await loadDocs(fid);
-      setMsg("✅ Documents téléversés.");
-    } catch (err: unknown) {
-      setMsg(err instanceof Error ? err.message : "Erreur upload.");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function getSignedUrl(path: string) {
-    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
-    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
-    return data.signedUrl;
-  }
-
-  async function openDoc(doc: DocRow) {
-    try {
-      const url = await getSignedUrl(doc.storage_path);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (e: unknown) {
-      setMsg(e instanceof Error ? e.message : "Impossible d’ouvrir le fichier.");
-    }
-  }
+  }, [router, fid, type, lang, loadDocs, ensureFidBelongsToUser]);
 
   if (booting) {
     return (
@@ -185,8 +242,6 @@ export default function DepotDocumentsPage() {
       </main>
     );
   }
-
-  const title = titleFromType(type);
 
   return (
     <main className="ff-bg">
@@ -241,7 +296,14 @@ export default function DepotDocumentsPage() {
                 {docs.map((d) => (
                   <div key={d.id} className="ff-rowbox" style={{ alignItems: "center" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {d.original_name}
                       </div>
                       <div style={{ opacity: 0.8, fontSize: 13 }}>
@@ -259,11 +321,7 @@ export default function DepotDocumentsPage() {
             )}
 
             <div className="ff-mt">
-              <button
-                type="button"
-                className="ff-btn ff-btn-primary"
-                onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-              >
+              <button type="button" className="ff-btn ff-btn-primary" onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}>
                 Terminer
               </button>
             </div>
@@ -284,31 +342,33 @@ function Dropzone({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isOver, setIsOver] = useState(false);
 
-  function openPicker() {
+  const openPicker = useCallback(() => {
     if (disabled) return;
     inputRef.current?.click();
-  }
+  }, [disabled]);
 
-  async function onDrop(e: React.DragEvent<HTMLDivElement>) {
+  const onDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOver(false);
+      if (disabled) return;
+      await onFiles(e.dataTransfer.files);
+    },
+    [disabled, onFiles]
+  );
+
+  const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsOver(false);
-    if (disabled) return;
-    await onFiles(e.dataTransfer.files);
-  }
-
-  function onDragOver(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (disabled) return;
     setIsOver(true);
-  }
+  }, []);
 
-  function onDragLeave(e: React.DragEvent<HTMLDivElement>) {
+  const onDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsOver(false);
-  }
+  }, []);
 
   return (
     <div
@@ -323,9 +383,16 @@ function Dropzone({
         if (e.key === "Enter" || e.key === " ") openPicker();
       }}
       style={{ marginTop: 10 }}
+      aria-disabled={disabled ? "true" : "false"}
     >
       <div className="ff-dropzone__title">Déposer ici</div>
       <div className="ff-dropzone__hint">Glissez-déposez ou cliquez pour sélectionner des fichiers</div>
+
+      <div className="ff-mt-sm" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button type="button" className="ff-btn ff-btn-soft" disabled={disabled} onClick={openPicker}>
+          Choisir des fichiers
+        </button>
+      </div>
 
       <input
         ref={inputRef}
