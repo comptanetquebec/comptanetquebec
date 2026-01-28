@@ -1423,7 +1423,6 @@ if (!errorInsert && dataInsert?.id) {
   </div>
 
   <div className="ff-stack">
-    {/* BOUTON BLEU – DÉPÔT (toujours visible) */}
     <button
       type="button"
       className="ff-btn ff-btn-primary"
@@ -1437,51 +1436,42 @@ if (!errorInsert && dataInsert?.id) {
       disabled={submitting}
       onClick={async () => {
         try {
-          setMsg(null);
+          // Message visible à l’endroit du clic
+          setMsg("⏳ Préparation du dossier…");
 
-          // 1) Créer / sauvegarder le dossier (si pas déjà fait)
-          await saveDraft();
-
-          // 2) Assurer qu'on a un fid (au cas où le state n'a pas encore eu le temps de se mettre à jour)
-          let fid = formulaireId;
+          // 1) Sauvegarde / création du dossier + récupération fid
+          const fidFromSave = await saveDraft();
+          const fid = fidFromSave || formulaireId;
 
           if (!fid) {
-            const { data: auth } = await supabase.auth.getUser();
-            const uid = auth.user?.id;
-            if (!uid) throw new Error("Utilisateur non connecté.");
-
-            const { data: row, error } = await supabase
-              .from(FORMS_TABLE)
-              .select("id")
-              .eq("user_id", uid)
-              .eq("dossier_type", type)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle<{ id: string }>();
-
-            if (error) throw new Error(error.message);
-            if (!row?.id) throw new Error("Impossible de créer le dossier.");
-
-            fid = row.id;
-            setFormulaireId(fid);
-            await loadDocs(fid);
+            throw new Error("Impossible de créer le dossier (fid manquant).");
           }
 
-          // 3) Aller à la page dépôt
+          // 2) Refresh docs (pour afficher la liste)
+          await loadDocs(fid);
+
+          // 3) Redirection (plus fiable que router.push si tu as une route manquante)
+          setMsg("✅ Redirection vers le dépôt…");
           const url = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
             type
           )}&lang=${encodeURIComponent(lang)}`;
-          router.push(url);
+
+          window.location.href = url;
         } catch (e: unknown) {
           const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
-          setMsg(message);
+          setMsg("❌ " + message);
+
+          // Assure que tu vois le message même si tu es plus haut/bas
+          document.getElementById("ff-upload-section")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         }
       }}
     >
       Déposer mes documents →
     </button>
 
-    {/* MESSAGE AIDE (si pas encore de dossier) */}
     {!formulaireId && (
       <div className="ff-empty">
         Vous pouvez cliquer sur “Déposer mes documents”.
@@ -1490,7 +1480,6 @@ if (!errorInsert && dataInsert?.id) {
       </div>
     )}
 
-    {/* INFOS DOSSIER + LISTE (uniquement si dossier existe) */}
     {formulaireId && (
       <>
         <div className="ff-rowbox">
@@ -1507,6 +1496,10 @@ if (!errorInsert && dataInsert?.id) {
             onClick={() => {
               navigator.clipboard?.writeText(formulaireId);
               setMsg("✅ ID copié.");
+              document.getElementById("ff-upload-section")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
             }}
           >
             Copier l’ID
