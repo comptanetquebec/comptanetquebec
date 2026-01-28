@@ -420,13 +420,13 @@ const loadLastForm = useCallback(
     hydrating.current = true;
 
     const { data: row, error } = await supabase
-      .from(FORMS_TABLE)
-      .select("id, data, created_at")
-      .eq("user_id", uid)
-      .eq("dossier_type", type)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<FormRow>();
+  .from(FORMS_TABLE)
+  .select("id, data, created_at")
+  .eq("user_id", uid)
+  .eq("form_type", type) // ✅ CORRIGÉ
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .maybeSingle<FormRow>();
 
     if (error) {
       setMsg(`Erreur chargement: ${error.message}`);
@@ -631,17 +631,17 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
     return formulaireId;
   }
 
-  // INSERT (brouillon) dès la première saisie
-  const { data: dataInsert, error: errorInsert } = await supabase
-    .from(FORMS_TABLE)
-    .insert({
-      user_id: userId,
-      dossier_type: type,
-      lang,
-      data,
-    })
-    .select("id")
-    .single<InsertIdRow>();
+// INSERT (brouillon) dès la première saisie
+const { data: dataInsert, error: errorInsert } = await supabase
+  .from(FORMS_TABLE)
+  .insert({
+    user_id: userId,
+    form_type: type, // ✅ CORRIGÉ
+    lang,
+    data,
+  })
+  .select("id")
+  .single<InsertIdRow>();
 
   if (errorInsert) throw new Error(errorInsert.message);
 
