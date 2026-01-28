@@ -1546,7 +1546,7 @@ if (errorInsert) {
 </section>
 
 {/* ===========================
-   SUBMIT FINAL
+   SUBMIT FINAL (UN SEUL SUBMIT)
 =========================== */}
 <div className="ff-submit">
   <button
@@ -1561,14 +1561,15 @@ if (errorInsert) {
     <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>
   )}
 
-  <p className="ff-footnote">
+    <p className="ff-footnote">
     Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
     travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
   </p>
-</div>
+</div>   {/* fin .ff-submit */}
 
 </form>
-</div> 
-    </main> 
-    ); 
-    }
+</div>   {/* fin container formulaire */}
+</main>
+);
+}
+
