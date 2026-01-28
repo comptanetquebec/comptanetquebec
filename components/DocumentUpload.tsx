@@ -19,6 +19,17 @@ function sanitizeFileName(name: string) {
   return name.replace(/[^\w.\-()+\s]/g, "_").replace(/\s+/g, " ").trim();
 }
 
+function getErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  // Supabase peut parfois renvoyer des objets simples
+  if (e && typeof e === "object" && "message" in e) {
+    const maybeMsg = (e as { message?: unknown }).message;
+    if (typeof maybeMsg === "string") return maybeMsg;
+  }
+  return "Erreur inconnue";
+}
+
 export default function DocumentUpload({ formulaireId }: { formulaireId: string | null }) {
   const [loading, setLoading] = useState(false);
   const [busyList, setBusyList] = useState(false);
@@ -50,7 +61,7 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
   }
 
   useEffect(() => {
-    refresh();
+    void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fid]);
 
@@ -69,12 +80,10 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
 
     setLoading(true);
     try {
-      const {
-        data: { user },
-        error: userErr,
-      } = await supabase.auth.getUser();
-
+      const { data, error: userErr } = await supabase.auth.getUser();
       if (userErr) throw userErr;
+
+      const user = data.user;
       if (!user) throw new Error("Utilisateur non connecté.");
 
       const cleanName = sanitizeFileName(selected.name);
@@ -95,6 +104,7 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
         file_path: path,
         file_name: cleanName,
       });
+
       if (dbErr) {
         // si insert DB échoue, on nettoie le fichier uploadé pour éviter un orphan
         await supabase.storage.from(BUCKET).remove([path]);
@@ -104,8 +114,8 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
       setSelected(null);
       setOk("Document déposé ✅");
       await refresh();
-    } catch (e: any) {
-      setErr(e?.message ?? "Erreur inconnue");
+    } catch (e: unknown) {
+      setErr(getErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -131,8 +141,8 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
     setErr(null);
     setOk(null);
 
-    const confirm = window.confirm("Supprimer ce document?");
-    if (!confirm) return;
+    const confirmDelete = window.confirm("Supprimer ce document?");
+    if (!confirmDelete) return;
 
     setLoading(true);
     try {
@@ -146,8 +156,8 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
 
       setOk("Document supprimé ✅");
       await refresh();
-    } catch (e: any) {
-      setErr(e?.message ?? "Erreur inconnue");
+    } catch (e: unknown) {
+      setErr(getErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -159,9 +169,7 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
 
       <p className="mt-2 text-sm text-black/70">
         Formulaire ID :{" "}
-        <span className="font-mono">
-          {fid ? fid : "— (manquant : ajoute ?fid=... dans l’URL) —"}
-        </span>
+        <span className="font-mono">{fid ? fid : "— (manquant : ajoute ?fid=... dans l’URL) —"}</span>
       </p>
 
       {err && (
@@ -215,12 +223,13 @@ export default function DocumentUpload({ formulaireId }: { formulaireId: string 
         ) : (
           <ul className="mt-3 space-y-2">
             {docs.map((d) => (
-              <li key={d.id} className="flex flex-col gap-2 rounded-xl border border-black/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <li
+                key={d.id}
+                className="flex flex-col gap-2 rounded-xl border border-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0">
                   <div className="truncate text-sm font-bold">{d.file_name ?? d.file_path}</div>
-                  <div className="text-xs text-black/60">
-                    {new Date(d.created_at).toLocaleString()}
-                  </div>
+                  <div className="text-xs text-black/60">{new Date(d.created_at).toLocaleString()}</div>
                 </div>
 
                 <div className="flex gap-2">
