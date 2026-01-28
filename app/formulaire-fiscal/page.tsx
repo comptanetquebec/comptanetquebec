@@ -1438,7 +1438,7 @@ const { data: dataInsert, error: errorInsert } = await supabase
         fontSize: 16,
         width: "100%",
       }}
-      disabled={submitting}
+      disabled={booting || !userId}
       onClick={async () => {
         try {
           // Message visible à l’endroit du clic
