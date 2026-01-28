@@ -1407,27 +1407,33 @@ if (!errorInsert && dataInsert?.id) {
   </p>
 </div>
 
-  {/* DÉPÔT DOCUMENTS */}
-<section id="ff-upload-section" className="ff-card" style={{ opacity: formulaireId ? 1 : 0.65 }}>
+ {/* ===========================
+    DÉPÔT DOCUMENTS
+=========================== */}
+<section
+  id="ff-upload-section"
+  className="ff-card"
+  style={{ opacity: formulaireId ? 1 : 0.65 }}
+>
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
     <p>
       Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
       <br />
-      Une page “glisser-déposer” s’ouvrira pour téléverser vos documents.
+      Vous pourrez ensuite revenir ici et soumettre le formulaire.
     </p>
   </div>
 
- {!formulaireId ? (
-  <div className="ff-empty">
-    Commencez par remplir le formulaire.
-    <br />
-    Le dossier se crée automatiquement et vous pourrez ensuite déposer vos documents.
-  </div>
-) : (
-  <div className="ff-stack">
-    <button
-
+  {!formulaireId ? (
+    <div className="ff-empty">
+      Commencez par remplir le formulaire.
+      <br />
+      Le dossier se crée automatiquement et vous pourrez ensuite déposer vos documents.
+    </div>
+  ) : (
+    <div className="ff-stack">
+      {/* BOUTON BLEU – DÉPÔT */}
+      <button
         type="button"
         className="ff-btn ff-btn-primary"
         style={{
@@ -1435,23 +1441,33 @@ if (!errorInsert && dataInsert?.id) {
           borderRadius: 14,
           fontWeight: 900,
           fontSize: 16,
-          textAlign: "center",
           width: "100%",
         }}
         onClick={() => {
-          const url = `/depot-documents?fid=${encodeURIComponent(formulaireId)}&type=${encodeURIComponent(
-            type
-          )}&lang=${encodeURIComponent(lang)}`;
+          const url = `/depot-documents?fid=${encodeURIComponent(
+            formulaireId
+          )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(
+            lang
+          )}`;
           router.push(url);
         }}
       >
         Déposer mes documents →
       </button>
 
-      <div className="ff-rowbox" style={{ marginTop: 12 }}>
+      {/* INFOS DOSSIER */}
+      <div className="ff-rowbox">
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>ID : {formulaireId}</div>
+          <div
+            style={{
+              opacity: 0.8,
+              fontSize: 13,
+              wordBreak: "break-all",
+            }}
+          >
+            ID : {formulaireId}
+          </div>
         </div>
 
         <button
@@ -1466,6 +1482,7 @@ if (!errorInsert && dataInsert?.id) {
         </button>
       </div>
 
+      {/* LISTE DES DOCUMENTS */}
       <div className="ff-mt">
         <div className="ff-subtitle">Documents téléversés</div>
 
@@ -1476,13 +1493,37 @@ if (!errorInsert && dataInsert?.id) {
         ) : (
           <div className="ff-stack">
             {docs.map((d) => (
-              <div key={d.id} className="ff-rowbox" style={{ alignItems: "center", gap: 12 }}>
+              <div
+                key={d.id}
+                className="ff-rowbox"
+                style={{ alignItems: "center", gap: 12 }}
+              >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>{d.original_name}</div>
-                  <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>{d.storage_path}</div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {d.original_name}
+                  </div>
+                  <div
+                    style={{
+                      opacity: 0.75,
+                      fontSize: 12,
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {d.storage_path}
+                  </div>
                 </div>
 
-                <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                <button
+                  type="button"
+                  className="ff-btn ff-btn-soft"
+                  onClick={() => openDoc(d)}
+                >
                   Ouvrir
                 </button>
               </div>
@@ -1490,23 +1531,6 @@ if (!errorInsert && dataInsert?.id) {
           </div>
         )}
       </div>
-
-      <div className="ff-mt">
-        <button
-          type="button"
-          className="ff-btn ff-btn-soft"
-          style={{ width: "100%", textAlign: "center" }}
-          onClick={() => router.push(`/merci?lang=${encodeURIComponent(lang)}`)}
-        >
-          Terminer
-        </button>
-      </div>
     </div>
   )}
 </section>
-        </form>
-      </div>
-    </main>
-  );
-}
-
