@@ -1408,129 +1408,141 @@ if (!errorInsert && dataInsert?.id) {
 </div>
 
  {/* ===========================
-    DÉPÔT DOCUMENTS
+    DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
 =========================== */}
-<section
-  id="ff-upload-section"
-  className="ff-card"
-  style={{ opacity: formulaireId ? 1 : 0.65 }}
->
+<section id="ff-upload-section" className="ff-card">
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
     <p>
-      Déposez vos fichiers (PDF, JPG, PNG, ZIP, Word, Excel) dans votre espace sécurisé.
+      1) Remplissez le formulaire
       <br />
-      Vous pourrez ensuite revenir ici et soumettre le formulaire.
+      2) Déposez vos documents
+      <br />
+      3) Revenez ici pour soumettre
     </p>
   </div>
 
-  {!formulaireId ? (
-    <div className="ff-empty">
-      Commencez par remplir le formulaire.
-      <br />
-      Le dossier se crée automatiquement et vous pourrez ensuite déposer vos documents.
-    </div>
-  ) : (
-    <div className="ff-stack">
-      {/* BOUTON BLEU – DÉPÔT */}
-      <button
-        type="button"
-        className="ff-btn ff-btn-primary"
-        style={{
-          padding: "14px 16px",
-          borderRadius: 14,
-          fontWeight: 900,
-          fontSize: 16,
-          width: "100%",
-        }}
-        onClick={() => {
-          const url = `/depot-documents?fid=${encodeURIComponent(
-            formulaireId
-          )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(
-            lang
-          )}`;
-          router.push(url);
-        }}
-      >
-        Déposer mes documents →
-      </button>
+  <div className="ff-stack">
+    {/* BOUTON BLEU – DÉPÔT (toujours visible) */}
+    <button
+      type="button"
+      className="ff-btn ff-btn-primary"
+      style={{
+        padding: "14px 16px",
+        borderRadius: 14,
+        fontWeight: 900,
+        fontSize: 16,
+        width: "100%",
+      }}
+      disabled={submitting}
+      onClick={async () => {
+        try {
+          setMsg(null);
 
-      {/* INFOS DOSSIER */}
-      <div className="ff-rowbox">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700 }}>Dossier créé</div>
-          <div
-            style={{
-              opacity: 0.8,
-              fontSize: 13,
-              wordBreak: "break-all",
+          // 1) Créer / sauvegarder le dossier (si pas déjà fait)
+          await saveDraft();
+
+          // 2) Assurer qu'on a un fid (au cas où le state n'a pas encore eu le temps de se mettre à jour)
+          let fid = formulaireId;
+
+          if (!fid) {
+            const { data: auth } = await supabase.auth.getUser();
+            const uid = auth.user?.id;
+            if (!uid) throw new Error("Utilisateur non connecté.");
+
+            const { data: row, error } = await supabase
+              .from(FORMS_TABLE)
+              .select("id")
+              .eq("user_id", uid)
+              .eq("dossier_type", type)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle<{ id: string }>();
+
+            if (error) throw new Error(error.message);
+            if (!row?.id) throw new Error("Impossible de créer le dossier.");
+
+            fid = row.id;
+            setFormulaireId(fid);
+            await loadDocs(fid);
+          }
+
+          // 3) Aller à la page dépôt
+          const url = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
+            type
+          )}&lang=${encodeURIComponent(lang)}`;
+          router.push(url);
+        } catch (e: unknown) {
+          const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
+          setMsg(message);
+        }
+      }}
+    >
+      Déposer mes documents →
+    </button>
+
+    {/* MESSAGE AIDE (si pas encore de dossier) */}
+    {!formulaireId && (
+      <div className="ff-empty">
+        Vous pouvez cliquer sur “Déposer mes documents”.
+        <br />
+        Le dossier sera créé automatiquement.
+      </div>
+    )}
+
+    {/* INFOS DOSSIER + LISTE (uniquement si dossier existe) */}
+    {formulaireId && (
+      <>
+        <div className="ff-rowbox">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700 }}>Dossier</div>
+            <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>
+              ID : {formulaireId}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="ff-btn ff-btn-soft"
+            onClick={() => {
+              navigator.clipboard?.writeText(formulaireId);
+              setMsg("✅ ID copié.");
             }}
           >
-            ID : {formulaireId}
-          </div>
+            Copier l’ID
+          </button>
         </div>
 
-        <button
-          type="button"
-          className="ff-btn ff-btn-soft"
-          onClick={() => {
-            navigator.clipboard?.writeText(formulaireId);
-            setMsg("✅ ID copié.");
-          }}
-        >
-          Copier l’ID
-        </button>
-      </div>
+        <div className="ff-mt">
+          <div className="ff-subtitle">Documents téléversés</div>
 
-      {/* LISTE DES DOCUMENTS */}
-      <div className="ff-mt">
-        <div className="ff-subtitle">Documents téléversés</div>
+          {docsLoading ? (
+            <div className="ff-empty">Chargement des documents…</div>
+          ) : docs.length === 0 ? (
+            <div className="ff-empty">Aucun document pour l’instant.</div>
+          ) : (
+            <div className="ff-stack">
+              {docs.map((d) => (
+                <div key={d.id} className="ff-rowbox" style={{ alignItems: "center", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {d.original_name}
+                    </div>
+                    <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>
+                      {d.storage_path}
+                    </div>
+                  </div>
 
-        {docsLoading ? (
-          <div className="ff-empty">Chargement des documents…</div>
-        ) : docs.length === 0 ? (
-          <div className="ff-empty">Aucun document pour l’instant.</div>
-        ) : (
-          <div className="ff-stack">
-            {docs.map((d) => (
-              <div
-                key={d.id}
-                className="ff-rowbox"
-                style={{ alignItems: "center", gap: 12 }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {d.original_name}
-                  </div>
-                  <div
-                    style={{
-                      opacity: 0.75,
-                      fontSize: 12,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {d.storage_path}
-                  </div>
+                  <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                    Ouvrir
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="ff-btn ff-btn-soft"
-                  onClick={() => openDoc(d)}
-                >
-                  Ouvrir
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )}
+              ))}
+            </div>
+          )}
+        </div>
+      </>
+    )}
+  </div>
 </section>
+
