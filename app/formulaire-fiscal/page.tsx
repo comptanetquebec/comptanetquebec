@@ -165,6 +165,11 @@ function normalizeLang(v: string) {
   const x = (v || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? x : "fr";
 }
+function supaErr(e: unknown) {
+  if (!e || typeof e !== "object") return "Erreur inconnue";
+  const err = e as { message?: string; details?: string; hint?: string; code?: string };
+  return [err.message, err.details, err.hint, err.code].filter(Boolean).join(" | ");
+}
 
 /* ===========================
    FORMAT LIVE (pendant saisie)
@@ -627,7 +632,7 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
       .eq("id", formulaireId)
       .eq("user_id", userId);
 
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(supaErr(error));
     return formulaireId;
   }
 
@@ -636,15 +641,16 @@ const { data: dataInsert, error: errorInsert } = await supabase
   .from(FORMS_TABLE)
   .insert({
     user_id: userId,
-    form_type: type, // ✅ CORRIGÉ
+    form_type: type, // doit correspondre EXACTEMENT à la colonne Supabase
     lang,
     data,
   })
   .select("id")
   .single<InsertIdRow>();
 
-  if (errorInsert) throw new Error(errorInsert.message);
-
+if (errorInsert) {
+  throw new Error(supaErr(errorInsert));
+}
   const fid = dataInsert?.id ?? null;
   if (fid) setFormulaireId(fid);
 
@@ -1176,7 +1182,7 @@ const { data: dataInsert, error: errorInsert } = await supabase
             onChange={(val) =>
               setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { debut: formatDateInput(val) }))
             }
-            placeholder="01/01/2024"
+            placeholder={`01/01/${new Date().getFullYear()}`}
             inputMode="numeric"
             maxLength={10}
           />
@@ -1186,7 +1192,7 @@ const { data: dataInsert, error: errorInsert } = await supabase
             onChange={(val) =>
               setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { fin: formatDateInput(val) }))
             }
-            placeholder="31/12/2024"
+            placeholder={`31/12/${new Date().getFullYear()}`}
             inputMode="numeric"
             maxLength={10}
           />
@@ -1225,7 +1231,7 @@ const { data: dataInsert, error: errorInsert } = await supabase
                 onChange={(val) =>
                   setAssuranceMedsConjointPeriodes((prev) => updatePeriode(prev, idx, { debut: formatDateInput(val) }))
                 }
-                placeholder="01/01/2024"
+                placeholder={`01/01/${new Date().getFullYear()}`}
                 inputMode="numeric"
                 maxLength={10}
               />
@@ -1235,7 +1241,7 @@ const { data: dataInsert, error: errorInsert } = await supabase
                 onChange={(val) =>
                   setAssuranceMedsConjointPeriodes((prev) => updatePeriode(prev, idx, { fin: formatDateInput(val) }))
                 }
-                placeholder="31/12/2024"
+                placeholder={`31/12/${new Date().getFullYear()}`}
                 inputMode="numeric"
                 maxLength={10}
               />
@@ -1412,8 +1418,8 @@ const { data: dataInsert, error: errorInsert } = await supabase
   </p>
 </div>
 
- {/* ===========================
-    DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
+{/* ===========================
+   DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
 =========================== */}
 <section id="ff-upload-section" className="ff-card">
   <div className="ff-card-head">
@@ -1441,10 +1447,8 @@ const { data: dataInsert, error: errorInsert } = await supabase
       disabled={booting || !userId}
       onClick={async () => {
         try {
-          // Message visible à l’endroit du clic
           setMsg("⏳ Préparation du dossier…");
 
-          // 1) Sauvegarde / création du dossier + récupération fid
           const fidFromSave = await saveDraft();
           const fid = fidFromSave || formulaireId;
 
@@ -1452,10 +1456,8 @@ const { data: dataInsert, error: errorInsert } = await supabase
             throw new Error("Impossible de créer le dossier (fid manquant).");
           }
 
-          // 2) Refresh docs (pour afficher la liste)
           await loadDocs(fid);
 
-          // 3) Redirection (plus fiable que router.push si tu as une route manquante)
           setMsg("✅ Redirection vers le dépôt…");
           const url = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
             type
@@ -1466,7 +1468,6 @@ const { data: dataInsert, error: errorInsert } = await supabase
           const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
           setMsg("❌ " + message);
 
-          // Assure que tu vois le message même si tu es plus haut/bas
           document.getElementById("ff-upload-section")?.scrollIntoView({
             behavior: "smooth",
             block: "start",
@@ -1543,8 +1544,31 @@ const { data: dataInsert, error: errorInsert } = await supabase
     )}
   </div>
 </section>
- </form>
-      </div>
-    </main>
-  );
-}
+
+{/* ===========================
+   SUBMIT FINAL
+=========================== */}
+<div className="ff-submit">
+  <button
+    type="submit"
+    className="ff-btn ff-btn-primary ff-btn-big"
+    disabled={submitting || !formulaireId || docsCount === 0}
+  >
+    {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
+  </button>
+
+  {formulaireId && docsCount === 0 && (
+    <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>
+  )}
+
+  <p className="ff-footnote">
+    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
+    travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
+  </p>
+</div>
+
+</form>
+</div> 
+    </main> 
+    ); 
+    }
