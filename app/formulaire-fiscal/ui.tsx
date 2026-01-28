@@ -83,14 +83,14 @@ export function CheckboxField({ label, checked, onChange }: CheckboxFieldProps) 
 }
 
 /* ===========================
-   YesNoField
+   YesNoField (SANS “EFFACER”)
 =========================== */
 
 export type YesNoFieldProps = {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  name: string; // important: stable
+  name: string; // stable pour chaque question
 };
 
 export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
@@ -121,12 +121,6 @@ export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
           <span>Non</span>
         </label>
       </div>
-
-      {value !== "" && (
-        <button type="button" className="ff-btn ff-btn-link" onClick={() => onChange("")}>
-          Effacer
-        </button>
-      )}
     </div>
   );
 }
@@ -135,7 +129,10 @@ export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
    SelectField
 =========================== */
 
-export type SelectOption<T extends string> = { value: Exclude<T, "">; label: string };
+export type SelectOption<T extends string> = {
+  value: Exclude<T, "">;
+  label: string;
+};
 
 export type SelectFieldProps<T extends string> = {
   label: string;
@@ -167,7 +164,9 @@ export function SelectField<T extends string>({
         onChange={(e) => onChange(e.currentTarget.value as T)}
         required={required}
       >
-        <option value="">{placeholderText ?? (required ? "Choisir…" : "—")}</option>
+        <option value="">
+          {placeholderText ?? (required ? "Choisir…" : "—")}
+        </option>
 
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
