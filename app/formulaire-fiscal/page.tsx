@@ -547,160 +547,165 @@ await loadDocs(fid);
   [loadDocs, type]
 );
 
-  // ✅ autosave brouillon (insert/update sans bouton)
-  const saveDraft = useCallback(async () => {
-    if (!userId) return;
-    if (hydrating.current) return;
-    if (submitting) return;
+ // ✅ autosave brouillon (insert/update sans bouton)
+// ✅ retourne le fid (string) ou null
+const saveDraft = useCallback(async (): Promise<string | null> => {
+  if (!userId) return null;
+  if (hydrating.current) return formulaireId ?? null;
+  if (submitting) return formulaireId ?? null;
 
-    const data: Formdata = {
-      dossierType: type,
-      client: {
-        prenom: prenom.trim(),
-        nom: nom.trim(),
-        nas: normalizeNAS(nas),
-        dob: dob.trim(),
-        etatCivil,
-        etatCivilChange,
-        ancienEtatCivil: ancienEtatCivil.trim(),
-        dateChangementEtatCivil: dateChangementEtatCivil.trim(),
-        tel: normalizePhone(tel),
-        telCell: normalizePhone(telCell),
-        adresse: adresse.trim(),
-        app: app.trim(),
-        ville: ville.trim(),
-        province,
-        codePostal: normalizePostal(codePostal),
-        courriel: courriel.trim().toLowerCase(),
-      },
-      conjoint: aUnConjoint
+  const data: Formdata = {
+    dossierType: type,
+    client: {
+      prenom: prenom.trim(),
+      nom: nom.trim(),
+      nas: normalizeNAS(nas),
+      dob: dob.trim(),
+      etatCivil,
+      etatCivilChange,
+      ancienEtatCivil: ancienEtatCivil.trim(),
+      dateChangementEtatCivil: dateChangementEtatCivil.trim(),
+      tel: normalizePhone(tel),
+      telCell: normalizePhone(telCell),
+      adresse: adresse.trim(),
+      app: app.trim(),
+      ville: ville.trim(),
+      province,
+      codePostal: normalizePostal(codePostal),
+      courriel: courriel.trim().toLowerCase(),
+    },
+    conjoint: aUnConjoint
+      ? {
+          traiterConjoint,
+          prenomConjoint: prenomConjoint.trim(),
+          nomConjoint: nomConjoint.trim(),
+          nasConjoint: normalizeNAS(nasConjoint),
+          dobConjoint: dobConjoint.trim(),
+          telConjoint: normalizePhone(telConjoint),
+          telCellConjoint: normalizePhone(telCellConjoint),
+          courrielConjoint: courrielConjoint.trim().toLowerCase(),
+          adresseConjointeIdentique,
+          adresseConjoint: (adresseConjointeIdentique ? adresse : adresseConjoint).trim(),
+          appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
+          villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
+          provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
+          codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
+          revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
+        }
+      : null,
+    assuranceMedicamenteuse:
+      province === "QC"
         ? {
-            traiterConjoint,
-            prenomConjoint: prenomConjoint.trim(),
-            nomConjoint: nomConjoint.trim(),
-            nasConjoint: normalizeNAS(nasConjoint),
-            dobConjoint: dobConjoint.trim(),
-            telConjoint: normalizePhone(telConjoint),
-            telCellConjoint: normalizePhone(telCellConjoint),
-            courrielConjoint: courrielConjoint.trim().toLowerCase(),
-            adresseConjointeIdentique,
-            adresseConjoint: (adresseConjointeIdentique ? adresse : adresseConjoint).trim(),
-            appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
-            villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
-            provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
-            codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
-            revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
+            client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
+            conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
           }
         : null,
-      assuranceMedicamenteuse:
-        province === "QC"
-          ? {
-              client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
-              conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
-            }
-          : null,
-      personnesACharge: enfants.map((x) => ({
-        prenom: x.prenom.trim(),
-        nom: x.nom.trim(),
-        dob: x.dob.trim(),
-        nas: normalizeNAS(x.nas),
-        sexe: x.sexe,
-      })),
-      questionsGenerales: {
-        habiteSeulTouteAnnee,
-        nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
-        biensEtranger100k,
-        citoyenCanadien,
-        nonResident,
-        maisonAcheteeOuVendue,
-        appelerTechnicien,
-        copieImpots,
-      },
-    };
+    personnesACharge: enfants.map((x) => ({
+      prenom: x.prenom.trim(),
+      nom: x.nom.trim(),
+      dob: x.dob.trim(),
+      nas: normalizeNAS(x.nas),
+      sexe: x.sexe,
+    })),
+    questionsGenerales: {
+      habiteSeulTouteAnnee,
+      nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
+      biensEtranger100k,
+      citoyenCanadien,
+      nonResident,
+      maisonAcheteeOuVendue,
+      appelerTechnicien,
+      copieImpots,
+    },
+  };
 
-    // UPDATE si dossier existe
-    if (formulaireId) {
-      await supabase
-        .from(FORMS_TABLE)
-        .update({ lang, data })
-        .eq("id", formulaireId)
-        .eq("user_id", userId);
-      return;
-    }
+  // UPDATE si dossier existe
+  if (formulaireId) {
+    const { error } = await supabase
+      .from(FORMS_TABLE)
+      .update({ lang, data })
+      .eq("id", formulaireId)
+      .eq("user_id", userId);
 
-    // INSERT (brouillon) dès la première saisie
-    const { data: dataInsert, error: errorInsert } = await supabase
-  .from(FORMS_TABLE)
-  .insert({
-    user_id: userId,
-    dossier_type: type,
-    lang,
-    data,
-  })
-  .select("id")
-  .single<InsertIdRow>();
+    if (error) throw new Error(error.message);
+    return formulaireId;
+  }
 
-if (!errorInsert && dataInsert?.id) {
-  setFormulaireId(dataInsert.id);
-}
-  }, [
+  // INSERT (brouillon) dès la première saisie
+  const { data: dataInsert, error: errorInsert } = await supabase
+    .from(FORMS_TABLE)
+    .insert({
+      user_id: userId,
+      dossier_type: type,
+      lang,
+      data,
+    })
+    .select("id")
+    .single<InsertIdRow>();
 
-    userId,
-    submitting,
-    formulaireId,
-    type,
-    lang,
+  if (errorInsert) throw new Error(errorInsert.message);
 
-    prenom,
-    nom,
-    nas,
-    dob,
-    etatCivil,
-    etatCivilChange,
-    ancienEtatCivil,
-    dateChangementEtatCivil,
-    tel,
-    telCell,
-    adresse,
-    app,
-    ville,
-    province,
-    codePostal,
-    courriel,
+  const fid = dataInsert?.id ?? null;
+  if (fid) setFormulaireId(fid);
 
-    aUnConjoint,
-    traiterConjoint,
-    prenomConjoint,
-    nomConjoint,
-    nasConjoint,
-    dobConjoint,
-    telConjoint,
-    telCellConjoint,
-    courrielConjoint,
-    adresseConjointeIdentique,
-    adresseConjoint,
-    appConjoint,
-    villeConjoint,
-    provinceConjoint,
-    codePostalConjoint,
-    revenuNetConjoint,
+  return fid;
+}, [
+  userId,
+  submitting,
+  formulaireId,
+  type,
+  lang,
 
-    assuranceMedsClient,
-    assuranceMedsClientPeriodes,
-    assuranceMedsConjoint,
-    assuranceMedsConjointPeriodes,
+  prenom,
+  nom,
+  nas,
+  dob,
+  etatCivil,
+  etatCivilChange,
+  ancienEtatCivil,
+  dateChangementEtatCivil,
+  tel,
+  telCell,
+  adresse,
+  app,
+  ville,
+  province,
+  codePostal,
+  courriel,
 
-    enfants,
+  aUnConjoint,
+  traiterConjoint,
+  prenomConjoint,
+  nomConjoint,
+  nasConjoint,
+  dobConjoint,
+  telConjoint,
+  telCellConjoint,
+  courrielConjoint,
+  adresseConjointeIdentique,
+  adresseConjoint,
+  appConjoint,
+  villeConjoint,
+  provinceConjoint,
+  codePostalConjoint,
+  revenuNetConjoint,
 
-    habiteSeulTouteAnnee,
-    nbPersonnesMaison3112,
-    biensEtranger100k,
-    citoyenCanadien,
-    nonResident,
-    maisonAcheteeOuVendue,
-    appelerTechnicien,
-    copieImpots,
-  ]);
+  assuranceMedsClient,
+  assuranceMedsClientPeriodes,
+  assuranceMedsConjoint,
+  assuranceMedsConjointPeriodes,
+
+  enfants,
+
+  habiteSeulTouteAnnee,
+  nbPersonnesMaison3112,
+  biensEtranger100k,
+  citoyenCanadien,
+  nonResident,
+  maisonAcheteeOuVendue,
+  appelerTechnicien,
+  copieImpots,
+]);
 
   /* ===========================
      Auth guard + preload
