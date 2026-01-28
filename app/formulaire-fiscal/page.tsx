@@ -1418,11 +1418,16 @@ if (!errorInsert && dataInsert?.id) {
     </p>
   </div>
 
-  {!formulaireId ? (
-    <div className="ff-empty">Soumettez d’abord le formulaire ci-dessus. Ensuite, le bouton de dépôt de documents sera activé.</div>
-  ) : (
-    <div className="ff-stack">
-      <button
+ {!formulaireId ? (
+  <div className="ff-empty">
+    Commencez par remplir le formulaire.
+    <br />
+    Le dossier se crée automatiquement et vous pourrez ensuite déposer vos documents.
+  </div>
+) : (
+  <div className="ff-stack">
+    <button
+
         type="button"
         className="ff-btn ff-btn-primary"
         style={{
