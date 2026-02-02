@@ -267,7 +267,10 @@ export default function DepotDocumentsPage() {
               <p>PDF, JPG, PNG, ZIP, Word, Excel (max 50 MB).</p>
             </div>
 
-            <Dropzone disabled={uploading} onFiles={handleUploadFiles} />
+            <Dropzone
+  disabled={uploading || booting || !userId || !fid}
+  onFiles={handleUploadFiles}
+/>
 
             {uploading && <div className="ff-empty">Téléversement en cours…</div>}
 
@@ -365,40 +368,49 @@ function Dropzone({
   }, []);
 
   return (
-    <div
-      className={`ff-dropzone ${isOver ? "ff-dropzone--over" : ""} ${disabled ? "ff-dropzone--disabled" : ""}`}
-      role="button"
-      tabIndex={0}
-      onClick={openPicker}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") openPicker();
+   <div
+  className={`ff-dropzone ${isOver ? "ff-dropzone--over" : ""} ${disabled ? "ff-dropzone--disabled" : ""}`}
+  role="button"
+  tabIndex={0}
+  onClick={openPicker}
+  onDrop={onDrop}
+  onDragOver={onDragOver}
+  onDragLeave={onDragLeave}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") openPicker();
+  }}
+  style={{ marginTop: 10 }}
+  aria-disabled={disabled ? "true" : "false"}
+>
+  <div className="ff-dropzone__title">Déposer ici</div>
+  <div className="ff-dropzone__hint">Glissez-déposez ou cliquez pour sélectionner des fichiers</div>
+
+  <div className="ff-mt-sm" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <button
+      type="button"
+      className="ff-btn ff-btn-soft"
+      disabled={disabled}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openPicker();
       }}
-      style={{ marginTop: 10 }}
-      aria-disabled={disabled ? "true" : "false"}
     >
-      <div className="ff-dropzone__title">Déposer ici</div>
-      <div className="ff-dropzone__hint">Glissez-déposez ou cliquez pour sélectionner des fichiers</div>
+      Choisir des fichiers
+    </button>
+  </div>
 
-      <div className="ff-mt-sm" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button type="button" className="ff-btn ff-btn-soft" disabled={disabled} onClick={openPicker}>
-          Choisir des fichiers
-        </button>
-      </div>
-
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        style={{ display: "none" }}
-        disabled={disabled}
-        onChange={async (e) => {
-          await onFiles(e.currentTarget.files);
-          e.currentTarget.value = "";
-        }}
-      />
-    </div>
+  <input
+    ref={inputRef}
+    type="file"
+    multiple
+    style={{ display: "none" }}
+    disabled={disabled}
+    onChange={async (e) => {
+      await onFiles(e.currentTarget.files);
+      e.currentTarget.value = "";
+    }}
+  />
+</div>
   );
 }
