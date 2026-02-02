@@ -282,10 +282,9 @@ export default function FormulaireFiscalPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
-const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
-const [currentFid, setCurrentFid] = useState<string | null>(null);
-const fidDisplay = currentFid || formulaireId;
+  const [currentFid, setCurrentFid] = useState<string | null>(null);
 
   const redirected = useRef(false);
 
@@ -297,13 +296,14 @@ const fidDisplay = currentFid || formulaireId;
   // ✅ Dossier (sert aussi de “mémoire”)
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
 
+  // ✅ UNE SEULE FOIS, et APRÈS formulaireId
   const fidDisplay = currentFid || formulaireId;
 
   // --- Docs state (pour afficher la liste / ouverture)
-const [docs, setDocs] = useState<DocRow[]>([]);
-const [docsLoading, setDocsLoading] = useState(false);
+  const [docs, setDocs] = useState<DocRow[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
 
-const docsCount = docs.length;
+  const docsCount = docs.length;
 
   // --- Infos client principal ---
   const [prenom, setPrenom] = useState("");
