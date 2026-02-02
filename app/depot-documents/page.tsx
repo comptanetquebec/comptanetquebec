@@ -13,8 +13,10 @@ type DocRow = {
   id: string;
   formulaire_id: string;
   user_id: string;
-  file_name: string | null;
-  file_path: string;
+  original_name: string | null;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
   created_at: string;
 };
 
@@ -70,7 +72,7 @@ export default function DepotDocumentsPage() {
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
-      .select("id, formulaire_id, user_id, file_name, file_path, created_at")
+      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
       .eq("formulaire_id", formulaireId)
       .order("created_at", { ascending: false });
 
@@ -104,10 +106,10 @@ export default function DepotDocumentsPage() {
       if (file.size > 50 * 1024 * 1024) throw new Error("Fichier trop lourd (max 50 MB).");
 
       const safe = safeFilename(file.name);
-      const file_path = `${userId}/${fid}/${Date.now()}-${safe}`;
+      const storage_path = `${userId}/${fid}/${Date.now()}-${safe}`;
 
       // 1) Upload storage
-      const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(file_path, file, {
+      const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(storage_path, file, {
         contentType: file.type || "application/octet-stream",
         upsert: false,
       });
@@ -118,13 +120,15 @@ export default function DepotDocumentsPage() {
       const { error: dbErr } = await supabase.from(DOCS_TABLE).insert({
         formulaire_id: fid,
         user_id: userId,
-        file_path,
-        file_name: file.name,
+        original_name: file.name,
+        storage_path,
+        mime_type: file.type || "application/octet-stream",
+        size_bytes: file.size,
       });
 
       if (dbErr) {
         // nettoyage: si DB échoue, on retire le fichier pour éviter les orphans
-        await supabase.storage.from(STORAGE_BUCKET).remove([file_path]);
+        await supabase.storage.from(STORAGE_BUCKET).remove([storage_path]);
         throw new Error(`DB: ${dbErr.message}`);
       }
     },
@@ -162,7 +166,7 @@ export default function DepotDocumentsPage() {
   const openDoc = useCallback(
     async (doc: DocRow) => {
       try {
-        const url = await getSignedUrl(doc.file_path);
+        const url = await getSignedUrl(doc.storage_path);
         window.open(url, "_blank", "noopener,noreferrer");
       } catch (e: unknown) {
         setMsg(e instanceof Error ? e.message : "Impossible d’ouvrir le fichier.");
@@ -288,10 +292,13 @@ export default function DepotDocumentsPage() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {d.file_name ?? d.file_path}
+                        {d.original_name ?? d.storage_path}
                       </div>
-                      <div style={{ opacity: 0.8, fontSize: 13 }}>
-                        {new Date(d.created_at).toLocaleString()}
+
+                      <div style={{ opacity: 0.8, fontSize: 13, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <span>{new Date(d.created_at).toLocaleString()}</span>
+                        {typeof d.size_bytes === "number" && <span>{Math.round(d.size_bytes / 1024)} KB</span>}
+                        {d.mime_type && <span>{d.mime_type}</span>}
                       </div>
                     </div>
 
