@@ -149,19 +149,17 @@ type FormRow = {
    Helpers (title / normalize)
 =========================== */
 
-function titleFromType(type: string) {
-  if (type === "T2") return "Société (T2)";
-  return "Particulier (T1)"; // autonome = T1 aussi
-}
-
-type FormType = "T1" | "T2" | "autonome";
-
 type FormTypeDb = "T1" | "T2";
+
+function titleFromType(_type: FormTypeDb) {
+  // cette page = T1 particulier seulement
+  return "Particulier (T1)";
+}
 
 function normalizeFormTypeDb(v: string): FormTypeDb {
   const x = (v || "").toLowerCase();
   if (x === "t2") return "T2";
-  return "T1"; // particulier + autonome
+  return "T1";
 }
 
 function normalizeLang(v: string) {
@@ -273,13 +271,13 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
    Page
 =========================== */
 
-export default function FormulaireFiscalPage() {
+eexport default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const type = normalizeType(params.get("type") || "t1");
+  const type: FormTypeDb = "T1";
   const lang = normalizeLang(params.get("lang") || "fr");
-  const formTitle = useMemo(() => titleFromType(type), [type]);
+  const formTitle = titleFromType(type);
 
   const [booting, setBooting] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
