@@ -648,6 +648,7 @@ const { data: dataInsert, error: errorInsert } = await supabase
     user_id: userId,
     form_type: type, // doit correspondre EXACTEMENT à la colonne Supabase
     lang,
+    status: "draft", // ✅ OBLIGATOIRE à cause de la contrainte CHECK
     data,
   })
   .select("id")
@@ -828,26 +829,49 @@ if (errorInsert) {
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
 
-  // ✅ handleSubmit minimal pour utiliser setSubmitting (sinon warning)
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      setSubmitting(true);
-      setMsg(null);
-      try {
-        // Ici tu peux mettre ton submit final (ex: marquer submitted)
-        // Pour l’instant on force un saveDraft pour être certain que tout est en DB
-        await saveDraft();
-        setMsg("Formulaire enregistré ✅");
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Erreur lors de l’enregistrement.";
-        setMsg(message);
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [saveDraft]
-  );
+ // ✅ handleSubmit (submit final)
+const handleSubmit = useCallback(
+  async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMsg(null);
+
+    try {
+      // 1) Force saveDraft et récupère le fid réel
+      const fidFromSave = await saveDraft(); // string | null
+      const realFid = fidFromSave || fidDisplay;
+
+      if (!realFid) throw new Error("Impossible de soumettre (dossier introuvable).");
+
+      // 2) Vérifie qu'il y a au moins 1 document (check DB pour être sûr)
+      const { data: docsData, error: docsErr } = await supabase
+        .from(DOCS_TABLE)
+        .select("id")
+        .eq("formulaire_id", realFid)
+        .limit(1);
+
+      if (docsErr) throw new Error(supaErr(docsErr));
+      if (!docsData || docsData.length === 0) throw new Error("Ajoutez au moins 1 document avant de soumettre.");
+
+      // 3) Marquer le dossier comme soumis
+      const { error } = await supabase
+        .from(FORMS_TABLE)
+        .update({ status: "submitted" })
+        .eq("id", realFid)
+        .eq("user_id", userId);
+
+      if (error) throw new Error(supaErr(error));
+
+      setMsg("✅ Dossier soumis. Merci !");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur lors de la soumission.";
+      setMsg("❌ " + message);
+    } finally {
+      setSubmitting(false);
+    }
+  },
+  [saveDraft, fidDisplay, userId]
+);
 
   if (booting) {
     return (
@@ -1436,7 +1460,7 @@ if (errorInsert) {
           setMsg("⏳ Préparation du dossier…");
 
           const fidFromSave = await saveDraft();
-          const fid = fidFromSave || formulaireId;
+          const fid = fidFromSave || fidDisplay;
 
           if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
