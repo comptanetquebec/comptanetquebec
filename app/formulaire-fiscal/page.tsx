@@ -1399,28 +1399,9 @@ if (errorInsert) {
   </div>
 </section>
 
- <div className="ff-submit">
-  <button
-    type="submit"
-    className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting || !formulaireId || docsCount === 0}
-  >
-    {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
-  </button>
-
-  {formulaireId && docsCount === 0 && (
-    <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>
-  )}
-
-  <p className="ff-footnote">
-    Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
-    travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
-  </p>
-</div>
-
-// ===========================
-// DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
-// ===========================
+{/* ===========================
+   DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
+=========================== */}
 <section id="ff-upload-section" className="ff-card">
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
@@ -1449,19 +1430,14 @@ if (errorInsert) {
         try {
           setMsg("⏳ Préparation du dossier…");
 
-          // 1) crée ou récupère un fid
           const fidFromSave = await saveDraft();
           const fid = fidFromSave || formulaireId;
 
           if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
-          // 2) on le garde en state pour l'affichage immédiat
           setCurrentFid(fid);
-
-          // 3) on recharge la liste (optionnel mais ok)
           await loadDocs(fid);
 
-          // 4) redirect vers la page de dépôt
           setMsg("✅ Redirection vers le dépôt…");
           const url = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
             type
@@ -1549,9 +1525,9 @@ if (errorInsert) {
   </div>
 </section>
 
-// ===========================
-// SUBMIT FINAL (UN SEUL SUBMIT)
-// ===========================
+{/* ===========================
+   SUBMIT FINAL (UN SEUL SUBMIT)
+=========================== */}
 <div className="ff-submit">
   <button
     type="submit"
@@ -1570,8 +1546,9 @@ if (errorInsert) {
     travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
   </p>
 </div>
+
 </form>
-</div>   {/* fin container formulaire */}
+</div> {/* fin container formulaire */}
 </main>
 );
 }
