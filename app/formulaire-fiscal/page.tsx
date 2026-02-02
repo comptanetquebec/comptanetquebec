@@ -150,15 +150,14 @@ type FormRow = {
 =========================== */
 
 function titleFromType(type: string) {
-  if (type === "autonome") return "Travailleur autonome (T1)";
-  if (type === "t2") return "Société (T2)";
-  return "Particulier (T1)";
+  if (type === "T2") return "Société (T2)";
+  return "Particulier (T1)"; // autonome = T1 aussi
 }
 
 function normalizeType(v: string) {
   const x = (v || "").toLowerCase();
-  if (x === "t1" || x === "autonome" || x === "t2") return x;
-  return "t1";
+  if (x === "t2") return "T2";
+  return "T1"; // t1 + autonome + tout le reste
 }
 
 function normalizeLang(v: string) {
