@@ -1418,12 +1418,6 @@ if (errorInsert) {
   </p>
 </div>
 
-// Ajoute ce state en haut de ton composant (une seule fois)
-const [currentFid, setCurrentFid] = useState<string | null>(null);
-
-// Fid affiché/utile partout
-const fidDisplay = currentFid || formulaireId;
-
 // ===========================
 // DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
 // ===========================
