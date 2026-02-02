@@ -271,7 +271,7 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
    Page
 =========================== */
 
-eexport default function FormulaireFiscalPage() {
+export default function FormulaireFiscalPage() {
   const router = useRouter();
   const params = useSearchParams();
 
