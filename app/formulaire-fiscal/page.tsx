@@ -154,10 +154,13 @@ function titleFromType(type: string) {
   return "Particulier (T1)"; // autonome = T1 aussi
 }
 
-function normalizeType(v: string) {
+type FormType = "T1" | "T2" | "autonome";
+
+function normalizeType(v: string): FormType {
   const x = (v || "").toLowerCase();
   if (x === "t2") return "T2";
-  return "T1"; // t1 + autonome + tout le reste
+  if (x === "autonome") return "autonome";
+  return "T1";
 }
 
 function normalizeLang(v: string) {
