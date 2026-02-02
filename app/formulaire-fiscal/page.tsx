@@ -156,11 +156,12 @@ function titleFromType(type: string) {
 
 type FormType = "T1" | "T2" | "autonome";
 
-function normalizeType(v: string): FormType {
+type FormTypeDb = "T1" | "T2";
+
+function normalizeFormTypeDb(v: string): FormTypeDb {
   const x = (v || "").toLowerCase();
   if (x === "t2") return "T2";
-  if (x === "autonome") return "autonome";
-  return "T1";
+  return "T1"; // particulier + autonome
 }
 
 function normalizeLang(v: string) {
