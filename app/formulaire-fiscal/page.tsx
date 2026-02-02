@@ -1418,9 +1418,15 @@ if (errorInsert) {
   </p>
 </div>
 
-{/* ===========================
-   DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
-=========================== */}
+// Ajoute ce state en haut de ton composant (une seule fois)
+const [currentFid, setCurrentFid] = useState<string | null>(null);
+
+// Fid affiché/utile partout
+const fidDisplay = currentFid || formulaireId;
+
+// ===========================
+// DÉPÔT DOCUMENTS (TOUJOURS VISIBLE)
+// ===========================
 <section id="ff-upload-section" className="ff-card">
   <div className="ff-card-head">
     <h2>Déposer vos documents</h2>
@@ -1449,15 +1455,19 @@ if (errorInsert) {
         try {
           setMsg("⏳ Préparation du dossier…");
 
+          // 1) crée ou récupère un fid
           const fidFromSave = await saveDraft();
           const fid = fidFromSave || formulaireId;
 
-          if (!fid) {
-            throw new Error("Impossible de créer le dossier (fid manquant).");
-          }
+          if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
+          // 2) on le garde en state pour l'affichage immédiat
+          setCurrentFid(fid);
+
+          // 3) on recharge la liste (optionnel mais ok)
           await loadDocs(fid);
 
+          // 4) redirect vers la page de dépôt
           setMsg("✅ Redirection vers le dépôt…");
           const url = `/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
             type
@@ -1478,7 +1488,7 @@ if (errorInsert) {
       Déposer mes documents →
     </button>
 
-    {!formulaireId && (
+    {!fidDisplay && (
       <div className="ff-empty">
         Vous pouvez cliquer sur “Déposer mes documents”.
         <br />
@@ -1486,13 +1496,13 @@ if (errorInsert) {
       </div>
     )}
 
-    {formulaireId && (
+    {fidDisplay && (
       <>
         <div className="ff-rowbox">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700 }}>Dossier</div>
             <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>
-              ID : {formulaireId}
+              ID : {fidDisplay}
             </div>
           </div>
 
@@ -1500,7 +1510,7 @@ if (errorInsert) {
             type="button"
             className="ff-btn ff-btn-soft"
             onClick={() => {
-              navigator.clipboard?.writeText(formulaireId);
+              navigator.clipboard?.writeText(fidDisplay);
               setMsg("✅ ID copié.");
               document.getElementById("ff-upload-section")?.scrollIntoView({
                 behavior: "smooth",
@@ -1545,31 +1555,29 @@ if (errorInsert) {
   </div>
 </section>
 
-{/* ===========================
-   SUBMIT FINAL (UN SEUL SUBMIT)
-=========================== */}
+// ===========================
+// SUBMIT FINAL (UN SEUL SUBMIT)
+// ===========================
 <div className="ff-submit">
   <button
     type="submit"
     className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting || !formulaireId || docsCount === 0}
+    disabled={submitting || !fidDisplay || docsCount === 0}
   >
     {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
   </button>
 
-  {formulaireId && docsCount === 0 && (
+  {fidDisplay && docsCount === 0 && (
     <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>
   )}
 
-    <p className="ff-footnote">
+  <p className="ff-footnote">
     Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
     travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
   </p>
-</div>   {/* fin .ff-submit */}
-
+</div>
 </form>
 </div>   {/* fin container formulaire */}
 </main>
 );
 }
-
