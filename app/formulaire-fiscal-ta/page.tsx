@@ -160,7 +160,8 @@ function titleFromType(type: string) {
 function normalizeType(v: string) {
   const x = (v || "").toLowerCase();
   if (x === "t2") return "T2";
-  return "T1"; // t1 + autonome + tout le reste
+  if (x === "autonome") return "autonome"; // ✅ LIGNE MANQUANTE
+  return "T1";
 }
 
 function normalizeLang(v: string) {
