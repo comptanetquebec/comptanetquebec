@@ -297,6 +297,8 @@ const fidDisplay = currentFid || formulaireId;
   // ✅ Dossier (sert aussi de “mémoire”)
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
 
+  const fidDisplay = currentFid || formulaireId;
+
   // --- Docs state (pour afficher la liste / ouverture)
 const [docs, setDocs] = useState<DocRow[]>([]);
 const [docsLoading, setDocsLoading] = useState(false);
