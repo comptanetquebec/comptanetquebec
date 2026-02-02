@@ -282,7 +282,10 @@ export default function FormulaireFiscalPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+const [msg, setMsg] = useState<string | null>(null);
+
+const [currentFid, setCurrentFid] = useState<string | null>(null);
+const fidDisplay = currentFid || formulaireId;
 
   const redirected = useRef(false);
 
