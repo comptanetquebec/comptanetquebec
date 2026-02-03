@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -10,27 +10,26 @@ import "./espace-client.css";
 const LANGS = ["fr", "en", "es"] as const;
 type Lang = (typeof LANGS)[number];
 
-const TXT: Record<
-  Lang,
-  {
-    brandSub: string;
-    title: string;
-    intro: string;
-    email: string;
-    password: string;
-    login: string;
-    loading: string;
-    forgot: string;
-    google: string;
-    or: string;
-    resetSent: string;
-    needEmail: string;
-    invalid: string;
-    noAccount: string;
-    createAccount: string;
-    emailPh: string;
-  }
-> = {
+type Txt = {
+  brandSub: string;
+  title: string;
+  intro: string;
+  email: string;
+  password: string;
+  login: string;
+  loading: string;
+  forgot: string;
+  google: string;
+  or: string;
+  resetSent: string;
+  needEmail: string;
+  invalid: string;
+  noAccount: string;
+  createAccount: string;
+  emailPh: string;
+};
+
+const TXT: Record<Lang, Txt> = {
   fr: {
     brandSub: "Portail sécurisé",
     title: "Espace client",
@@ -93,15 +92,19 @@ function isLang(v: string): v is Lang {
 
 function normalizeLang(v?: string | null): Lang {
   const x = (v || "fr").toLowerCase();
-  return isLang(x) ? x : "fr";
+  return isLang(x) ? (x as Lang) : "fr";
 }
 
+/**
+ * Sécurité: on accepte seulement un chemin interne.
+ * Exemples acceptés:
+ *  - /formulaire-fiscal
+ *  - /formulaire-fiscal?type=autonome
+ */
 function safeNext(v?: string | null): string {
-  // sécurité: on accepte seulement un chemin interne
   const raw = (v || "").trim();
   if (!raw) return "/dossiers/nouveau";
 
-  // bloque les URLs externes ou protocoles
   const lower = raw.toLowerCase();
   if (lower.startsWith("http:") || lower.startsWith("https:")) return "/dossiers/nouveau";
   if (lower.startsWith("javascript:")) return "/dossiers/nouveau";
@@ -112,6 +115,9 @@ function safeNext(v?: string | null): string {
   return raw;
 }
 
+/**
+ * Ajoute/force lang dans l'URL cible (en gardant les query existants)
+ */
 function withLang(href: string, lang: Lang): string {
   try {
     const u = new URL(href, "http://dummy.local");
@@ -133,7 +139,6 @@ export default function EspaceClientInner() {
   const nextRaw = params.get("next"); // string | null
   const next = useMemo(() => safeNext(nextRaw), [nextRaw]);
 
-  // destination finale (lang forcé)
   const nextWithLang = useMemo(() => withLang(next, lang), [next, lang]);
 
   const [email, setEmail] = useState("");
@@ -141,7 +146,6 @@ export default function EspaceClientInner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // anti double redirect
   const redirecting = useRef(false);
 
   // ✅ si déjà connecté -> redirige immédiatement vers next
@@ -163,7 +167,7 @@ export default function EspaceClientInner() {
     };
   }, [router, nextWithLang]);
 
-  async function login(e: React.FormEvent) {
+  async function login(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
@@ -193,7 +197,7 @@ export default function EspaceClientInner() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // ✅ on revient sur /espace-client avec lang + next (puis getUser() redirect vers nextWithLang)
+        // ✅ on revient sur /espace-client avec lang + next
         redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`,
       },
     });
@@ -213,7 +217,7 @@ export default function EspaceClientInner() {
 
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(eaddr, {
-      // ✅ on garde lang + next
+      // ✅ garde lang + next
       redirectTo: `${window.location.origin}/espace-client?lang=${lang}&next=${encodeURIComponent(next)}`,
     });
     setLoading(false);
@@ -241,14 +245,7 @@ export default function EspaceClientInner() {
         <p className="intro">{t.intro}</p>
 
         <button className="btn-google" onClick={google} disabled={loading} type="button">
-          <Image
-            src="/google-g.png"
-            alt="Google"
-            width={18}
-            height={18}
-            className="google-icon"
-            priority
-          />
+          <Image src="/google-g.png" alt="Google" width={18} height={18} className="google-icon" priority />
           {t.google}
         </button>
 
