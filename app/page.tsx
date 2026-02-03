@@ -13,7 +13,7 @@ type Grecaptcha = {
 };
 declare const grecaptcha: Grecaptcha | undefined;
 
-/* ===== Types (pour enlever les any dans les .map) ===== */
+/* ===== Types ===== */
 type Lang = "fr" | "en" | "es";
 
 type FAQItem = { q: string; a: string };
@@ -82,6 +82,60 @@ type CopyDict = {
   };
 };
 
+/* ===========================
+   Cookies helpers (lang)
+=========================== */
+const LANG_COOKIE = "cq_lang";
+const LANG_COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const found =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(name + "="))
+      ?.split("=")[1] ?? null;
+  return found ? decodeURIComponent(found) : null;
+}
+
+function setCookie(name: string, value: string, maxAgeSeconds: number) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; samesite=lax`;
+}
+
+function normalizeLang(v: string | null): Lang {
+  const x = (v || "").toLowerCase();
+  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
+}
+
+function readLangFromUrl(): Lang | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("lang");
+    const x = (q || "").toLowerCase();
+    return x === "fr" || x === "en" || x === "es" ? (x as Lang) : null;
+  } catch {
+    return null;
+  }
+}
+
+function readLangFromCookie(): Lang | null {
+  const x = normalizeLang(getCookie(LANG_COOKIE));
+  return x ? x : null;
+}
+
+function writeLangToUrl(l: Lang) {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", l);
+    window.history.replaceState({}, "", url.toString());
+  } catch {
+    // rien
+  }
+}
+
+/* ===========================
+   UI bits
+=========================== */
 function TaxChoiceCard({
   title,
   desc,
@@ -146,15 +200,32 @@ export default function Home() {
   const [contactOk, setContactOk] = useState<string | null>(null);
   const [contactErr, setContactErr] = useState<string | null>(null);
 
+  // ✅ Init langue: URL > cookie > fr
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const q = (params.get("lang") || "").toLowerCase();
-      if (q === "fr" || q === "en" || q === "es") setLang(q);
-    } catch {
-      // rien
-    }
+    const fromUrl = readLangFromUrl();
+    const fromCookieRaw = getCookie(LANG_COOKIE);
+    const fromCookie = fromCookieRaw ? normalizeLang(fromCookieRaw) : null;
+
+    const next = fromUrl || fromCookie || "fr";
+    setLang(next);
+
+    // ✅ Persiste cookie si absent / différent
+    setCookie(LANG_COOKIE, next, LANG_COOKIE_MAX_AGE);
+
+    // ✅ Normalise aussi l’URL (optionnel mais pratique)
+    if (!fromUrl) writeLangToUrl(next);
+
+    // ✅ annonce aux composants (CookieBanner écoute ça)
+    window.dispatchEvent(new Event("cq:lang"));
   }, []);
+
+  // ✅ Changement par boutons: cookie + URL + event
+  function setLangAndPersist(next: Lang) {
+    setLang(next);
+    setCookie(LANG_COOKIE, next, LANG_COOKIE_MAX_AGE);
+    writeLangToUrl(next);
+    window.dispatchEvent(new Event("cq:lang"));
+  }
 
   const COPY = useMemo(() => {
     const dict: Record<Lang, CopyDict> = {
@@ -435,9 +506,10 @@ export default function Home() {
 
   const T = COPY[lang];
 
-  const toT1 = `/espace-client?lang=${lang}&next=/formulaire-fiscal`;
-  const toT1Auto = `/espace-client?lang=${lang}&next=/formulaire-fiscal?type=autonome`;
-  const toT2 = `/espace-client?lang=${lang}&next=/T2`;
+  // ✅ Toujours mettre lang dans next (URL safe) :
+  const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
+  const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal?type=autonome")}`;
+  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/T2")}`;
 
   const LangSwitcher = () => {
     return (
@@ -447,7 +519,7 @@ export default function Home() {
         {(["fr", "en", "es"] as const).map((l) => (
           <button
             key={l}
-            onClick={() => setLang(l)}
+            onClick={() => setLangAndPersist(l)}
             className={`${styles.langBtn} ${l === lang ? styles.langBtnActive : ""}`}
             aria-pressed={l === lang}
             type="button"
@@ -491,7 +563,7 @@ export default function Home() {
           name: contactName,
           email: contactEmail,
           message: contactMsg,
-          token, // ✅ IMPORTANT: ton API attend "token"
+          token,
         }),
       });
 
@@ -541,7 +613,7 @@ export default function Home() {
             <a href="#faq">{T.nav.faq}</a>
             <a href="#contact">{T.nav.contact}</a>
 
-            <Link href={`/espace-client?lang=${lang}`} style={{ fontWeight: 800 }}>
+            <Link href={`/espace-client?lang=${encodeURIComponent(lang)}`} style={{ fontWeight: 800 }}>
               {T.nav.client}
             </Link>
 
@@ -567,7 +639,11 @@ export default function Home() {
               <Link href={toT1} className="btn btn-primary" style={{ borderRadius: 10 }}>
                 {T.ctaMain}
               </Link>
-              <Link href={`/espace-client?lang=${lang}`} className="btn btn-outline" style={{ borderRadius: 10 }}>
+              <Link
+                href={`/espace-client?lang=${encodeURIComponent(lang)}`}
+                className="btn btn-outline"
+                style={{ borderRadius: 10 }}
+              >
                 {T.nav.client}
               </Link>
             </div>
@@ -641,10 +717,14 @@ export default function Home() {
               </ul>
 
               <div className={styles.planActions}>
-                <Link href={`${plan.href}?lang=${lang}`} className="btn btn-primary" style={{ borderRadius: 10 }}>
+                <Link href={`${plan.href}?lang=${encodeURIComponent(lang)}`} className="btn btn-primary" style={{ borderRadius: 10 }}>
                   {T.getPrice}
                 </Link>
-                <Link href={`/espace-client?lang=${lang}`} className="btn btn-outline" style={{ borderRadius: 10 }}>
+                <Link
+                  href={`/espace-client?lang=${encodeURIComponent(lang)}`}
+                  className="btn btn-outline"
+                  style={{ borderRadius: 10 }}
+                >
                   {T.nav.client}
                 </Link>
               </div>
@@ -735,7 +815,7 @@ export default function Home() {
               <a href="#tarifs">{T.footerLinks.pricing}</a>
               <a href="#contact">{T.footerLinks.contact}</a>
               <Link
-                href={`/espace-client?lang=${lang}`}
+                href={`/espace-client?lang=${encodeURIComponent(lang)}`}
                 style={{ fontWeight: 800, color: "#cbd5e1", textDecoration: "none" }}
               >
                 {T.nav.client}
@@ -745,15 +825,15 @@ export default function Home() {
 
           <div className={styles.footerLegal}>
             <div className={styles.footerLegalRow}>
-              <Link href={`/legal/confidentialite?lang=${lang}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
+              <Link href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
                 {T.footerLinks.legal.privacy}
               </Link>
               <span className={styles.dot}>•</span>
-              <Link href={`/legal/conditions?lang=${lang}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
+              <Link href={`/legal/conditions?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
                 {T.footerLinks.legal.terms}
               </Link>
               <span className={styles.dot}>•</span>
-              <Link href={`/legal/avis-legal?lang=${lang}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
+              <Link href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
                 {T.footerLinks.legal.disclaimer}
               </Link>
             </div>
