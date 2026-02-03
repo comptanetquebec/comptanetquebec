@@ -506,10 +506,10 @@ export default function Home() {
 
   const T = COPY[lang];
 
-  // ✅ Toujours mettre lang dans next (URL safe) :
-  const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
-  const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal?type=autonome")}`;
-  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/T2")}`;
+ // ✅ Toujours mettre lang dans next (URL safe) :
+const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
+const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
+const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/T2")}`;
 
   const LangSwitcher = () => {
     return (
