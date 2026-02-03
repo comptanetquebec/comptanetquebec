@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 
+import CookieBanner from "@/components/CookieBanner";
+
 export const metadata: Metadata = {
   title: "Espace client - ComptaNet Québec",
-  description:
-    "Accédez à votre espace client sécurisé pour déposer vos documents fiscaux.",
+  description: "Accédez à votre espace client sécurisé pour déposer vos documents fiscaux.",
 };
 
 export default function RootLayout({
@@ -16,8 +17,10 @@ export default function RootLayout({
   return (
     <html lang="fr" className="h-full">
       <body className="min-h-full bg-slate-50 text-slate-900 antialiased">
-        {/* <= Important pour useSearchParams partout dans l'app */}
         <Suspense fallback={null}>{children}</Suspense>
+
+        {/* ✅ Cookie banner global */}
+        <CookieBanner />
       </body>
     </html>
   );
