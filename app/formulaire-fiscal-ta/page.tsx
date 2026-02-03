@@ -1,6 +1,6 @@
 "use client";
 
-import "../formulaire-fiscal/formulaire-fiscal.css";
+import "./formulaire-fiscal.css";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
