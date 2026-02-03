@@ -740,8 +740,8 @@ if (errorInsert) {
           redirected.current = true;
           setBooting(false);
 
-          const next = `/formulaire-fiscal?type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
-          router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+          const next = `/formulaire-fiscal-ta?lang=${encodeURIComponent(lang)}`;
+router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
         }
         return;
       }
