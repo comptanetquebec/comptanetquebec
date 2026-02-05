@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
+
 import "./formulaire-fiscal.css";
 import Steps from "./Steps";
 import RequireAuth from "./RequireAuth";
@@ -26,7 +27,7 @@ function normalizeLang(v: string | null | undefined): Lang {
 }
 
 /* ===========================
-   Types (TES TYPES inchangés)
+   Types
 =========================== */
 
 type ProvinceCode =
@@ -133,6 +134,7 @@ type FormQuestionsdata = {
   maisonAcheteeOuVendue?: YesNo;
   appelerTechnicien?: YesNo;
   copieImpots?: CopieImpots;
+  anneeImposition?: string; // ✅ ajouté
 };
 
 type Formdata = {
@@ -155,7 +157,7 @@ type FormRow = {
 };
 
 /* ===========================
-   Helpers (TES HELPERS)
+   Helpers
 =========================== */
 
 const PROVINCES: { value: ProvinceCode; label: string }[] = [
@@ -252,29 +254,28 @@ export default function FormulaireFiscalPage() {
   const type: FormTypeDb = "T1";
   const lang = normalizeLang(params.get("lang") || "fr");
 
-  const nextPath = useMemo(
-    () => `/formulaire-fiscal?type=${type}&lang=${lang}`,
-    [type, lang]
-  );
+  const nextPath = useMemo(() => `/formulaire-fiscal?type=${type}&lang=${lang}`, [type, lang]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => (
-        <FormulaireFiscalInner
-          userId={userId}
-          lang={lang}
-          type={type}
-        />
-      )}
+      {(userId) => <FormulaireFiscalInner userId={userId} lang={lang} type={type} />}
     </RequireAuth>
   );
 }
 
 /* ===========================
-   INNER (tout ton code ici)
+   INNER
 =========================== */
 
-function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: Lang; type: FormTypeDb }) {
+function FormulaireFiscalInner({
+  userId,
+  lang,
+  type,
+}: {
+  userId: string;
+  lang: Lang;
+  type: FormTypeDb;
+}) {
   const router = useRouter();
   const formTitle = titleFromType(type);
 
@@ -298,7 +299,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
   const docsCount = docs.length;
 
   /* ===========================
-     States - Client (tes states)
+     States - Client
   =========================== */
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
@@ -345,10 +346,14 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
      Assurance meds
   =========================== */
   const [assuranceMedsClient, setAssuranceMedsClient] = useState<AssuranceMeds>("");
-  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState<Periode[]>([{ debut: "", fin: "" }]);
+  const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState<Periode[]>([
+    { debut: "", fin: "" },
+  ]);
 
   const [assuranceMedsConjoint, setAssuranceMedsConjoint] = useState<AssuranceMeds>("");
-  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState<Periode[]>([{ debut: "", fin: "" }]);
+  const [assuranceMedsConjointPeriodes, setAssuranceMedsConjointPeriodes] = useState<Periode[]>([
+    { debut: "", fin: "" },
+  ]);
 
   /* ===========================
      Enfants
@@ -382,6 +387,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
   const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
   const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
+  const [anneeImposition, setAnneeImposition] = useState<string>(""); // ✅ maintenant sauvegardé
 
   /* ===========================
      Docs helpers
@@ -451,7 +457,9 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
       province === "QC"
         ? {
             client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
-            conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
+            conjoint: aUnConjoint
+              ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes }
+              : null,
           }
         : null;
 
@@ -493,6 +501,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
         maisonAcheteeOuVendue,
         appelerTechnicien,
         copieImpots,
+        anneeImposition: anneeImposition.trim(), // ✅ ajouté
       },
     };
   }, [
@@ -542,6 +551,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
     maisonAcheteeOuVendue,
     appelerTechnicien,
     copieImpots,
+    anneeImposition,
   ]);
 
   /* ===========================
@@ -697,6 +707,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
     setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
     setAppelerTechnicien(q.appelerTechnicien ?? "");
     setCopieImpots(q.copieImpots ?? "");
+    setAnneeImposition(q.anneeImposition ?? ""); // ✅ preload
 
     await loadDocs(fid);
 
@@ -746,9 +757,10 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
 
       setMsg("✅ Redirection vers le dépôt…");
 
-      // ✅ IMPORTANT: ta route est dans /formulaire-fiscal
       router.push(
-        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
+          type
+        )}&lang=${encodeURIComponent(lang)}`
       );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
@@ -757,7 +769,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
     }
   }, [saveDraft, fidDisplay, loadDocs, router, lang, type]);
 
-  // (Optionnel) submit final sur cette page
+  // submit final sur cette page (optionnel)
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -799,7 +811,7 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
   );
 
   /* ===========================
-     Render (plus de booting ici)
+     Render
   =========================== */
   return (
     <main className="ff-bg">
@@ -843,531 +855,560 @@ function FormulaireFiscalInner({ userId, lang, type }: { userId: string; lang: L
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Informations du client</h2>
-    <p>Informations essentielles pour l’ouverture du dossier.</p>
-  </div>
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Informations du client</h2>
+              <p>Informations essentielles pour l’ouverture du dossier.</p>
+            </div>
 
-  <div className="ff-grid2">
-    <Field label="Prénom" value={prenom} onChange={setPrenom} required />
-    <Field label="Nom" value={nom} onChange={setNom} required />
+            <div className="ff-grid2">
+              <Field label="Prénom" value={prenom} onChange={setPrenom} required />
+              <Field label="Nom" value={nom} onChange={setNom} required />
 
-    <Field
-      label="Numéro d’assurance sociale (NAS)"
-      value={nas}
-      onChange={setNas}
-      placeholder="123-456-789"
-      required
-      inputMode="numeric"
-      formatter={formatNASInput}
-      maxLength={11}
-    />
-
-    <Field
-      label="Date de naissance (JJ/MM/AAAA)"
-      value={dob}
-      onChange={setDob}
-      placeholder="01/01/1990"
-      required
-      inputMode="numeric"
-      formatter={formatDateInput}
-      maxLength={10}
-    />
-  </div>
-
-  <div className="ff-grid2 ff-mt">
-    <SelectField<EtatCivil>
-      label="État civil"
-      value={etatCivil}
-      onChange={setEtatCivil}
-      options={[
-        { value: "celibataire", label: "Célibataire" },
-        { value: "conjointDefait", label: "Conjoint de fait" },
-        { value: "marie", label: "Marié(e)" },
-        { value: "separe", label: "Séparé(e)" },
-        { value: "divorce", label: "Divorcé(e)" },
-        { value: "veuf", label: "Veuf(ve)" },
-      ]}
-      required
-    />
-
-    <CheckboxField
-      label="Mon état civil a changé durant l'année"
-      checked={etatCivilChange}
-      onChange={setEtatCivilChange}
-    />
-  </div>
-
-  {etatCivilChange && (
-    <div className="ff-grid2 ff-mt">
-      <Field
-        label="Ancien état civil"
-        value={ancienEtatCivil}
-        onChange={setAncienEtatCivil}
-        placeholder="ex.: Célibataire"
-      />
-      <Field
-        label="Date du changement (JJ/MM/AAAA)"
-        value={dateChangementEtatCivil}
-        onChange={setDateChangementEtatCivil}
-        placeholder="15/07/2024"
-        inputMode="numeric"
-        formatter={formatDateInput}
-        maxLength={10}
-      />
-    </div>
-  )}
-
-  <div className="ff-grid2 ff-mt">
-    <Field
-      label="Téléphone"
-      value={tel}
-      onChange={setTel}
-      placeholder="(418) 555-1234"
-      inputMode="tel"
-      formatter={formatPhoneInput}
-      maxLength={14}
-    />
-    <Field
-      label="Cellulaire"
-      value={telCell}
-      onChange={setTelCell}
-      placeholder="(418) 555-1234"
-      inputMode="tel"
-      formatter={formatPhoneInput}
-      maxLength={14}
-    />
-    <Field label="Courriel" value={courriel} onChange={setCourriel} type="email" required />
-  </div>
-
-  <div className="ff-mt">
-    <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
-
-    <div className="ff-grid4 ff-mt-sm">
-      <Field label="App." value={app} onChange={setApp} placeholder="#201" />
-      <Field label="Ville" value={ville} onChange={setVille} required />
-      <SelectField<ProvinceCode>
-        label="Province"
-        value={province}
-        onChange={setProvince}
-        options={PROVINCES}
-        required
-      />
-      <Field
-        label="Code postal"
-        value={codePostal}
-        onChange={setCodePostal}
-        placeholder="G1V 0A6"
-        required
-        formatter={formatPostalInput}
-        maxLength={7}
-        autoComplete="postal-code"
-      />
-    </div>
-  </div>
-</section>
-
-{/* SECTION CONJOINT */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Conjoint</h2>
-    <p>À remplir seulement si applicable.</p>
-  </div>
-
-  <CheckboxField label="J'ai un conjoint / conjointe" checked={aUnConjoint} onChange={setAUnConjoint} />
-
-  {aUnConjoint && (
-    <>
-      <div className="ff-mt">
-        <CheckboxField
-          label="Traiter aussi la déclaration du conjoint"
-          checked={traiterConjoint}
-          onChange={setTraiterConjoint}
-        />
-      </div>
-
-      {!traiterConjoint && (
-        <div className="ff-mt">
-          <Field
-            label="Revenu net approximatif du conjoint ($)"
-            value={revenuNetConjoint}
-            onChange={setRevenuNetConjoint}
-            placeholder="ex.: 42 000"
-            inputMode="numeric"
-          />
-        </div>
-      )}
-
-      <div className="ff-grid2 ff-mt">
-        <Field
-          label="Prénom (conjoint)"
-          value={prenomConjoint}
-          onChange={setPrenomConjoint}
-          required={traiterConjoint}
-        />
-        <Field
-          label="Nom (conjoint)"
-          value={nomConjoint}
-          onChange={setNomConjoint}
-          required={traiterConjoint}
-        />
-
-        <Field
-          label="NAS (conjoint)"
-          value={nasConjoint}
-          onChange={setNasConjoint}
-          placeholder="123-456-789"
-          inputMode="numeric"
-          formatter={formatNASInput}
-          maxLength={11}
-        />
-
-        <Field
-          label="Date de naissance (JJ/MM/AAAA)"
-          value={dobConjoint}
-          onChange={setDobConjoint}
-          placeholder="01/01/1990"
-          inputMode="numeric"
-          formatter={formatDateInput}
-          maxLength={10}
-        />
-      </div>
-
-      <div className="ff-grid2 ff-mt">
-        <Field
-          label="Téléphone (conjoint)"
-          value={telConjoint}
-          onChange={setTelConjoint}
-          placeholder="(418) 555-1234"
-          inputMode="tel"
-          formatter={formatPhoneInput}
-          maxLength={14}
-        />
-        <Field
-          label="Cellulaire (conjoint)"
-          value={telCellConjoint}
-          onChange={setTelCellConjoint}
-          placeholder="(418) 555-1234"
-          inputMode="tel"
-          formatter={formatPhoneInput}
-          maxLength={14}
-        />
-        <Field
-          label="Courriel (conjoint)"
-          value={courrielConjoint}
-          onChange={setCourrielConjoint}
-          type="email"
-        />
-      </div>
-
-      <div className="ff-mt">
-        <CheckboxField
-          label="L'adresse du conjoint est identique à la mienne"
-          checked={adresseConjointeIdentique}
-          onChange={setAdresseConjointeIdentique}
-        />
-      </div>
-
-      {!adresseConjointeIdentique && (
-        <div className="ff-mt">
-          <Field label="Adresse (rue) - conjoint" value={adresseConjoint} onChange={setAdresseConjoint} />
-
-          <div className="ff-grid4 ff-mt-sm">
-            <Field label="App." value={appConjoint} onChange={setAppConjoint} />
-            <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
-            <SelectField<ProvinceCode>
-              label="Province"
-              value={provinceConjoint}
-              onChange={setProvinceConjoint}
-              options={PROVINCES}
-            />
-            <Field
-              label="Code postal"
-              value={codePostalConjoint}
-              onChange={setCodePostalConjoint}
-              placeholder="G1V 0A6"
-              formatter={formatPostalInput}
-              maxLength={7}
-              autoComplete="postal-code"
-            />
-          </div>
-        </div>
-      )}
-    </>
-  )}
-</section>
-
-{/* ASSURANCE MEDS */}
-{province === "QC" && (
-  <section className="ff-card">
-    <div className="ff-card-head">
-      <h2>Assurance médicaments (Québec)</h2>
-      <p>RAMQ / régimes privés : indiquez qui vous couvrait et les périodes.</p>
-    </div>
-
-    <div className="ff-subtitle">Couverture du client</div>
-    <SelectField<AssuranceMeds>
-      label="Votre couverture médicaments"
-      value={assuranceMedsClient}
-      onChange={setAssuranceMedsClient}
-      options={[
-        { value: "ramq", label: "Régime public (RAMQ)" },
-        { value: "prive", label: "Mon régime collectif privé" },
-        { value: "conjoint", label: "Régime du conjoint / d'un parent" },
-      ]}
-    />
-
-    <div className="ff-mt-sm ff-stack">
-      {assuranceMedsClientPeriodes.map((p, idx) => (
-        <div key={`cli-${idx}`} className="ff-rowbox">
-          <Field
-            label="De (JJ/MM/AAAA)"
-            value={p.debut}
-            onChange={(val) =>
-              setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { debut: formatDateInput(val) }))
-            }
-            placeholder="01/01/2024"
-            inputMode="numeric"
-            maxLength={10}
-          />
-          <Field
-            label="À (JJ/MM/AAAA)"
-            value={p.fin}
-            onChange={(val) =>
-              setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { fin: formatDateInput(val) }))
-            }
-            placeholder="31/12/2024"
-            inputMode="numeric"
-            maxLength={10}
-          />
-        </div>
-      ))}
-
-      <button
-        type="button"
-        className="ff-btn ff-btn-soft"
-        onClick={() => setAssuranceMedsClientPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
-      >
-        + Ajouter une période
-      </button>
-    </div>
-
-    {aUnConjoint && (
-      <>
-        <div className="ff-subtitle ff-mt">Couverture du conjoint</div>
-        <SelectField<AssuranceMeds>
-          label="Couverture médicaments du conjoint"
-          value={assuranceMedsConjoint}
-          onChange={setAssuranceMedsConjoint}
-          options={[
-            { value: "ramq", label: "Régime public (RAMQ)" },
-            { value: "prive", label: "Régime collectif privé" },
-            { value: "conjoint", label: "Régime du conjoint / d'un parent" },
-          ]}
-        />
-
-        <div className="ff-mt-sm ff-stack">
-          {assuranceMedsConjointPeriodes.map((p, idx) => (
-            <div key={`cj-${idx}`} className="ff-rowbox">
               <Field
-                label="De (JJ/MM/AAAA)"
-                value={p.debut}
-                onChange={(val) =>
-                  setAssuranceMedsConjointPeriodes((prev) =>
-                    updatePeriode(prev, idx, { debut: formatDateInput(val) })
-                  )
-                }
-                placeholder="01/01/2024"
+                label="Numéro d’assurance sociale (NAS)"
+                value={nas}
+                onChange={setNas}
+                placeholder="123-456-789"
+                required
                 inputMode="numeric"
-                maxLength={10}
+                formatter={formatNASInput}
+                maxLength={11}
               />
+
               <Field
-                label="À (JJ/MM/AAAA)"
-                value={p.fin}
-                onChange={(val) =>
-                  setAssuranceMedsConjointPeriodes((prev) => updatePeriode(prev, idx, { fin: formatDateInput(val) }))
-                }
-                placeholder="31/12/2024"
+                label="Date de naissance (JJ/MM/AAAA)"
+                value={dob}
+                onChange={setDob}
+                placeholder="01/01/1990"
+                required
                 inputMode="numeric"
+                formatter={formatDateInput}
                 maxLength={10}
               />
             </div>
-          ))}
 
-          <button
-            type="button"
-            className="ff-btn ff-btn-soft"
-            onClick={() => setAssuranceMedsConjointPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
-          >
-            + Ajouter une période
-          </button>
-        </div>
-      </>
-    )}
-  </section>
-)}
+            <div className="ff-grid2 ff-mt">
+              <SelectField<EtatCivil>
+                label="État civil"
+                value={etatCivil}
+                onChange={setEtatCivil}
+                options={[
+                  { value: "celibataire", label: "Célibataire" },
+                  { value: "conjointDefait", label: "Conjoint de fait" },
+                  { value: "marie", label: "Marié(e)" },
+                  { value: "separe", label: "Séparé(e)" },
+                  { value: "divorce", label: "Divorcé(e)" },
+                  { value: "veuf", label: "Veuf(ve)" },
+                ]}
+                required
+              />
 
-{/* PERSONNES A CHARGE */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Personnes à charge</h2>
-    <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
-  </div>
+              <CheckboxField
+                label="Mon état civil a changé durant l'année"
+                checked={etatCivilChange}
+                onChange={setEtatCivilChange}
+              />
+            </div>
 
-  {enfants.length === 0 ? (
-    <div className="ff-empty">Aucune personne à charge ajoutée.</div>
-  ) : (
-    <div className="ff-stack">
-      {enfants.map((enf, i) => (
-        <div key={`enf-${i}`} className="ff-childbox">
-          <div className="ff-childhead">
-            <div className="ff-childtitle">Personne à charge #{i + 1}</div>
-            <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
-              Supprimer
+            {etatCivilChange && (
+              <div className="ff-grid2 ff-mt">
+                <Field
+                  label="Ancien état civil"
+                  value={ancienEtatCivil}
+                  onChange={setAncienEtatCivil}
+                  placeholder="ex.: Célibataire"
+                />
+                <Field
+                  label="Date du changement (JJ/MM/AAAA)"
+                  value={dateChangementEtatCivil}
+                  onChange={setDateChangementEtatCivil}
+                  placeholder="15/07/2024"
+                  inputMode="numeric"
+                  formatter={formatDateInput}
+                  maxLength={10}
+                />
+              </div>
+            )}
+
+            <div className="ff-grid2 ff-mt">
+              <Field
+                label="Téléphone"
+                value={tel}
+                onChange={setTel}
+                placeholder="(418) 555-1234"
+                inputMode="tel"
+                formatter={formatPhoneInput}
+                maxLength={14}
+              />
+              <Field
+                label="Cellulaire"
+                value={telCell}
+                onChange={setTelCell}
+                placeholder="(418) 555-1234"
+                inputMode="tel"
+                formatter={formatPhoneInput}
+                maxLength={14}
+              />
+              <Field label="Courriel" value={courriel} onChange={setCourriel} type="email" required />
+            </div>
+
+            <div className="ff-mt">
+              <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
+
+              <div className="ff-grid4 ff-mt-sm">
+                <Field label="App." value={app} onChange={setApp} placeholder="#201" />
+                <Field label="Ville" value={ville} onChange={setVille} required />
+                <SelectField<ProvinceCode>
+                  label="Province"
+                  value={province}
+                  onChange={setProvince}
+                  options={PROVINCES}
+                  required
+                />
+                <Field
+                  label="Code postal"
+                  value={codePostal}
+                  onChange={setCodePostal}
+                  placeholder="G1V 0A6"
+                  required
+                  formatter={formatPostalInput}
+                  maxLength={7}
+                  autoComplete="postal-code"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION CONJOINT */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Conjoint</h2>
+              <p>À remplir seulement si applicable.</p>
+            </div>
+
+            <CheckboxField label="J'ai un conjoint / conjointe" checked={aUnConjoint} onChange={setAUnConjoint} />
+
+            {aUnConjoint && (
+              <>
+                <div className="ff-mt">
+                  <CheckboxField
+                    label="Traiter aussi la déclaration du conjoint"
+                    checked={traiterConjoint}
+                    onChange={setTraiterConjoint}
+                  />
+                </div>
+
+                {!traiterConjoint && (
+                  <div className="ff-mt">
+                    <Field
+                      label="Revenu net approximatif du conjoint ($)"
+                      value={revenuNetConjoint}
+                      onChange={setRevenuNetConjoint}
+                      placeholder="ex.: 42 000"
+                      inputMode="numeric"
+                    />
+                  </div>
+                )}
+
+                <div className="ff-grid2 ff-mt">
+                  <Field
+                    label="Prénom (conjoint)"
+                    value={prenomConjoint}
+                    onChange={setPrenomConjoint}
+                    required={traiterConjoint}
+                  />
+                  <Field
+                    label="Nom (conjoint)"
+                    value={nomConjoint}
+                    onChange={setNomConjoint}
+                    required={traiterConjoint}
+                  />
+
+                  <Field
+                    label="NAS (conjoint)"
+                    value={nasConjoint}
+                    onChange={setNasConjoint}
+                    placeholder="123-456-789"
+                    inputMode="numeric"
+                    formatter={formatNASInput}
+                    maxLength={11}
+                  />
+
+                  <Field
+                    label="Date de naissance (JJ/MM/AAAA)"
+                    value={dobConjoint}
+                    onChange={setDobConjoint}
+                    placeholder="01/01/1990"
+                    inputMode="numeric"
+                    formatter={formatDateInput}
+                    maxLength={10}
+                  />
+                </div>
+
+                <div className="ff-grid2 ff-mt">
+                  <Field
+                    label="Téléphone (conjoint)"
+                    value={telConjoint}
+                    onChange={setTelConjoint}
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
+                  />
+                  <Field
+                    label="Cellulaire (conjoint)"
+                    value={telCellConjoint}
+                    onChange={setTelCellConjoint}
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
+                  />
+                  <Field
+                    label="Courriel (conjoint)"
+                    value={courrielConjoint}
+                    onChange={setCourrielConjoint}
+                    type="email"
+                  />
+                </div>
+
+                <div className="ff-mt">
+                  <CheckboxField
+                    label="L'adresse du conjoint est identique à la mienne"
+                    checked={adresseConjointeIdentique}
+                    onChange={setAdresseConjointeIdentique}
+                  />
+                </div>
+
+                {!adresseConjointeIdentique && (
+                  <div className="ff-mt">
+                    <Field label="Adresse (rue) - conjoint" value={adresseConjoint} onChange={setAdresseConjoint} />
+
+                    <div className="ff-grid4 ff-mt-sm">
+                      <Field label="App." value={appConjoint} onChange={setAppConjoint} />
+                      <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
+                      <SelectField<ProvinceCode>
+                        label="Province"
+                        value={provinceConjoint}
+                        onChange={setProvinceConjoint}
+                        options={PROVINCES}
+                      />
+                      <Field
+                        label="Code postal"
+                        value={codePostalConjoint}
+                        onChange={setCodePostalConjoint}
+                        placeholder="G1V 0A6"
+                        formatter={formatPostalInput}
+                        maxLength={7}
+                        autoComplete="postal-code"
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          {/* ASSURANCE MEDS */}
+          {province === "QC" && (
+            <section className="ff-card">
+              <div className="ff-card-head">
+                <h2>Assurance médicaments (Québec)</h2>
+                <p>RAMQ / régimes privés : indiquez qui vous couvrait et les périodes.</p>
+              </div>
+
+              <div className="ff-subtitle">Couverture du client</div>
+              <SelectField<AssuranceMeds>
+                label="Votre couverture médicaments"
+                value={assuranceMedsClient}
+                onChange={setAssuranceMedsClient}
+                options={[
+                  { value: "ramq", label: "Régime public (RAMQ)" },
+                  { value: "prive", label: "Mon régime collectif privé" },
+                  { value: "conjoint", label: "Régime du conjoint / d'un parent" },
+                ]}
+              />
+
+              <div className="ff-mt-sm ff-stack">
+                {assuranceMedsClientPeriodes.map((p, idx) => (
+                  <div key={`cli-${idx}`} className="ff-rowbox">
+                    <Field
+                      label="De (JJ/MM/AAAA)"
+                      value={p.debut}
+                      onChange={(val) =>
+                        setAssuranceMedsClientPeriodes((prev) =>
+                          updatePeriode(prev, idx, { debut: formatDateInput(val) })
+                        )
+                      }
+                      placeholder="01/01/2024"
+                      inputMode="numeric"
+                      maxLength={10}
+                    />
+                    <Field
+                      label="À (JJ/MM/AAAA)"
+                      value={p.fin}
+                      onChange={(val) =>
+                        setAssuranceMedsClientPeriodes((prev) =>
+                          updatePeriode(prev, idx, { fin: formatDateInput(val) })
+                        )
+                      }
+                      placeholder="31/12/2024"
+                      inputMode="numeric"
+                      maxLength={10}
+                    />
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="ff-btn ff-btn-soft"
+                  onClick={() => setAssuranceMedsClientPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
+                >
+                  + Ajouter une période
+                </button>
+              </div>
+
+              {aUnConjoint && (
+                <>
+                  <div className="ff-subtitle ff-mt">Couverture du conjoint</div>
+                  <SelectField<AssuranceMeds>
+                    label="Couverture médicaments du conjoint"
+                    value={assuranceMedsConjoint}
+                    onChange={setAssuranceMedsConjoint}
+                    options={[
+                      { value: "ramq", label: "Régime public (RAMQ)" },
+                      { value: "prive", label: "Régime collectif privé" },
+                      { value: "conjoint", label: "Régime du conjoint / d'un parent" },
+                    ]}
+                  />
+
+                  <div className="ff-mt-sm ff-stack">
+                    {assuranceMedsConjointPeriodes.map((p, idx) => (
+                      <div key={`cj-${idx}`} className="ff-rowbox">
+                        <Field
+                          label="De (JJ/MM/AAAA)"
+                          value={p.debut}
+                          onChange={(val) =>
+                            setAssuranceMedsConjointPeriodes((prev) =>
+                              updatePeriode(prev, idx, { debut: formatDateInput(val) })
+                            )
+                          }
+                          placeholder="01/01/2024"
+                          inputMode="numeric"
+                          maxLength={10}
+                        />
+                        <Field
+                          label="À (JJ/MM/AAAA)"
+                          value={p.fin}
+                          onChange={(val) =>
+                            setAssuranceMedsConjointPeriodes((prev) =>
+                              updatePeriode(prev, idx, { fin: formatDateInput(val) })
+                            )
+                          }
+                          placeholder="31/12/2024"
+                          inputMode="numeric"
+                          maxLength={10}
+                        />
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      className="ff-btn ff-btn-soft"
+                      onClick={() => setAssuranceMedsConjointPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
+                    >
+                      + Ajouter une période
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
+          {/* PERSONNES A CHARGE */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Personnes à charge</h2>
+              <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
+            </div>
+
+            {enfants.length === 0 ? (
+              <div className="ff-empty">Aucune personne à charge ajoutée.</div>
+            ) : (
+              <div className="ff-stack">
+                {enfants.map((enf, i) => (
+                  <div key={`enf-${i}`} className="ff-childbox">
+                    <div className="ff-childhead">
+                      <div className="ff-childtitle">Personne à charge #{i + 1}</div>
+                      <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
+                        Supprimer
+                      </button>
+                    </div>
+
+                    <div className="ff-grid2">
+                      <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
+                      <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
+
+                      <Field
+                        label="Date de naissance (JJ/MM/AAAA)"
+                        value={enf.dob}
+                        onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
+                        placeholder="01/01/2020"
+                        inputMode="numeric"
+                        maxLength={10}
+                      />
+
+                      <Field
+                        label="NAS (si attribué)"
+                        value={enf.nas}
+                        onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
+                        placeholder="123-456-789"
+                        inputMode="numeric"
+                        maxLength={11}
+                      />
+                    </div>
+
+                    <div className="ff-mt-sm">
+                      <SelectField<Sexe>
+                        label="Sexe"
+                        value={enf.sexe}
+                        onChange={(v) => updateEnfant(i, "sexe", v)}
+                        options={[
+                          { value: "M", label: "M" },
+                          { value: "F", label: "F" },
+                          { value: "X", label: "Autre / préfère ne pas dire" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="ff-mt">
+              <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
+                + Ajouter une personne à charge
+              </button>
+            </div>
+          </section>
+
+          {/* QUESTIONS */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Informations fiscales additionnelles</h2>
+              <p>Questions générales pour compléter correctement le dossier.</p>
+            </div>
+
+            <div className="ff-stack">
+              <Field
+                label="Année d’imposition (ex.: 2025)"
+                value={anneeImposition}
+                onChange={setAnneeImposition}
+                placeholder="ex.: 2025"
+                inputMode="numeric"
+              />
+
+              <YesNoField
+                name="habiteSeulTouteAnnee"
+                label="Avez-vous habité seul(e) toute l'année (sans personne à charge) ?"
+                value={habiteSeulTouteAnnee}
+                onChange={setHabiteSeulTouteAnnee}
+              />
+
+              <Field
+                label="Au 31/12, combien de personnes vivaient avec vous ?"
+                value={nbPersonnesMaison3112}
+                onChange={setNbPersonnesMaison3112}
+                placeholder="ex.: 1"
+                inputMode="numeric"
+              />
+
+              <YesNoField
+                name="biensEtranger100k"
+                label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
+                value={biensEtranger100k}
+                onChange={setBiensEtranger100k}
+              />
+
+              <YesNoField
+                name="citoyenCanadien"
+                label="Êtes-vous citoyen(ne) canadien(ne) ?"
+                value={citoyenCanadien}
+                onChange={setCitoyenCanadien}
+              />
+
+              <YesNoField
+                name="nonResident"
+                label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
+                value={nonResident}
+                onChange={setNonResident}
+              />
+
+              <YesNoField
+                name="maisonAcheteeOuVendue"
+                label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
+                value={maisonAcheteeOuVendue}
+                onChange={setMaisonAcheteeOuVendue}
+              />
+
+              <YesNoField
+                name="appelerTechnicien"
+                label="Souhaitez-vous qu'un technicien vous appelle ?"
+                value={appelerTechnicien}
+                onChange={setAppelerTechnicien}
+              />
+
+              <SelectField<CopieImpots>
+                label="Comment voulez-vous recevoir votre copie d'impôt ?"
+                value={copieImpots}
+                onChange={setCopieImpots}
+                required
+                options={[
+                  { value: "espaceClient", label: "Espace client" },
+                  { value: "courriel", label: "Courriel" },
+                ]}
+              />
+            </div>
+          </section>
+
+          {/* ACTION — CONTINUER (étape 1) */}
+          <div className="ff-submit">
+            <button
+              type="button"
+              className="ff-btn ff-btn-primary ff-btn-big"
+              disabled={submitting}
+              onClick={goToDepotDocuments}
+            >
+              {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
             </button>
+
+            <div className="ff-muted" style={{ marginTop: 10 }}>
+              {docsLoading ? "Chargement des documents…" : docsCount > 0 ? `${docsCount} document(s) déjà au dossier.` : ""}
+            </div>
+
+            {/* Optionnel: liste de docs (si tu veux) */}
+            {docsCount > 0 && (
+              <div className="ff-mt">
+                <div className="ff-subtitle">Documents au dossier</div>
+                <div className="ff-stack">
+                  {docs.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className="ff-btn ff-btn-outline"
+                      onClick={() => openDoc(d)}
+                      title={d.original_name}
+                    >
+                      Ouvrir — {d.original_name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          <div className="ff-grid2">
-            <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
-            <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
-
-            <Field
-              label="Date de naissance (JJ/MM/AAAA)"
-              value={enf.dob}
-              onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
-              placeholder="01/01/2020"
-              inputMode="numeric"
-              maxLength={10}
-            />
-
-            <Field
-              label="NAS (si attribué)"
-              value={enf.nas}
-              onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
-              placeholder="123-456-789"
-              inputMode="numeric"
-              maxLength={11}
-            />
-          </div>
-
-          <div className="ff-mt-sm">
-            <SelectField<Sexe>
-              label="Sexe"
-              value={enf.sexe}
-              onChange={(v) => updateEnfant(i, "sexe", v)}
-              options={[
-                { value: "M", label: "M" },
-                { value: "F", label: "F" },
-                { value: "X", label: "Autre / préfère ne pas dire" },
-              ]}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
-
-  <div className="ff-mt">
-    <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
-      + Ajouter une personne à charge
-    </button>
-  </div>
-</section>
-
-{/* QUESTIONS */}
-<section className="ff-card">
-  <div className="ff-card-head">
-    <h2>Informations fiscales additionnelles</h2>
-    <p>Questions générales pour compléter correctement le dossier.</p>
-  </div>
-
-  <div className="ff-stack">
-    <YesNoField
-      name="habiteSeulTouteAnnee"
-      label="Avez-vous habité seul(e) toute l'année (sans personne à charge) ?"
-      value={habiteSeulTouteAnnee}
-      onChange={setHabiteSeulTouteAnnee}
-    />
-
-    <Field
-      label="Au 31/12, combien de personnes vivaient avec vous ?"
-      value={nbPersonnesMaison3112}
-      onChange={setNbPersonnesMaison3112}
-      placeholder="ex.: 1"
-      inputMode="numeric"
-    />
-
-    <YesNoField
-      name="biensEtranger100k"
-      label="Avez-vous plus de 100 000 $ de biens à l'étranger ?"
-      value={biensEtranger100k}
-      onChange={setBiensEtranger100k}
-    />
-
-    <YesNoField
-      name="citoyenCanadien"
-      label="Êtes-vous citoyen(ne) canadien(ne) ?"
-      value={citoyenCanadien}
-      onChange={setCitoyenCanadien}
-    />
-
-    <YesNoField
-      name="nonResident"
-      label="Êtes-vous non-résident(e) du Canada aux fins fiscales ?"
-      value={nonResident}
-      onChange={setNonResident}
-    />
-
-    <YesNoField
-      name="maisonAcheteeOuVendue"
-      label="Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?"
-      value={maisonAcheteeOuVendue}
-      onChange={setMaisonAcheteeOuVendue}
-    />
-
-    <YesNoField
-      name="appelerTechnicien"
-      label="Souhaitez-vous qu'un technicien vous appelle ?"
-      value={appelerTechnicien}
-      onChange={setAppelerTechnicien}
-    />
-
-        <SelectField<CopieImpots>
-      label="Comment voulez-vous recevoir votre copie d'impôt ?"
-      value={copieImpots}
-      onChange={setCopieImpots}
-      required
-      options={[
-        { value: "espaceClient", label: "Espace client" },
-        { value: "courriel", label: "Courriel" },
-      ]}
-    />
-  </div>
-</section>
-
-{/* ACTION — CONTINUER (étape 1) */}
-<div className="ff-submit">
-  <button
-    type="button"
-    className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={submitting}
-    onClick={goToDepotDocuments}
-  >
-    {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
-  </button>
-
-  <div className="ff-muted" style={{ marginTop: 10 }}>
-    {docsLoading
-      ? "Chargement des documents…"
-      : docsCount > 0
-      ? `${docsCount} document(s) déjà au dossier.`
-      : ""}
-  </div>
-</div>
-
-</form>
-</div>
-</main>
-);
+        </form>
+      </div>
+    </main>
+  );
 }
