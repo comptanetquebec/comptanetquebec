@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 
 export type YesNo = "oui" | "non" | "";
 
@@ -12,13 +12,20 @@ export type FieldProps = {
   label: string;
   value: string;
   onChange: (v: string) => void;
+
   required?: boolean;
   placeholder?: string;
   type?: React.HTMLInputTypeAttribute;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   maxLength?: number;
   formatter?: (v: string) => string;
+
   autoComplete?: string;
+  name?: string;
+  min?: string | number;
+  max?: string | number;
+  pattern?: string;
+  disabled?: boolean;
 };
 
 export function Field({
@@ -32,15 +39,24 @@ export function Field({
   maxLength,
   formatter,
   autoComplete,
+  name,
+  min,
+  max,
+  pattern,
+  disabled = false,
 }: FieldProps) {
+  const id = useId();
+
   return (
-    <label className="ff-field">
-      <span className="ff-label">
+    <div className="ff-field">
+      <label className="ff-label" htmlFor={id}>
         {label}
         {required ? " *" : ""}
-      </span>
+      </label>
 
       <input
+        id={id}
+        name={name}
         className="ff-input"
         value={value}
         onChange={(e) => {
@@ -49,12 +65,17 @@ export function Field({
         }}
         placeholder={placeholder}
         required={required}
+        aria-required={required || undefined}
         type={type}
         inputMode={inputMode}
         maxLength={maxLength}
         autoComplete={autoComplete}
+        min={min}
+        max={max}
+        pattern={pattern}
+        disabled={disabled}
       />
-    </label>
+    </div>
   );
 }
 
@@ -66,19 +87,24 @@ export type CheckboxFieldProps = {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 };
 
-export function CheckboxField({ label, checked, onChange }: CheckboxFieldProps) {
+export function CheckboxField({ label, checked, onChange, disabled = false }: CheckboxFieldProps) {
+  const id = useId();
+
   return (
-    <label className="ff-check">
+    <div className="ff-check">
       <input
+        id={id}
         type="checkbox"
         className="ff-checkbox"
         checked={checked}
         onChange={(e) => onChange(e.currentTarget.checked)}
+        disabled={disabled}
       />
-      <span>{label}</span>
-    </label>
+      <label htmlFor={id}>{label}</label>
+    </div>
   );
 }
 
@@ -90,13 +116,27 @@ export type YesNoFieldProps = {
   label: string;
   value: YesNo;
   onChange: (v: YesNo) => void;
-  name: string; // stable pour chaque question
+  name: string; // stable
+  required?: boolean;
+  disabled?: boolean;
+  labels?: { yes: string; no: string }; // si un jour tu veux i18n
 };
 
-export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
+export function YesNoField({
+  label,
+  value,
+  onChange,
+  name,
+  required = false,
+  disabled = false,
+  labels = { yes: "Oui", no: "Non" },
+}: YesNoFieldProps) {
   return (
     <div className="ff-yn">
-      <div className="ff-label">{label}</div>
+      <div className="ff-label">
+        {label}
+        {required ? " *" : ""}
+      </div>
 
       <div className="ff-yn-row">
         <label className="ff-radio">
@@ -106,8 +146,10 @@ export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
             value="oui"
             checked={value === "oui"}
             onChange={() => onChange("oui")}
+            required={required}
+            disabled={disabled}
           />
-          <span>Oui</span>
+          <span>{labels.yes}</span>
         </label>
 
         <label className="ff-radio">
@@ -117,8 +159,10 @@ export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
             value="non"
             checked={value === "non"}
             onChange={() => onChange("non")}
+            required={required}
+            disabled={disabled}
           />
-          <span>Non</span>
+          <span>{labels.no}</span>
         </label>
       </div>
     </div>
@@ -141,6 +185,9 @@ export type SelectFieldProps<T extends string> = {
   options: Array<SelectOption<T>>;
   required?: boolean;
   placeholderText?: string;
+  disabled?: boolean;
+  name?: string;
+  autoComplete?: string;
 };
 
 export function SelectField<T extends string>({
@@ -150,23 +197,31 @@ export function SelectField<T extends string>({
   options,
   required = false,
   placeholderText,
+  disabled = false,
+  name,
+  autoComplete,
 }: SelectFieldProps<T>) {
+  const id = useId();
+
   return (
-    <label className="ff-field">
-      <span className="ff-label">
+    <div className="ff-field">
+      <label className="ff-label" htmlFor={id}>
         {label}
         {required ? " *" : ""}
-      </span>
+      </label>
 
       <select
+        id={id}
+        name={name}
         className="ff-select"
         value={value}
         onChange={(e) => onChange(e.currentTarget.value as T)}
         required={required}
+        aria-required={required || undefined}
+        disabled={disabled}
+        autoComplete={autoComplete}
       >
-        <option value="">
-          {placeholderText ?? (required ? "Choisir…" : "—")}
-        </option>
+        <option value="">{placeholderText ?? (required ? "Choisir…" : "—")}</option>
 
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -174,6 +229,7 @@ export function SelectField<T extends string>({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
+
