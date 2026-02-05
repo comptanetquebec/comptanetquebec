@@ -2,9 +2,12 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
+// si tu as RequireAuth, tu peux l'utiliser (voir plus bas)
+// import RequireAuth from "../RequireAuth";
 
 /**
  * Tables
@@ -13,7 +16,12 @@ const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
 
 /**
- * Lang (toujours suivre la langue de la 1re page via cookie cq_lang)
+ * Stripe checkout API (à adapter à TON projet)
+ */
+const CHECKOUT_API = "/api/stripe/checkout";
+
+/**
+ * Lang
  */
 type Lang = "fr" | "en" | "es";
 
@@ -34,13 +42,11 @@ function setCookie(name: string, value: Lang) {
 }
 
 function resolveLang(urlLang: string | null): Lang {
-  // 1) Si lang est dans l'URL, on l'utilise et on le persiste en cookie
   if (urlLang) {
     const l = normalizeLang(urlLang);
     setCookie("cq_lang", l);
     return l;
   }
-  // 2) Sinon on lit le cookie (lang de la 1re page)
   return normalizeLang(getCookie("cq_lang"));
 }
 
@@ -51,6 +57,10 @@ function withLang(path: string, lang: Lang, extra?: Record<string, string>) {
   return u.pathname + u.search;
 }
 
+function t(lang: Lang, fr: string, en: string, es: string) {
+  return lang === "fr" ? fr : lang === "en" ? en : es;
+}
+
 type DocRow = { id: string; original_name: string; created_at: string };
 
 export default function EnvoyerDossierPage() {
@@ -58,16 +68,20 @@ export default function EnvoyerDossierPage() {
   const params = useSearchParams();
 
   const fid = params.get("fid") || "";
+  const type = params.get("type") || "T1";
   const lang = useMemo(() => resolveLang(params.get("lang")), [params]);
 
-  const [userId, setUserId] = useState<string | null>(null);
   const [booting, setBooting] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
+  const [confirm, setConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  const docsCount = docs.length;
 
   const loadDocs = useCallback(async () => {
     if (!fid) return;
@@ -100,37 +114,38 @@ export default function EnvoyerDossierPage() {
       if (error || !data.user) {
         setBooting(false);
 
-        // ✅ IMPORTANT: route correcte (dans /formulaire-fiscal)
-        const next = `/formulaire-fiscal/envoyer-dossier?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(
-          lang
-        )}`;
+        const next = `/formulaire-fiscal/envoyer-dossier?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
+          type
+        )}&lang=${encodeURIComponent(lang)}`;
 
-        router.replace(
-          `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`
-        );
+        router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
         return;
       }
 
       setUserId(data.user.id);
       setBooting(false);
 
-      if (!fid) setMsg("❌ fid manquant");
-      else await loadDocs();
+      if (!fid) {
+        setMsg("❌ " + t(lang, "fid manquant", "missing fid", "fid faltante"));
+        return;
+      }
+
+      await loadDocs();
     })();
 
     return () => {
       alive = false;
     };
-  }, [router, fid, lang, loadDocs]);
+  }, [router, fid, type, lang, loadDocs]);
 
-  const submitFinal = useCallback(async () => {
+  const startCheckout = useCallback(async () => {
     if (!fid || !userId) return;
 
     setSubmitting(true);
     setMsg(null);
 
     try {
-      // 1) check docs
+      // 1) Vérifier qu'il y a au moins 1 doc (source de vérité DB)
       const { data: d, error: e1 } = await supabase
         .from(DOCS_TABLE)
         .select("id")
@@ -138,42 +153,56 @@ export default function EnvoyerDossierPage() {
         .limit(1);
 
       if (e1) throw new Error(e1.message);
-      if (!d || d.length === 0)
+      if (!d || d.length === 0) {
         throw new Error(
-          lang === "fr"
-            ? "Ajoutez au moins 1 document avant d’envoyer."
-            : lang === "en"
-            ? "Upload at least 1 document before submitting."
-            : "Suba al menos 1 documento antes de enviar."
+          t(
+            lang,
+            "Ajoutez au moins 1 document avant de continuer.",
+            "Upload at least 1 document before continuing.",
+            "Suba al menos 1 documento antes de continuar."
+          )
         );
+      }
 
-      // 2) mark submitted
+      // 2) (optionnel mais pro) passer en "ready_for_payment"
+      //    Ça évite "submitted" avant paiement.
       const { error: e2 } = await supabase
         .from(FORMS_TABLE)
-        .update({ status: "submitted" })
+        .update({ status: "ready_for_payment" })
         .eq("id", fid)
         .eq("user_id", userId);
 
       if (e2) throw new Error(e2.message);
 
-      setMsg(lang === "fr" ? "✅ Dossier soumis. Merci !" : lang === "en" ? "✅ Submitted. Thank you!" : "✅ Enviado. ¡Gracias!");
+      // 3) Stripe Checkout (server)
+      const res = await fetch(CHECKOUT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fid, type, lang }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Stripe error");
+      }
+
+      const json: { url?: string } = await res.json();
+      if (!json.url) throw new Error("Missing Stripe URL");
+
+      window.location.href = json.url;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur";
       setMsg("❌ " + message);
     } finally {
       setSubmitting(false);
     }
-  }, [fid, userId, lang]);
-
-  const docsCount = docs.length;
+  }, [fid, userId, type, lang]);
 
   if (booting) {
     return (
       <main className="ff-bg">
         <div className="ff-container">
-          <div style={{ padding: 24 }}>
-            {lang === "fr" ? "Chargement…" : lang === "en" ? "Loading…" : "Cargando…"}
-          </div>
+          <div style={{ padding: 24 }}>{t(lang, "Chargement…", "Loading…", "Cargando…")}</div>
         </div>
       </main>
     );
@@ -182,25 +211,52 @@ export default function EnvoyerDossierPage() {
   return (
     <main className="ff-bg">
       <div className="ff-container">
+        {/* Header pro (identique) */}
         <header className="ff-header">
-          <div className="ff-brand-text">
-            <strong>ComptaNet Québec</strong>
-            <span>
-              {lang === "fr" ? "Envoyer le dossier" : lang === "en" ? "Submit file" : "Enviar expediente"}
-            </span>
+          <div className="ff-brand">
+            <Image
+              src="/logo-cq.png"
+              alt="ComptaNet Québec"
+              width={120}
+              height={40}
+              priority
+              style={{ height: 40, width: "auto" }}
+            />
+            <div className="ff-brand-text">
+              <strong>ComptaNet Québec</strong>
+              <span>
+                {t(
+                  lang,
+                  "Étape 3/3 — Paiement & envoi",
+                  "Step 3/3 — Payment & submission",
+                  "Paso 3/3 — Pago y envío"
+                )}
+              </span>
+            </div>
           </div>
 
-          {/* ✅ IMPORTANT: retour vers la bonne route */}
           <button
             className="ff-btn ff-btn-outline"
             type="button"
-            onClick={() =>
-              router.push(withLang("/formulaire-fiscal/depot-documents", lang, { fid }))
-            }
+            onClick={() => router.push(withLang("/formulaire-fiscal/depot-documents", lang, { fid, type }))}
           >
-            ← {lang === "fr" ? "Retour dépôt" : lang === "en" ? "Back to upload" : "Volver a subida"}
+            ← {t(lang, "Retour dépôt", "Back to upload", "Volver a subida")}
           </button>
         </header>
+
+        <Steps step={3} lang={lang} />
+
+        <div className="ff-title">
+          <h1>{t(lang, "Résumé et paiement", "Summary & payment", "Resumen y pago")}</h1>
+          <p>
+            {t(
+              lang,
+              "Vérifiez votre dossier, puis procédez au paiement sécurisé pour soumettre.",
+              "Review your file, then proceed to secure payment to submit.",
+              "Revise su expediente y luego proceda al pago seguro para enviar."
+            )}
+          </p>
+        </div>
 
         {msg && (
           <div className="ff-card" style={{ padding: 14 }}>
@@ -210,79 +266,113 @@ export default function EnvoyerDossierPage() {
 
         <section className="ff-card">
           <div className="ff-card-head">
-            <h2>
-              {lang === "fr"
-                ? "Vérification avant envoi"
-                : lang === "en"
-                ? "Check before submitting"
-                : "Verificación antes de enviar"}
-            </h2>
-            <p>
-              {lang === "fr"
-                ? "Vous devez avoir au moins 1 document téléversé."
-                : lang === "en"
-                ? "You must have at least 1 uploaded document."
-                : "Debe tener al menos 1 documento subido."}
-            </p>
+            <h2>{t(lang, "Résumé du dossier", "File summary", "Resumen del expediente")}</h2>
+            <p>{t(lang, "Vérification automatique des documents.", "Automatic document check.", "Verificación automática de documentos.")}</p>
           </div>
 
-          {loadingDocs ? (
-            <div className="ff-empty">
-              {lang === "fr"
-                ? "Chargement des documents…"
-                : lang === "en"
-                ? "Loading documents…"
-                : "Cargando documentos…"}
+          <div className="ff-grid2">
+            <div className="ff-field">
+              <div className="ff-label">{t(lang, "Référence", "Reference", "Referencia")}</div>
+              <div className="ff-empty" style={{ borderStyle: "solid" }}>
+                {fid || "—"}
+              </div>
             </div>
-          ) : docsCount === 0 ? (
-            <div className="ff-empty">
-              {lang === "fr"
-                ? "Aucun document détecté."
-                : lang === "en"
-                ? "No documents detected."
-                : "No se detectaron documentos."}
+            <div className="ff-field">
+              <div className="ff-label">{t(lang, "Type", "Type", "Tipo")}</div>
+              <div className="ff-empty" style={{ borderStyle: "solid" }}>
+                {type}
+              </div>
             </div>
-          ) : (
-            <div className="ff-empty">
-              ✅{" "}
-              {lang === "fr"
-                ? "Documents détectés"
-                : lang === "en"
-                ? "Documents found"
-                : "Documentos detectados"}{" "}
-              : {docsCount}
-            </div>
-          )}
+          </div>
 
-          <div className="ff-submit">
+          <div className="ff-mt">
+            {loadingDocs ? (
+              <div className="ff-empty">{t(lang, "Chargement des documents…", "Loading documents…", "Cargando documentos…")}</div>
+            ) : docsCount === 0 ? (
+              <div className="ff-empty">
+                {t(lang, "Aucun document détecté. Retournez au dépôt.", "No documents detected. Go back to upload.", "No se detectaron documentos. Vuelva a subir.")}
+              </div>
+            ) : (
+              <div className="ff-empty" style={{ borderStyle: "solid" }}>
+                ✅ {t(lang, "Documents détectés", "Documents detected", "Documentos detectados")} : {docsCount}
+              </div>
+            )}
+          </div>
+
+          <div className="ff-mt">
+            <label className="ff-check" style={{ fontWeight: 800 }}>
+              <input
+                className="ff-checkbox"
+                type="checkbox"
+                checked={confirm}
+                onChange={(e) => setConfirm(e.target.checked)}
+              />
+              {t(
+                lang,
+                "Je confirme que les informations sont exactes et que les documents sont complets.",
+                "I confirm the information is accurate and documents are complete.",
+                "Confirmo que la información es correcta y los documentos están completos."
+              )}
+            </label>
+          </div>
+
+          <div className="ff-submit" style={{ marginTop: 14 }}>
             <button
               type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={!fid || docsCount === 0 || submitting}
-              onClick={submitFinal}
+              disabled={!fid || !userId || docsCount === 0 || submitting || !confirm}
+              onClick={() => void startCheckout()}
             >
               {submitting
-                ? lang === "fr"
-                  ? "Envoi…"
-                  : lang === "en"
-                  ? "Submitting…"
-                  : "Enviando…"
-                : lang === "fr"
-                ? "Soumettre mon dossier"
-                : lang === "en"
-                ? "Submit my file"
-                : "Enviar mi expediente"}
+                ? t(lang, "Redirection vers Stripe…", "Redirecting to Stripe…", "Redirigiendo a Stripe…")
+                : t(lang, "Payer et soumettre", "Pay & submit", "Pagar y enviar")}
             </button>
 
-            {docsCount === 0 && (
+            {!confirm && (
               <p className="ff-footnote">
-                {lang === "fr"
-                  ? "Ajoutez au moins 1 document avant de soumettre."
-                  : lang === "en"
-                  ? "Upload at least 1 document before submitting."
-                  : "Suba al menos 1 documento antes de enviar."}
+                {t(
+                  lang,
+                  "Cochez la confirmation pour continuer.",
+                  "Check the confirmation to continue.",
+                  "Marque la confirmación para continuar."
+                )}
               </p>
             )}
+
+            <p className="ff-footnote" style={{ marginTop: 10 }}>
+              {t(
+                lang,
+                "Paiement sécurisé via Stripe. Vous recevrez un reçu par courriel.",
+                "Secure payment via Stripe. You will receive an email receipt.",
+                "Pago seguro con Stripe. Recibirá un recibo por correo."
+              )}
+            </p>
+          </div>
+        </section>
+
+        <section className="ff-card">
+          <div className="ff-card-head">
+            <h2>{t(lang, "Après le paiement", "After payment", "Después del pago")}</h2>
+            <p>
+              {t(
+                lang,
+                "Votre dossier sera automatiquement soumis et pris en charge.",
+                "Your file will be automatically submitted and processed.",
+                "Su expediente se enviará automáticamente y será procesado."
+              )}
+            </p>
+          </div>
+
+          <div className="ff-stack">
+            <div className="ff-empty" style={{ borderStyle: "solid" }}>
+              1) {t(lang, "Paiement confirmé", "Payment confirmed", "Pago confirmado")}
+            </div>
+            <div className="ff-empty" style={{ borderStyle: "solid" }}>
+              2) {t(lang, "Dossier soumis", "File submitted", "Expediente enviado")}
+            </div>
+            <div className="ff-empty" style={{ borderStyle: "solid" }}>
+              3) {t(lang, "Traitement par l’équipe", "Processed by the team", "Procesado por el equipo")}
+            </div>
           </div>
         </section>
       </div>
