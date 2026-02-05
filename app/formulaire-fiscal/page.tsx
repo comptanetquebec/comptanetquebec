@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import "./formulaire-fiscal.css";
+import Steps from "./Steps";
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "./ui";
 
 /**
@@ -13,6 +14,13 @@ import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "./ui"
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
+
+/** Lang (toujours suivre la langue de la 1re page via query ?lang ou cookie ailleurs) */
+type Lang = "fr" | "en" | "es";
+function normalizeLang(v: string | null | undefined): Lang {
+  const x = (v || "").toLowerCase();
+  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
+}
 
 /* ===========================
    Types
