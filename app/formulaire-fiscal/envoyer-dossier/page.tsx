@@ -62,6 +62,14 @@ function t(lang: Lang, fr: string, en: string, es: string) {
 
 type DocRow = { id: string; original_name: string; created_at: string };
 
+// ✅ On lit cq_id ici
+type FormRowLite = {
+  id: string;
+  cq_id: string | null;
+  status: string | null;
+  form_type: string | null;
+};
+
 export default function EnvoyerDossierPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -86,11 +94,24 @@ export default function EnvoyerDossierPage() {
   );
 }
 
-function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid: string; type: string; lang: Lang }) {
+function EnvoyerDossierInner({
+  userId,
+  fid,
+  type,
+  lang,
+}: {
+  userId: string;
+  fid: string;
+  type: string;
+  lang: Lang;
+}) {
   const router = useRouter();
 
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+
+  const [cqId, setCqId] = useState<string | null>(null);
+  const [loadingForm, setLoadingForm] = useState(false);
 
   const [confirm, setConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -119,9 +140,34 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
     setDocs((data as DocRow[]) || []);
   }, [fid]);
 
+  // ✅ Charge cq_id depuis le dossier
+  const loadForm = useCallback(async () => {
+    if (!fid) return;
+
+    setLoadingForm(true);
+
+    const { data, error } = await supabase
+      .from(FORMS_TABLE)
+      .select("id, cq_id, status, form_type")
+      .eq("id", fid)
+      .eq("user_id", userId)
+      .single<FormRowLite>();
+
+    setLoadingForm(false);
+
+    if (error) {
+      setMsg("❌ " + error.message);
+      return;
+    }
+
+    // cq_id est généré côté DB à l’INSERT
+    setCqId(data?.cq_id ?? null);
+  }, [fid, userId]);
+
   useEffect(() => {
     void loadDocs();
-  }, [loadDocs]);
+    void loadForm();
+  }, [loadDocs, loadForm]);
 
   const startCheckout = useCallback(async () => {
     if (!fid || !userId) return;
@@ -138,6 +184,7 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
         .limit(1);
 
       if (e1) throw new Error(e1.message);
+
       if (!d || d.length === 0) {
         throw new Error(
           t(
@@ -149,7 +196,7 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
         );
       }
 
-      // 2) Optionnel/pro: statut prêt au paiement (PAS submitted)
+      // 2) Statut prêt au paiement (PAS submitted)
       const { error: e2 } = await supabase
         .from(FORMS_TABLE)
         .update({ status: "ready_for_payment" })
@@ -162,7 +209,8 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
       const res = await fetch(CHECKOUT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fid, type, lang }),
+        // ✅ tu peux envoyer cq_id au serveur si tu veux l'afficher dans Stripe metadata (optionnel)
+        body: JSON.stringify({ fid, type, lang, cqId }),
       });
 
       if (!res.ok) {
@@ -180,7 +228,7 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
     } finally {
       setSubmitting(false);
     }
-  }, [fid, userId, type, lang]);
+  }, [fid, userId, type, lang, cqId]);
 
   const goBackUpload = useCallback(() => {
     router.push(withLang("/formulaire-fiscal/depot-documents", lang, { fid, type }));
@@ -248,14 +296,23 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
         <section className="ff-card">
           <div className="ff-card-head">
             <h2>{t(lang, "Résumé du dossier", "File summary", "Resumen del expediente")}</h2>
-            <p>{t(lang, "Vérification automatique des documents.", "Automatic document check.", "Verificación automática de documentos.")}</p>
+            <p>
+              {t(
+                lang,
+                "Vérification automatique des documents.",
+                "Automatic document check.",
+                "Verificación automática de documentos."
+              )}
+            </p>
           </div>
 
           <div className="ff-grid2">
             <div className="ff-field">
-              <div className="ff-label">{t(lang, "Référence", "Reference", "Referencia")}</div>
+              <div className="ff-label">{t(lang, "Numéro de dossier (CQ)", "File number (CQ)", "Número de expediente (CQ)")}</div>
               <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                {fid}
+                {loadingForm
+                  ? t(lang, "Chargement…", "Loading…", "Cargando…")
+                  : cqId || t(lang, "Non disponible", "Not available", "No disponible")}
               </div>
             </div>
 
@@ -264,6 +321,13 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
               <div className="ff-empty" style={{ borderStyle: "solid" }}>
                 {type}
               </div>
+            </div>
+          </div>
+
+          {/* (Optionnel) garder le fid technique mais discret */}
+          <div className="ff-mt">
+            <div className="ff-footnote">
+              {t(lang, "Identifiant interne :", "Internal id:", "Id interno:")} {fid}
             </div>
           </div>
 
@@ -288,7 +352,12 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
 
           <div className="ff-mt">
             <label className="ff-check">
-              <input className="ff-checkbox" type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
+              <input
+                className="ff-checkbox"
+                type="checkbox"
+                checked={confirm}
+                onChange={(e) => setConfirm(e.target.checked)}
+              />
               {t(
                 lang,
                 "Je confirme que les informations sont exactes et que les documents sont complets.",
@@ -312,7 +381,12 @@ function EnvoyerDossierInner({ userId, fid, type, lang }: { userId: string; fid:
 
             {!confirm && (
               <p className="ff-footnote">
-                {t(lang, "Cochez la confirmation pour continuer.", "Check the confirmation to continue.", "Marque la confirmación para continuar.")}
+                {t(
+                  lang,
+                  "Cochez la confirmation pour continuer.",
+                  "Check the confirmation to continue.",
+                  "Marque la confirmación para continuar."
+                )}
               </p>
             )}
 
