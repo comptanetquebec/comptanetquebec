@@ -4,8 +4,6 @@ import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
-
 type Lang = "fr" | "en" | "es";
 type TaxType = "t1" | "ta" | "t2";
 type PayMode = "acompte" | "solde";
@@ -44,9 +42,13 @@ const LABEL: Record<TaxType, string> = {
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) {
       return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
     }
+
+    // ✅ Crée Stripe une fois que la clé est confirmée
+    const stripe = new Stripe(sk, { apiVersion: "2024-06-20" });
 
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -55,8 +57,12 @@ export async function POST(req: Request) {
     const lang = normalizeLang(body["lang"]);
 
     const fid =
-      typeof body["fid"] === "string" && body["fid"].trim().length >= 10
-        ? body["fid"].trim()
+      typeof body["fid"] === "string" && body["fid"].trim().length >= 10 ? body["fid"].trim() : null;
+
+    // ✅ CQ ID (optionnel, envoyé par ton UI)
+    const cqId =
+      typeof body["cqId"] === "string" && body["cqId"].trim().startsWith("CQ-")
+        ? body["cqId"].trim()
         : null;
 
     if (!taxType || !payMode) {
@@ -83,12 +89,16 @@ export async function POST(req: Request) {
     cancelUrl.searchParams.set("type", taxType);
     cancelUrl.searchParams.set("mode", payMode);
 
+    // ✅ Empêche les doubles sessions si double click
     const idempotencyKey = `${fid}:${taxType}:${payMode}`;
 
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-        // ✅ Montant fixe via price_data (pas de Price ID)
+
+        // ✅ visible/searchable côté Stripe (très utile)
+        client_reference_id: cqId || fid,
+
         line_items: [
           {
             price_data: {
@@ -101,10 +111,14 @@ export async function POST(req: Request) {
             quantity: 1,
           },
         ],
+
         success_url: successUrl.toString(),
         cancel_url: cancelUrl.toString(),
+
+        // ✅ CQ lié au paiement (metadata)
         metadata: {
           fid,
+          cq_id: cqId || "",
           type: taxType,
           mode: payMode,
           lang,
