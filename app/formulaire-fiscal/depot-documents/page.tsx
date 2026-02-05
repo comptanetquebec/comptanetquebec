@@ -8,20 +8,27 @@ import "../formulaire-fiscal.css";
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
 
+// ✅ Ta route réelle
+const DEPOT_ROUTE = "/formulaire-fiscal/depot-documents";
+
 type Lang = "fr" | "en" | "es";
+
 function normalizeLang(v: string | null | undefined): Lang {
   const x = (v || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
 }
+
 function getCookie(name: string) {
   if (typeof document === "undefined") return null;
   const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
   return m ? decodeURIComponent(m[2]) : null;
 }
+
 function setCookie(name: string, value: string) {
   if (typeof document === "undefined") return;
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax`;
 }
+
 function resolveLang(urlLang: string | null): Lang {
   if (urlLang) {
     const l = normalizeLang(urlLang);
@@ -30,6 +37,7 @@ function resolveLang(urlLang: string | null): Lang {
   }
   return normalizeLang(getCookie("cq_lang"));
 }
+
 function withLang(path: string, lang: Lang, extra?: Record<string, string>) {
   const u = new URL(path, window.location.origin);
   u.searchParams.set("lang", lang);
@@ -58,8 +66,13 @@ function isAllowedFile(file: File) {
     n.endsWith(".xlsx")
   );
 }
+
 function safeFilename(name: string) {
   return name.replace(/[^\w.\-()\s]/g, "_");
+}
+
+function t(lang: Lang, fr: string, en: string, es: string) {
+  return lang === "fr" ? fr : lang === "en" ? en : es;
 }
 
 export default function DepotDocumentsPage() {
@@ -110,22 +123,24 @@ export default function DepotDocumentsPage() {
       if (error || !data.user) {
         setBooting(false);
 
-        // ✅ IMPORTANT: route correcte (dans /formulaire-fiscal)
-        const next = `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(
-          fid
-        )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
+        // ✅ retour exactement à la page dépôt (ta route réelle)
+        const next = `${DEPOT_ROUTE}?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
+          type
+        )}&lang=${encodeURIComponent(lang)}`;
 
-        router.replace(
-          `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`
-        );
+        router.replace(`/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
         return;
       }
 
       setUserId(data.user.id);
       setBooting(false);
 
-      if (!fid) setMsg("❌ fid manquant");
-      else await loadDocs();
+      if (!fid) {
+        setMsg("❌ " + t(lang, "fid manquant", "missing fid", "fid faltante"));
+        return;
+      }
+
+      await loadDocs();
     })();
 
     return () => {
@@ -134,13 +149,8 @@ export default function DepotDocumentsPage() {
   }, [router, fid, type, lang, loadDocs]);
 
   const getSignedUrl = useCallback(async (path: string) => {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrl(path, 60 * 10);
-
-    if (error || !data?.signedUrl) {
-      throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
-    }
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
     return data.signedUrl;
   }, []);
 
@@ -169,11 +179,12 @@ export default function DepotDocumentsPage() {
         for (const file of Array.from(files)) {
           if (!isAllowedFile(file)) {
             throw new Error(
-              lang === "fr"
-                ? `Type de fichier refusé: ${file.name}`
-                : lang === "en"
-                ? `File type not allowed: ${file.name}`
-                : `Tipo de archivo no permitido: ${file.name}`
+              t(
+                lang,
+                `Type de fichier refusé: ${file.name}`,
+                `File type not allowed: ${file.name}`,
+                `Tipo de archivo no permitido: ${file.name}`
+              )
             );
           }
 
@@ -190,7 +201,7 @@ export default function DepotDocumentsPage() {
           const ins = await supabase.from(DOCS_TABLE).insert({
             formulaire_id: fid,
             user_id: userId,
-            original_name: file.name,
+            original_name: file.name, // on garde le vrai nom ici
             storage_path: storagePath,
             mime_type: file.type || null,
             size_bytes: file.size || null,
@@ -198,11 +209,11 @@ export default function DepotDocumentsPage() {
           if (ins.error) throw new Error(ins.error.message);
         }
 
-        setMsg(lang === "fr" ? "✅ Upload terminé." : lang === "en" ? "✅ Upload complete." : "✅ Subida completada.");
+        setMsg(t(lang, "✅ Upload terminé.", "✅ Upload complete.", "✅ Subida completada."));
         await loadDocs();
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Erreur upload.";
-        setMsg("❌ " + (lang === "fr" ? message : message));
+        const message = e instanceof Error ? e.message : t(lang, "Erreur upload.", "Upload error.", "Error de subida.");
+        setMsg("❌ " + message);
       } finally {
         setUploading(false);
       }
@@ -216,9 +227,7 @@ export default function DepotDocumentsPage() {
     return (
       <main className="ff-bg">
         <div className="ff-container">
-          <div style={{ padding: 24 }}>
-            {lang === "fr" ? "Chargement…" : lang === "en" ? "Loading…" : "Cargando…"}
-          </div>
+          <div style={{ padding: 24 }}>{t(lang, "Chargement…", "Loading…", "Cargando…")}</div>
         </div>
       </main>
     );
@@ -230,16 +239,11 @@ export default function DepotDocumentsPage() {
         <header className="ff-header">
           <div className="ff-brand-text">
             <strong>ComptaNet Québec</strong>
-            <span>{lang === "fr" ? "Dépôt de documents" : lang === "en" ? "Document upload" : "Subir documentos"}</span>
+            <span>{t(lang, "Étape 2/3 — Dépôt de documents", "Step 2/3 — Upload documents", "Paso 2/3 — Subir documentos")}</span>
           </div>
 
-          <button
-            className="ff-btn ff-btn-outline"
-            type="button"
-            onClick={() => router.push(withLang("/formulaire-fiscal", lang))}
-          >
-            ← {lang === "fr" ? "Retour" : lang === "en" ? "Back" : "Volver"}
-          </button>
+          {/* ✅ Flow linéaire: pas de bouton Retour */}
+          <div />
         </header>
 
         {msg && (
@@ -250,36 +254,19 @@ export default function DepotDocumentsPage() {
 
         <section className="ff-card">
           <div className="ff-card-head">
-            <h2>{lang === "fr" ? "Téléverser vos documents" : lang === "en" ? "Upload your documents" : "Suba sus documentos"}</h2>
-            <p>
-              {lang === "fr"
-                ? "Formats acceptés: PDF, images, Office, ZIP."
-                : lang === "en"
-                ? "Accepted formats: PDF, images, Office, ZIP."
-                : "Formatos: PDF, imágenes, Office, ZIP."}
-            </p>
+            <h2>{t(lang, "Téléverser vos documents", "Upload your documents", "Suba sus documentos")}</h2>
+            <p>{t(lang, "Formats acceptés: PDF, images, Office, ZIP.", "Accepted formats: PDF, images, Office, ZIP.", "Formatos: PDF, imágenes, Office, ZIP.")}</p>
           </div>
 
-          <input
-            type="file"
-            multiple
-            disabled={uploading || !userId || !fid}
-            onChange={(e) => handleFiles(e.target.files)}
-          />
+          <input type="file" multiple disabled={uploading || !userId || !fid} onChange={(e) => handleFiles(e.target.files)} />
 
           <div className="ff-mt">
-            <div className="ff-subtitle">
-              {lang === "fr" ? "Documents envoyés" : lang === "en" ? "Uploaded documents" : "Documentos subidos"}
-            </div>
+            <div className="ff-subtitle">{t(lang, "Documents envoyés", "Uploaded documents", "Documentos subidos")}</div>
 
             {loadingDocs ? (
-              <div className="ff-empty">
-                {lang === "fr" ? "Chargement…" : lang === "en" ? "Loading…" : "Cargando…"}
-              </div>
+              <div className="ff-empty">{t(lang, "Chargement…", "Loading…", "Cargando…")}</div>
             ) : docsCount === 0 ? (
-              <div className="ff-empty">
-                {lang === "fr" ? "Aucun document." : lang === "en" ? "No documents yet." : "Aún no hay documentos."}
-              </div>
+              <div className="ff-empty">{t(lang, "Aucun document.", "No documents yet.", "Aún no hay documentos.")}</div>
             ) : (
               <div className="ff-stack">
                 {docs.map((d) => (
@@ -290,7 +277,7 @@ export default function DepotDocumentsPage() {
                     </div>
 
                     <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
-                      {lang === "fr" ? "Ouvrir" : lang === "en" ? "Open" : "Abrir"}
+                      {t(lang, "Ouvrir", "Open", "Abrir")}
                     </button>
                   </div>
                 ))}
@@ -303,19 +290,14 @@ export default function DepotDocumentsPage() {
               type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
               disabled={!fid || docsCount === 0}
-              // ✅ IMPORTANT: route correcte (dans /formulaire-fiscal)
               onClick={() => router.push(withLang("/formulaire-fiscal/envoyer-dossier", lang, { fid }))}
             >
-              {lang === "fr" ? "Suivant : envoyer →" : lang === "en" ? "Next: submit →" : "Siguiente: enviar →"}
+              {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
             </button>
 
             {docsCount === 0 && (
               <p className="ff-footnote">
-                {lang === "fr"
-                  ? "Ajoutez au moins 1 document pour continuer."
-                  : lang === "en"
-                  ? "Upload at least 1 document to continue."
-                  : "Suba al menos 1 documento para continuar."}
+                {t(lang, "Ajoutez au moins 1 document pour continuer.", "Upload at least 1 document to continue.", "Suba al menos 1 documento para continuar.")}
               </p>
             )}
           </div>
