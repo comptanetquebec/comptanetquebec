@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
@@ -39,13 +40,11 @@ function setCookie(name: string, value: string) {
 }
 
 function resolveLang(urlLang: string | null): Lang {
-  // Si l’URL a un lang, on l’enregistre pour les pages suivantes
   if (urlLang) {
     const l = normalizeLang(urlLang);
     setCookie("cq_lang", l);
     return l;
   }
-  // Sinon on reprend celui de la 1re page (cookie)
   return normalizeLang(getCookie("cq_lang"));
 }
 
@@ -86,12 +85,6 @@ function safeFilename(name: string) {
   return name.replace(/[^\w.\-()\s]/g, "_");
 }
 
-function supaErr(e: unknown) {
-  if (!e || typeof e !== "object") return "Erreur inconnue";
-  const err = e as { message?: string; details?: string; hint?: string; code?: string };
-  return [err.message, err.details, err.hint, err.code].filter(Boolean).join(" | ");
-}
-
 export default function DepotDocumentsPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -108,6 +101,8 @@ export default function DepotDocumentsPage() {
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const docsCount = docs.length;
 
   const loadDocs = useCallback(async () => {
     if (!fid) return;
@@ -137,7 +132,6 @@ export default function DepotDocumentsPage() {
       const { data, error } = await supabase.auth.getUser();
       if (!alive) return;
 
-      // Pas connecté → login avec retour EXACT sur cette page (step 2)
       if (error || !data.user) {
         setBooting(false);
 
@@ -165,13 +159,19 @@ export default function DepotDocumentsPage() {
     };
   }, [router, fid, type, lang, loadDocs]);
 
-  const getSignedUrl = useCallback(async (path: string) => {
-    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
-    if (error || !data?.signedUrl) {
-      throw new Error(error?.message || t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo."));
-    }
-    return data.signedUrl;
-  }, [lang]);
+  const getSignedUrl = useCallback(
+    async (path: string) => {
+      const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+      if (error || !data?.signedUrl) {
+        throw new Error(
+          error?.message ||
+            t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.")
+        );
+      }
+      return data.signedUrl;
+    },
+    [lang]
+  );
 
   const openDoc = useCallback(
     async (doc: DocRow) => {
@@ -179,7 +179,10 @@ export default function DepotDocumentsPage() {
         const url = await getSignedUrl(doc.storage_path);
         window.open(url, "_blank", "noopener,noreferrer");
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.");
+        const message =
+          e instanceof Error
+            ? e.message
+            : t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.");
         setMsg("❌ " + message);
       }
     },
@@ -208,7 +211,8 @@ export default function DepotDocumentsPage() {
           }
 
           const clean = safeFilename(file.name);
-          const storagePath = `${userId}/${fid}/${Date.now()}-${clean}`;
+          const uniq = Math.random().toString(36).slice(2, 8);
+          const storagePath = `${userId}/${fid}/${Date.now()}-${uniq}-${clean}`;
 
           const up = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, file, {
             cacheControl: "3600",
@@ -232,9 +236,7 @@ export default function DepotDocumentsPage() {
         await loadDocs();
       } catch (e: unknown) {
         const message =
-          e instanceof Error
-            ? e.message
-            : t(lang, "Erreur upload.", "Upload error.", "Error de subida.");
+          e instanceof Error ? e.message : t(lang, "Erreur upload.", "Upload error.", "Error de subida.");
         setMsg("❌ " + message);
       } finally {
         setUploading(false);
@@ -242,8 +244,6 @@ export default function DepotDocumentsPage() {
     },
     [fid, userId, loadDocs, lang]
   );
-
-  const docsCount = docs.length;
 
   if (booting) {
     return (
@@ -258,24 +258,47 @@ export default function DepotDocumentsPage() {
   return (
     <main className="ff-bg">
       <div className="ff-container">
-        {/* ✅ Flow linéaire (pas de bouton Retour) */}
+        {/* ✅ Header identique à la 1re page (logo + branding) */}
         <header className="ff-header">
-          <div className="ff-brand-text">
-            <strong>ComptaNet Québec</strong>
-            <span>
-              {t(
-                lang,
-                "Étape 2/3 — Dépôt de documents",
-                "Step 2/3 — Upload documents",
-                "Paso 2/3 — Subir documentos"
-              )}
-            </span>
+          <div className="ff-brand">
+            <Image
+              src="/logo-cq.png"
+              alt="ComptaNet Québec"
+              width={120}
+              height={40}
+              priority
+              style={{ height: 40, width: "auto" }}
+            />
+            <div className="ff-brand-text">
+              <strong>ComptaNet Québec</strong>
+              <span>
+                {t(
+                  lang,
+                  "Étape 2/3 — Dépôt de documents",
+                  "Step 2/3 — Upload documents",
+                  "Paso 2/3 — Subir documentos"
+                )}
+              </span>
+            </div>
           </div>
           <div />
         </header>
 
         {/* ✅ Indicateur 1-2-3 */}
         <Steps step={2} lang={lang} />
+
+        {/* (Optionnel) petit titre/texte comme la 1re page */}
+        <div className="ff-title">
+          <h1>{t(lang, "Dépôt de documents", "Document upload", "Subida de documentos")}</h1>
+          <p>
+            {t(
+              lang,
+              "Ajoutez ici tous les documents nécessaires à la préparation de votre dossier.",
+              "Upload all documents required to prepare your file.",
+              "Suba todos los documentos necesarios para preparar su expediente."
+            )}
+          </p>
+        </div>
 
         {msg && (
           <div className="ff-card" style={{ padding: 14 }}>
@@ -299,21 +322,24 @@ export default function DepotDocumentsPage() {
           <input
             type="file"
             multiple
+            accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
             disabled={uploading || !userId || !fid}
-            onChange={(e) => handleFiles(e.target.files)}
+            onChange={(e) => {
+              void handleFiles(e.target.files);
+              e.currentTarget.value = ""; // permet de re-choisir le même fichier
+            }}
           />
 
           <div className="ff-mt">
             <div className="ff-subtitle">
               {t(lang, "Documents envoyés", "Uploaded documents", "Documentos subidos")}
+              {docsCount > 0 ? ` (${docsCount})` : ""}
             </div>
 
             {loadingDocs ? (
               <div className="ff-empty">{t(lang, "Chargement…", "Loading…", "Cargando…")}</div>
             ) : docsCount === 0 ? (
-              <div className="ff-empty">
-                {t(lang, "Aucun document.", "No documents yet.", "Aún no hay documentos.")}
-              </div>
+              <div className="ff-empty">{t(lang, "Aucun document.", "No documents yet.", "Aún no hay documentos.")}</div>
             ) : (
               <div className="ff-stack">
                 {docs.map((d) => (
@@ -322,12 +348,10 @@ export default function DepotDocumentsPage() {
                       <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
                         {d.original_name}
                       </div>
-                      <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>
-                        {d.storage_path}
-                      </div>
+                      <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>{d.storage_path}</div>
                     </div>
 
-                    <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
+                    <button type="button" className="ff-btn ff-btn-soft" onClick={() => void openDoc(d)}>
                       {t(lang, "Ouvrir", "Open", "Abrir")}
                     </button>
                   </div>
@@ -341,9 +365,7 @@ export default function DepotDocumentsPage() {
               type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
               disabled={!fid || docsCount === 0}
-              onClick={() =>
-                router.push(withLang("/formulaire-fiscal/envoyer-dossier", lang, { fid, type }))
-              }
+              onClick={() => router.push(withLang("/formulaire-fiscal/envoyer-dossier", lang, { fid, type }))}
             >
               {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
             </button>
