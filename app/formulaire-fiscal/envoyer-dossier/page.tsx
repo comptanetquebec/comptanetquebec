@@ -4,10 +4,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
+import Steps from "../Steps";
 
+/**
+ * Tables
+ */
 const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
 
+/**
+ * Lang (toujours suivre la langue de la 1re page via cookie cq_lang)
+ */
 type Lang = "fr" | "en" | "es";
 
 function normalizeLang(v: string | null | undefined): Lang {
@@ -21,17 +28,19 @@ function getCookie(name: string) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
-function setCookie(name: string, value: string) {
+function setCookie(name: string, value: Lang) {
   if (typeof document === "undefined") return;
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 function resolveLang(urlLang: string | null): Lang {
+  // 1) Si lang est dans l'URL, on l'utilise et on le persiste en cookie
   if (urlLang) {
     const l = normalizeLang(urlLang);
     setCookie("cq_lang", l);
     return l;
   }
+  // 2) Sinon on lit le cookie (lang de la 1re page)
   return normalizeLang(getCookie("cq_lang"));
 }
 
