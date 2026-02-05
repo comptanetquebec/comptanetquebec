@@ -1,19 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 type Props = {
   lang: string;
-  nextPath: string; // ex: "/formulaire-fiscal/depot-documents?fid=...&lang=fr"
+  nextPath: string; // ex: "/formulaire-fiscal?type=T1&lang=fr" ou "/formulaire-fiscal/depot-documents?fid=...&lang=fr"
   children: (userId: string) => React.ReactNode;
 };
 
 export default function RequireAuth({ lang, nextPath, children }: Props) {
   const router = useRouter();
+
   const [booting, setBooting] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // évite double redirect si l'effet rerun vite
+  const redirected = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -24,9 +28,13 @@ export default function RequireAuth({ lang, nextPath, children }: Props) {
 
       if (error || !data.user) {
         setBooting(false);
-        router.replace(
-          `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(nextPath)}`
-        );
+
+        if (!redirected.current) {
+          redirected.current = true;
+          router.replace(
+            `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(nextPath)}`
+          );
+        }
         return;
       }
 
@@ -50,5 +58,6 @@ export default function RequireAuth({ lang, nextPath, children }: Props) {
   }
 
   if (!userId) return null;
+
   return <>{children(userId)}</>;
 }
