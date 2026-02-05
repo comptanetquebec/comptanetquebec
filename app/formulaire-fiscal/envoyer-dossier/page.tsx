@@ -205,22 +205,41 @@ function EnvoyerDossierInner({
 
       if (e2) throw new Error(e2.message);
 
-      // 3) Stripe Checkout (server)
-      const res = await fetch(CHECKOUT_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // ✅ tu peux envoyer cq_id au serveur si tu veux l'afficher dans Stripe metadata (optionnel)
-        body: JSON.stringify({ fid, type: type.toLowerCase(), lang, cqId }),
-      });
+     // 3) Stripe Checkout (server)
 
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || "Stripe error");
-      }
+// 🔒 On exige un numéro CQ avant tout paiement
+if (!cqId) {
+  throw new Error(
+    t(
+      lang,
+      "Numéro de dossier (CQ) non généré. Rafraîchissez la page.",
+      "CQ file number not generated. Please refresh the page.",
+      "El número de expediente (CQ) no se ha generado. Actualice la página."
+    )
+  );
+}
 
-      const json: { url?: string } = await res.json();
-      if (!json.url) throw new Error("Missing Stripe URL");
+const res = await fetch(CHECKOUT_API, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    fid,
+    type: type.toLowerCase(), // "t1" | "ta" | "t2"
+    mode: "acompte",          // acompte seulement pour l’instant
+    lang,
+    cqId,                     // ex: CQ-0000001
+  }),
+});
 
+if (!res.ok) {
+  const txt = await res.text().catch(() => "");
+  throw new Error(txt || "Stripe error");
+}
+
+const json: { url?: string } = await res.json().catch(() => ({}));
+if (!json.url) throw new Error("Missing Stripe URL");
+
+// Redirection vers Stripe
       window.location.href = json.url;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur";
