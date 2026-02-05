@@ -26,18 +26,22 @@ function safeOrigin(req: Request) {
   return o.replace(/\/+$/, "");
 }
 
-// ✅ Montants fixes (ACOMPTE) en cents
-const ACOMPTE_CENTS: Record<TaxType, number> = {
-  t1: 10000,  // 100.00
-  ta: 15000,  // 150.00
-  t2: 45000,  // 450.00
-};
+function priceIdFor(type: TaxType, mode: PayMode): string {
+  // ✅ pour l’instant: acompte seulement
+  if (mode !== "acompte") {
+    throw new Error("Le solde est facturé après le traitement du dossier (montant variable).");
+  }
 
-const LABEL: Record<TaxType, string> = {
-  t1: "Déclaration T1",
-  ta: "Travailleur autonome (TA)",
-  t2: "Déclaration T2",
-};
+  const map: Record<TaxType, string | undefined> = {
+    t1: process.env.STRIPE_PRICE_T1_ACOMPTE,
+    ta: process.env.STRIPE_PRICE_TA_ACOMPTE,
+    t2: process.env.STRIPE_PRICE_T2_ACOMPTE,
+  };
+
+  const pid = map[type];
+  if (!pid) throw new Error(`Missing Stripe Price ID for ${type}:${mode}`);
+  return pid;
+}
 
 export async function POST(req: Request) {
   try {
@@ -71,13 +75,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fid" }, { status: 400 });
     }
 
-    // ✅ IMPORTANT : pour l’instant, on accepte SEULEMENT l’acompte
-    if (payMode !== "acompte") {
-      return NextResponse.json(
-        { error: "Le solde est facturé après le traitement du dossier (montant variable)." },
-        { status: 400 }
-      );
-    }
+    // ✅ si tu veux EXIGER cqId avant paiement, décommente ceci :
+    // if (!cqId) {
+    //   return NextResponse.json({ error: "Missing cqId" }, { status: 400 });
+    // }
 
     const origin = safeOrigin(req);
     if (!origin) {
@@ -98,23 +99,17 @@ export async function POST(req: Request) {
 
     const idempotencyKey = `${fid}:${taxType}:${payMode}`;
 
+    const priceId = priceIdFor(taxType, payMode);
+
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
+
+        // ✅ plus facile à retrouver dans Stripe
         client_reference_id: cqId || fid,
 
-        line_items: [
-          {
-            price_data: {
-              currency: "cad",
-              product_data: {
-                name: `${LABEL[taxType]} — Acompte`,
-              },
-              unit_amount: ACOMPTE_CENTS[taxType],
-            },
-            quantity: 1,
-          },
-        ],
+        // ✅ Price ID venant de Vercel env
+        line_items: [{ price: priceId, quantity: 1 }],
 
         success_url: successUrl.toString(),
         cancel_url: cancelUrl.toString(),
@@ -136,7 +131,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: unknown) {
-    // ✅ renvoie un message lisible
     const message =
       e instanceof Stripe.errors.StripeError
         ? e.message
