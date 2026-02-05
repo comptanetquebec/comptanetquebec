@@ -55,15 +55,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as any;
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
-    const taxType = normalizeTaxType(body.type);
-    const payMode = normalizePayMode(body.mode);
-    const lang = normalizeLang(body.lang);
+    const taxType = normalizeTaxType(body["type"]);
+    const payMode = normalizePayMode(body["mode"]);
+    const lang = normalizeLang(body["lang"]);
 
     // ✅ IMPORTANT: fid OBLIGATOIRE (paiement = lié au dossier)
     const fid =
-      typeof body.fid === "string" && body.fid.trim().length >= 10 ? body.fid.trim() : null;
+      typeof body["fid"] === "string" && body["fid"].trim().length >= 10 ? body["fid"].trim() : null;
 
     if (!taxType || !payMode) {
       return NextResponse.json({ error: "Invalid type/mode" }, { status: 400 });
