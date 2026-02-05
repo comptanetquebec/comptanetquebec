@@ -4,13 +4,22 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
+import Steps from "../Steps";
 
+/**
+ * Storage / DB
+ */
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
 
-// ✅ Ta route réelle
+/**
+ * Route réelle (référence unique)
+ */
 const DEPOT_ROUTE = "/formulaire-fiscal/depot-documents";
 
+/**
+ * Lang — TOUJOURS suivre la langue de la 1re page
+ */
 type Lang = "fr" | "en" | "es";
 
 function normalizeLang(v: string | null | undefined): Lang {
