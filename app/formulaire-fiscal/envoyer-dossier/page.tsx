@@ -210,7 +210,7 @@ function EnvoyerDossierInner({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // ✅ tu peux envoyer cq_id au serveur si tu veux l'afficher dans Stripe metadata (optionnel)
-        body: JSON.stringify({ fid, type, lang, cqId }),
+        body: JSON.stringify({ fid, type: type.toLowerCase(), lang, cqId }),
       });
 
       if (!res.ok) {
