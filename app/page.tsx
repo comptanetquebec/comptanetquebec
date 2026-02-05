@@ -274,8 +274,8 @@ export default function Home() {
           "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
         plans: [
           { t: "Impôt personnel (T1 – Québec)", p: "à partir de 100 $", pts: ["Portail sécurisé", "Préparation selon documents fournis", "Acompte initial 100 $"], href: "/tarifs/t1" },
-          { t: "Travailleur autonome (T1 – Québec)", p: "à partir de 150 $", pts: ["Revenus + dépenses selon pièces", "Portail sécurisé", "Acompte initial 100 $"], href: "/tarifs/travailleur-autonome" },
-          { t: "Société (T2 + CO-17 – Québec)", p: "à partir de 850 $", pts: ["Préparation selon documents fournis", "Portail sécurisé", "Acompte initial 400 $", "Société sans revenus : à partir de 450 $"], href: "/tarifs/t2" },
+          { t: "Travailleur autonome (T1 – Québec)", p: "à partir de 150 $", pts: ["Revenus + dépenses selon pièces", "Portail sécurisé", "Acompte initial 150 $"], href: "/tarifs/travailleur-autonome" },
+          { t: "Société (T2 + CO-17 – Québec)", p: "à partir de 850 $", pts: ["Préparation selon documents fournis", "Portail sécurisé", "Acompte initial 450 $", "Société sans revenus : à partir de 450 $"], href: "/tarifs/t2" },
         ],
         getPrice: "Voir les détails",
 
