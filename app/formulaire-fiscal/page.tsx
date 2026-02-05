@@ -25,7 +25,6 @@ function normalizeLang(v: string | null | undefined): Lang {
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
 }
 
-
 /* ===========================
    Types
 =========================== */
@@ -48,7 +47,15 @@ type ProvinceCode =
 type Sexe = "M" | "F" | "X" | "";
 type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 type CopieImpots = "espaceClient" | "courriel" | "";
-type EtatCivil = "celibataire" | "conjointDefait" | "marie" | "separe" | "divorce" | "veuf" | "";
+type EtatCivil =
+  | "celibataire"
+  | "conjointDefait"
+  | "marie"
+  | "separe"
+  | "divorce"
+  | "veuf"
+  | "";
+
 type Periode = { debut: string; fin: string };
 type FormTypeDb = "T1" | "T2";
 
@@ -267,6 +274,7 @@ export default function FormulaireFiscalPage() {
 
   // évite autosave pendant le preload
   const hydrating = useRef(false);
+
   // debounce autosave
   const saveTimer = useRef<number | null>(null);
 
@@ -800,6 +808,7 @@ export default function FormulaireFiscalPage() {
     }
   }, [fidDisplay, lang, loadDocs, saveDraft, type]);
 
+  // (Optionnel) soumission finale — si tu ajoutes un bouton submit sur cette page
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -896,6 +905,9 @@ export default function FormulaireFiscalPage() {
             {msg}
           </div>
         )}
+
+        {/* Steps */}
+        <Steps step={1} lang={lang} />
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
@@ -1003,9 +1015,13 @@ export default function FormulaireFiscalPage() {
               <div className="ff-grid4 ff-mt-sm">
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
                 <Field label="Ville" value={ville} onChange={setVille} required />
-
-                <SelectField<ProvinceCode> label="Province" value={province} onChange={setProvince} options={PROVINCES} required />
-
+                <SelectField<ProvinceCode>
+                  label="Province"
+                  value={province}
+                  onChange={setProvince}
+                  options={PROVINCES}
+                  required
+                />
                 <Field
                   label="Code postal"
                   value={codePostal}
@@ -1052,7 +1068,12 @@ export default function FormulaireFiscalPage() {
                 )}
 
                 <div className="ff-grid2 ff-mt">
-                  <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required={traiterConjoint} />
+                  <Field
+                    label="Prénom (conjoint)"
+                    value={prenomConjoint}
+                    onChange={setPrenomConjoint}
+                    required={traiterConjoint}
+                  />
                   <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required={traiterConjoint} />
 
                   <Field
@@ -1113,7 +1134,12 @@ export default function FormulaireFiscalPage() {
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
                       <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
-                      <SelectField<ProvinceCode> label="Province" value={provinceConjoint} onChange={setProvinceConjoint} options={PROVINCES} />
+                      <SelectField<ProvinceCode>
+                        label="Province"
+                        value={provinceConjoint}
+                        onChange={setProvinceConjoint}
+                        options={PROVINCES}
+                      />
                       <Field
                         label="Code postal"
                         value={codePostalConjoint}
@@ -1378,119 +1404,21 @@ export default function FormulaireFiscalPage() {
             </div>
           </section>
 
-          {/* ===========================
-             DÉPÔT DOCUMENTS (redirige vers /depot-documents)
-          =========================== */}
-          <section id="ff-upload-section" className="ff-card">
-            <div className="ff-card-head">
-              <h2>Déposer vos documents</h2>
-              <p>
-                1) Remplissez le formulaire
-                <br />
-                2) Déposez vos documents
-                <br />
-                3) Revenez ici pour soumettre
-              </p>
-            </div>
-
-            <div className="ff-stack">
-              <button
-                type="button"
-                className="ff-btn ff-btn-primary"
-                style={{
-                  padding: "14px 16px",
-                  borderRadius: 14,
-                  fontWeight: 900,
-                  fontSize: 16,
-                  width: "100%",
-                }}
-                disabled={booting || !userId}
-                onClick={goToDepotDocuments}
-              >
-                Déposer mes documents →
-              </button>
-
-              {!fidDisplay && (
-                <div className="ff-empty">
-                  Vous pouvez cliquer sur “Déposer mes documents”.
-                  <br />
-                  Le dossier sera créé automatiquement.
-                </div>
-              )}
-
-              {fidDisplay && (
-                <>
-                  <div className="ff-rowbox">
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700 }}>Dossier</div>
-                      <div style={{ opacity: 0.8, fontSize: 13, wordBreak: "break-all" }}>ID : {fidDisplay}</div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="ff-btn ff-btn-soft"
-                      onClick={() => {
-                        navigator.clipboard?.writeText(fidDisplay);
-                        setMsg("✅ ID copié.");
-                        document.getElementById("ff-upload-section")?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "start",
-                        });
-                      }}
-                    >
-                      Copier l’ID
-                    </button>
-                  </div>
-
-                  <div className="ff-mt">
-                    <div className="ff-subtitle">Documents téléversés</div>
-
-                    {docsLoading ? (
-                      <div className="ff-empty">Chargement des documents…</div>
-                    ) : docs.length === 0 ? (
-                      <div className="ff-empty">Aucun document pour l’instant.</div>
-                    ) : (
-                      <div className="ff-stack">
-                        {docs.map((d) => (
-                          <div key={d.id} className="ff-rowbox" style={{ alignItems: "center", gap: 12 }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
-                                {d.original_name}
-                              </div>
-                              <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>{d.storage_path}</div>
-                            </div>
-
-                            <button type="button" className="ff-btn ff-btn-soft" onClick={() => openDoc(d)}>
-                              Ouvrir
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </section>
-
-          {/* ===========================
-             SUBMIT FINAL
-          =========================== */}
+          {/* ACTION — CONTINUER (étape 1) */}
           <div className="ff-submit">
             <button
-              type="submit"
+              type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={submitting || !fidDisplay || docsCount === 0}
+              disabled={booting || !userId || submitting}
+              onClick={goToDepotDocuments}
             >
-              {submitting ? "Envoi…" : "Soumettre mes informations fiscales"}
+              {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
             </button>
 
-            {fidDisplay && docsCount === 0 && <p className="ff-footnote">Ajoutez au moins 1 document avant de soumettre.</p>}
-
-            <p className="ff-footnote">
-              Vos informations sont traitées de façon confidentielle et servent à préparer vos déclarations T1 (particulier /
-              travail autonome) et T2 (société) au Canada. Au Québec, nous produisons aussi la déclaration provinciale.
-            </p>
+            {/* Optionnel: petit info docs */}
+            <div className="ff-muted" style={{ marginTop: 10 }}>
+              {docsLoading ? "Chargement des documents…" : docsCount > 0 ? `${docsCount} document(s) déjà au dossier.` : ""}
+            </div>
           </div>
         </form>
       </div>
