@@ -40,11 +40,13 @@ function setCookie(name: string, value: string) {
 }
 
 function resolveLang(urlLang: string | null): Lang {
+  // URL lang prioritaire + mémorisé
   if (urlLang) {
     const l = normalizeLang(urlLang);
     setCookie("cq_lang", l);
     return l;
   }
+  // fallback cookie
   return normalizeLang(getCookie("cq_lang"));
 }
 
@@ -83,6 +85,11 @@ function isAllowedFile(file: File) {
 
 function safeFilename(name: string) {
   return name.replace(/[^\w.\-()\s]/g, "_");
+}
+
+function formatDateTimeShort(_iso: string) {
+  // volontairement simple (affichage optionnel)
+  return "";
 }
 
 export default function DepotDocumentsPage() {
@@ -132,6 +139,7 @@ export default function DepotDocumentsPage() {
       const { data, error } = await supabase.auth.getUser();
       if (!alive) return;
 
+      // Pas connecté → login avec retour EXACT sur cette page (step 2)
       if (error || !data.user) {
         setBooting(false);
 
@@ -255,6 +263,8 @@ export default function DepotDocumentsPage() {
     );
   }
 
+  const disabledUpload = uploading || !userId || !fid;
+
   return (
     <main className="ff-bg">
       <div className="ff-container">
@@ -287,7 +297,7 @@ export default function DepotDocumentsPage() {
         {/* ✅ Indicateur 1-2-3 */}
         <Steps step={2} lang={lang} />
 
-        {/* (Optionnel) petit titre/texte comme la 1re page */}
+        {/* Petit titre/texte comme la 1re page */}
         <div className="ff-title">
           <h1>{t(lang, "Dépôt de documents", "Document upload", "Subida de documentos")}</h1>
           <p>
@@ -319,16 +329,49 @@ export default function DepotDocumentsPage() {
             </p>
           </div>
 
-          <input
-            type="file"
-            multiple
-            accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
-            disabled={uploading || !userId || !fid}
-            onChange={(e) => {
-              void handleFiles(e.target.files);
-              e.currentTarget.value = ""; // permet de re-choisir le même fichier
-            }}
-          />
+          {/* ✅ Upload stylé (utilise TON CSS: ff-docs / ff-drop / ff-file-input / ff-progress) */}
+          <div className="ff-docs">
+            <div className={`ff-drop ${disabledUpload ? "ff-drop--disabled" : ""}`}>
+              <div className="ff-drop__text">
+                <p className="ff-drop__title">
+                  {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
+                </p>
+                <p className="ff-drop__hint">
+                  {t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}
+                </p>
+              </div>
+
+              <div className="ff-doc-actions">
+                <label className="ff-btn ff-btn-primary" style={{ cursor: disabledUpload ? "not-allowed" : "pointer" }}>
+                  {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
+                  <input
+                    className="ff-file-input"
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
+                    disabled={disabledUpload}
+                    onChange={(e) => {
+                      void handleFiles(e.target.files);
+                      e.currentTarget.value = ""; // re-choisir le même fichier
+                    }}
+                  />
+                </label>
+
+                {uploading && (
+                  <div className="ff-progress">{t(lang, "Téléversement…", "Uploading…", "Subiendo…")}</div>
+                )}
+              </div>
+            </div>
+
+            <p className="ff-doc-note">
+              {t(
+                lang,
+                "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.",
+                "Tip: you can upload multiple files at once.",
+                "Consejo: puede subir varios archivos a la vez."
+              )}
+            </p>
+          </div>
 
           <div className="ff-mt">
             <div className="ff-subtitle">
@@ -341,19 +384,20 @@ export default function DepotDocumentsPage() {
             ) : docsCount === 0 ? (
               <div className="ff-empty">{t(lang, "Aucun document.", "No documents yet.", "Aún no hay documentos.")}</div>
             ) : (
-              <div className="ff-stack">
+              /* ✅ Liste stylée (utilise TON CSS: ff-files / ff-file / ff-file__name etc.) */
+              <div className="ff-files">
                 {docs.map((d) => (
-                  <div key={d.id} className="ff-rowbox" style={{ alignItems: "center", gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {d.original_name}
-                      </div>
-                      <div style={{ opacity: 0.75, fontSize: 12, wordBreak: "break-all" }}>{d.storage_path}</div>
+                  <div key={d.id} className="ff-file">
+                    <div className="ff-file__left">
+                      <p className="ff-file__name">{d.original_name}</p>
+                      <p className="ff-file__meta">{d.storage_path}</p>
                     </div>
 
-                    <button type="button" className="ff-btn ff-btn-soft" onClick={() => void openDoc(d)}>
-                      {t(lang, "Ouvrir", "Open", "Abrir")}
-                    </button>
+                    <div className="ff-file__right">
+                      <button type="button" className="ff-btn ff-btn-soft" onClick={() => void openDoc(d)}>
+                        {t(lang, "Ouvrir", "Open", "Abrir")}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
