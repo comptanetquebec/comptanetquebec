@@ -27,15 +27,15 @@ function safeOrigin(req: Request) {
 }
 
 function priceIdFor(type: TaxType, mode: PayMode): string {
-  // ✅ pour l’instant: acompte seulement
+  // ✅ acompte seulement pour l’instant
   if (mode !== "acompte") {
     throw new Error("Le solde est facturé après le traitement du dossier (montant variable).");
   }
 
   const map: Record<TaxType, string | undefined> = {
-    t1: process.env.STRIPE_PRICE_T1_ACOMPTE,
-    ta: process.env.STRIPE_PRICE_TA_ACOMPTE,
-    t2: process.env.STRIPE_PRICE_T2_ACOMPTE,
+    t1: process.env.STRIPE_PRICE_ACOMPTE_T1,
+    ta: process.env.STRIPE_PRICE_ACOMPTE_TA,
+    t2: process.env.STRIPE_PRICE_ACOMPTE_T2,
   };
 
   const pid = map[type];
