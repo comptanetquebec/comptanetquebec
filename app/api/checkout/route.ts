@@ -26,14 +26,13 @@ function safeOrigin(req: Request) {
   return o.replace(/\/+$/, "");
 }
 
-// ✅ Montants fixes (en cents)
-const AMOUNT_CENTS: Record<TaxType, number> = {
-  t1: 10000, // 100.00
-  ta: 15000, // 150.00
-  t2: 45000, // 450.00
+// ✅ Montants fixes (ACOMPTE) en cents
+const ACOMPTE_CENTS: Record<TaxType, number> = {
+  t1: 10000,  // 100.00
+  ta: 15000,  // 150.00
+  t2: 45000,  // 450.00
 };
 
-// ✅ Libellés (affichés sur Stripe Checkout)
 const LABEL: Record<TaxType, string> = {
   t1: "Déclaration T1",
   ta: "Travailleur autonome (TA)",
@@ -56,9 +55,10 @@ export async function POST(req: Request) {
     const lang = normalizeLang(body["lang"]);
 
     const fid =
-      typeof body["fid"] === "string" && body["fid"].trim().length >= 10 ? body["fid"].trim() : null;
+      typeof body["fid"] === "string" && body["fid"].trim().length >= 10
+        ? body["fid"].trim()
+        : null;
 
-    // ✅ CQ ID (optionnel, envoyé par ton UI)
     const cqId =
       typeof body["cqId"] === "string" && body["cqId"].trim().startsWith("CQ-")
         ? body["cqId"].trim()
@@ -69,6 +69,14 @@ export async function POST(req: Request) {
     }
     if (!fid) {
       return NextResponse.json({ error: "Missing fid" }, { status: 400 });
+    }
+
+    // ✅ IMPORTANT : pour l’instant, on accepte SEULEMENT l’acompte
+    if (payMode !== "acompte") {
+      return NextResponse.json(
+        { error: "Le solde est facturé après le traitement du dossier (montant variable)." },
+        { status: 400 }
+      );
     }
 
     const origin = safeOrigin(req);
@@ -88,14 +96,11 @@ export async function POST(req: Request) {
     cancelUrl.searchParams.set("type", taxType);
     cancelUrl.searchParams.set("mode", payMode);
 
-    // ✅ Empêche les doubles sessions si double click
     const idempotencyKey = `${fid}:${taxType}:${payMode}`;
 
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-
-        // ✅ visible/searchable côté Stripe (très utile)
         client_reference_id: cqId || fid,
 
         line_items: [
@@ -103,9 +108,9 @@ export async function POST(req: Request) {
             price_data: {
               currency: "cad",
               product_data: {
-                name: `${LABEL[taxType]} — ${payMode === "acompte" ? "Acompte" : "Solde"}`,
+                name: `${LABEL[taxType]} — Acompte`,
               },
-              unit_amount: AMOUNT_CENTS[taxType],
+              unit_amount: ACOMPTE_CENTS[taxType],
             },
             quantity: 1,
           },
@@ -114,7 +119,6 @@ export async function POST(req: Request) {
         success_url: successUrl.toString(),
         cancel_url: cancelUrl.toString(),
 
-        // ✅ CQ lié au paiement (metadata)
         metadata: {
           fid,
           cq_id: cqId || "",
@@ -126,9 +130,20 @@ export async function POST(req: Request) {
       { idempotencyKey }
     );
 
+    if (!session.url) {
+      return NextResponse.json({ error: "Stripe session missing url" }, { status: 500 });
+    }
+
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Checkout error";
+    // ✅ renvoie un message lisible
+    const message =
+      e instanceof Stripe.errors.StripeError
+        ? e.message
+        : e instanceof Error
+          ? e.message
+          : "Checkout error";
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
