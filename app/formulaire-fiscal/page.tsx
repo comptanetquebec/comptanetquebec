@@ -9,18 +9,22 @@ import Steps from "./Steps";
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "./ui";
 
 /**
- * IMPORTANT (à ajuster si tes noms sont différents)
+ * Storage / DB
  */
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
 
-/** Lang (toujours suivre la langue de la 1re page via query ?lang ou cookie ailleurs) */
+/**
+ * Lang — toujours suivre la langue de la 1re page (query ?lang prioritaire)
+ */
 type Lang = "fr" | "en" | "es";
+
 function normalizeLang(v: string | null | undefined): Lang {
   const x = (v || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
 }
+
 
 /* ===========================
    Types
@@ -167,11 +171,6 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
 function titleFromType(_type: FormTypeDb) {
   // cette page = T1 particulier seulement (tu peux ajuster plus tard)
   return "Particulier (T1)";
-}
-
-function normalizeLang(v: string) {
-  const x = (v || "").toLowerCase();
-  return x === "fr" || x === "en" || x === "es" ? x : "fr";
 }
 
 function supaErr(e: unknown) {
