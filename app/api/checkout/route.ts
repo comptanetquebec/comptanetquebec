@@ -47,8 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
     }
 
-    // ✅ Crée Stripe une fois que la clé est confirmée
-    const stripe = new Stripe(sk, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(sk);
 
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
