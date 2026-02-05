@@ -17,7 +17,7 @@ const FORMS_TABLE = "formulaires_fiscaux";
 /**
  * Stripe checkout API (adapte si ton endpoint diffère)
  */
-const CHECKOUT_API = "/api/stripe/checkout";
+const CHECKOUT_API = "/api/checkout";
 
 /**
  * Lang
