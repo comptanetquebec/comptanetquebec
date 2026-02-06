@@ -280,7 +280,7 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
           </button>
         </header>
 
-        <Steps step={3} lang={lang} />
+        <Steps step={3} lang={lang} flow="ta" />
 
         <div className="ff-title">
           <h1>{t(lang, "Résumé et paiement (TA)", "Summary & payment (TA)", "Resumen y pago (TA)")}</h1>
