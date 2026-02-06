@@ -432,51 +432,57 @@ function DepotDocumentsInner({
             </div>
           )}
 
-          {/* Upload stylé */}
-          <div className="ff-docs">
-            <div className={`ff-drop ${disabledUpload ? "ff-drop--disabled" : ""}`}>
-              <div className="ff-drop__text">
-                <p className="ff-drop__title">
-                  {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
-                </p>
-                <p className="ff-drop__hint">
-                  {t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}
-                </p>
-              </div>
+         {/* Upload stylé */}
+<div className="ff-docs">
+  <div className={`ff-dropzone ${disabledUpload ? "ff-dropzone--disabled" : ""}`}>
+    <div>
+      <p className="ff-dropzone__title">
+        {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
+      </p>
+      <p className="ff-dropzone__hint">
+        {t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}
+      </p>
+    </div>
 
-              <div className="ff-doc-actions">
-                <label
-                  className="ff-btn ff-btn-primary"
-                  style={{ cursor: disabledUpload ? "not-allowed" : "pointer" }}
-                  aria-disabled={disabledUpload}
-                >
-                  {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
-                  <input
-                    className="ff-file-input"
-                    type="file"
-                    multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
-                    disabled={disabledUpload}
-                    onChange={(e) => {
-                      void handleFiles(e.target.files);
-                      e.currentTarget.value = "";
-                    }}
-                  />
-                </label>
+    <button
+      type="button"
+      className="ff-btn ff-btn-primary"
+      disabled={disabledUpload}
+      onClick={() => !disabledUpload && fileInputRef.current?.click()}
+    >
+      {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
+    </button>
 
-                {uploading && <div className="ff-progress">{t(lang, "Téléversement…", "Uploading…", "Subiendo…")}</div>}
-              </div>
-            </div>
+    <input
+      ref={fileInputRef}
+      className="ff-file-input"
+      type="file"
+      multiple
+      accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
+      disabled={disabledUpload}
+      onChange={(e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length) handleUploadFiles(files);
+        e.currentTarget.value = "";
+      }}
+    />
+  </div>
 
-            <p className="ff-doc-note">
-              {t(
-                lang,
-                "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.",
-                "Tip: you can upload multiple files at once.",
-                "Consejo: puede subir varios archivos a la vez."
-              )}
-            </p>
-          </div>
+  {uploading && (
+    <div className="ff-progress">
+      {t(lang, "Téléversement…", "Uploading…", "Subiendo…")}
+    </div>
+  )}
+</div>
+
+<p className="ff-doc-note">
+  {t(
+    lang,
+    "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.",
+    "Tip: you can upload multiple files at once.",
+    "Consejo: puede subir varios archivos a la vez."
+  )}
+</p>
 
           <div className="ff-mt">
             <div className="ff-subtitle">
