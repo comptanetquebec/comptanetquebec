@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -153,6 +153,9 @@ function DepotDocumentsInner({
   lang: Lang;
 }) {
   const router = useRouter();
+
+  // ✅ AJOUT ICI
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [msg, setMsg] = useState<string | null>(null);
 
