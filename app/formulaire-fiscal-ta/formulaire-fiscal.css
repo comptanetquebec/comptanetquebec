@@ -532,3 +532,38 @@
     justify-content:flex-start;
   }
 }
+/* Steps style "tabs" comme T1 */
+.ff-steps{
+  display:flex;
+  gap:6px;
+  margin-top:14px;
+  padding:6px;
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  flex-wrap: nowrap;
+}
+
+.ff-step{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:12px 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ff-step-active{
+  background: var(--card);
+  border-color: rgba(0,74,173,.25);
+  box-shadow: 0 0 0 4px rgba(0,74,173,.08);
+}
+
+@media (max-width: 640px){
+  .ff-steps{ flex-wrap: wrap; }
+  .ff-step{ justify-content:flex-start; }
+}
