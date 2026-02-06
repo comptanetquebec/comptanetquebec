@@ -456,19 +456,19 @@ function DepotDocumentsInner({
       {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
     </button>
 
-    <input
-      ref={fileInputRef}
-      className="ff-file-input"
-      type="file"
-      multiple
-      accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
-      disabled={disabledUpload}
-      onChange={(e) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length) handleUploadFiles(files);
-        e.currentTarget.value = "";
-      }}
-    />
+   <input
+  ref={fileInputRef}
+  className="ff-file-input"
+  type="file"
+  multiple
+  accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
+  disabled={disabledUpload}
+  onChange={(e) => {
+    const fl = e.target.files;
+    if (fl && fl.length > 0) handleFiles(fl);
+    e.currentTarget.value = "";
+  }}
+/>
   </div>
 
   {uploading && (
