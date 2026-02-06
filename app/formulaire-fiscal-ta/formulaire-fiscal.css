@@ -475,3 +475,60 @@
     justify-content:flex-start;
   }
 }
+/* ===============================
+   Steps (Stepper)
+================================ */
+
+.ff-steps{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.ff-step{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background:#ffffff;
+  color:#0f172a;
+  font-weight: 900;
+  font-size: 13px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.06);
+}
+
+.ff-step-num{
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid #cbd5e1;
+  background:#f8fafc;
+  font-weight: 900;
+}
+
+.ff-step-active{
+  border-color: rgba(0,74,173,.35);
+  box-shadow: 0 0 0 4px rgba(0,74,173,.10);
+}
+
+.ff-step-active .ff-step-num{
+  border-color:#004aad;
+  background: rgba(0,74,173,.10);
+}
+
+@media (max-width: 640px){
+  .ff-steps{
+    gap: 8px;
+  }
+  .ff-step{
+    width: 100%;
+    justify-content:flex-start;
+  }
+}
