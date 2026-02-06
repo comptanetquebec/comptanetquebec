@@ -793,7 +793,7 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
           </div>
         )}
 
-        <Steps step={1} lang={lang} />
+        <Steps step={1} lang={lang} flow="ta" />
 
         {/* Étape 1 = FORM ONLY (pas de submit final ici) */}
         <div className="ff-form">
