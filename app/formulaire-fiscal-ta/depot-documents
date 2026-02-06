@@ -19,7 +19,7 @@ const FORMS_TABLE = "formulaires_fiscaux";
 /**
  * Route réelle (référence unique)
  */
-const DEPOT_ROUTE = "/formulaire-fiscal/depot-documents";
+const DEPOT_ROUTE = "/formulaire-fiscal-ta/depot-documents";
 
 /**
  * Lang
@@ -371,7 +371,7 @@ function DepotDocumentsInner({
           <div />
         </header>
 
-        <Steps step={2} lang={lang} />
+        <Steps step={2} lang={lang} flow="ta" />
 
         <div className="ff-title">
           <h1>{t(lang, "Dépôt de documents", "Document upload", "Subida de documentos")}</h1>
