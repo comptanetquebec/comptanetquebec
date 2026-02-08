@@ -3,75 +3,82 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import AdminDossiersClient, { type AdminDossierRow } from "./AdminDossiersClient";
 
-type DocRow = {
-  formulaire_id: string | null;
-  created_at: string | null;
-};
-
 type StatusRow = {
   formulaire_id: string;
   status: "recu" | "en_cours" | "attente_client" | "termine";
   updated_at: string | null;
 };
 
+type DocRow = {
+  formulaire_id: string | null;
+  created_at: string | null;
+};
+
+function AccessDenied() {
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold">Accès refusé</h1>
+      <p className="mt-2 text-sm opacity-80">
+        Vous n’avez pas l’autorisation d’accéder à cette section.
+      </p>
+    </div>
+  );
+}
+
 export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
 
-  // ✅ Auth obligatoire (si pas connecté → login)
+  // ✅ Auth obligatoire : pas connecté (ou souci auth) → redirect login
   const { data: auth, error: authError } = await supabase.auth.getUser();
-  if (authError) {
-    return (
-      <pre className="p-6 whitespace-pre-wrap">
-        auth.getUser error: {authError.message}
-      </pre>
-    );
-  }
-  if (!auth?.user) {
-    // Mets ici ta page de login réelle si différente
+  if (authError || !auth?.user) {
     redirect("/espace-client?next=/admin/dossiers");
   }
 
-  // ✅ Admin check (profiles.is_admin)
+  const userId = auth.user.id;
+
+  // ✅ Admin check : connecté mais pas admin → Accès refusé
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_admin")
-    .eq("id", auth.user.id)
+    .eq("id", userId)
     .maybeSingle();
 
-  if (profileError) {
-    return (
-      <pre className="p-6 whitespace-pre-wrap">
-        profiles select error: {profileError.message}
-      </pre>
-    );
+  if (profileError || !profile?.is_admin) {
+    return <AccessDenied />;
   }
-  if (!profile?.is_admin) return <div className="p-6">Accès refusé</div>;
 
-  // ✅ Docs (dossiers existants) — distinct formulaire_id
+  // ✅ Docs : dossiers existants (triés du plus récent au plus vieux)
   const { data: docs, error: docsError } = await supabase
     .from("formulaire_documents")
     .select("formulaire_id, created_at")
     .order("created_at", { ascending: false });
 
   if (docsError) {
+    // pas de leak : page générique (ou AccessDenied si tu préfères)
     return (
-      <pre className="p-6 whitespace-pre-wrap">
-        formulaire_documents select error: {docsError.message}
-      </pre>
+      <div className="p-6">
+        <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
+        <p className="mt-2 text-sm opacity-80">Veuillez réessayer plus tard.</p>
+      </div>
     );
   }
 
-  const cleanIds =
-    (docs as DocRow[] | null)
-      ?.map((d) => (d.formulaire_id ?? "").trim())
-      .filter(Boolean) ?? [];
+  const docsRows = (docs ?? []) as DocRow[];
 
-  // unique (en gardant l’ordre du plus récent)
-  const seen = new Set<string>();
-  const dossierIds = cleanIds.filter((id) => (seen.has(id) ? false : (seen.add(id), true)));
+  // ✅ created_at le plus récent par formulaire_id
+  const createdAtMap = new Map<string, string | null>();
+  for (const d of docsRows) {
+    const id = (d.formulaire_id ?? "").trim();
+    if (!id) continue;
+    if (!createdAtMap.has(id)) {
+      // tri desc → premier rencontré = plus récent
+      createdAtMap.set(id, d.created_at ?? null);
+    }
+  }
+
+  const dossierIds = Array.from(createdAtMap.keys());
 
   // ✅ Statuts
-  // (si pas de statut → "recu" par défaut)
   let statusRows: StatusRow[] = [];
   if (dossierIds.length > 0) {
     const { data: s, error: sErr } = await supabase
@@ -81,11 +88,13 @@ export default async function AdminDossiersPage() {
 
     if (sErr) {
       return (
-        <pre className="p-6 whitespace-pre-wrap">
-          dossier_statuses select error: {sErr.message}
-        </pre>
+        <div className="p-6">
+          <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
+          <p className="mt-2 text-sm opacity-80">Veuillez réessayer plus tard.</p>
+        </div>
       );
     }
+
     statusRows = (s ?? []) as StatusRow[];
   }
 
@@ -97,17 +106,14 @@ export default async function AdminDossiersPage() {
     });
   }
 
-  // ✅ construire rows pour l’UI (onglets + compteurs)
+  // ✅ Rows UI
   const rows: AdminDossierRow[] = dossierIds.map((id) => {
-    const created = (docs as DocRow[] | null)?.find((x) => (x.formulaire_id ?? "").trim() === id)
-      ?.created_at ?? null;
-
     const st = statusMap.get(id)?.status ?? "recu";
     const up = statusMap.get(id)?.updated_at ?? null;
 
     return {
       formulaire_id: id,
-      created_at: created,
+      created_at: createdAtMap.get(id) ?? null,
       status: st,
       updated_at: up,
     };
