@@ -270,6 +270,7 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
   const formTitle = "Travailleur autonome (T1)";
 
   const [msg, setMsg] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // dossier courant
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
@@ -545,38 +546,45 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
   /* ===========================
      Save draft (insert/update)
   =========================== */
-  const saveDraft = useCallback(async (): Promise<string | null> => {
-    if (hydrating.current) return formulaireId ?? null;
+ const saveDraft = useCallback(async (): Promise<string | null> => {
+  if (hydrating.current) return formulaireId ?? null;
+  if (submitting) return formulaireId ?? null;
 
-    if (formulaireId) {
-      const { error } = await supabase
-        .from(FORMS_TABLE)
-        .update({ lang, data: draftData })
-        .eq("id", formulaireId)
-        .eq("user_id", userId);
-
-      if (error) throw new Error(supaErr(error));
-      return formulaireId;
-    }
-
-    const { data: dataInsert, error: errorInsert } = await supabase
+  if (formulaireId) {
+    const { error } = await supabase
       .from(FORMS_TABLE)
-      .insert({
-        user_id: userId,
-        form_type: FORM_TYPE_TA,
+      .update({
         lang,
-        status: "draft",
+        annee: anneeImposition || null,
         data: draftData,
       })
-      .select("id")
-      .single<InsertIdRow>();
+      .eq("id", formulaireId)
+      .eq("user_id", userId);
 
-    if (errorInsert) throw new Error(supaErr(errorInsert));
+    if (error) throw new Error(supaErr(error));
+    return formulaireId;
+  }
 
-    const fid = dataInsert?.id ?? null;
-    if (fid) setFormulaireId(fid);
-    return fid;
-  }, [draftData, formulaireId, lang, userId]);
+  const { data: dataInsert, error: errorInsert } = await supabase
+    .from(FORMS_TABLE)
+    .insert({
+      user_id: userId,
+      form_type: FORM_TYPE_TA,
+      lang,
+      status: "draft",
+      annee: anneeImposition || null,
+      data: draftData,
+    })
+    .select("id")
+    .single<InsertIdRow>();
+
+  if (errorInsert) throw new Error(supaErr(errorInsert));
+
+  const fid = dataInsert?.id ?? null;
+  if (fid) setFormulaireId(fid);
+  return fid;
+}, [draftData, formulaireId, lang, userId, anneeImposition, submitting]);
+
 
   /* ===========================
      Load last form (preload)
@@ -584,14 +592,20 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
 
-    const { data: row, error } = await supabase
-      .from(FORMS_TABLE)
-      .select("id, data, created_at")
-      .eq("user_id", userId)
-      .eq("form_type", FORM_TYPE_TA)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<FormRow>();
+   let q = supabase
+  .from(FORMS_TABLE)
+  .select("id, data, created_at")
+  .eq("user_id", userId)
+  .eq("form_type", FORM_TYPE_TA);
+
+if (anneeImposition.trim()) {
+  q = q.eq("annee", anneeImposition.trim());
+}
+
+const { data: row, error } = await q
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .maybeSingle<FormRow>();
 
     if (error) {
       setMsg(`Erreur chargement: ${error.message}`);
@@ -699,7 +713,7 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
     await loadDocs(fid);
 
     hydrating.current = false;
-  }, [loadDocs, userId]);
+  }, [loadDocs, userId, anneeImposition]);
 
   useEffect(() => {
     void loadLastForm();
