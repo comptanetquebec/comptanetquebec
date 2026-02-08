@@ -11,7 +11,7 @@ import RequireAuth from "../RequireAuth";
 /**
  * TA ONLY
  */
-const FORM_KIND = "TA"; // on force TA ici
+const FORM_KIND = "TA";
 const SEND_ROUTE = "/formulaire-fiscal-ta/envoyer-dossier";
 const DEPOT_ROUTE = "/formulaire-fiscal-ta/depot-documents";
 
@@ -80,7 +80,6 @@ export default function EnvoyerDossierTaPage() {
   const params = useSearchParams();
   const fid = params.get("fid") || "";
 
-  // on force TA, même si un param type arrive
   const lang = useMemo(() => resolveLang(params.get("lang")), [params]);
 
   const nextPath = useMemo(() => {
@@ -97,7 +96,15 @@ export default function EnvoyerDossierTaPage() {
   );
 }
 
-function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: string; lang: Lang }) {
+function EnvoyerDossierInner({
+  userId,
+  fid,
+  lang,
+}: {
+  userId: string;
+  fid: string;
+  lang: Lang;
+}) {
   const router = useRouter();
 
   const [docs, setDocs] = useState<DocRow[]>([]);
@@ -214,7 +221,7 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fid,
-          type: "ta",       // ✅ forcé TA
+          type: "ta",
           mode: "acompte",
           lang,
           cqId,
@@ -270,7 +277,12 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
               <span>
-                {t(lang, "Étape 3/3 — Paiement & envoi", "Step 3/3 — Payment & submission", "Paso 3/3 — Pago y envío")}
+                {t(
+                  lang,
+                  "Étape 4/4 — Paiement & envoi",
+                  "Step 4/4 — Payment & submission",
+                  "Paso 4/4 — Pago y envío"
+                )}
               </span>
             </div>
           </div>
@@ -280,7 +292,7 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
           </button>
         </header>
 
-        <Steps step={3} lang={lang} flow="ta" />
+        <Steps step={4} lang={lang} flow="ta" />
 
         <div className="ff-title">
           <h1>{t(lang, "Résumé et paiement (TA)", "Summary & payment (TA)", "Resumen y pago (TA)")}</h1>
@@ -303,12 +315,21 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
         <section className="ff-card">
           <div className="ff-card-head">
             <h2>{t(lang, "Résumé du dossier", "File summary", "Resumen del expediente")}</h2>
-            <p>{t(lang, "Vérification automatique des documents.", "Automatic document check.", "Verificación automática de documentos.")}</p>
+            <p>
+              {t(
+                lang,
+                "Vérification automatique des documents.",
+                "Automatic document check.",
+                "Verificación automática de documentos."
+              )}
+            </p>
           </div>
 
           <div className="ff-grid2">
             <div className="ff-field">
-              <div className="ff-label">{t(lang, "Numéro de dossier (CQ)", "File number (CQ)", "Número de expediente (CQ)")}</div>
+              <div className="ff-label">
+                {t(lang, "Numéro de dossier (CQ)", "File number (CQ)", "Número de expediente (CQ)")}
+              </div>
               <div className="ff-empty" style={{ borderStyle: "solid" }}>
                 {loadingForm
                   ? t(lang, "Chargement…", "Loading…", "Cargando…")
@@ -382,7 +403,12 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
 
             {!confirm && (
               <p className="ff-footnote">
-                {t(lang, "Cochez la confirmation pour continuer.", "Check the confirmation to continue.", "Marque la confirmación para continuar.")}
+                {t(
+                  lang,
+                  "Cochez la confirmation pour continuer.",
+                  "Check the confirmation to continue.",
+                  "Marque la confirmación para continuar."
+                )}
               </p>
             )}
 
@@ -426,4 +452,3 @@ function EnvoyerDossierInner({ userId, fid, lang }: { userId: string; fid: strin
     </main>
   );
 }
-
