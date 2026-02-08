@@ -542,6 +542,49 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
     copieImpots,
     anneeImposition,
   ]);
+/* ===========================
+   Save draft (insert/update)
+=========================== */
+const saveDraft = useCallback(async (): Promise<string | null> => {
+  if (hydrating.current) return formulaireId ?? null;
+  if (submitting) return formulaireId ?? null;
+
+  // UPDATE
+  if (formulaireId) {
+    const { error } = await supabase
+      .from(FORMS_TABLE)
+      .update({
+        lang,
+        annee: anneeImposition || null,
+        data: draftData,
+      })
+      .eq("id", formulaireId)
+      .eq("user_id", userId);
+
+    if (error) throw new Error(supaErr(error));
+    return formulaireId;
+  }
+
+  // INSERT
+  const { data: dataInsert, error: errorInsert } = await supabase
+    .from(FORMS_TABLE)
+    .insert({
+      user_id: userId,
+      form_type: FORM_TYPE_TA,
+      lang,
+      status: "draft",
+      annee: anneeImposition || null,
+      data: draftData,
+    })
+    .select("id")
+    .single<InsertIdRow>();
+
+  if (errorInsert) throw new Error(supaErr(errorInsert));
+
+  const fid = dataInsert?.id ?? null;
+  if (fid) setFormulaireId(fid);
+  return fid;
+}, [draftData, formulaireId, lang, userId, anneeImposition, submitting]);
 
 /* ===========================
    Load last form (preload)
