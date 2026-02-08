@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import "../formulaire-fiscal.css"; // si ton css est dans /formulaire-fiscal-ta/ sinon ajuste
+import "../formulaire-fiscal.css";
 import Steps from "../Steps";
 import RequireAuth from "../RequireAuth";
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../ui";
@@ -109,8 +109,7 @@ type TAProfil = {
 
 type Formdata = {
   dossierType?: string;
-  taProfil?: TAProfil; // <— on ajoute ici
-  // ... le reste de tes sections existantes
+  taProfil?: TAProfil;
 };
 
 type FormRow = {
@@ -124,16 +123,21 @@ type FormRow = {
 };
 
 /* ===========================
-   Page wrapper
+   Page wrapper (refait)
 =========================== */
 
 export default function FormulaireFiscalTAProfilActivitePage() {
   const params = useSearchParams();
-  const lang = normalizeLang(params.get("lang") || "fr");
-  const nextPath = useMemo(
-    () => `/formulaire-fiscal-ta/profil-activite?lang=${encodeURIComponent(lang)}`,
-    [lang]
-  );
+
+  const lang = normalizeLang(params.get("lang"));
+  const fid = params.get("fid");
+
+  const nextPath = useMemo(() => {
+    const q = new URLSearchParams();
+    q.set("lang", lang);
+    if (fid) q.set("fid", fid);
+    return `/formulaire-fiscal-ta/profil-activite?${q.toString()}`;
+  }, [lang, fid]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
@@ -182,6 +186,26 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [immobilisations, setImmobilisations] = useState(false);
   const [sousTraitants, setSousTraitants] = useState(false);
   const [employes, setEmployes] = useState(false);
+
+  // ✅ Accordéon (section ouverte)
+  type DepenseSection =
+    | "bureau"
+    | "vehicule"
+    | "inventaire"
+    | "immobilisations"
+    | "sousTraitants"
+    | "employes";
+  const [openDepense, setOpenDepense] = useState<DepenseSection | null>(null);
+
+  // ✅ Fermer automatiquement si décoché
+  useEffect(() => {
+    if (!bureauDomicile && openDepense === "bureau") setOpenDepense(null);
+    if (!vehicule && openDepense === "vehicule") setOpenDepense(null);
+    if (!inventaire && openDepense === "inventaire") setOpenDepense(null);
+    if (!immobilisations && openDepense === "immobilisations") setOpenDepense(null);
+    if (!sousTraitants && openDepense === "sousTraitants") setOpenDepense(null);
+    if (!employes && openDepense === "employes") setOpenDepense(null);
+  }, [bureauDomicile, vehicule, inventaire, immobilisations, sousTraitants, employes, openDepense]);
 
   const [methodeComptable, setMethodeComptable] = useState<AccountingMethod>("");
   const [outilComptable, setOutilComptable] = useState<AccountingTool>("");
@@ -321,7 +345,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
 
     setSaving(true);
     try {
-      // on récupère la data actuelle pour merger sans écraser le reste
       const { data: row, error: e1 } = await supabase
         .from(FORMS_TABLE)
         .select("data")
@@ -346,7 +369,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
     }
   }, [fid, userId, taProfilDraft, lang]);
 
-  // autosave debounce
   useEffect(() => {
     if (hydrating.current) return;
 
@@ -603,17 +625,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
               />
 
               {modesPaiement.includes("autre") && (
-                <Field
-                  label="Précisez"
-                  value={autresPaiementTexte}
-                  onChange={setAutresPaiementTexte}
-                  placeholder="ex.: Interac, etc."
-                />
+                <Field label="Précisez" value={autresPaiementTexte} onChange={setAutresPaiementTexte} />
               )}
             </div>
           </section>
 
-          {/* DÉPENSES / DÉCLENCHEURS */}
+          {/* DÉPENSES / DÉCLENCHEURS + ACCORDÉON */}
           <section className="ff-card">
             <div className="ff-card-head">
               <h2>Sections de dépenses utilisées</h2>
@@ -621,12 +638,146 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
             </div>
 
             <div className="ff-stack">
+              {/* Cases à cocher */}
               <CheckboxField label="Bureau à domicile" checked={bureauDomicile} onChange={setBureauDomicile} />
               <CheckboxField label="Véhicule (usage affaires)" checked={vehicule} onChange={setVehicule} />
               <CheckboxField label="Inventaire (produits)" checked={inventaire} onChange={setInventaire} />
-              <CheckboxField label="Immobilisations (équipement)" checked={immobilisations} onChange={setImmobilisations} />
+              <CheckboxField
+                label="Immobilisations (équipement)"
+                checked={immobilisations}
+                onChange={setImmobilisations}
+              />
               <CheckboxField label="Sous-traitants" checked={sousTraitants} onChange={setSousTraitants} />
               <CheckboxField label="Employés" checked={employes} onChange={setEmployes} />
+
+              {/* Accordéon */}
+              {(bureauDomicile || vehicule || inventaire || immobilisations || sousTraitants || employes) && (
+                <div className="ff-card" style={{ padding: 12 }}>
+                  <div className="ff-muted" style={{ marginBottom: 10 }}>
+                    Cliquez sur une section pour l’ouvrir (seules les sections cochées apparaissent).
+                  </div>
+
+                  {bureauDomicile && (
+                    <div style={{ marginBottom: 10 }}>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-outline"
+                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                        onClick={() => setOpenDepense((p) => (p === "bureau" ? null : "bureau"))}
+                      >
+                        <span>Bureau à domicile</span>
+                        <span>{openDepense === "bureau" ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openDepense === "bureau" && (
+                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                          <div className="ff-muted">Champs “Bureau à domicile” à venir…</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {vehicule && (
+                    <div style={{ marginBottom: 10 }}>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-outline"
+                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                        onClick={() => setOpenDepense((p) => (p === "vehicule" ? null : "vehicule"))}
+                      >
+                        <span>Véhicule (usage affaires)</span>
+                        <span>{openDepense === "vehicule" ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openDepense === "vehicule" && (
+                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                          <div className="ff-muted">Champs “Véhicule” à venir…</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {inventaire && (
+                    <div style={{ marginBottom: 10 }}>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-outline"
+                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                        onClick={() => setOpenDepense((p) => (p === "inventaire" ? null : "inventaire"))}
+                      >
+                        <span>Inventaire (produits)</span>
+                        <span>{openDepense === "inventaire" ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openDepense === "inventaire" && (
+                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                          <div className="ff-muted">Champs “Inventaire” à venir…</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {immobilisations && (
+                    <div style={{ marginBottom: 10 }}>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-outline"
+                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                        onClick={() => setOpenDepense((p) => (p === "immobilisations" ? null : "immobilisations"))}
+                      >
+                        <span>Immobilisations (équipement)</span>
+                        <span>{openDepense === "immobilisations" ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openDepense === "immobilisations" && (
+                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                          <div className="ff-muted">Champs “Immobilisations” à venir…</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {sousTraitants && (
+                    <div style={{ marginBottom: 10 }}>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-outline"
+                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                        onClick={() => setOpenDepense((p) => (p === "sousTraitants" ? null : "sousTraitants"))}
+                      >
+                        <span>Sous-traitants</span>
+                        <span>{openDepense === "sousTraitants" ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openDepense === "sousTraitants" && (
+                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                          <div className="ff-muted">Champs “Sous-traitants” à venir…</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {employes && (
+                    <div>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-outline"
+                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                        onClick={() => setOpenDepense((p) => (p === "employes" ? null : "employes"))}
+                      >
+                        <span>Employés</span>
+                        <span>{openDepense === "employes" ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openDepense === "employes" && (
+                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                          <div className="ff-muted">Champs “Employés” à venir…</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
