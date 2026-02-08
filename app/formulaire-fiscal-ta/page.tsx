@@ -592,39 +592,39 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
  const loadLastForm = useCallback(async () => {
   hydrating.current = true;
 
-  let query = supabase
-    .from(FORMS_TABLE)
-    .select("id, data, created_at")
-    .eq("user_id", userId)
-    .eq("form_type", FORM_TYPE_TA);
+  try {
+    let query = supabase
+      .from(FORMS_TABLE)
+      .select("id, data, created_at")
+      .eq("user_id", userId)
+      .eq("form_type", FORM_TYPE_TA);
 
-  if (anneeImposition.trim()) {
-    query = query.eq("annee", anneeImposition.trim());
-  }
+    if (anneeImposition.trim()) {
+      query = query.eq("annee", anneeImposition.trim());
+    }
 
-  const { data: row, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<FormRow>();
+    const { data: row, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<FormRow>();
 
-  if (error) {
-    setMsg(`Erreur chargement: ${error.message}`);
+    if (error) {
+      setMsg(`Erreur chargement: ${error.message}`);
+      return;
+    }
+    if (!row) return;
+
+    setFormulaireId(row.id);
+
+    const form = row.data;
+    // ... (ton code qui applique form dans les states)
+    // si tu as loadDocs(fid) ici, garde-le:
+    // await loadDocs(row.id);
+
+  } finally {
     hydrating.current = false;
-    return;
   }
-  if (!row) {
-    hydrating.current = false;
-    return;
-  }
-
-  const fid = row.id;
-  setFormulaireId(fid);
-
-  const form = row.data;
-
-  // ✅ important: finir l’hydratation aussi en succès
-  hydrating.current = false;
-}, [userId, anneeImposition]);
+}, [loadDocs, userId, anneeImposition]);
 
     const client = form?.client ?? {};
     setPrenom(client.prenom ?? "");
