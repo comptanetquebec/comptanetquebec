@@ -742,27 +742,29 @@ useEffect(() => {
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
 
-  // ✅ Étape 1 → Étape 2 (dépôt documents)
-  const goToDepotDocuments = useCallback(async () => {
-    try {
-      setMsg("⏳ Préparation du dossier…");
+ // ✅ Étape 1 → Étape 2 (revenus & dépenses)
+const goToDepotDocuments = useCallback(async () => {
+  try {
+    setMsg("⏳ Préparation du dossier…");
 
-      const fidFromSave = await saveDraft();
-      const fid = fidFromSave || fidDisplay;
+    const fidFromSave = await saveDraft();
+    const fid = fidFromSave || fidDisplay;
 
-      if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
+    if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
-      setCurrentFid(fid);
-      await loadDocs(fid);
+    setCurrentFid(fid);
+    await loadDocs(fid);
 
-      setMsg(null);
+    setMsg(null);
 
-      router.push(`/formulaire-fiscal-ta/depot-documents?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
-      setMsg("❌ " + message);
-    }
-  }, [fidDisplay, lang, loadDocs, router, saveDraft]);
+    router.push(
+      `/formulaire-fiscal-ta/revenus-depenses?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`
+    );
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Erreur redirection.";
+    setMsg("❌ " + message);
+  }
+}, [fidDisplay, lang, loadDocs, router, saveDraft]);
 
   /* ===========================
      Render
