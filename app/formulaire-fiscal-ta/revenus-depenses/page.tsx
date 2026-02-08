@@ -45,8 +45,19 @@ function formatDateInput(v: string) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+function formatMoneyInput(v: string) {
+  // chiffres + séparateurs (.,)
+  const x = (v || "").replace(/[^\d.,]/g, "");
+  return x.slice(0, 14);
+}
+
+function formatPercentInput(v: string) {
+  const x = (v || "").replace(/[^\d]/g, "").slice(0, 3);
+  return x;
+}
+
 /* ===========================
-   Types data (ajout TA)
+   Types data (TA)
 =========================== */
 
 type RevenueType =
@@ -72,6 +83,67 @@ type PayMethod =
 type AccountingMethod = "encaisse" | "exercice" | "";
 type AccountingTool = "aucun" | "excel" | "quickbooks" | "autre" | "";
 
+type Money = string;
+
+/**
+ * Dépenses (selon ton PDF)
+ */
+type TAGeneralExpenses = {
+  publicitePromotion?: Money;
+  fraisJuridiques?: Money;
+  fraisComptables?: Money;
+  repasRepresentation?: Money;
+  hebergement?: Money;
+  voyage?: Money;
+  stationnement?: Money;
+  fournitures?: Money;
+  assuranceResponsabilitePro?: Money;
+  permisLicences?: Money;
+  locationBureau?: Money;
+  salairesSousTraitants?: Money;
+  fraisFormationCongres?: Money;
+  internetPartieAffaires?: Money;
+
+  autres1Label?: string;
+  autres1Montant?: Money;
+  autres2Label?: string;
+  autres2Montant?: Money;
+  autres3Label?: string;
+  autres3Montant?: Money;
+};
+
+type TAVehicule = {
+  pctUtilisationAffaires?: string; // %
+  marqueModele?: string;
+  prixAchatAvantTaxes?: Money;
+  valeurMarchande?: Money;
+  prixDetailSuggere?: Money;
+
+  carburant?: Money;
+  assurances?: Money;
+  entretienReparation?: Money;
+  immatriculationPermis?: Money;
+  interetsPretAuto?: Money; // pas les mensualités
+  fraisLocation?: Money;
+  cellulairePartieAffaires?: Money;
+};
+
+type TABureauDomicile = {
+  pctUtilisationDomicile?: string; // %
+  chauffageElectricite?: Money;
+  assuranceHabitation?: Money;
+
+  // Si propriétaire (info demandée dans le PDF)
+  interetHypothecaire?: Money; // non déductible (PDF)
+  amortissement?: Money; // non déductible (PDF)
+  fraisCondo?: Money;
+  taxesMunicipales?: Money;
+  taxesScolaires?: Money;
+
+  // Si locataire
+  loyer?: Money;
+};
+
 type TAProfil = {
   // identité activité
   nomCommercial?: string;
@@ -93,13 +165,18 @@ type TAProfil = {
   modesPaiement?: PayMethod[];
   autresPaiementTexte?: string;
 
-  // dépenses / déclencheurs pages suivantes
-  bureauDomicile?: boolean;
-  vehicule?: boolean;
+  // déclencheurs pages suivantes
   inventaire?: boolean;
   immobilisations?: boolean;
   sousTraitants?: boolean;
   employes?: boolean;
+
+  // ✅ sections détaillées (PDF)
+  bureauDomicile?: boolean;
+  vehicule?: boolean;
+  depensesGenerales?: TAGeneralExpenses;
+  vehiculeDetails?: TAVehicule;
+  bureauDomicileDetails?: TABureauDomicile;
 
   // compta
   methodeComptable?: AccountingMethod;
@@ -123,7 +200,7 @@ type FormRow = {
 };
 
 /* ===========================
-   Page wrapper (refait)
+   Page wrapper
 =========================== */
 
 export default function FormulaireFiscalTAProfilActivitePage() {
@@ -161,7 +238,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const hydrating = useRef(false);
   const saveTimer = useRef<number | null>(null);
 
-  // ---- states TA profil
+  // ---- states TA profil (profil de base)
   const [nomCommercial, setNomCommercial] = useState("");
   const [neq, setNeq] = useState("");
   const [dateDebut, setDateDebut] = useState("");
@@ -180,33 +257,73 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [modesPaiement, setModesPaiement] = useState<PayMethod[]>([]);
   const [autresPaiementTexte, setAutresPaiementTexte] = useState("");
 
-  const [bureauDomicile, setBureauDomicile] = useState(false);
-  const [vehicule, setVehicule] = useState(false);
+  // ---- déclencheurs pages suivantes
   const [inventaire, setInventaire] = useState(false);
   const [immobilisations, setImmobilisations] = useState(false);
   const [sousTraitants, setSousTraitants] = useState(false);
   const [employes, setEmployes] = useState(false);
 
-  // ✅ Accordéon (section ouverte)
-  type DepenseSection =
-    | "bureau"
-    | "vehicule"
-    | "inventaire"
-    | "immobilisations"
-    | "sousTraitants"
-    | "employes";
+  // ---- sections détaillées (PDF)
+  const [bureauDomicile, setBureauDomicile] = useState(false);
+  const [vehicule, setVehicule] = useState(false);
+
+  // Accordéon (seulement pour les sections détaillées)
+  type DepenseSection = "bureau" | "vehicule";
   const [openDepense, setOpenDepense] = useState<DepenseSection | null>(null);
 
-  // ✅ Fermer automatiquement si décoché
   useEffect(() => {
     if (!bureauDomicile && openDepense === "bureau") setOpenDepense(null);
     if (!vehicule && openDepense === "vehicule") setOpenDepense(null);
-    if (!inventaire && openDepense === "inventaire") setOpenDepense(null);
-    if (!immobilisations && openDepense === "immobilisations") setOpenDepense(null);
-    if (!sousTraitants && openDepense === "sousTraitants") setOpenDepense(null);
-    if (!employes && openDepense === "employes") setOpenDepense(null);
-  }, [bureauDomicile, vehicule, inventaire, immobilisations, sousTraitants, employes, openDepense]);
+  }, [bureauDomicile, vehicule, openDepense]);
 
+  // ---- Dépenses générales (PDF)
+  const [gxPublicite, setGxPublicite] = useState("");
+  const [gxJuridique, setGxJuridique] = useState("");
+  const [gxComptables, setGxComptables] = useState("");
+  const [gxRepas, setGxRepas] = useState("");
+  const [gxHebergement, setGxHebergement] = useState("");
+  const [gxVoyage, setGxVoyage] = useState("");
+  const [gxStationnement, setGxStationnement] = useState("");
+  const [gxFournitures, setGxFournitures] = useState("");
+  const [gxAssPro, setGxAssPro] = useState("");
+  const [gxPermis, setGxPermis] = useState("");
+  const [gxLocationBureau, setGxLocationBureau] = useState("");
+  const [gxSalairesSousTraitants, setGxSalairesSousTraitants] = useState("");
+  const [gxFormationCongres, setGxFormationCongres] = useState("");
+  const [gxInternet, setGxInternet] = useState("");
+  const [gxAutre1Label, setGxAutre1Label] = useState("");
+  const [gxAutre1Montant, setGxAutre1Montant] = useState("");
+  const [gxAutre2Label, setGxAutre2Label] = useState("");
+  const [gxAutre2Montant, setGxAutre2Montant] = useState("");
+  const [gxAutre3Label, setGxAutre3Label] = useState("");
+  const [gxAutre3Montant, setGxAutre3Montant] = useState("");
+
+  // ---- Véhicule (PDF)
+  const [vehPct, setVehPct] = useState("");
+  const [vehMarqueModele, setVehMarqueModele] = useState("");
+  const [vehPrixAchat, setVehPrixAchat] = useState("");
+  const [vehValeurMarchande, setVehValeurMarchande] = useState("");
+  const [vehPrixDetail, setVehPrixDetail] = useState("");
+  const [vehCarburant, setVehCarburant] = useState("");
+  const [vehAssurances, setVehAssurances] = useState("");
+  const [vehEntretien, setVehEntretien] = useState("");
+  const [vehImmat, setVehImmat] = useState("");
+  const [vehInterets, setVehInterets] = useState("");
+  const [vehLocation, setVehLocation] = useState("");
+  const [vehCell, setVehCell] = useState("");
+
+  // ---- Bureau à domicile (PDF)
+  const [bdPct, setBdPct] = useState("");
+  const [bdChauffElec, setBdChauffElec] = useState("");
+  const [bdAssHab, setBdAssHab] = useState("");
+  const [bdInteretHyp, setBdInteretHyp] = useState("");
+  const [bdAmort, setBdAmort] = useState("");
+  const [bdCondo, setBdCondo] = useState("");
+  const [bdTaxMun, setBdTaxMun] = useState("");
+  const [bdTaxSco, setBdTaxSco] = useState("");
+  const [bdLoyer, setBdLoyer] = useState("");
+
+  // ---- Comptabilité
   const [methodeComptable, setMethodeComptable] = useState<AccountingMethod>("");
   const [outilComptable, setOutilComptable] = useState<AccountingTool>("");
   const [compteBancaireSepare, setCompteBancaireSepare] = useState<YesNo>("");
@@ -234,12 +351,65 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       modesPaiement,
       autresPaiementTexte: autresPaiementTexte.trim(),
 
-      bureauDomicile,
-      vehicule,
+      // déclencheurs
       inventaire,
       immobilisations,
       sousTraitants,
       employes,
+
+      // sections détaillées
+      bureauDomicile,
+      vehicule,
+
+      depensesGenerales: {
+        publicitePromotion: gxPublicite.trim(),
+        fraisJuridiques: gxJuridique.trim(),
+        fraisComptables: gxComptables.trim(),
+        repasRepresentation: gxRepas.trim(),
+        hebergement: gxHebergement.trim(),
+        voyage: gxVoyage.trim(),
+        stationnement: gxStationnement.trim(),
+        fournitures: gxFournitures.trim(),
+        assuranceResponsabilitePro: gxAssPro.trim(),
+        permisLicences: gxPermis.trim(),
+        locationBureau: gxLocationBureau.trim(),
+        salairesSousTraitants: gxSalairesSousTraitants.trim(),
+        fraisFormationCongres: gxFormationCongres.trim(),
+        internetPartieAffaires: gxInternet.trim(),
+        autres1Label: gxAutre1Label.trim(),
+        autres1Montant: gxAutre1Montant.trim(),
+        autres2Label: gxAutre2Label.trim(),
+        autres2Montant: gxAutre2Montant.trim(),
+        autres3Label: gxAutre3Label.trim(),
+        autres3Montant: gxAutre3Montant.trim(),
+      },
+
+      vehiculeDetails: {
+        pctUtilisationAffaires: vehPct.trim(),
+        marqueModele: vehMarqueModele.trim(),
+        prixAchatAvantTaxes: vehPrixAchat.trim(),
+        valeurMarchande: vehValeurMarchande.trim(),
+        prixDetailSuggere: vehPrixDetail.trim(),
+        carburant: vehCarburant.trim(),
+        assurances: vehAssurances.trim(),
+        entretienReparation: vehEntretien.trim(),
+        immatriculationPermis: vehImmat.trim(),
+        interetsPretAuto: vehInterets.trim(),
+        fraisLocation: vehLocation.trim(),
+        cellulairePartieAffaires: vehCell.trim(),
+      },
+
+      bureauDomicileDetails: {
+        pctUtilisationDomicile: bdPct.trim(),
+        chauffageElectricite: bdChauffElec.trim(),
+        assuranceHabitation: bdAssHab.trim(),
+        interetHypothecaire: bdInteretHyp.trim(),
+        amortissement: bdAmort.trim(),
+        fraisCondo: bdCondo.trim(),
+        taxesMunicipales: bdTaxMun.trim(),
+        taxesScolaires: bdTaxSco.trim(),
+        loyer: bdLoyer.trim(),
+      },
 
       methodeComptable,
       outilComptable,
@@ -260,12 +430,53 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       autresRevenusTexte,
       modesPaiement,
       autresPaiementTexte,
-      bureauDomicile,
-      vehicule,
       inventaire,
       immobilisations,
       sousTraitants,
       employes,
+      bureauDomicile,
+      vehicule,
+      gxPublicite,
+      gxJuridique,
+      gxComptables,
+      gxRepas,
+      gxHebergement,
+      gxVoyage,
+      gxStationnement,
+      gxFournitures,
+      gxAssPro,
+      gxPermis,
+      gxLocationBureau,
+      gxSalairesSousTraitants,
+      gxFormationCongres,
+      gxInternet,
+      gxAutre1Label,
+      gxAutre1Montant,
+      gxAutre2Label,
+      gxAutre2Montant,
+      gxAutre3Label,
+      gxAutre3Montant,
+      vehPct,
+      vehMarqueModele,
+      vehPrixAchat,
+      vehValeurMarchande,
+      vehPrixDetail,
+      vehCarburant,
+      vehAssurances,
+      vehEntretien,
+      vehImmat,
+      vehInterets,
+      vehLocation,
+      vehCell,
+      bdPct,
+      bdChauffElec,
+      bdAssHab,
+      bdInteretHyp,
+      bdAmort,
+      bdCondo,
+      bdTaxMun,
+      bdTaxSco,
+      bdLoyer,
       methodeComptable,
       outilComptable,
       compteBancaireSepare,
@@ -317,12 +528,60 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setModesPaiement((ta.modesPaiement ?? []) as PayMethod[]);
       setAutresPaiementTexte(ta.autresPaiementTexte ?? "");
 
-      setBureauDomicile(!!ta.bureauDomicile);
-      setVehicule(!!ta.vehicule);
       setInventaire(!!ta.inventaire);
       setImmobilisations(!!ta.immobilisations);
       setSousTraitants(!!ta.sousTraitants);
       setEmployes(!!ta.employes);
+
+      setBureauDomicile(!!ta.bureauDomicile);
+      setVehicule(!!ta.vehicule);
+
+      const gx = ta.depensesGenerales ?? {};
+      setGxPublicite(gx.publicitePromotion ?? "");
+      setGxJuridique(gx.fraisJuridiques ?? "");
+      setGxComptables(gx.fraisComptables ?? "");
+      setGxRepas(gx.repasRepresentation ?? "");
+      setGxHebergement(gx.hebergement ?? "");
+      setGxVoyage(gx.voyage ?? "");
+      setGxStationnement(gx.stationnement ?? "");
+      setGxFournitures(gx.fournitures ?? "");
+      setGxAssPro(gx.assuranceResponsabilitePro ?? "");
+      setGxPermis(gx.permisLicences ?? "");
+      setGxLocationBureau(gx.locationBureau ?? "");
+      setGxSalairesSousTraitants(gx.salairesSousTraitants ?? "");
+      setGxFormationCongres(gx.fraisFormationCongres ?? "");
+      setGxInternet(gx.internetPartieAffaires ?? "");
+      setGxAutre1Label(gx.autres1Label ?? "");
+      setGxAutre1Montant(gx.autres1Montant ?? "");
+      setGxAutre2Label(gx.autres2Label ?? "");
+      setGxAutre2Montant(gx.autres2Montant ?? "");
+      setGxAutre3Label(gx.autres3Label ?? "");
+      setGxAutre3Montant(gx.autres3Montant ?? "");
+
+      const vv = ta.vehiculeDetails ?? {};
+      setVehPct(vv.pctUtilisationAffaires ?? "");
+      setVehMarqueModele(vv.marqueModele ?? "");
+      setVehPrixAchat(vv.prixAchatAvantTaxes ?? "");
+      setVehValeurMarchande(vv.valeurMarchande ?? "");
+      setVehPrixDetail(vv.prixDetailSuggere ?? "");
+      setVehCarburant(vv.carburant ?? "");
+      setVehAssurances(vv.assurances ?? "");
+      setVehEntretien(vv.entretienReparation ?? "");
+      setVehImmat(vv.immatriculationPermis ?? "");
+      setVehInterets(vv.interetsPretAuto ?? "");
+      setVehLocation(vv.fraisLocation ?? "");
+      setVehCell(vv.cellulairePartieAffaires ?? "");
+
+      const bd = ta.bureauDomicileDetails ?? {};
+      setBdPct(bd.pctUtilisationDomicile ?? "");
+      setBdChauffElec(bd.chauffageElectricite ?? "");
+      setBdAssHab(bd.assuranceHabitation ?? "");
+      setBdInteretHyp(bd.interetHypothecaire ?? "");
+      setBdAmort(bd.amortissement ?? "");
+      setBdCondo(bd.fraisCondo ?? "");
+      setBdTaxMun(bd.taxesMunicipales ?? "");
+      setBdTaxSco(bd.taxesScolaires ?? "");
+      setBdLoyer(bd.loyer ?? "");
 
       setMethodeComptable((ta.methodeComptable ?? "") as AccountingMethod);
       setOutilComptable((ta.outilComptable ?? "") as AccountingTool);
@@ -630,17 +889,334 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
             </div>
           </section>
 
-          {/* DÉPENSES / DÉCLENCHEURS + ACCORDÉON */}
+          {/* DÉPENSES (PDF) */}
           <section className="ff-card">
             <div className="ff-card-head">
-              <h2>Sections de dépenses utilisées</h2>
-              <p>Ça sert à afficher uniquement les sections nécessaires.</p>
+              <h2>Dépenses</h2>
+              <p>Montants totaux payés dans l’année (d’après le questionnaire).</p>
             </div>
 
+            {/* Dépenses générales */}
+            <div className="ff-card" style={{ padding: 12, marginBottom: 12 }}>
+              <div className="ff-muted" style={{ marginBottom: 10 }}>
+                Dépenses générales
+              </div>
+
+              <div className="ff-grid2">
+                <Field
+                  label="Publicité et promotion ($)"
+                  value={gxPublicite}
+                  onChange={(v) => setGxPublicite(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Frais juridiques et autres honoraires professionnels ($)"
+                  value={gxJuridique}
+                  onChange={(v) => setGxJuridique(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+
+                <Field
+                  label="Frais comptables ($)"
+                  value={gxComptables}
+                  onChange={(v) => setGxComptables(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Frais de repas et de représentation ($)"
+                  value={gxRepas}
+                  onChange={(v) => setGxRepas(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+
+                <Field
+                  label="Hébergement (ex.: chambre d'hôtel) ($)"
+                  value={gxHebergement}
+                  onChange={(v) => setGxHebergement(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Frais de voyage (avion/autocar/train) ($)"
+                  value={gxVoyage}
+                  onChange={(v) => setGxVoyage(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+
+                <Field
+                  label="Frais de stationnement ($)"
+                  value={gxStationnement}
+                  onChange={(v) => setGxStationnement(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Fournitures (poste/papeterie/encre, etc.) ($)"
+                  value={gxFournitures}
+                  onChange={(v) => setGxFournitures(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+
+                <Field
+                  label="Assurance responsabilité professionnelle ($)"
+                  value={gxAssPro}
+                  onChange={(v) => setGxAssPro(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Permis et licence ($)"
+                  value={gxPermis}
+                  onChange={(v) => setGxPermis(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+
+                <Field
+                  label="Location de bureau (loyer commercial) ($)"
+                  value={gxLocationBureau}
+                  onChange={(v) => setGxLocationBureau(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Salaires et sous-traitants ($)"
+                  value={gxSalairesSousTraitants}
+                  onChange={(v) => setGxSalairesSousTraitants(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+
+                <Field
+                  label="Frais de formation et de congrès ($)"
+                  value={gxFormationCongres}
+                  onChange={(v) => setGxFormationCongres(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+                <Field
+                  label="Internet (partie affaires seulement) ($)"
+                  value={gxInternet}
+                  onChange={(v) => setGxInternet(formatMoneyInput(v))}
+                  inputMode="decimal"
+                />
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div className="ff-muted" style={{ marginBottom: 8 }}>
+                  Autres (précisez)
+                </div>
+
+                <div className="ff-grid2">
+                  <Field label="Autre 1 — libellé" value={gxAutre1Label} onChange={setGxAutre1Label} />
+                  <Field
+                    label="Autre 1 — montant ($)"
+                    value={gxAutre1Montant}
+                    onChange={(v) => setGxAutre1Montant(formatMoneyInput(v))}
+                    inputMode="decimal"
+                  />
+
+                  <Field label="Autre 2 — libellé" value={gxAutre2Label} onChange={setGxAutre2Label} />
+                  <Field
+                    label="Autre 2 — montant ($)"
+                    value={gxAutre2Montant}
+                    onChange={(v) => setGxAutre2Montant(formatMoneyInput(v))}
+                    inputMode="decimal"
+                  />
+
+                  <Field label="Autre 3 — libellé" value={gxAutre3Label} onChange={setGxAutre3Label} />
+                  <Field
+                    label="Autre 3 — montant ($)"
+                    value={gxAutre3Montant}
+                    onChange={(v) => setGxAutre3Montant(formatMoneyInput(v))}
+                    inputMode="decimal"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Déclencheurs + accordéons (seulement les sections qui ont des champs PDF) */}
             <div className="ff-stack">
-              {/* Cases à cocher */}
-              <CheckboxField label="Bureau à domicile" checked={bureauDomicile} onChange={setBureauDomicile} />
-              <CheckboxField label="Véhicule (usage affaires)" checked={vehicule} onChange={setVehicule} />
+              {/* BUREAU À DOMICILE */}
+              <div>
+                <CheckboxField label="Bureau à domicile" checked={bureauDomicile} onChange={setBureauDomicile} />
+
+                {bureauDomicile && (
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="ff-btn ff-btn-outline"
+                      style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                      onClick={() => setOpenDepense((p) => (p === "bureau" ? null : "bureau"))}
+                    >
+                      <span>Bureau à domicile</span>
+                      <span>{openDepense === "bureau" ? "▲" : "▼"}</span>
+                    </button>
+
+                    {openDepense === "bureau" && (
+                      <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                        <div className="ff-grid2">
+                          <Field
+                            label="% utilisation du domicile (affaires)"
+                            value={bdPct}
+                            onChange={(v) => setBdPct(formatPercentInput(v))}
+                            inputMode="numeric"
+                          />
+                          <div />
+
+                          <Field
+                            label="Chauffage et électricité ($)"
+                            value={bdChauffElec}
+                            onChange={(v) => setBdChauffElec(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Assurance habitation ($)"
+                            value={bdAssHab}
+                            onChange={(v) => setBdAssHab(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Intérêt hypothécaire ($)"
+                            value={bdInteretHyp}
+                            onChange={(v) => setBdInteretHyp(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Amortissement ($)"
+                            value={bdAmort}
+                            onChange={(v) => setBdAmort(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Frais de condo ($)"
+                            value={bdCondo}
+                            onChange={(v) => setBdCondo(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Taxes municipales ($)"
+                            value={bdTaxMun}
+                            onChange={(v) => setBdTaxMun(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Taxes scolaires ($)"
+                            value={bdTaxSco}
+                            onChange={(v) => setBdTaxSco(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Loyer ($) (si locataire)"
+                            value={bdLoyer}
+                            onChange={(v) => setBdLoyer(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* VÉHICULE */}
+              <div>
+                <CheckboxField label="Véhicule (usage affaires)" checked={vehicule} onChange={setVehicule} />
+
+                {vehicule && (
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="ff-btn ff-btn-outline"
+                      style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                      onClick={() => setOpenDepense((p) => (p === "vehicule" ? null : "vehicule"))}
+                    >
+                      <span>Frais de véhicule</span>
+                      <span>{openDepense === "vehicule" ? "▲" : "▼"}</span>
+                    </button>
+
+                    {openDepense === "vehicule" && (
+                      <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
+                        <div className="ff-grid2">
+                          <Field
+                            label="% utilisation du véhicule (affaires)"
+                            value={vehPct}
+                            onChange={(v) => setVehPct(formatPercentInput(v))}
+                            inputMode="numeric"
+                          />
+                          <Field label="Marque et modèle" value={vehMarqueModele} onChange={setVehMarqueModele} />
+
+                          <Field
+                            label="Prix d’achat avant taxes ($) (si acheté)"
+                            value={vehPrixAchat}
+                            onChange={(v) => setVehPrixAchat(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Valeur marchande approx ($) (sinon)"
+                            value={vehValeurMarchande}
+                            onChange={(v) => setVehValeurMarchande(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Prix de détail suggéré (approx) ($) (si loué)"
+                            value={vehPrixDetail}
+                            onChange={(v) => setVehPrixDetail(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <div />
+
+                          <Field
+                            label="Frais de carburant ($)"
+                            value={vehCarburant}
+                            onChange={(v) => setVehCarburant(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Assurances ($)"
+                            value={vehAssurances}
+                            onChange={(v) => setVehAssurances(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Entretien et réparation ($)"
+                            value={vehEntretien}
+                            onChange={(v) => setVehEntretien(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Immatriculation et permis ($)"
+                            value={vehImmat}
+                            onChange={(v) => setVehImmat(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Intérêts prêt auto ($) (pas les mensualités)"
+                            value={vehInterets}
+                            onChange={(v) => setVehInterets(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <Field
+                            label="Frais de location ($)"
+                            value={vehLocation}
+                            onChange={(v) => setVehLocation(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+
+                          <Field
+                            label="Téléphone cellulaire (partie affaires seulement) ($)"
+                            value={vehCell}
+                            onChange={(v) => setVehCell(formatMoneyInput(v))}
+                            inputMode="decimal"
+                          />
+                          <div />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Déclencheurs seulement (pas de champs dans ton PDF) */}
               <CheckboxField label="Inventaire (produits)" checked={inventaire} onChange={setInventaire} />
               <CheckboxField
                 label="Immobilisations (équipement)"
@@ -649,135 +1225,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
               />
               <CheckboxField label="Sous-traitants" checked={sousTraitants} onChange={setSousTraitants} />
               <CheckboxField label="Employés" checked={employes} onChange={setEmployes} />
-
-              {/* Accordéon */}
-              {(bureauDomicile || vehicule || inventaire || immobilisations || sousTraitants || employes) && (
-                <div className="ff-card" style={{ padding: 12 }}>
-                  <div className="ff-muted" style={{ marginBottom: 10 }}>
-                    Cliquez sur une section pour l’ouvrir (seules les sections cochées apparaissent).
-                  </div>
-
-                  {bureauDomicile && (
-                    <div style={{ marginBottom: 10 }}>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-outline"
-                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
-                        onClick={() => setOpenDepense((p) => (p === "bureau" ? null : "bureau"))}
-                      >
-                        <span>Bureau à domicile</span>
-                        <span>{openDepense === "bureau" ? "▲" : "▼"}</span>
-                      </button>
-
-                      {openDepense === "bureau" && (
-                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
-                          <div className="ff-muted">Champs “Bureau à domicile” à venir…</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {vehicule && (
-                    <div style={{ marginBottom: 10 }}>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-outline"
-                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
-                        onClick={() => setOpenDepense((p) => (p === "vehicule" ? null : "vehicule"))}
-                      >
-                        <span>Véhicule (usage affaires)</span>
-                        <span>{openDepense === "vehicule" ? "▲" : "▼"}</span>
-                      </button>
-
-                      {openDepense === "vehicule" && (
-                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
-                          <div className="ff-muted">Champs “Véhicule” à venir…</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {inventaire && (
-                    <div style={{ marginBottom: 10 }}>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-outline"
-                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
-                        onClick={() => setOpenDepense((p) => (p === "inventaire" ? null : "inventaire"))}
-                      >
-                        <span>Inventaire (produits)</span>
-                        <span>{openDepense === "inventaire" ? "▲" : "▼"}</span>
-                      </button>
-
-                      {openDepense === "inventaire" && (
-                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
-                          <div className="ff-muted">Champs “Inventaire” à venir…</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {immobilisations && (
-                    <div style={{ marginBottom: 10 }}>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-outline"
-                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
-                        onClick={() => setOpenDepense((p) => (p === "immobilisations" ? null : "immobilisations"))}
-                      >
-                        <span>Immobilisations (équipement)</span>
-                        <span>{openDepense === "immobilisations" ? "▲" : "▼"}</span>
-                      </button>
-
-                      {openDepense === "immobilisations" && (
-                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
-                          <div className="ff-muted">Champs “Immobilisations” à venir…</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {sousTraitants && (
-                    <div style={{ marginBottom: 10 }}>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-outline"
-                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
-                        onClick={() => setOpenDepense((p) => (p === "sousTraitants" ? null : "sousTraitants"))}
-                      >
-                        <span>Sous-traitants</span>
-                        <span>{openDepense === "sousTraitants" ? "▲" : "▼"}</span>
-                      </button>
-
-                      {openDepense === "sousTraitants" && (
-                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
-                          <div className="ff-muted">Champs “Sous-traitants” à venir…</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {employes && (
-                    <div>
-                      <button
-                        type="button"
-                        className="ff-btn ff-btn-outline"
-                        style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
-                        onClick={() => setOpenDepense((p) => (p === "employes" ? null : "employes"))}
-                      >
-                        <span>Employés</span>
-                        <span>{openDepense === "employes" ? "▲" : "▼"}</span>
-                      </button>
-
-                      {openDepense === "employes" && (
-                        <div className="ff-card" style={{ marginTop: 10, padding: 12 }}>
-                          <div className="ff-muted">Champs “Employés” à venir…</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </section>
 
@@ -827,7 +1274,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                 ← Retour
               </button>
 
-              <button type="button" className="ff-btn ff-btn-primary ff-btn-big" onClick={goNext} disabled={!fid || saving}>
+              <button
+                type="button"
+                className="ff-btn ff-btn-primary ff-btn-big"
+                onClick={goNext}
+                disabled={!fid || saving}
+              >
                 {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
               </button>
             </div>
@@ -842,3 +1294,4 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
     </main>
   );
 }
+
