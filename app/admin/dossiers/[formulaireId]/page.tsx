@@ -6,7 +6,7 @@ export default async function AdminDossierPage({
 }: {
   params: { formulaireId: string };
 }) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   // auth
   const { data: auth } = await supabase.auth.getUser();
