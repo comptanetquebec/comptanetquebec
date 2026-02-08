@@ -2,7 +2,7 @@ import Link from "next/link";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export default async function AdminDossiersPage() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   // auth
   const { data: auth } = await supabase.auth.getUser();
