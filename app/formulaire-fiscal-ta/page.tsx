@@ -543,53 +543,10 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
     anneeImposition,
   ]);
 
-  /* ===========================
-     Save draft (insert/update)
-  =========================== */
- const saveDraft = useCallback(async (): Promise<string | null> => {
-  if (hydrating.current) return formulaireId ?? null;
-  if (submitting) return formulaireId ?? null;
-
-  if (formulaireId) {
-    const { error } = await supabase
-      .from(FORMS_TABLE)
-      .update({
-        lang,
-        annee: anneeImposition || null,
-        data: draftData,
-      })
-      .eq("id", formulaireId)
-      .eq("user_id", userId);
-
-    if (error) throw new Error(supaErr(error));
-    return formulaireId;
-  }
-
-  const { data: dataInsert, error: errorInsert } = await supabase
-    .from(FORMS_TABLE)
-    .insert({
-      user_id: userId,
-      form_type: FORM_TYPE_TA,
-      lang,
-      status: "draft",
-      annee: anneeImposition || null,
-      data: draftData,
-    })
-    .select("id")
-    .single<InsertIdRow>();
-
-  if (errorInsert) throw new Error(supaErr(errorInsert));
-
-  const fid = dataInsert?.id ?? null;
-  if (fid) setFormulaireId(fid);
-  return fid;
-}, [draftData, formulaireId, lang, userId, anneeImposition, submitting]);
-
-
-  /* ===========================
-     Load last form (preload)
-  =========================== */
- const loadLastForm = useCallback(async () => {
+/* ===========================
+   Load last form (preload)
+=========================== */
+const loadLastForm = useCallback(async () => {
   hydrating.current = true;
 
   try {
@@ -614,19 +571,12 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
     }
     if (!row) return;
 
-    setFormulaireId(row.id);
+    const fid = row.id;
+    setFormulaireId(fid);
 
-    const form = row.data;
-    // ... (ton code qui applique form dans les states)
-    // si tu as loadDocs(fid) ici, garde-le:
-    // await loadDocs(row.id);
+    const form = row.data ?? {};
 
-  } finally {
-    hydrating.current = false;
-  }
-}, [loadDocs, userId, anneeImposition]);
-
-    const client = form?.client ?? {};
+    const client = form.client ?? {};
     setPrenom(client.prenom ?? "");
     setNom(client.nom ?? "");
     setNas(client.nas ? formatNASInput(client.nas) : "");
@@ -646,7 +596,7 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
     setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
     setCourriel(client.courriel ?? "");
 
-    const cj = form?.conjoint ?? null;
+    const cj = form.conjoint ?? null;
     setAUnConjoint(!!cj);
 
     if (cj) {
@@ -684,7 +634,7 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
       setRevenuNetConjoint("");
     }
 
-    const meds = form?.assuranceMedicamenteuse ?? null;
+    const meds = form.assuranceMedicamenteuse ?? null;
     if (meds?.client) {
       setAssuranceMedsClient(meds.client.regime ?? "");
       setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
@@ -694,34 +644,35 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
     }
 
     if (meds?.conjoint) {
-      setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
-      setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
+      setAssuranceMedsConjoint(meds.conjoint.regime ?? "");
+      setAssuranceMedsConjointPeriodes(meds.conjoint.periodes ?? [{ debut: "", fin: "" }]);
     } else {
       setAssuranceMedsConjoint("");
       setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
     }
 
-    setEnfants(form?.personnesACharge ?? []);
+    setEnfants(form.personnesACharge ?? []);
 
-    const q = form?.questionsGenerales ?? {};
-    setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
-    setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
-    setBiensEtranger100k(q.biensEtranger100k ?? "");
-    setCitoyenCanadien(q.citoyenCanadien ?? "");
-    setNonResident(q.nonResident ?? "");
-    setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
-    setAppelerTechnicien(q.appelerTechnicien ?? "");
-    setCopieImpots(q.copieImpots ?? "");
-    setAnneeImposition(q.anneeImposition ?? "");
+    const questions = form.questionsGenerales ?? {};
+    setHabiteSeulTouteAnnee(questions.habiteSeulTouteAnnee ?? "");
+    setNbPersonnesMaison3112(questions.nbPersonnesMaison3112 ?? "");
+    setBiensEtranger100k(questions.biensEtranger100k ?? "");
+    setCitoyenCanadien(questions.citoyenCanadien ?? "");
+    setNonResident(questions.nonResident ?? "");
+    setMaisonAcheteeOuVendue(questions.maisonAcheteeOuVendue ?? "");
+    setAppelerTechnicien(questions.appelerTechnicien ?? "");
+    setCopieImpots(questions.copieImpots ?? "");
+    setAnneeImposition(questions.anneeImposition ?? "");
 
     await loadDocs(fid);
-
+  } finally {
     hydrating.current = false;
-  }, [loadDocs, userId, anneeImposition]);
+  }
+}, [loadDocs, userId, anneeImposition]);
 
-  useEffect(() => {
-    void loadLastForm();
-  }, [loadLastForm]);
+useEffect(() => {
+  void loadLastForm();
+}, [loadLastForm]);
 
   /* ===========================
      Autosave debounce
