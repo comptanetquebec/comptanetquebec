@@ -6,12 +6,12 @@ export type Lang = "fr" | "en" | "es";
 export type Flow = "t1" | "ta" | "t2";
 
 type Props = {
-  step: 1 | 2 | 3;
+  step: 1 | 2 | 3 | 4; // ✅ permet 4 (utile seulement pour TA)
   lang: Lang;
   flow: Flow;
 };
 
-const LABELS: Record<Flow, Record<Lang, [string, string, string]>> = {
+const LABELS: Record<Flow, Record<Lang, string[]>> = {
   t1: {
     fr: ["Remplir le formulaire", "Déposer les documents", "Envoyer le dossier"],
     en: ["Fill the form", "Upload documents", "Submit file"],
@@ -20,51 +20,40 @@ const LABELS: Record<Flow, Record<Lang, [string, string, string]>> = {
   ta: {
     fr: [
       "Informations travailleur autonome",
-      "Déposer les documents",
-      "Envoyer le dossier",
+      "Profil & activité",
+      "Revenus & dépenses",
+      "Documents",
     ],
     en: [
       "Self-employed information",
-      "Upload documents",
-      "Submit file",
+      "Profile & activity",
+      "Income & expenses",
+      "Documents",
     ],
     es: [
       "Información del trabajador autónomo",
-      "Subir documentos",
-      "Enviar el expediente",
+      "Perfil y actividad",
+      "Ingresos y gastos",
+      "Documentos",
     ],
   },
   t2: {
-    fr: [
-      "Informations société (T2)",
-      "Documents financiers",
-      "Envoyer le dossier",
-    ],
-    en: [
-      "Corporation information (T2)",
-      "Financial documents",
-      "Submit file",
-    ],
-    es: [
-      "Información de la empresa (T2)",
-      "Documentos financieros",
-      "Enviar el expediente",
-    ],
+    fr: ["Informations société (T2)", "Documents financiers", "Envoyer le dossier"],
+    en: ["Corporation information (T2)", "Financial documents", "Submit file"],
+    es: ["Información de la empresa (T2)", "Documentos financieros", "Enviar el expediente"],
   },
 };
 
 export default function Steps({ step, lang, flow }: Props) {
-  const t = LABELS[flow][lang];
+  const labels = LABELS[flow][lang];
+  const total = labels.length; // ✅ 3 pour t1/t2, 4 pour ta
 
   return (
     <div className="ff-steps" aria-label="Étapes du dossier">
-      {[1, 2, 3].map((n) => (
-        <div
-          key={n}
-          className={`ff-step ${step === n ? "ff-step-active" : ""}`}
-        >
+      {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
+        <div key={n} className={`ff-step ${step === n ? "ff-step-active" : ""}`}>
           <div className="ff-step-num">{n}</div>
-          <div>{t[n - 1]}</div>
+          <div>{labels[n - 1] ?? ""}</div>
         </div>
       ))}
     </div>
