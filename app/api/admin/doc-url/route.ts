@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 const BUCKET = "client-documents";
 
@@ -24,58 +24,39 @@ function supabaseServer() {
   );
 }
 
-async function assertAdmin(supabase: ReturnType<typeof supabaseServer>) {
-  const { data: auth, error } = await supabase.auth.getUser();
-  if (error || !auth?.user) return { ok: false };
+export async function POST(req: Request) {
+  const supabase = supabaseServer();
 
-  // Option A (recommandé) : table profiles avec is_admin
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+
   const { data: prof } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", auth.user.id)
     .maybeSingle();
 
-  if (prof?.is_admin) return { ok: true as const };
-
-  return { ok: false as const };
-}
-
-export async function POST(req: Request) {
-  const supabase = supabaseServer();
-
-  const isAdmin = await assertAdmin(supabase);
-  if (!isAdmin.ok) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!prof?.is_admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   const docId: string | undefined = body?.docId;
+  if (!docId) return NextResponse.json({ error: "Missing docId" }, { status: 400 });
 
-  if (!docId) {
-    return NextResponse.json({ error: "Missing docId" }, { status: 400 });
-  }
-
-  const { data: doc, error: docErr } = await supabase
+  const { data: doc } = await supabase
     .from("formulaire_documents")
     .select("storage_path, original_name, mime_type")
     .eq("id", docId)
     .maybeSingle();
 
-  if (docErr || !doc) {
-    return NextResponse.json({ error: "Doc not found" }, { status: 404 });
-  }
+  if (!doc) return NextResponse.json({ error: "Doc not found" }, { status: 404 });
 
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(doc.storage_path, 60 * 10); // 10 minutes
+    .createSignedUrl(doc.storage_path, 60 * 10);
 
   if (error || !data?.signedUrl) {
     return NextResponse.json({ error: "Cannot sign url" }, { status: 500 });
   }
 
-  return NextResponse.json({
-    signedUrl: data.signedUrl,
-    name: doc.original_name,
-    mime: doc.mime_type ?? null,
-  });
+  return NextResponse.json({ signedUrl: data.signedUrl });
 }
