@@ -545,3 +545,64 @@
     justify-content:flex-start;
   }
 }
+/* Steps horizontal (tabs) */
+.ff-stepsbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  background:#fff;
+}
+
+.ff-stepitem{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  text-decoration:none;
+  color:inherit;
+  border:1px solid transparent;
+  background:rgba(0,0,0,.02);
+}
+
+.ff-stepitem:hover{
+  background:rgba(0,0,0,.04);
+}
+
+.ff-stepitem.is-active{
+  background:#e8f0ff;
+  border-color:rgba(0,0,0,.08);
+  font-weight:600;
+}
+
+.ff-stepitem.is-done{
+  opacity:.85;
+}
+
+.ff-stepdot{
+  width:26px;
+  height:26px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  border:1px solid rgba(0,0,0,.15);
+  background:#fff;
+}
+
+.ff-stepitem.is-active .ff-stepdot{
+  border-color:rgba(0,0,0,.2);
+}
+
+.ff-steplabel{
+  font-size:14px;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
