@@ -589,38 +589,42 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
   /* ===========================
      Load last form (preload)
   =========================== */
-  const loadLastForm = useCallback(async () => {
-    hydrating.current = true;
+ const loadLastForm = useCallback(async () => {
+  hydrating.current = true;
 
-   let q = supabase
-  .from(FORMS_TABLE)
-  .select("id, data, created_at")
-  .eq("user_id", userId)
-  .eq("form_type", FORM_TYPE_TA);
+  let query = supabase
+    .from(FORMS_TABLE)
+    .select("id, data, created_at")
+    .eq("user_id", userId)
+    .eq("form_type", FORM_TYPE_TA);
 
-if (anneeImposition.trim()) {
-  q = q.eq("annee", anneeImposition.trim());
-}
+  if (anneeImposition.trim()) {
+    query = query.eq("annee", anneeImposition.trim());
+  }
 
-const { data: row, error } = await q
-  .order("created_at", { ascending: false })
-  .limit(1)
-  .maybeSingle<FormRow>();
+  const { data: row, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<FormRow>();
 
-    if (error) {
-      setMsg(`Erreur chargement: ${error.message}`);
-      hydrating.current = false;
-      return;
-    }
-    if (!row) {
-      hydrating.current = false;
-      return;
-    }
+  if (error) {
+    setMsg(`Erreur chargement: ${error.message}`);
+    hydrating.current = false;
+    return;
+  }
+  if (!row) {
+    hydrating.current = false;
+    return;
+  }
 
-    const fid = row.id;
-    setFormulaireId(fid);
+  const fid = row.id;
+  setFormulaireId(fid);
 
-    const form = row.data;
+  const form = row.data;
+
+  // ✅ important: finir l’hydratation aussi en succès
+  hydrating.current = false;
+}, [userId, anneeImposition]);
 
     const client = form?.client ?? {};
     setPrenom(client.prenom ?? "");
