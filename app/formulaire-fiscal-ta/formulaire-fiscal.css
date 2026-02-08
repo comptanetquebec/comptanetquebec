@@ -1,7 +1,7 @@
 /* =========================================================
    ComptaNet Québec — Formulaire fiscal (sans Tailwind)
    Palette: bleu #004aad
-   FIX: évite les doublons (drop/dropzone) + style unique
+   FIX: style unique + Steps stable (plus de doublons)
 ========================================================= */
 
 :root{
@@ -360,7 +360,6 @@
   line-height: 1.4;
 }
 
-/* Actions à droite du dropzone (si tu en as) */
 .ff-doc-actions{
   display:flex;
   gap: 10px;
@@ -373,12 +372,10 @@
   margin: 0;
 }
 
-/* Input file (si tu l’utilises) */
 .ff-file-input{
   display:none;
 }
 
-/* Liste des fichiers */
 .ff-files{
   display:grid;
   gap: 10px;
@@ -442,6 +439,59 @@
   font-weight: 900;
 }
 
+/* =========================================================
+   Steps (Tabs) — VERSION UNIQUE + STABLE
+   ✅ Toujours 4 slots (TA), donc plus de "raccourci"
+========================================================= */
+
+.ff-steps{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+  padding: 6px;
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.ff-step{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:12px 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  min-width: 0;
+}
+
+.ff-step-num{
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid #cbd5e1;
+  background:#f8fafc;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.ff-step-active{
+  background: var(--card);
+  border-color: rgba(0,74,173,.25);
+  box-shadow: 0 0 0 4px rgba(0,74,173,.08);
+}
+
+.ff-step-active .ff-step-num{
+  border-color: var(--cq-blue);
+  background: rgba(0,74,173,.10);
+}
+
 /* Responsive */
 @media (max-width: 860px){
   .ff-grid4{
@@ -474,96 +524,11 @@
     width:100%;
     justify-content:flex-start;
   }
-}
-/* ===============================
-   Steps (Stepper)
-================================ */
 
-.ff-steps{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-
-.ff-step{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 999px;
-  background:#ffffff;
-  color:#0f172a;
-  font-weight: 900;
-  font-size: 13px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.06);
-}
-
-.ff-step-num{
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border: 1px solid #cbd5e1;
-  background:#f8fafc;
-  font-weight: 900;
-}
-
-.ff-step-active{
-  border-color: rgba(0,74,173,.35);
-  box-shadow: 0 0 0 4px rgba(0,74,173,.10);
-}
-
-.ff-step-active .ff-step-num{
-  border-color:#004aad;
-  background: rgba(0,74,173,.10);
-}
-
-@media (max-width: 640px){
   .ff-steps{
-    gap: 8px;
+    grid-template-columns: 1fr;
   }
   .ff-step{
-    width: 100%;
     justify-content:flex-start;
   }
-}
-/* Steps style "tabs" comme T1 */
-.ff-steps{
-  display:flex;
-  gap:6px;
-  margin-top:14px;
-  padding:6px;
-  background: var(--soft);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  flex-wrap: nowrap;
-}
-
-.ff-step{
-  flex:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  padding:12px 14px;
-  border-radius: 14px;
-  border: 1px solid transparent;
-  background: transparent;
-  box-shadow: none;
-}
-
-.ff-step-active{
-  background: var(--card);
-  border-color: rgba(0,74,173,.25);
-  box-shadow: 0 0 0 4px rgba(0,74,173,.08);
-}
-
-@media (max-width: 640px){
-  .ff-steps{ flex-wrap: wrap; }
-  .ff-step{ justify-content:flex-start; }
 }
