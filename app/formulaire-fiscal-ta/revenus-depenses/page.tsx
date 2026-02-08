@@ -103,6 +103,7 @@ type TAGeneralExpenses = {
   salairesSousTraitants?: Money;
   fraisFormationCongres?: Money;
   internetPartieAffaires?: Money;
+  telephoneCellulairePartieAffaires?: Money;
 
   autres1Label?: string;
   autres1Montant?: Money;
@@ -125,7 +126,6 @@ type TAVehicule = {
   immatriculationPermis?: Money;
   interetsPretAuto?: Money; // pas les mensualités
   fraisLocation?: Money;
-  cellulairePartieAffaires?: Money;
 };
 
 type TABureauDomicile = {
@@ -291,6 +291,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [gxSalairesSousTraitants, setGxSalairesSousTraitants] = useState("");
   const [gxFormationCongres, setGxFormationCongres] = useState("");
   const [gxInternet, setGxInternet] = useState("");
+  const [gxCellulaire, setGxCellulaire] = useState("");
   const [gxAutre1Label, setGxAutre1Label] = useState("");
   const [gxAutre1Montant, setGxAutre1Montant] = useState("");
   const [gxAutre2Label, setGxAutre2Label] = useState("");
@@ -310,7 +311,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [vehImmat, setVehImmat] = useState("");
   const [vehInterets, setVehInterets] = useState("");
   const [vehLocation, setVehLocation] = useState("");
-  const [vehCell, setVehCell] = useState("");
 
   // ---- Bureau à domicile (PDF)
   const [bdPct, setBdPct] = useState("");
@@ -376,6 +376,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
         salairesSousTraitants: gxSalairesSousTraitants.trim(),
         fraisFormationCongres: gxFormationCongres.trim(),
         internetPartieAffaires: gxInternet.trim(),
+        telephoneCellulairePartieAffaires: gxCellulaire.trim(),
         autres1Label: gxAutre1Label.trim(),
         autres1Montant: gxAutre1Montant.trim(),
         autres2Label: gxAutre2Label.trim(),
@@ -396,7 +397,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
         immatriculationPermis: vehImmat.trim(),
         interetsPretAuto: vehInterets.trim(),
         fraisLocation: vehLocation.trim(),
-        cellulairePartieAffaires: vehCell.trim(),
       },
 
       bureauDomicileDetails: {
@@ -551,6 +551,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setGxSalairesSousTraitants(gx.salairesSousTraitants ?? "");
       setGxFormationCongres(gx.fraisFormationCongres ?? "");
       setGxInternet(gx.internetPartieAffaires ?? "");
+      setGxCellulaire(gx.telephoneCellulairePartieAffaires ?? "");
       setGxAutre1Label(gx.autres1Label ?? "");
       setGxAutre1Montant(gx.autres1Montant ?? "");
       setGxAutre2Label(gx.autres2Label ?? "");
@@ -570,7 +571,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setVehImmat(vv.immatriculationPermis ?? "");
       setVehInterets(vv.interetsPretAuto ?? "");
       setVehLocation(vv.fraisLocation ?? "");
-      setVehCell(vv.cellulairePartieAffaires ?? "");
 
       const bd = ta.bureauDomicileDetails ?? {};
       setBdPct(bd.pctUtilisationDomicile ?? "");
@@ -993,6 +993,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxInternet(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
+                <Field
+                label="Téléphone cellulaire (partie affaires seulement) ($)"
+                value={gxCellulaire}
+                onChange={(v) => setGxCellulaire(formatMoneyInput(v))}
+                inputMode="decimal"
+                />
               </div>
 
               <div style={{ marginTop: 12 }}>
@@ -1199,13 +1205,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                             label="Frais de location ($)"
                             value={vehLocation}
                             onChange={(v) => setVehLocation(formatMoneyInput(v))}
-                            inputMode="decimal"
-                          />
-
-                          <Field
-                            label="Téléphone cellulaire (partie affaires seulement) ($)"
-                            value={vehCell}
-                            onChange={(v) => setVehCell(formatMoneyInput(v))}
                             inputMode="decimal"
                           />
                           <div />
