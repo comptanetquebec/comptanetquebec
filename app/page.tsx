@@ -24,7 +24,14 @@ type WhyItem = { t: string; d: string };
 
 type CopyDict = {
   brand: string;
-  nav: { services: string; steps: string; pricing: string; faq: string; contact: string; client: string };
+  nav: {
+    services: string;
+    steps: string;
+    pricing: string;
+    faq: string;
+    contact: string;
+    client: string;
+  };
   ctaMain: string;
   heroTitle: React.ReactNode;
   heroSub: string;
@@ -118,11 +125,6 @@ function readLangFromUrl(): Lang | null {
   }
 }
 
-function readLangFromCookie(): Lang | null {
-  const x = normalizeLang(getCookie(LANG_COOKIE));
-  return x ? x : null;
-}
-
 function writeLangToUrl(l: Lang) {
   try {
     const url = new URL(window.location.href);
@@ -192,6 +194,7 @@ export default function Home() {
   const bleu = "#004aad" as const;
 
   const [lang, setLang] = useState<Lang>("fr");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -209,14 +212,33 @@ export default function Home() {
     const next = fromUrl || fromCookie || "fr";
     setLang(next);
 
-    // ✅ Persiste cookie si absent / différent
+    // ✅ Persiste cookie
     setCookie(LANG_COOKIE, next, LANG_COOKIE_MAX_AGE);
 
-    // ✅ Normalise aussi l’URL (optionnel mais pratique)
+    // ✅ Normalise l’URL (si pas déjà)
     if (!fromUrl) writeLangToUrl(next);
 
-    // ✅ annonce aux composants (CookieBanner écoute ça)
+    // ✅ annonce aux composants
     window.dispatchEvent(new Event("cq:lang"));
+  }, []);
+
+  // ✅ Check admin (pour afficher le lien Admin)
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/me/is-admin");
+        const data = (await res.json()) as { isAdmin?: boolean };
+        if (alive) setIsAdmin(!!data?.isAdmin);
+      } catch {
+        if (alive) setIsAdmin(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // ✅ Changement par boutons: cookie + URL + event
@@ -231,7 +253,14 @@ export default function Home() {
     const dict: Record<Lang, CopyDict> = {
       fr: {
         brand: "ComptaNet Québec",
-        nav: { services: "Services", steps: "Étapes", pricing: "Tarifs", faq: "FAQ", contact: "Contact", client: "Espace client" },
+        nav: {
+          services: "Services",
+          steps: "Étapes",
+          pricing: "Tarifs",
+          faq: "FAQ",
+          contact: "Contact",
+          client: "Espace client",
+        },
         ctaMain: "Commencer mon dossier",
         heroTitle: (
           <>
@@ -273,9 +302,24 @@ export default function Home() {
         pricingSub:
           "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
         plans: [
-          { t: "Impôt personnel (T1 – Québec)", p: "à partir de 100 $", pts: ["Portail sécurisé", "Préparation selon documents fournis", "Acompte initial 100 $"], href: "/tarifs/t1" },
-          { t: "Travailleur autonome (T1 – Québec)", p: "à partir de 150 $", pts: ["Revenus + dépenses selon pièces", "Portail sécurisé", "Acompte initial 150 $"], href: "/tarifs/travailleur-autonome" },
-          { t: "Société (T2 + CO-17 – Québec)", p: "à partir de 850 $", pts: ["Préparation selon documents fournis", "Portail sécurisé", "Acompte initial 450 $", "Société sans revenus : à partir de 450 $"], href: "/tarifs/t2" },
+          {
+            t: "Impôt personnel (T1 – Québec)",
+            p: "à partir de 100 $",
+            pts: ["Portail sécurisé", "Préparation selon documents fournis", "Acompte initial 100 $"],
+            href: "/tarifs/t1",
+          },
+          {
+            t: "Travailleur autonome (T1 – Québec)",
+            p: "à partir de 150 $",
+            pts: ["Revenus + dépenses selon pièces", "Portail sécurisé", "Acompte initial 150 $"],
+            href: "/tarifs/travailleur-autonome",
+          },
+          {
+            t: "Société (T2 + CO-17 – Québec)",
+            p: "à partir de 850 $",
+            pts: ["Préparation selon documents fournis", "Portail sécurisé", "Acompte initial 450 $", "Société sans revenus : à partir de 450 $"],
+            href: "/tarifs/t2",
+          },
         ],
         getPrice: "Voir les détails",
 
@@ -482,7 +526,7 @@ export default function Home() {
         sending: "Enviando...",
         sentOk: "Mensaje enviado. ¡Gracias!",
         sentErr: "No se pudo enviar. Inténtelo de nuevo o escríbanos por correo.",
-        contactPlaceholders: { name: "Su nombre", email: "Su correo", msg: "Su mensaje" },
+        contactPlaceholders: { name: "Su nombre", email: "Su correo", msg: "Votre message" },
 
         langLabel: "Idioma",
         langNames: { fr: "FR", en: "EN", es: "ES" },
@@ -500,16 +544,15 @@ export default function Home() {
         },
       },
     };
-
     return dict;
   }, [bleu]);
 
   const T = COPY[lang];
 
- // ✅ Toujours mettre lang dans next (URL safe) :
-const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
-const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
-const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/T2")}`;
+  // ✅ Toujours mettre lang dans next (URL safe)
+  const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
+  const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
+  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/T2")}`;
 
   const LangSwitcher = () => {
     return (
@@ -616,6 +659,12 @@ const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURICo
             <Link href={`/espace-client?lang=${encodeURIComponent(lang)}`} style={{ fontWeight: 800 }}>
               {T.nav.client}
             </Link>
+
+            {isAdmin && (
+              <Link href="/admin/dossiers" style={{ fontWeight: 900, color: "#f59e0b" }}>
+                Admin
+              </Link>
+            )}
 
             <div className={styles.langWrap}>
               <LangSwitcher />
@@ -825,15 +874,24 @@ const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURICo
 
           <div className={styles.footerLegal}>
             <div className={styles.footerLegalRow}>
-              <Link href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
+              <Link
+                href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`}
+                style={{ color: "#94a3b8", textDecoration: "none" }}
+              >
                 {T.footerLinks.legal.privacy}
               </Link>
               <span className={styles.dot}>•</span>
-              <Link href={`/legal/conditions?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
+              <Link
+                href={`/legal/conditions?lang=${encodeURIComponent(lang)}`}
+                style={{ color: "#94a3b8", textDecoration: "none" }}
+              >
                 {T.footerLinks.legal.terms}
               </Link>
               <span className={styles.dot}>•</span>
-              <Link href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
+              <Link
+                href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`}
+                style={{ color: "#94a3b8", textDecoration: "none" }}
+              >
                 {T.footerLinks.legal.disclaimer}
               </Link>
             </div>
