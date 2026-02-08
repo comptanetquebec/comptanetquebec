@@ -1,5 +1,4 @@
 // comptanetquebec/app/admin/dossiers/page.tsx
-import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import AdminDossiersClient, { type AdminDossierRow } from "./AdminDossiersClient";
 
@@ -14,38 +13,8 @@ type DocRow = {
   created_at: string | null;
 };
 
-function AccessDenied() {
-  return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold">Accès refusé</h1>
-      <p className="mt-2 text-sm opacity-80">
-        Vous n’avez pas l’autorisation d’accéder à cette section.
-      </p>
-    </div>
-  );
-}
-
 export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
-
-  // ✅ Auth obligatoire : pas connecté (ou souci auth) → redirect login
-  const { data: auth, error: authError } = await supabase.auth.getUser();
-  if (authError || !auth?.user) {
-    redirect("/espace-client?next=/admin/dossiers");
-  }
-
-  const userId = auth.user.id;
-
-  // ✅ Admin check : connecté mais pas admin → Accès refusé
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profileError || !profile?.is_admin) {
-    return <AccessDenied />;
-  }
 
   // ✅ Docs : dossiers existants (triés du plus récent au plus vieux)
   const { data: docs, error: docsError } = await supabase
@@ -54,7 +23,6 @@ export default async function AdminDossiersPage() {
     .order("created_at", { ascending: false });
 
   if (docsError) {
-    // pas de leak : page générique (ou AccessDenied si tu préfères)
     return (
       <div className="p-6">
         <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
@@ -98,7 +66,11 @@ export default async function AdminDossiersPage() {
     statusRows = (s ?? []) as StatusRow[];
   }
 
-  const statusMap = new Map<string, { status: StatusRow["status"]; updated_at: string | null }>();
+  const statusMap = new Map<
+    string,
+    { status: StatusRow["status"]; updated_at: string | null }
+  >();
+
   for (const s of statusRows) {
     statusMap.set(String(s.formulaire_id), {
       status: s.status,
