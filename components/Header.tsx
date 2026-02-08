@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import AdminLink from "@/components/AdminLink";
 
 export default function Header() {
   return (
@@ -18,8 +17,13 @@ export default function Header() {
             Espace client
           </Link>
 
-          {/* 🔐 Visible seulement si admin */}
-          <AdminLink />
+          {/* ✅ Admin TOUJOURS visible */}
+          <Link
+            href="/admin/dossiers"
+            className="text-blue-600 hover:underline"
+          >
+            Admin
+          </Link>
         </nav>
       </div>
     </header>
