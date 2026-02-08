@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import "./globals.css";
 
 import CookieBanner from "@/components/CookieBanner";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Espace client - ComptaNet Québec",
@@ -17,6 +18,10 @@ export default function RootLayout({
   return (
     <html lang="fr" className="h-full">
       <body className="min-h-full bg-slate-50 text-slate-900 antialiased">
+        {/* ✅ Header global */}
+        <Header />
+
+        {/* ✅ Pages */}
         <Suspense fallback={null}>{children}</Suspense>
 
         {/* ✅ Cookie banner global */}
