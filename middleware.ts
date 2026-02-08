@@ -5,11 +5,19 @@ import { createServerClient } from "@supabase/ssr";
 type CookieToSet = {
   name: string;
   value: string;
-  options?: Parameters<NextResponse["cookies"]["set"]>[0];
+  options?: {
+    path?: string;
+    domain?: string;
+    maxAge?: number;
+    expires?: Date;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: "lax" | "strict" | "none";
+  };
 };
 
 export async function middleware(req: NextRequest) {
-  let res = NextResponse.next();
+  const res = NextResponse.next();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,14 +29,18 @@ export async function middleware(req: NextRequest) {
         },
         setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set({ name, value, ...options });
+            res.cookies.set(
+              name,
+              value,
+              options ?? {}
+            );
           });
         },
       },
     }
   );
 
-  // 🔑 obligatoire pour SSR auth
+  // 🔑 force le refresh de session SSR
   await supabase.auth.getUser();
 
   return res;
