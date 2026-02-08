@@ -2,6 +2,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: Parameters<NextResponse["cookies"]["set"]>[0];
+};
+
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next();
 
@@ -13,7 +19,7 @@ export async function middleware(req: NextRequest) {
         getAll() {
           return req.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
             res.cookies.set({ name, value, ...options });
           });
@@ -22,7 +28,7 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // ⚠️ important: déclenche le refresh SSR si nécessaire
+  // 🔑 obligatoire pour SSR auth
   await supabase.auth.getUser();
 
   return res;
