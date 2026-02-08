@@ -1,7 +1,7 @@
 /* =========================================================
    ComptaNet Québec — Formulaire fiscal (sans Tailwind)
    Palette: bleu #004aad
-   FIX: style unique + Steps stable (plus de doublons)
+   ✅ CSS unique (aucun doublon) + Steps stable (3 ou 4)
 ========================================================= */
 
 :root{
@@ -99,9 +99,7 @@
   box-shadow: 0 10px 30px rgba(0,0,0,.06);
 }
 
-.ff-card-head{
-  margin-bottom: 12px;
-}
+.ff-card-head{ margin-bottom: 12px; }
 
 .ff-card-head h2{
   margin:0;
@@ -222,9 +220,7 @@
   margin-top: 6px;
 }
 
-.ff-checkbox{
-  margin-top: 2px;
-}
+.ff-checkbox{ margin-top: 2px; }
 
 /* Yes/No */
 .ff-yn{
@@ -313,7 +309,6 @@
 
 /* =========================================================
    Documents (Upload) — VERSION UNIQUE
-   Utilise UNIQUEMENT .ff-dropzone (+ variantes)
 ========================================================= */
 
 .ff-docs{
@@ -372,9 +367,7 @@
   margin: 0;
 }
 
-.ff-file-input{
-  display:none;
-}
+.ff-file-input{ display:none; }
 
 .ff-files{
   display:grid;
@@ -412,18 +405,9 @@
   font-size: 12px;
   color: var(--muted);
   margin: 0;
-}
-
-.ff-badge{
-  display:inline-flex;
-  align-items:center;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 900;
-  border: 1px solid rgba(0,74,173,.18);
-  background:#e5f3ff;
-  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ff-file__right{
@@ -439,20 +423,41 @@
   font-weight: 900;
 }
 
+.ff-badge{
+  display:inline-flex;
+  align-items:center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  border: 1px solid rgba(0,74,173,.18);
+  background:#e5f3ff;
+  color: var(--text);
+}
+
 /* =========================================================
    Steps (Tabs) — VERSION UNIQUE + STABLE
-   ✅ Toujours 4 slots (TA), donc plus de "raccourci"
+   ✅ 3 colonnes pour T1/T2
+   ✅ 4 colonnes pour TA
+   ✅ texte ne “pousse” pas la largeur (ellipsis)
 ========================================================= */
 
 .ff-steps{
   display:grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   margin-top: 14px;
   padding: 6px;
   background: var(--soft);
   border: 1px solid var(--border);
   border-radius: 18px;
+}
+
+.ff-steps--3{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ff-steps--4{
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .ff-step{
@@ -481,6 +486,16 @@
   flex: 0 0 auto;
 }
 
+.ff-step-label{
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--text);
+}
+
 .ff-step-active{
   background: var(--card);
   border-color: rgba(0,74,173,.25);
@@ -501,20 +516,16 @@
 
 @media (max-width: 640px){
   .ff-bg{ padding: 14px; }
+
   .ff-header{
     flex-direction:column;
     align-items:flex-start;
   }
-  .ff-grid2{
-    grid-template-columns: 1fr;
-  }
-  .ff-rowbox{
-    grid-template-columns: 1fr;
-  }
 
-  .ff-dropzone{
-    padding: 16px;
-  }
+  .ff-grid2{ grid-template-columns: 1fr; }
+  .ff-rowbox{ grid-template-columns: 1fr; }
+
+  .ff-dropzone{ padding: 16px; }
 
   .ff-file{
     flex-direction: column;
@@ -525,9 +536,11 @@
     justify-content:flex-start;
   }
 
-  .ff-steps{
+  .ff-steps--3,
+  .ff-steps--4{
     grid-template-columns: 1fr;
   }
+
   .ff-step{
     justify-content:flex-start;
   }
