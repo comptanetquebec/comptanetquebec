@@ -118,6 +118,9 @@ function safeFilename(name: string) {
   return name.replace(/[^\w.\-()\s]/g, "_");
 }
 
+/* ===========================
+   PAGE (RequireAuth wrapper)
+=========================== */
 export default function DepotDocumentsPage() {
   const params = useSearchParams();
 
@@ -141,6 +144,9 @@ export default function DepotDocumentsPage() {
   );
 }
 
+/* ===========================
+   INNER
+=========================== */
 function DepotDocumentsInner({
   userId,
   fid,
@@ -154,7 +160,6 @@ function DepotDocumentsInner({
 }) {
   const router = useRouter();
 
-  // ✅ AJOUT ICI
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [msg, setMsg] = useState<string | null>(null);
@@ -348,7 +353,7 @@ function DepotDocumentsInner({
   return (
     <main className="ff-bg">
       <div className="ff-container">
-        {/* Header identique */}
+        {/* Header */}
         <header className="ff-header">
           <div className="ff-brand">
             <Image
@@ -364,9 +369,9 @@ function DepotDocumentsInner({
               <span>
                 {t(
                   lang,
-                  "Étape 2/3 — Dépôt de documents",
-                  "Step 2/3 — Upload documents",
-                  "Paso 2/3 — Subir documentos"
+                  "Étape 3/4 — Dépôt de documents",
+                  "Step 3/4 — Upload documents",
+                  "Paso 3/4 — Subir documentos"
                 )}
               </span>
             </div>
@@ -374,7 +379,8 @@ function DepotDocumentsInner({
           <div />
         </header>
 
-        <Steps step={2} lang={lang} flow="ta" />
+        {/* ✅ TA : Documents = étape 3 */}
+        <Steps step={3} lang={lang} flow="ta" />
 
         <div className="ff-title">
           <h1>{t(lang, "Dépôt de documents", "Document upload", "Subida de documentos")}</h1>
@@ -388,7 +394,8 @@ function DepotDocumentsInner({
           </p>
 
           <div className="ff-muted" style={{ marginTop: 6 }}>
-            {t(lang, "Type de dossier :", "File type:", "Tipo de expediente:")} <strong>{typeLabel(lang, realType)}</strong>
+            {t(lang, "Type de dossier :", "File type:", "Tipo de expediente:")}{" "}
+            <strong>{typeLabel(lang, realType)}</strong>
           </div>
         </div>
 
@@ -412,7 +419,9 @@ function DepotDocumentsInner({
           </div>
 
           {validating && (
-            <div className="ff-empty">{t(lang, "Validation du dossier…", "Validating file…", "Validando expediente…")}</div>
+            <div className="ff-empty">
+              {t(lang, "Validation du dossier…", "Validating file…", "Validando expediente…")}
+            </div>
           )}
 
           {!validating && !valid && (
@@ -435,57 +444,55 @@ function DepotDocumentsInner({
             </div>
           )}
 
-         {/* Upload stylé */}
-<div className="ff-docs">
-  <div className={`ff-dropzone ${disabledUpload ? "ff-dropzone--disabled" : ""}`}>
-    <div>
-      <p className="ff-dropzone__title">
-        {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
-      </p>
-      <p className="ff-dropzone__hint">
-        {t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}
-      </p>
-    </div>
+          {/* Upload stylé */}
+          <div className="ff-docs">
+            <div className={`ff-dropzone ${disabledUpload ? "ff-dropzone--disabled" : ""}`}>
+              <div>
+                <p className="ff-dropzone__title">
+                  {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
+                </p>
+                <p className="ff-dropzone__hint">
+                  {t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}
+                </p>
+              </div>
 
-    <button
-      type="button"
-      className="ff-btn ff-btn-primary"
-      disabled={disabledUpload}
-      onClick={() => !disabledUpload && fileInputRef.current?.click()}
-    >
-      {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
-    </button>
+              <button
+                type="button"
+                className="ff-btn ff-btn-primary"
+                disabled={disabledUpload}
+                onClick={() => !disabledUpload && fileInputRef.current?.click()}
+              >
+                {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
+              </button>
 
-   <input
-  ref={fileInputRef}
-  className="ff-file-input"
-  type="file"
-  multiple
-  accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
-  disabled={disabledUpload}
-  onChange={(e) => {
-    const fl = e.target.files;
-    if (fl && fl.length > 0) handleFiles(fl);
-    e.currentTarget.value = "";
-  }}
-/>
-  </div>
+              <input
+                ref={fileInputRef}
+                className="ff-file-input"
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.zip,.doc,.docx,.xls,.xlsx"
+                disabled={disabledUpload}
+                onChange={(e) => {
+                  const fl = e.target.files;
+                  if (fl && fl.length > 0) void handleFiles(fl);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </div>
 
-  {uploading && (
-    <div className="ff-progress">
-      {t(lang, "Téléversement…", "Uploading…", "Subiendo…")}
-    </div>
-  )}
-</div>
+            {uploading && (
+              <div className="ff-progress">{t(lang, "Téléversement…", "Uploading…", "Subiendo…")}</div>
+            )}
+          </div>
 
-<p className="ff-doc-note">
-  {t(
-    lang,
-    "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.",
-    "Tip: you can upload multiple files at once.",
-    "Consejo: puede subir varios archivos a la vez."
-  )}
-</p>
+          <p className="ff-doc-note">
+            {t(
+              lang,
+              "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.",
+              "Tip: you can upload multiple files at once.",
+              "Consejo: puede subir varios archivos a la vez."
+            )}
+          </p>
 
           <div className="ff-mt">
             <div className="ff-subtitle">
