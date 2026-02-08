@@ -561,30 +561,35 @@ function FormulaireFiscalInner({
     if (hydrating.current) return formulaireId ?? null;
     if (submitting) return formulaireId ?? null;
 
-    if (formulaireId) {
-      const { error } = await supabase
-        .from(FORMS_TABLE)
-        .update({ lang, data: draftData })
-        .eq("id", formulaireId)
-        .eq("user_id", userId);
+   if (formulaireId) {
+  const { error } = await supabase
+    .from(FORMS_TABLE)
+    .update({
+      lang,
+      annee: anneeImposition || null,
+      data: draftData,
+    })
+    .eq("id", formulaireId)
+    .eq("user_id", userId);
 
-      if (error) throw new Error(supaErr(error));
-      return formulaireId;
-    }
+  if (error) throw new Error(supaErr(error));
+  return formulaireId;
+}
 
-    const { data: dataInsert, error: errorInsert } = await supabase
-      .from(FORMS_TABLE)
-      .insert({
-        user_id: userId,
-        form_type: type,
-        lang,
-        status: "draft",
-        data: draftData,
-      })
-      .select("id")
-      .single<InsertIdRow>();
+   const { data: dataInsert, error: errorInsert } = await supabase
+  .from(FORMS_TABLE)
+  .insert({
+    user_id: userId,
+    form_type: type,
+    lang,
+    status: "draft",
+    annee: anneeImposition || null,
+    data: draftData,
+  })
+  .select("id")
+  .single<InsertIdRow>();
 
-    if (errorInsert) throw new Error(supaErr(errorInsert));
+if (errorInsert) throw new Error(supaErr(errorInsert));
 
     const fid = dataInsert?.id ?? null;
     if (fid) setFormulaireId(fid);
@@ -598,13 +603,14 @@ function FormulaireFiscalInner({
     hydrating.current = true;
 
     const { data: row, error } = await supabase
-      .from(FORMS_TABLE)
-      .select("id, data, created_at")
-      .eq("user_id", userId)
-      .eq("form_type", type)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<FormRow>();
+  .from(FORMS_TABLE)
+  .select("id, data, created_at")
+  .eq("user_id", userId)
+  .eq("form_type", type)
+  .eq("annee", anneeImposition || null)
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .maybeSingle<FormRow>();
 
     if (error) {
       setMsg(`Erreur chargement: ${error.message}`);
@@ -712,7 +718,7 @@ function FormulaireFiscalInner({
     await loadDocs(fid);
 
     hydrating.current = false;
-  }, [userId, type, loadDocs]);
+  }, [userId, type, anneeImposition, loadDocs]);
 
   useEffect(() => {
     void loadLastForm();
