@@ -552,7 +552,7 @@ export default function Home() {
   // ✅ Toujours mettre lang dans next (URL safe)
   const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
   const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
-  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/T2")}`;
+  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
   const LangSwitcher = () => {
     return (
