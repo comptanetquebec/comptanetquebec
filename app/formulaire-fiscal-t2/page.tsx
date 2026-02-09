@@ -9,7 +9,7 @@ import "./formulaire-fiscal.css";
 
 import Steps from "./Steps";
 import RequireAuth from "./RequireAuth";
-import { Field, YesNoField, SelectField, type YesNo } from "./ui";
+import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "./ui";
 
 import { resolveLangFromParamsT2 as resolveLangFromParams, type Lang } from "./_lib/lang";
 
@@ -37,7 +37,7 @@ type ProvinceCode =
   | "NT"
   | "NU";
 
-const PROVINCES: Array<SelectOption<ProvinceCode | "">> = [
+const PROVINCES: Array<SelectOption<ProvinceCode>> = [
   { value: "QC", label: "QC" },
   { value: "ON", label: "ON" },
   { value: "NB", label: "NB" },
@@ -72,7 +72,7 @@ type T2Data = {
 
   addrStreet: string;
   addrCity: string;
-  addrProv: ProvinceCode | "";
+  addrProv: ProvinceCode
   addrPostal: string;
 
   yearEnd: string;
@@ -196,7 +196,7 @@ function FormulaireFiscalT2Inner({
 
   const [addrStreet, setAddrStreet] = useState("");
   const [addrCity, setAddrCity] = useState("");
-  const [addrProv, setAddrProv] = useState<ProvinceCode | "">("QC");
+  const [addrProv, setAddrProv] = useState<ProvinceCode>("QC");
   const [addrPostal, setAddrPostal] = useState("");
 
   const [yearEnd, setYearEnd] = useState("");
