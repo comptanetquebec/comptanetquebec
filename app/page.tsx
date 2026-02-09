@@ -631,54 +631,63 @@ export default function Home() {
       </header>
 
       {/* HERO */}
-      <section className={styles.hero}>
-        <div className={styles.heroBg}>
-          <Image src="/banniere.png" alt="Bannière" fill priority sizes="100vw" className={styles.heroBgImg} />
+     <section className={styles.hero}>
+  <div className={styles.heroBg}>
+    <Image
+      src="/banniere.png"
+      alt="Bannière"
+      fill
+      priority
+      sizes="100vw"
+      className={styles.heroBgImg}
+    />
+  </div>
+
+  <div className={styles.heroCenter}>
+    <div className={styles.heroCard}>
+      <h1 className={styles.heroTitle}>{T.heroTitle}</h1>
+      <p className={styles.heroSub}>{T.heroSub}</p>
+
+      {/* Liens discrets (style pro) */}
+      <div className={styles.heroLinks}>
+        <Link href={toClient} className={styles.heroLink}>
+          {T.nav.client}
+        </Link>
+
+        <span className={styles.heroSep}>•</span>
+
+        <Link href={toHelp} className={styles.heroLink}>
+          {T.nav.help}
+        </Link>
+
+        {isAdmin && (
+          <>
+            <span className={styles.heroSep}>•</span>
+            <Link href="/admin/dossiers" className={styles.heroLinkAdmin}>
+              Admin
+            </Link>
+          </>
+        )}
+      </div>
+
+      <div className={styles.choiceBox}>
+        <div className={styles.choiceTitle}>{T.chooseType}</div>
+
+        <div className={styles.choiceGrid}>
+          <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
+          <TaxChoiceCard title={T.autoTitle} desc={T.autoDesc} btn={T.autoBtn} href={toT1Auto} />
+          <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
         </div>
 
-        <div className={styles.heroCenter}>
-          <div className={styles.heroCard}>
-            <h1 className={styles.heroTitle}>{T.heroTitle}</h1>
-            <p className={styles.heroSub}>{T.heroSub}</p>
-
-            <div className={styles.heroCtas}>
-              <Link href={toT1} className="btn btn-primary" style={{ borderRadius: 10 }}>
-                {T.ctaMain}
-              </Link>
-              <Link href={toClient} className="btn btn-outline" style={{ borderRadius: 10 }}>
-                {T.nav.client}
-              </Link>
-              <Link href={toHelp} className="btn btn-outline" style={{ borderRadius: 10 }}>
-                {T.nav.help}
-              </Link>
-            </div>
-
-            <div className={styles.choiceBox}>
-              <div className={styles.choiceTitle}>{T.chooseType}</div>
-
-              <div className={styles.choiceGrid}>
-                <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
-                <TaxChoiceCard title={T.autoTitle} desc={T.autoDesc} btn={T.autoBtn} href={toT1Auto} />
-                <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
-              </div>
-
-              <div style={{ marginTop: 10, textAlign: "center" }}>
-                <a href="#tarifs" style={{ color: bleu, fontWeight: 800, textDecoration: "none" }}>
-                  {T.nav.pricing}
-                </a>
-              </div>
-
-              {isAdmin && (
-                <div style={{ marginTop: 10, textAlign: "center" }}>
-                  <Link href="/admin/dossiers" style={{ fontWeight: 900, color: "#f59e0b", textDecoration: "none" }}>
-                    Admin
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
+        <div style={{ marginTop: 10, textAlign: "center" }}>
+          <a href="#tarifs" style={{ color: bleu, fontWeight: 800, textDecoration: "none" }}>
+            {T.nav.pricing}
+          </a>
         </div>
-      </section>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* SERVICES */}
       <section id="services" className={styles.section}>
