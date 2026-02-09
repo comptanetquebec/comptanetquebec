@@ -9,12 +9,13 @@ import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "ComptaNet Québec",
-  description: "Accédez à votre espace client sécurisé pour déposer vos documents fiscaux.",
+  description:
+    "Accédez à votre espace client sécurisé pour déposer vos documents fiscaux.",
 };
 
-function getPathnameFromHeaders(): string {
-  // Next met souvent l’URL dans ces headers (selon plateforme)
-  const h = headers();
+async function getPathnameFromHeaders(): Promise<string> {
+  const h = await headers();
+
   const fromUrl = h.get("x-url");
   if (fromUrl) {
     try {
@@ -27,14 +28,17 @@ function getPathnameFromHeaders(): string {
   const fromNextUrl = h.get("next-url");
   if (fromNextUrl) return fromNextUrl;
 
-  // fallback
   return "/";
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const pathname = getPathnameFromHeaders();
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = await getPathnameFromHeaders();
 
-  // ✅ Landing "/" : pas de Header global (pour éviter doublon avec le header local de la page)
+  // ✅ Landing "/" : pas de Header global
   const showHeader = pathname !== "/";
 
   return (
@@ -49,3 +53,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
