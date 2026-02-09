@@ -1,8 +1,29 @@
+/* =========================================
+   ComptaNet Québec — Home page (page.module.css)
+   Accent principal: BLEU (#004aad)
+========================================= */
+
+:root{
+  --cq-blue:#004aad;
+  --cq-blue-600:#003c8f;
+  --cq-blue-700:#003377;
+
+  --ink:#0f172a;
+  --muted:#64748b;
+  --muted2:#475569;
+
+  --border:#e5e7eb;
+  --border2:#eef2f7;
+
+  --card:rgba(255,255,255,.96);
+  --soft:#f8fafc;
+}
+
 /* ==============
    Base / Layout
 ============== */
 .main{
-  color:#111827;
+  color:var(--ink);
   background:#ffffff;
 }
 
@@ -15,7 +36,7 @@
   z-index:40;
   background:rgba(255,255,255,.92);
   backdrop-filter:saturate(180%) blur(10px);
-  border-bottom:1px solid #eef2f7;
+  border-bottom:1px solid var(--border2);
 }
 
 .headerInner{
@@ -40,7 +61,7 @@
   font-weight:900;
   white-space:nowrap;
   letter-spacing:-.2px;
-  color:#0f172a;
+  color:var(--ink);
 }
 
 .nav{
@@ -61,6 +82,7 @@
 
 .nav a:hover{
   text-decoration:underline;
+  text-decoration-color:rgba(0,0,0,.2);
 }
 
 .langWrap{ margin-left:8px; }
@@ -77,12 +99,12 @@
 
 .langLabel{
   font-size:12px;
-  color:#64748b;
+  color:var(--muted);
   font-weight:700;
 }
 
 .langBtn{
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   background:#fff;
   color:#334155;
   padding:6px 10px;
@@ -93,17 +115,26 @@
   line-height:1;
   font-weight:800;
   min-width:44px;
-  transition:background .15s ease, border-color .15s ease, color .15s ease;
+  transition:background .15s ease, border-color .15s ease, color .15s ease, transform .06s ease;
+}
+
+.langBtn:hover{
+  border-color:rgba(0,74,173,.45);
+  color:var(--cq-blue);
+}
+
+.langBtn:active{
+  transform:translateY(1px);
 }
 
 .langBtnActive{
-  border-color:#0f172a;
-  background:#0f172a;
+  border-color:var(--cq-blue);
+  background:var(--cq-blue);
   color:#fff;
 }
 
 .langSelect{
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   padding:6px 10px;
   border-radius:10px;
   font-size:12px;
@@ -130,13 +161,18 @@
   filter:saturate(1.02);
 }
 
-/* léger voile pour rendre le texte plus pro/lecturable */
+/* voile doux (plus pro, meilleure lisibilité) */
 .hero::after{
   content:"";
   position:absolute;
   inset:0;
   background:
-    linear-gradient(to bottom, rgba(15,23,42,.28), rgba(15,23,42,.10) 35%, rgba(255,255,255,0) 70%);
+    linear-gradient(
+      to bottom,
+      rgba(15,23,42,.25),
+      rgba(15,23,42,.08) 35%,
+      rgba(255,255,255,0) 70%
+    );
   pointer-events:none;
 }
 
@@ -150,11 +186,11 @@
 
 .heroCard{
   width:min(860px, 96vw);
-  background:rgba(255,255,255,.95);
+  background:var(--card);
   border:1px solid rgba(15,23,42,.10);
   border-radius:18px;
   padding:18px 18px 16px;
-  box-shadow:0 20px 60px rgba(0,0,0,.18);
+  box-shadow:0 20px 60px rgba(0,0,0,.16);
   text-align:center;
 }
 
@@ -163,17 +199,17 @@
   line-height:1.15;
   margin:0;
   letter-spacing:-.3px;
-  color:#0f172a;
+  color:var(--ink);
 }
 
 .heroSub{
   margin-top:10px;
-  color:#475569;
+  color:var(--muted2);
   font-size:clamp(14px, 1.7vw, 16px);
   line-height:1.55;
 }
 
-/* ✅ Remplace les gros boutons: liens texte discrets */
+/* liens texte discrets (si tu les utilises) */
 .heroLinks{
   margin-top:12px;
   display:inline-flex;
@@ -192,6 +228,7 @@
 }
 
 .heroLink:hover{
+  color:var(--cq-blue);
   text-decoration:underline;
 }
 
@@ -210,7 +247,7 @@
   text-decoration:underline;
 }
 
-/* (Ancien bloc boutons — tu peux le supprimer si tu ne l'utilises plus) */
+/* si tu gardes l'ancien bloc de boutons */
 .heroCtas{
   margin-top:12px;
   display:flex;
@@ -220,13 +257,13 @@
 }
 
 /* ==============
-   Choix situation (les 3 cartes)
+   Choix situation (3 cartes)
 ============== */
 .choiceBox{
   margin-top:14px;
   text-align:left;
-  background:#f8fafc;
-  border:1px solid #e5e7eb;
+  background:var(--soft);
+  border:1px solid var(--border);
   border-radius:14px;
   padding:12px 12px 14px;
 }
@@ -234,7 +271,7 @@
 .choiceTitle{
   font-weight:900;
   font-size:13px;
-  color:#0f172a;
+  color:var(--ink);
   margin-bottom:10px;
   text-align:center;
   letter-spacing:-.1px;
@@ -247,7 +284,7 @@
 }
 
 .choiceCard{
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   border-radius:14px;
   background:#fff;
   padding:14px;
@@ -255,19 +292,26 @@
   flex-direction:column;
   min-height:154px;
   box-shadow:0 1px 0 rgba(15,23,42,.04);
+  transition:transform .08s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.choiceCard:hover{
+  transform:translateY(-1px);
+  border-color:rgba(0,74,173,.25);
+  box-shadow:0 6px 22px rgba(0,0,0,.08);
 }
 
 .choiceCardTitle{
   font-weight:900;
   font-size:14px;
-  color:#0f172a;
+  color:var(--ink);
   line-height:1.35;
   letter-spacing:-.1px;
 }
 
 .choiceCardDesc{
   font-size:13px;
-  color:#64748b;
+  color:var(--muted);
   margin-top:8px;
   line-height:1.45;
 }
@@ -287,13 +331,13 @@
 }
 
 .sectionTitle{
-  color:#0f172a;
+  color:var(--ink);
   margin:0 0 10px;
   letter-spacing:-.2px;
 }
 
 .sectionSub{
-  color:#475569;
+  color:var(--muted2);
   margin:0 0 18px;
   line-height:1.55;
 }
@@ -308,7 +352,7 @@
 }
 
 .cardBox{
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   border-radius:14px;
   padding:16px;
   background:#fff;
@@ -317,14 +361,14 @@
 
 .cardBox h3{
   margin:0 0 8px 0;
-  color:#0f172a;
+  color:var(--ink);
   font-size:16px;
   letter-spacing:-.1px;
 }
 
 .cardBox p{
   margin:0;
-  color:#64748b;
+  color:var(--muted);
   line-height:1.55;
 }
 
@@ -332,9 +376,9 @@
    Steps section
 ============== */
 .stepsWrap{
-  background:#f8fafc;
-  border-top:1px solid #eef2f7;
-  border-bottom:1px solid #eef2f7;
+  background:var(--soft);
+  border-top:1px solid var(--border2);
+  border-bottom:1px solid var(--border2);
 }
 
 .stepsInner{
@@ -343,23 +387,25 @@
   padding:38px 16px;
 }
 
+/* ✅ numéros 1-2-3-4 en bleu (au lieu de noir) */
 .stepNum{
   width:34px;
   height:34px;
   border-radius:999px;
-  background:#0f172a;
+  background:var(--cq-blue);
   color:#fff;
   display:grid;
   place-items:center;
   font-weight:900;
   margin-bottom:10px;
+  box-shadow:0 8px 18px rgba(0,74,173,.18);
 }
 
 /* ==============
    Pricing
 ============== */
 .planPrice{
-  color:#0f172a;
+  color:var(--ink);
   font-weight:900;
   font-size:18px;
   margin:8px 0 10px;
@@ -368,7 +414,7 @@
 .planList{
   margin:0;
   padding-left:18px;
-  color:#64748b;
+  color:var(--muted);
   font-size:14px;
   line-height:1.55;
 }
@@ -384,7 +430,7 @@
    FAQ
 ============== */
 .faqTitle{
-  color:#0f172a;
+  color:var(--ink);
   margin:0 0 12px;
   letter-spacing:-.2px;
 }
@@ -392,7 +438,7 @@
 .faqWrap{ display:grid; gap:10px; }
 
 .faqItem{
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   border-radius:14px;
   overflow:hidden;
   background:#fff;
@@ -407,7 +453,7 @@
   border:none;
   cursor:pointer;
   font-weight:900;
-  color:#0f172a;
+  color:var(--ink);
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -415,18 +461,18 @@
 
 .faqAnswer{
   padding:0 14px 14px;
-  color:#475569;
+  color:var(--muted2);
   font-size:14px;
   line-height:1.55;
 }
 
-.faqIcon{ font-size:18px; color:#64748b; }
+.faqIcon{ font-size:18px; color:var(--muted); }
 
 /* ==============
    Contact
 ============== */
 .contactBox{
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   border-radius:14px;
   padding:16px;
   background:#fff;
@@ -438,28 +484,38 @@
 
 .input{
   width:100%;
-  border:1px solid #e5e7eb;
+  border:1px solid var(--border);
   border-radius:12px;
   padding:12px 14px;
   outline:none;
   font-size:14px;
   font-family:inherit;
-  color:#0f172a;
+  color:var(--ink);
   background:#fff;
 }
 
 .input:focus{
-  border-color:#94a3b8;
-  box-shadow:0 0 0 3px rgba(148,163,184,.25);
+  border-color:rgba(0,74,173,.55);
+  box-shadow:0 0 0 3px rgba(0,74,173,.16);
 }
 
 .ok{ color:#166534; font-weight:900; font-size:13px; }
 .err{ color:#b91c1c; font-weight:900; font-size:13px; }
 
 .contactHint{
-  color:#64748b;
+  color:var(--muted);
   margin-top:12px;
   font-size:14px;
+}
+
+.contactHint a{
+  color:var(--cq-blue);
+  font-weight:800;
+  text-decoration:none;
+}
+
+.contactHint a:hover{
+  text-decoration:underline;
 }
 
 /* ==============
