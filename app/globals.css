@@ -6,16 +6,22 @@
    Variables & reset léger
    ========================= */
 :root{
-  /* Palette plus "cabinet" */
+  /* Texte */
   --ink:#0f172a;
   --muted:#475569;
 
+  /* Fonds */
   --bg:#ffffff;
   --bg-soft:#f6f8fb;
 
+  /* Bordures */
   --border:#e5e7eb;
 
-  /* Accent sobre (utilisé pour liens + focus) */
+  /* Bleu (PRIMARY) — boutons principaux */
+  --primary:#0b4ea2;
+  --primary-2:#093f84;
+
+  /* Accent sobre (liens + focus) */
   --accent:#0f172a;
   --accent-2:#111827;
 
@@ -33,7 +39,7 @@ html,body{
   line-height:1.5;
 }
 
-a{ color:var(--accent); text-decoration:none; }
+a{ color:var(--primary); text-decoration:none; }
 a:hover{ text-decoration:underline; }
 
 /* =========================
@@ -44,29 +50,30 @@ a:hover{ text-decoration:underline; }
     @apply max-w-[1100px] mx-auto px-4;
   }
 
-  /* Boutons: plus pro, moins flashy */
+  /* Boutons */
   .btn{
     @apply inline-flex items-center justify-center gap-2
-           px-4 py-2 rounded-xl font-semibold border transition
+           px-4 py-2 font-semibold border transition
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
            disabled:opacity-60 disabled:cursor-not-allowed;
+    border-radius: var(--radius);
     border-color: var(--border);
     text-decoration:none;
   }
 
-  /* "Primary" = sobre (noir/charbon) */
+  /* Primary = BLEU (ton choix) */
   .btn-primary{
     @apply text-white;
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--primary);
+    border-color: var(--primary);
   }
   .btn-primary:hover{
-    background: var(--accent-2);
-    border-color: var(--accent-2);
+    background: var(--primary-2);
+    border-color: var(--primary-2);
     text-decoration:none;
   }
 
-  /* Outline = neutre (gris), pas bleu */
+  /* Outline = blanc + bord gris */
   .btn-outline{
     @apply bg-white;
     color: var(--ink);
@@ -77,14 +84,27 @@ a:hover{ text-decoration:underline; }
     text-decoration:none;
   }
 
-  /* Lien bouton (pour tes liens discrets) */
+  /* Soft = léger bleu pâle (utile pour petits CTA) */
+  .btn-soft{
+    background: rgba(11,78,162,.08);
+    color: var(--primary);
+    border-color: rgba(11,78,162,.18);
+  }
+  .btn-soft:hover{
+    background: rgba(11,78,162,.12);
+    border-color: rgba(11,78,162,.25);
+    text-decoration:none;
+  }
+
+  /* Lien bouton */
   .btn-link{
     @apply font-semibold underline underline-offset-2;
-    color: var(--accent);
+    color: var(--primary);
   }
 
   .card{
-    @apply bg-white border p-4 rounded-[14px];
+    @apply bg-white border p-4;
+    border-radius: var(--radius);
     border-color: var(--border);
   }
 
@@ -93,11 +113,15 @@ a:hover{ text-decoration:underline; }
     color: var(--muted);
   }
 
-  .form{ margin-top:12px; display:grid; gap:12px; }
+  .form{
+    margin-top:12px;
+    display:grid;
+    gap:12px;
+  }
 }
 
 /* =========================
-   Header / nav (global) — scoped ✅
+   Header / nav (global)
    ========================= */
 .siteHeader{
   position:sticky;
@@ -122,6 +146,7 @@ a:hover{ text-decoration:underline; }
   gap:12px;
   padding:12px 0;
 }
+
 .siteBrandText{
   font-weight:900;
   font-size:18px;
@@ -138,11 +163,15 @@ a:hover{ text-decoration:underline; }
 /* =========================
    Inputs (global)
    ========================= */
-label{ display:grid; gap:6px; font-weight:700; }
+label{
+  display:grid;
+  gap:6px;
+  font-weight:700;
+}
 
 input,textarea{
   border:1px solid var(--border);
-  border-radius:12px;
+  border-radius: var(--radius);
   padding:12px 14px;
   font:inherit;
   color:var(--ink);
@@ -151,8 +180,8 @@ input,textarea{
 
 input:focus,textarea:focus{
   outline:none;
-  border-color:#94a3b8;
-  box-shadow:0 0 0 3px rgba(148,163,184,.25);
+  border-color: rgba(11,78,162,.45);
+  box-shadow:0 0 0 3px rgba(11,78,162,.18);
 }
 
 /* =========================
