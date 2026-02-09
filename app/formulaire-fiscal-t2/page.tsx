@@ -11,7 +11,10 @@ import Steps from "./Steps";
 import RequireAuth from "./RequireAuth";
 import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "./ui";
 
-import { resolveLangFromParamsT2 as resolveLangFromParams, type Lang } from "./_lib/lang";
+import {
+  resolveLangFromParamsT2 as resolveLangFromParams,
+  type Lang,
+} from "./_lib/lang";
 
 /**
  * DB
@@ -20,7 +23,6 @@ const FORMS_TABLE = "formulaires_fiscaux";
 
 type FormTypeDb = "T1" | "T2";
 type InsertIdRow = { id: string };
-type SelectOption<T extends string> = { value: T; label: string };
 
 type ProvinceCode =
   | "QC"
@@ -72,7 +74,7 @@ type T2Data = {
 
   addrStreet: string;
   addrCity: string;
-  addrProv: ProvinceCode
+  addrProv: ProvinceCode;
   addrPostal: string;
 
   yearEnd: string;
@@ -101,7 +103,7 @@ type Formdata = {
 type FormRow = {
   id: string;
   data: Formdata | null;
-  created_at: string;
+  created_at: string | null;
 };
 
 function titleFromType(type: FormTypeDb) {
@@ -137,24 +139,33 @@ function normalizePostal(v: string) {
 
 export default function FormulaireFiscalT2Page() {
   const paramsRO = useSearchParams();
-  const params = useMemo(() => new URLSearchParams(paramsRO.toString()), [paramsRO]);
+  const params = useMemo(
+    () => new URLSearchParams(paramsRO.toString()),
+    [paramsRO]
+  );
 
   const type: FormTypeDb = "T2";
   const lang: Lang = useMemo(() => resolveLangFromParams(params), [params]);
 
   const yearParam = (params.get("year") || "").trim();
 
+  // ✅ pas de window ici (safe pour build/SSR)
   const nextPath = useMemo(() => {
-    const u = new URL("/formulaire-fiscal-t2", window.location.origin);
-    u.searchParams.set("lang", lang);
-    if (yearParam) u.searchParams.set("year", yearParam);
-    return u.pathname + u.search;
+    const qs = new URLSearchParams();
+    qs.set("lang", lang);
+    if (yearParam) qs.set("year", yearParam);
+    return `/formulaire-fiscal-t2?${qs.toString()}`;
   }, [lang, yearParam]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
       {(userId) => (
-        <FormulaireFiscalT2Inner userId={userId} lang={lang} type={type} initialYear={yearParam} />
+        <FormulaireFiscalT2Inner
+          userId={userId}
+          lang={lang}
+          type={type}
+          initialYear={yearParam}
+        />
       )}
     </RequireAuth>
   );
@@ -314,7 +325,7 @@ function FormulaireFiscalT2Inner({
     return fid;
   }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
-  // 🔥 Charge le dernier T2 (peu importe l'année) puis hydrate les champs depuis data.t2
+  // Charge le dernier T2 (peu importe l'année) puis hydrate les champs depuis data.t2
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
 
@@ -351,7 +362,7 @@ function FormulaireFiscalT2Inner({
 
     setAddrStreet(t2.addrStreet ?? "");
     setAddrCity(t2.addrCity ?? "");
-    setAddrProv((t2.addrProv as ProvinceCode) ?? "QC");
+    setAddrProv(((t2.addrProv ?? "QC") as ProvinceCode));
     setAddrPostal(t2.addrPostal ? formatPostalInput(t2.addrPostal) : "");
 
     setYearEnd(t2.yearEnd ?? "");
@@ -409,7 +420,9 @@ function FormulaireFiscalT2Inner({
 
       setMsg("✅ Redirection vers le dépôt…");
       router.push(
-        `/formulaire-fiscal-t2/depot-documents?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`
+        `/formulaire-fiscal-t2/depot-documents?fid=${encodeURIComponent(
+          fid
+        )}&lang=${encodeURIComponent(lang)}`
       );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
@@ -447,7 +460,10 @@ function FormulaireFiscalT2Inner({
 
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
-          <p>Merci de remplir ce formulaire. Ces informations servent à préparer la déclaration T2 (et CO-17 si requis).</p>
+          <p>
+            Merci de remplir ce formulaire. Ces informations servent à préparer la
+            déclaration T2 (et CO-17 si requis).
+          </p>
         </div>
 
         {msg && (
@@ -476,24 +492,42 @@ function FormulaireFiscalT2Inner({
               />
 
               <div className="ff-grid2">
-                <Field label="Nom légal de l’entreprise" value={companyName} onChange={setCompanyName} required />
-                <Field label="Numéro d’entreprise (ARC) – BN (9 chiffres)" value={craNumber} onChange={setCraNumber} />
+                <Field
+                  label="Nom légal de l’entreprise"
+                  value={companyName}
+                  onChange={setCompanyName}
+                  required
+                />
+                <Field
+                  label="Numéro d’entreprise (ARC) – BN (9 chiffres)"
+                  value={craNumber}
+                  onChange={setCraNumber}
+                />
               </div>
 
               <div className="ff-grid2">
                 <Field label="NEQ (si Québec)" value={neq} onChange={setNeq} />
-                <Field label="Province d’incorporation" value={incProvince} onChange={setIncProvince} placeholder="QC / ON / ..." />
+                <Field
+                  label="Province d’incorporation"
+                  value={incProvince}
+                  onChange={setIncProvince}
+                  placeholder="QC / ON / ..."
+                />
               </div>
 
-              <Field label="Fin d’exercice (JJ/MM/AAAA)" value={yearEnd} onChange={setYearEnd} placeholder="31/12/2024" />
+              <Field
+                label="Fin d’exercice (JJ/MM/AAAA)"
+                value={yearEnd}
+                onChange={setYearEnd}
+                placeholder="31/12/2024"
+              />
 
               <Field label="Adresse (rue)" value={addrStreet} onChange={setAddrStreet} />
 
-              {/* ✅ Remplacé ff-grid4 (4 colonnes) par une structure 2 + 1 (plus stable) */}
               <div className="ff-grid2 ff-mt-sm">
                 <Field label="Ville" value={addrCity} onChange={setAddrCity} />
 
-                <SelectField<ProvinceCode | "">
+                <SelectField<ProvinceCode>
                   label="Province"
                   value={addrProv}
                   onChange={setAddrProv}
@@ -584,7 +618,12 @@ function FormulaireFiscalT2Inner({
             </div>
 
             <div className="ff-mt">
-              <Field label="Courriel" value={contactEmail} onChange={setContactEmail} type="email" />
+              <Field
+                label="Courriel"
+                value={contactEmail}
+                onChange={setContactEmail}
+                type="email"
+              />
             </div>
           </section>
 
