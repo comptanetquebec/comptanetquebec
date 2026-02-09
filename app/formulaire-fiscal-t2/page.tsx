@@ -8,21 +8,14 @@ import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
 import RequireAuth from "../RequireAuth";
-import { Field, YesNoField, SelectField, type YesNo } from "../ui";
+import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "../ui";
+
+import { resolveLangFromParams, type Lang } from "../_lib/lang";
 
 /**
  * DB
  */
 const FORMS_TABLE = "formulaires_fiscaux";
-
-/**
- * Lang
- */
-type Lang = "fr" | "en" | "es";
-function normalizeLang(v: string | null | undefined): Lang {
-  const x = (v || "").toLowerCase();
-  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
-}
 
 type FormTypeDb = "T1" | "T2";
 type InsertIdRow = { id: string };
@@ -42,7 +35,7 @@ type ProvinceCode =
   | "NT"
   | "NU";
 
-const PROVINCES: { value: ProvinceCode; label: string }[] = [
+const PROVINCES: Array<SelectOption<ProvinceCode | "">> = [
   { value: "QC", label: "QC" },
   { value: "ON", label: "ON" },
   { value: "NB", label: "NB" },
@@ -68,10 +61,8 @@ function supaErr(e: unknown) {
  * Types payload T2
  */
 type T2Data = {
-  // année
   anneeImposition: string;
 
-  // société
   companyName: string;
   craNumber: string;
   neq: string;
@@ -84,7 +75,6 @@ type T2Data = {
 
   yearEnd: string;
 
-  // questions
   operatesInQuebec: YesNo;
   hasRevenue: YesNo;
   paidSalary: YesNo;
@@ -92,12 +82,10 @@ type T2Data = {
   hasAssets: YesNo;
   hasLoans: YesNo;
 
-  // contact
   contactName: string;
   contactPhone: string;
   contactEmail: string;
 
-  // résumé
   revenue: string;
   expenses: string;
   notes: string;
@@ -106,7 +94,6 @@ type T2Data = {
 type Formdata = {
   dossierType: FormTypeDb;
   t2?: T2Data;
-  // (tu peux laisser le reste pour T1)
 };
 
 type FormRow = {
@@ -119,6 +106,7 @@ function titleFromType(type: FormTypeDb) {
   return type === "T2" ? "Société (T2)" : "Particulier (T1)";
 }
 
+/** format helpers */
 function formatPhoneInput(v: string) {
   const d = (v || "").replace(/\D+/g, "").slice(0, 10);
   const a = d.slice(0, 3);
@@ -146,17 +134,20 @@ function normalizePostal(v: string) {
 =========================== */
 
 export default function FormulaireFiscalT2Page() {
-  const params = useSearchParams();
-  const type: FormTypeDb = "T2";
-  const lang = normalizeLang(params.get("lang") || "fr");
+  const paramsRO = useSearchParams();
+  const params = useMemo(() => new URLSearchParams(paramsRO.toString()), [paramsRO]);
 
-  // 👉 option: tu peux aussi passer ?year=2024
+  const type: FormTypeDb = "T2";
+  const lang: Lang = useMemo(() => resolveLangFromParams(params), [params]);
+
   const yearParam = (params.get("year") || "").trim();
 
-  const nextPath = useMemo(
-    () => `/formulaire-fiscal-t2?lang=${lang}${yearParam ? `&year=${encodeURIComponent(yearParam)}` : ""}`,
-    [lang, yearParam]
-  );
+  const nextPath = useMemo(() => {
+    const u = new URL("/formulaire-fiscal-t2", window.location.origin);
+    u.searchParams.set("lang", lang);
+    if (yearParam) u.searchParams.set("year", yearParam);
+    return u.pathname + u.search;
+  }, [lang, yearParam]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
@@ -187,7 +178,6 @@ function FormulaireFiscalT2Inner({
 
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-
   const [formulaireId, setFormulaireId] = useState<string | null>(null);
 
   // évite autosave pendant preload
@@ -289,6 +279,7 @@ function FormulaireFiscalT2Inner({
 
     const annee = anneeImposition.trim() || null;
 
+    // UPDATE
     if (formulaireId) {
       const { error } = await supabase
         .from(FORMS_TABLE)
@@ -300,6 +291,7 @@ function FormulaireFiscalT2Inner({
       return formulaireId;
     }
 
+    // INSERT
     const { data: dataInsert, error: errorInsert } = await supabase
       .from(FORMS_TABLE)
       .insert({
@@ -320,8 +312,7 @@ function FormulaireFiscalT2Inner({
     return fid;
   }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
-  // 🔥 IMPORTANT : on ne filtre PAS par annee au premier chargement (sinon tu “rates” le draft)
-  // On charge le dernier T2, puis on hydrate anneeImposition depuis le payload.
+  // 🔥 Charge le dernier T2 (peu importe l'année) puis hydrate les champs depuis data.t2
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
 
@@ -339,6 +330,7 @@ function FormulaireFiscalT2Inner({
       hydrating.current = false;
       return;
     }
+
     if (!row?.data?.t2) {
       hydrating.current = false;
       return;
@@ -384,7 +376,7 @@ function FormulaireFiscalT2Inner({
     void loadLastForm();
   }, [loadLastForm]);
 
-  // autosave debounce (comme T1)
+  // autosave debounce
   useEffect(() => {
     if (hydrating.current) return;
 
@@ -404,18 +396,28 @@ function FormulaireFiscalT2Inner({
   }, [router, lang]);
 
   const goToDepotDocuments = useCallback(async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setMsg(null);
+
     try {
       setMsg("⏳ Préparation du dossier…");
       const fid = await saveDraft();
       if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
       setMsg("✅ Redirection vers le dépôt…");
-      router.push(`/formulaire-fiscal-t2/depot-documents?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`);
+      router.push(
+        `/formulaire-fiscal-t2/depot-documents?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`
+      );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
       setMsg("❌ " + message);
+      setSubmitting(false);
     }
-  }, [saveDraft, router, lang]);
+  }, [saveDraft, router, lang, submitting]);
+
+  const btnContinue =
+    lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →";
 
   return (
     <main className="ff-bg">
@@ -485,14 +487,20 @@ function FormulaireFiscalT2Inner({
 
               <Field label="Adresse (rue)" value={addrStreet} onChange={setAddrStreet} />
 
-              <div className="ff-grid4 ff-mt-sm">
+              {/* ✅ Remplacé ff-grid4 (4 colonnes) par une structure 2 + 1 (plus stable) */}
+              <div className="ff-grid2 ff-mt-sm">
                 <Field label="Ville" value={addrCity} onChange={setAddrCity} />
+
                 <SelectField<ProvinceCode | "">
                   label="Province"
                   value={addrProv}
                   onChange={setAddrProv}
-                  options={PROVINCES as any}
+                  options={PROVINCES}
+                  required
                 />
+              </div>
+
+              <div className="ff-mt-sm">
                 <Field
                   label="Code postal"
                   value={addrPostal}
@@ -591,7 +599,12 @@ function FormulaireFiscalT2Inner({
             </div>
 
             <div className="ff-mt">
-              <Field label="Notes / précisions" value={notes} onChange={setNotes} placeholder="Ex.: année fiscale différente, dépenses perso payées par la cie, etc." />
+              <Field
+                label="Notes / précisions"
+                value={notes}
+                onChange={setNotes}
+                placeholder="Ex.: année fiscale différente, dépenses perso payées par la cie, etc."
+              />
             </div>
           </section>
 
@@ -603,7 +616,7 @@ function FormulaireFiscalT2Inner({
               disabled={submitting}
               onClick={goToDepotDocuments}
             >
-              {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
+              {btnContinue}
             </button>
           </div>
         </form>
