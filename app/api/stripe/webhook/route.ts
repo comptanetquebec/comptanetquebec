@@ -51,18 +51,34 @@ function supabaseAdmin(): SupabaseClient {
  * Si l'insert échoue avec 23505 => déjà traité => OK.
  * Toute autre erreur => throw (500) pour Stripe retry.
  */
+type PostgrestLikeError = {
+  message: string;
+  code?: string;
+};
+
+function getPgErrorCode(err: unknown): string | undefined {
+  if (!err || typeof err !== "object") return undefined;
+  const rec = err as Record<string, unknown>;
+  const code = rec.code;
+  return typeof code === "string" ? code : undefined;
+}
+
 async function ensureNotProcessed(sb: SupabaseClient, eventId: string) {
   const { error } = await sb.from("stripe_events").insert({ id: eventId });
 
   if (!error) return;
 
-  // @ts-expect-error: Supabase error typing varie selon versions
-  const code = (error as any)?.code;
+  const code = getPgErrorCode(error);
 
   // 23505 = unique_violation (déjà inséré)
-  if (code === "23505") throw Object.assign(new Error("ALREADY_PROCESSED"), { code: "ALREADY_PROCESSED" });
+  if (code === "23505") {
+    const already = Object.assign(new Error("ALREADY_PROCESSED"), { code: "ALREADY_PROCESSED" as const });
+    throw already;
+  }
 
-  throw new Error(error.message);
+  // message toujours présent côté PostgREST/Supabase
+  const msg = (error as PostgrestLikeError).message || "Supabase insert error";
+  throw new Error(msg);
 }
 
 export async function POST(req: NextRequest) {
@@ -89,11 +105,10 @@ export async function POST(req: NextRequest) {
 
     const sb = supabaseAdmin();
 
-    // ✅ idempotence (doit se faire AVANT toute action)
+    // ✅ idempotence (AVANT toute action)
     try {
       await ensureNotProcessed(sb, event.id);
     } catch (e: unknown) {
-      // si déjà traité, on répond OK
       if (e && typeof e === "object" && (e as { code?: string }).code === "ALREADY_PROCESSED") {
         return jsonOk();
       }
@@ -105,9 +120,9 @@ export async function POST(req: NextRequest) {
     const fid = getStr(session.metadata?.fid);
     if (!fid) return jsonOk(); // rien à lier
 
-    // type peut être manquant => fallback "T2" (ou change si tu veux)
+    // type peut être manquant => fallback "T2"
     const type: DossierType = normalizeType(getStr(session.metadata?.type)) ?? "T2";
-    const mode = getStr(session.metadata?.mode); // "acompte" etc
+    const mode = getStr(session.metadata?.mode);
     const lang = getStr(session.metadata?.lang);
 
     const amountTotal = typeof session.amount_total === "number" ? session.amount_total : null;
@@ -130,7 +145,6 @@ export async function POST(req: NextRequest) {
     if (!finalCqId) {
       const { data: generated, error: genErr } = await sb.rpc("generate_dossier_number", { p_type: type });
       if (genErr) throw new Error(genErr.message);
-
       finalCqId = typeof generated === "string" && generated.trim() ? generated.trim() : null;
     }
 
@@ -141,7 +155,6 @@ export async function POST(req: NextRequest) {
         status: "paid",
         cq_id: finalCqId || undefined,
         updated_at: new Date().toISOString(),
-        // Si tu ajoutes des colonnes plus tard:
         // stripe_session_id: stripeSessionId || undefined,
         // paid_at: new Date().toISOString(),
       })
