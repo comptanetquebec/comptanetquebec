@@ -11,7 +11,7 @@ import Steps from "./Steps";
 import RequireAuth from "./RequireAuth";
 import { Field, YesNoField, SelectField, type YesNo } from "./ui";
 
-import { resolveLangFromParams, type Lang } from "./_lib/lang";
+import { resolveLangFromParamsT2 as resolveLangFromParams, type Lang } from "./_lib/lang";
 
 /**
  * DB
