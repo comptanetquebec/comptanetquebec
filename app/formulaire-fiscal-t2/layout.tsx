@@ -1,0 +1,6 @@
+// app/formulaire-fiscal/layout.tsx
+import "./formulaire-fiscal.css";
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
