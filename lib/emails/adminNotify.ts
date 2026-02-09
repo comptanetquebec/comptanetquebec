@@ -1,9 +1,5 @@
 // lib/emails/adminNotify.ts
-import {
-  getResend,
-  getContactFrom,
-  getAdminNotifyEmail,
-} from "@/lib/resend";
+import { getResend, getContactFrom, getAdminNotifyEmail } from "@/lib/resend";
 
 type ResendErrorShape = {
   error?: {
@@ -23,7 +19,7 @@ export async function sendAdminNotifyEmail(opts: {
     to: [getAdminNotifyEmail()],
     subject: opts.subject,
     text: opts.text,
-    reply_to: opts.replyTo ? [opts.replyTo] : undefined,
+    replyTo: opts.replyTo, // ✅ camelCase, string | undefined
   })) as ResendErrorShape;
 
   if (res?.error) {
