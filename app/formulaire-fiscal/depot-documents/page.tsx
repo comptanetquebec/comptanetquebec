@@ -25,11 +25,11 @@ const DEPOT_ROUTE = "/formulaire-fiscal/depot-documents";
 type Lang = "fr" | "en" | "es";
 
 function normalizeLang(v?: string | null): Lang {
-  const l = (v || "").toLowerCase();
-  return l === "fr" || l === "en" || l === "es" ? (l as Lang) : "fr";
+  const x = (v || "").toLowerCase();
+  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
 }
 
-function getCookie(name: string) {
+function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
   return m ? decodeURIComponent(m[2]) : null;
@@ -52,7 +52,9 @@ function resolveLang(urlLang: string | null): Lang {
 function withLang(path: string, lang: Lang, extra?: Record<string, string>) {
   const u = new URL(path, window.location.origin);
   u.searchParams.set("lang", lang);
-  if (extra) for (const [k, v] of Object.entries(extra)) u.searchParams.set(k, v);
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) u.searchParams.set(k, v);
+  }
   return u.pathname + u.search;
 }
 
@@ -60,7 +62,20 @@ function t(lang: Lang, fr: string, en: string, es: string) {
   return lang === "fr" ? fr : lang === "en" ? en : es;
 }
 
+function errMessage(err: unknown, fallback: string) {
+  if (err instanceof Error) return err.message || fallback;
+  if (typeof err === "string") return err || fallback;
+  return fallback;
+}
+
 type DocRow = {
+  id: string;
+  original_name: string;
+  storage_path: string;
+  created_at: string;
+};
+
+type DocsSelectRow = {
   id: string;
   original_name: string;
   storage_path: string;
@@ -87,15 +102,15 @@ function safeFilename(name: string) {
 }
 
 export default function DepotDocumentsPage() {
-  const router = useRouter();
   const params = useSearchParams();
 
-  const fid = params.get("fid") || "";
-  const type = params.get("type") || "T1";
+  const fid = params.get("fid") ?? "";
+  const type = params.get("type") ?? "T1";
+
   const lang = useMemo(() => resolveLang(params.get("lang")), [params]);
 
   const nextPath = useMemo(() => {
-    // retour EXACT ici après login
+    // Retour exact ici après login
     const u = new URL(DEPOT_ROUTE, window.location.origin);
     u.searchParams.set("fid", fid);
     u.searchParams.set("type", type);
@@ -110,7 +125,17 @@ export default function DepotDocumentsPage() {
   );
 }
 
-function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid: string; type: string; lang: Lang }) {
+function DepotDocumentsInner({
+  userId,
+  fid,
+  type,
+  lang,
+}: {
+  userId: string;
+  fid: string;
+  type: string;
+  lang: Lang;
+}) {
   const router = useRouter();
 
   const [msg, setMsg] = useState<string | null>(null);
@@ -126,6 +151,7 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
     if (!fid) return;
 
     setLoadingDocs(true);
+    setMsg(null);
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
@@ -140,7 +166,15 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
       return;
     }
 
-    setDocs((data as DocRow[]) || []);
+    const rows = (data ?? []) as DocsSelectRow[];
+    const mapped: DocRow[] = rows.map((r) => ({
+      id: String(r.id),
+      original_name: String(r.original_name),
+      storage_path: String(r.storage_path),
+      created_at: String(r.created_at),
+    }));
+
+    setDocs(mapped);
   }, [fid]);
 
   useEffect(() => {
@@ -149,10 +183,14 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
 
   const getSignedUrl = useCallback(
     async (path: string) => {
-      const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .createSignedUrl(path, 60 * 10);
+
       if (error || !data?.signedUrl) {
         throw new Error(
-          error?.message || t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.")
+          error?.message ||
+            t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.")
         );
       }
       return data.signedUrl;
@@ -166,9 +204,13 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
         const url = await getSignedUrl(doc.storage_path);
         window.open(url, "_blank", "noopener,noreferrer");
       } catch (e: unknown) {
-        const message =
-          e instanceof Error ? e.message : t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.");
-        setMsg("❌ " + message);
+        setMsg(
+          "❌ " +
+            errMessage(
+              e,
+              t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.")
+            )
+        );
       }
     },
     [getSignedUrl, lang]
@@ -220,8 +262,7 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
         setMsg(t(lang, "✅ Upload terminé.", "✅ Upload complete.", "✅ Subida completada."));
         await loadDocs();
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : t(lang, "Erreur upload.", "Upload error.", "Error de subida.");
-        setMsg("❌ " + message);
+        setMsg("❌ " + errMessage(e, t(lang, "Erreur upload.", "Upload error.", "Error de subida.")));
       } finally {
         setUploading(false);
       }
@@ -244,7 +285,7 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
   return (
     <main className="ff-bg">
       <div className="ff-container">
-        {/* Header identique */}
+        {/* Header */}
         <header className="ff-header">
           <div className="ff-brand">
             <Image
@@ -289,15 +330,21 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
           <div className="ff-card-head">
             <h2>{t(lang, "Téléverser vos documents", "Upload your documents", "Suba sus documentos")}</h2>
             <p>
-              {t(lang, "Formats acceptés: PDF, images, Office, ZIP.", "Accepted formats: PDF, images, Office, ZIP.", "Formatos: PDF, imágenes, Office, ZIP.")}
+              {t(
+                lang,
+                "Formats acceptés: PDF, images, Office, ZIP.",
+                "Accepted formats: PDF, images, Office, ZIP.",
+                "Formatos: PDF, imágenes, Office, ZIP."
+              )}
             </p>
           </div>
 
-          {/* Upload stylé */}
           <div className="ff-docs">
             <div className={`ff-drop ${disabledUpload ? "ff-drop--disabled" : ""}`}>
               <div className="ff-drop__text">
-                <p className="ff-drop__title">{t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}</p>
+                <p className="ff-drop__title">
+                  {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
+                </p>
                 <p className="ff-drop__hint">{t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}</p>
               </div>
 
@@ -322,7 +369,12 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
             </div>
 
             <p className="ff-doc-note">
-              {t(lang, "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.", "Tip: you can upload multiple files at once.", "Consejo: puede subir varios archivos a la vez.")}
+              {t(
+                lang,
+                "Astuce: vous pouvez téléverser plusieurs fichiers d’un coup.",
+                "Tip: you can upload multiple files at once.",
+                "Consejo: puede subir varios archivos a la vez."
+              )}
             </p>
           </div>
 
@@ -368,7 +420,12 @@ function DepotDocumentsInner({ userId, fid, type, lang }: { userId: string; fid:
 
             {docsCount === 0 && (
               <p className="ff-footnote">
-                {t(lang, "Ajoutez au moins 1 document pour continuer.", "Upload at least 1 document to continue.", "Suba al menos 1 documento para continuar.")}
+                {t(
+                  lang,
+                  "Ajoutez au moins 1 document pour continuer.",
+                  "Upload at least 1 document to continue.",
+                  "Suba al menos 1 documento para continuar."
+                )}
               </p>
             )}
           </div>
