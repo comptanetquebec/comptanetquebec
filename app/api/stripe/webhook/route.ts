@@ -1,26 +1,15 @@
 // app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { sendAdminNotifyEmail } from "@/lib/emails/adminNotify";
 
 export const runtime = "nodejs";
 
-// ✅ IMPORTANT: ne PAS forcer apiVersion (sinon conflit de types avec ta version Stripe)
+// ✅ ne pas forcer apiVersion
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
-/**
- * Supabase admin client (bypass RLS) — SERVEUR SEULEMENT
- */
-function supabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-  if (!serviceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-
-  return createClient(url, serviceKey, { auth: { persistSession: false } });
-}
+type DossierType = "T1" | "TA" | "T2";
 
 function jsonOk() {
   return NextResponse.json({ received: true }, { status: 200 });
@@ -34,9 +23,46 @@ function getStr(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-function normalizeType(v: string | null): "T1" | "TA" | "T2" | null {
+function normalizeType(v: string | null): DossierType | null {
   const x = (v || "").trim().toUpperCase();
-  return x === "T1" || x === "TA" || x === "T2" ? x : null;
+  return x === "T1" || x === "TA" || x === "T2" ? (x as DossierType) : null;
+}
+
+function mustEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing ${name}`);
+  return v;
+}
+
+function supabaseAdmin(): SupabaseClient {
+  const url = mustEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const serviceKey = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
+  return createClient(url, serviceKey, { auth: { persistSession: false } });
+}
+
+/**
+ * Idempotence:
+ * Table requise:
+ *   create table public.stripe_events (
+ *     id text primary key,
+ *     created_at timestamptz default now()
+ *   );
+ *
+ * Si l'insert échoue avec 23505 => déjà traité => OK.
+ * Toute autre erreur => throw (500) pour Stripe retry.
+ */
+async function ensureNotProcessed(sb: SupabaseClient, eventId: string) {
+  const { error } = await sb.from("stripe_events").insert({ id: eventId });
+
+  if (!error) return;
+
+  // @ts-expect-error: Supabase error typing varie selon versions
+  const code = (error as any)?.code;
+
+  // 23505 = unique_violation (déjà inséré)
+  if (code === "23505") throw Object.assign(new Error("ALREADY_PROCESSED"), { code: "ALREADY_PROCESSED" });
+
+  throw new Error(error.message);
 }
 
 export async function POST(req: NextRequest) {
@@ -44,49 +70,44 @@ export async function POST(req: NextRequest) {
     const sig = req.headers.get("stripe-signature");
     if (!sig) return jsonErr("Missing stripe-signature", 400);
 
-    const secret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!secret) return jsonErr("Missing STRIPE_WEBHOOK_SECRET", 500);
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) return jsonErr("Missing STRIPE_WEBHOOK_SECRET", 500);
 
-    // ⚠️ req.text() obligatoire pour vérifier la signature
+    // ⚠️ raw body obligatoire pour Stripe signature
     const body = await req.text();
 
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, sig, secret);
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Invalid signature";
       return jsonErr(msg, 400);
     }
 
-    const sb = supabaseAdmin();
-    const eventId = event.id;
-
-    /**
-     * ✅ Idempotence: ignore si déjà traité
-     * Requiert la table:
-     *   create table public.stripe_events (id text primary key, created_at timestamptz default now());
-     */
-    const { data: already, error: chkErr } = await sb
-      .from("stripe_events")
-      .select("id")
-      .eq("id", eventId)
-      .maybeSingle();
-
-    // si erreur de lecture → on traite quand même (mais Stripe peut retry)
-    if (!chkErr && already?.id) return jsonOk();
-
-    // insert event id (si collision → déjà traité en parallèle)
-    const { error: insErr } = await sb.from("stripe_events").insert({ id: eventId });
-    if (insErr) return jsonOk();
-
-    // ✅ On traite seulement checkout.session.completed
+    // ✅ on ne traite que checkout.session.completed
     if (event.type !== "checkout.session.completed") return jsonOk();
+
+    const sb = supabaseAdmin();
+
+    // ✅ idempotence (doit se faire AVANT toute action)
+    try {
+      await ensureNotProcessed(sb, event.id);
+    } catch (e: unknown) {
+      // si déjà traité, on répond OK
+      if (e && typeof e === "object" && (e as { code?: string }).code === "ALREADY_PROCESSED") {
+        return jsonOk();
+      }
+      throw e;
+    }
 
     const session = event.data.object as Stripe.Checkout.Session;
 
     const fid = getStr(session.metadata?.fid);
-    const type = normalizeType(getStr(session.metadata?.type)); // "T1" | "TA" | "T2"
-    const mode = getStr(session.metadata?.mode); // ex: "acompte"
+    if (!fid) return jsonOk(); // rien à lier
+
+    // type peut être manquant => fallback "T2" (ou change si tu veux)
+    const type: DossierType = normalizeType(getStr(session.metadata?.type)) ?? "T2";
+    const mode = getStr(session.metadata?.mode); // "acompte" etc
     const lang = getStr(session.metadata?.lang);
 
     const amountTotal = typeof session.amount_total === "number" ? session.amount_total : null;
@@ -94,11 +115,7 @@ export async function POST(req: NextRequest) {
     const stripeSessionId = getStr(session.id);
     const paymentStatus = getStr(session.payment_status);
 
-    if (!fid) return jsonOk();
-
-    /**
-     * 1) Lire le cq_id existant (pour éviter toute régénération)
-     */
+    // 1) lire cq_id existant
     const { data: existing, error: readErr } = await sb
       .from("formulaires_fiscaux")
       .select("cq_id")
@@ -109,33 +126,22 @@ export async function POST(req: NextRequest) {
 
     let finalCqId = getStr(existing?.cq_id ?? null);
 
-    /**
-     * 2) Générer cq_id si absent (via RPC Supabase)
-     * RPC attendue:
-     *   public.generate_dossier_number(p_type text) returns text
-     * Ex: "T2-000001"
-     */
-    if (!finalCqId && type) {
-      const { data: generated, error: genErr } = await sb.rpc("generate_dossier_number", {
-        p_type: type,
-      });
-
+    // 2) générer si absent
+    if (!finalCqId) {
+      const { data: generated, error: genErr } = await sb.rpc("generate_dossier_number", { p_type: type });
       if (genErr) throw new Error(genErr.message);
 
-      finalCqId = typeof generated === "string" ? generated : null;
+      finalCqId = typeof generated === "string" && generated.trim() ? generated.trim() : null;
     }
 
-    /**
-     * 3) Update dossier
-     * Tu utilises déjà status "paid" → OK si ton CHECK l’accepte.
-     */
+    // 3) update dossier
     const { error: upErr } = await sb
       .from("formulaires_fiscaux")
       .update({
         status: "paid",
         cq_id: finalCqId || undefined,
         updated_at: new Date().toISOString(),
-        // Optionnel: si tu as ces colonnes
+        // Si tu ajoutes des colonnes plus tard:
         // stripe_session_id: stripeSessionId || undefined,
         // paid_at: new Date().toISOString(),
       })
@@ -143,9 +149,7 @@ export async function POST(req: NextRequest) {
 
     if (upErr) throw new Error(upErr.message);
 
-    /**
-     * 4) Email admin (best-effort)
-     */
+    // 4) email admin best-effort
     try {
       await sendAdminNotifyEmail({
         subject: `Paiement reçu — ${finalCqId || fid}`,
@@ -153,7 +157,7 @@ export async function POST(req: NextRequest) {
           `Paiement confirmé (Stripe)\n\n` +
           `CQ: ${finalCqId || "—"}\n` +
           `fid: ${fid}\n` +
-          `Type: ${type || "—"}\n` +
+          `Type: ${type}\n` +
           `Mode: ${mode || "—"}\n` +
           `Lang: ${lang || "—"}\n` +
           `Stripe session: ${stripeSessionId || "—"}\n` +
