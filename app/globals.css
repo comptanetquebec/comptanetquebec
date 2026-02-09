@@ -76,9 +76,10 @@ a:hover{ text-decoration:underline; }
 }
 
 /* =========================
-   Header / nav (global)
+   Header / nav (global) — SCOPED ✅
+   IMPORTANT: pas de "header { ... }" global
    ========================= */
-header{
+.siteHeader{
   position:sticky;
   top:0;
   background:rgba(255,255,255,0.9);
@@ -87,21 +88,21 @@ header{
   z-index:20;
 }
 
-header .container{
+.siteHeader .container{
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
 
-.brand{
+.siteBrand{
   display:flex;
   align-items:center;
   gap:12px;
   padding:14px 0;
 }
-.brand-text{ font-weight:700; font-size:18px; }
+.siteBrandText{ font-weight:700; font-size:18px; }
 
-.nav{ display:flex; align-items:center; gap:18px; }
+.siteNav{ display:flex; align-items:center; gap:18px; }
 
 /* =========================
    Inputs (global)
@@ -142,6 +143,6 @@ input:focus,textarea:focus{
    Responsive (global)
    ========================= */
 @media (max-width:900px){
-  .nav{ gap:12px; }
+  .siteNav{ gap:12px; }
   .footer-inner{ flex-direction:column; gap:10px; }
 }
