@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import "../formulaire-fiscal.css";
-import Steps from "../Steps";
-import RequireAuth from "../RequireAuth";
-import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "../ui";
+import "./formulaire-fiscal.css";
+
+import Steps from "./Steps";
+import RequireAuth from "./RequireAuth";
+import { Field, YesNoField, SelectField, type YesNo } from "./ui";
 
 import { resolveLangFromParams, type Lang } from "../_lib/lang";
 
