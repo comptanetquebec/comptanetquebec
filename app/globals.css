@@ -6,17 +6,24 @@
    Variables & reset léger
    ========================= */
 :root{
-  --blue:#0b3b8a;
-  --blue-2:#113c80;
-  --ink:#0b1020;
-  --muted:#5e6470;
+  /* Palette plus "cabinet" */
+  --ink:#0f172a;
+  --muted:#475569;
+
   --bg:#ffffff;
-  --bg-soft:#f3f6fb;
+  --bg-soft:#f6f8fb;
+
+  --border:#e5e7eb;
+
+  /* Accent sobre (utilisé pour liens + focus) */
+  --accent:#0f172a;
+  --accent-2:#111827;
+
   --radius:14px;
-  --border:#e6ecf5;
 }
 
 *{ box-sizing:border-box; }
+
 html,body{
   padding:0;
   margin:0;
@@ -26,7 +33,7 @@ html,body{
   line-height:1.5;
 }
 
-a{ color:var(--blue); text-decoration:none; }
+a{ color:var(--accent); text-decoration:none; }
 a:hover{ text-decoration:underline; }
 
 /* =========================
@@ -34,32 +41,46 @@ a:hover{ text-decoration:underline; }
    ========================= */
 @layer components {
   .container{
-    @apply max-w-[1040px] mx-auto px-5;
+    @apply max-w-[1100px] mx-auto px-4;
   }
 
+  /* Boutons: plus pro, moins flashy */
   .btn{
     @apply inline-flex items-center justify-center gap-2
-           px-4 py-2 rounded-full font-semibold border transition
+           px-4 py-2 rounded-xl font-semibold border transition
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
            disabled:opacity-60 disabled:cursor-not-allowed;
-    border-color: var(--blue);
+    border-color: var(--border);
+    text-decoration:none;
   }
+
+  /* "Primary" = sobre (noir/charbon) */
   .btn-primary{
     @apply text-white;
-    background: var(--blue);
+    background: var(--accent);
+    border-color: var(--accent);
   }
-  .btn-primary:hover{ background: var(--blue-2); text-decoration:none; }
+  .btn-primary:hover{
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    text-decoration:none;
+  }
 
+  /* Outline = neutre (gris), pas bleu */
   .btn-outline{
     @apply bg-white;
-    color: var(--blue);
-    border-color: var(--blue);
+    color: var(--ink);
+    border-color: var(--border);
   }
-  .btn-outline:hover{ background:#eef3ff; text-decoration:none; }
+  .btn-outline:hover{
+    background:#f8fafc;
+    text-decoration:none;
+  }
 
+  /* Lien bouton (pour tes liens discrets) */
   .btn-link{
-    @apply underline underline-offset-2 font-medium;
-    color: var(--blue);
+    @apply font-semibold underline underline-offset-2;
+    color: var(--accent);
   }
 
   .card{
@@ -76,15 +97,14 @@ a:hover{ text-decoration:underline; }
 }
 
 /* =========================
-   Header / nav (global) — SCOPED ✅
-   IMPORTANT: pas de "header { ... }" global
+   Header / nav (global) — scoped ✅
    ========================= */
 .siteHeader{
   position:sticky;
   top:0;
-  background:rgba(255,255,255,0.9);
-  backdrop-filter:saturate(140%) blur(6px);
-  border-bottom:1px solid #e8ecf3;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:saturate(180%) blur(10px);
+  border-bottom:1px solid var(--border);
   z-index:20;
 }
 
@@ -92,41 +112,56 @@ a:hover{ text-decoration:underline; }
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
 }
 
 .siteBrand{
   display:flex;
   align-items:center;
   gap:12px;
-  padding:14px 0;
+  padding:12px 0;
 }
-.siteBrandText{ font-weight:700; font-size:18px; }
+.siteBrandText{
+  font-weight:900;
+  font-size:18px;
+  letter-spacing:-.2px;
+}
 
-.siteNav{ display:flex; align-items:center; gap:18px; }
+.siteNav{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
 
 /* =========================
    Inputs (global)
    ========================= */
-label{ display:grid; gap:6px; font-weight:600; }
+label{ display:grid; gap:6px; font-weight:700; }
 
 input,textarea{
-  border:1px solid #d8deea;
-  border-radius:10px;
-  padding:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 14px;
   font:inherit;
+  color:var(--ink);
+  background:#fff;
 }
 
 input:focus,textarea:focus{
-  outline:2px solid #cfe0ff;
-  border-color:#cfe0ff;
+  outline:none;
+  border-color:#94a3b8;
+  box-shadow:0 0 0 3px rgba(148,163,184,.25);
 }
 
 /* =========================
    Footer (global)
    ========================= */
 .footer{
-  border-top:1px solid #e8ecf3;
-  background:#fbfcff;
+  border-top:1px solid var(--border);
+  background:#0f172a;
+  color:#cbd5e1;
   margin-top:42px;
 }
 
@@ -135,7 +170,7 @@ input:focus,textarea:focus{
   justify-content:space-between;
   align-items:center;
   padding:16px 0;
-  color:var(--muted);
+  color:#94a3b8;
   font-size:14px;
 }
 
