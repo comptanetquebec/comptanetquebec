@@ -31,6 +31,12 @@ function normalizePayMode(v: unknown): PayMode | null {
   return x === "acompte" || x === "solde" ? (x as PayMode) : null;
 }
 
+function parseFid(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim() : "";
+  // on valide léger (uuid fait 36, mais on évite de bloquer si tu changes plus tard)
+  return s.length >= 10 ? s : null;
+}
+
 function safeOrigin(req: Request): string {
   const fromHeader = req.headers.get("origin");
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
@@ -57,49 +63,24 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
   return pid;
 }
 
-function parseFid(v: unknown): string | null {
-  const s = typeof v === "string" ? v.trim() : "";
-  // uuid = 36 chars en général, mais on reste permissif
-  return s.length >= 10 ? s : null;
-}
-
 /**
- * Génère/assure cq_id côté serveur.
- * - Si déjà présent: retourne cq_id
- * - Sinon: appelle RPC generate_cq_id() puis update la fiche
- *
- * NOTE: si tu préfères une RPC atomique: ensure_cq_id(p_fid uuid),
- * dis-moi et je te donne la version qui appelle ensure_cq_id directement.
+ * ✅ Utilise la fonction DB existante: public.ensure_cq_id(p_fid uuid) returns text
+ * - si cq_id existe -> retourne cq_id
+ * - sinon -> génère + update -> retourne cq_id
  */
 async function ensureCqId(fid: string): Promise<string> {
   const supabase = await supabaseServer();
 
-  // Lire cq_id
-  const { data: form, error: readErr } = await supabase
-    .from("formulaires_fiscaux")
-    .select("cq_id")
-    .eq("id", fid)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("ensure_cq_id", {
+    p_fid: fid,
+  });
 
-  if (readErr) throw new Error(readErr.message);
+  if (error) throw new Error(error.message);
 
-  const existing = form?.cq_id ? String(form.cq_id) : "";
-  if (existing.startsWith("CQ-")) return existing;
-
-  // Générer cq_id (RPC)
-  const { data: gen, error: genErr } = await supabase.rpc("generate_cq_id");
-  if (genErr) throw new Error(genErr.message);
-
-  const cqId = String(gen || "").trim();
-  if (!cqId.startsWith("CQ-")) throw new Error("generate_cq_id returned an invalid value");
-
-  // Update la fiche
-  const { error: upErr } = await supabase
-    .from("formulaires_fiscaux")
-    .update({ cq_id: cqId })
-    .eq("id", fid);
-
-  if (upErr) throw new Error(upErr.message);
+  const cqId = String(data ?? "").trim();
+  if (!cqId.startsWith("CQ-")) {
+    throw new Error("ensure_cq_id returned an invalid cq_id");
+  }
 
   return cqId;
 }
@@ -108,7 +89,10 @@ export async function POST(req: Request) {
   try {
     const sk = process.env.STRIPE_SECRET_KEY;
     if (!sk) {
-      return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Missing STRIPE_SECRET_KEY" },
+        { status: 500 }
+      );
     }
 
     const origin = safeOrigin(req);
@@ -130,7 +114,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fid" }, { status: 400 });
     }
 
-    // ✅ Génère cqId (pro)
+    // ✅ cq_id pro garanti (DB)
     const cqId = await ensureCqId(fid);
 
     const successUrl = new URL("/paiement/succes", origin);
@@ -147,7 +131,7 @@ export async function POST(req: Request) {
 
     const priceId = priceIdFor(taxType, payMode);
 
-    // Idempotency: évite doubles sessions si double-click
+    // ✅ idempotency stable (évite doubles sessions)
     const idempotencyKey = `checkout:${fid}:${taxType}:${payMode}`;
 
     const stripe = new Stripe(sk);
@@ -155,10 +139,16 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-        client_reference_id: cqId, // ✅ CQ-2026-014 visible dans Stripe
+
+        // ✅ visible dans Stripe en clair
+        client_reference_id: cqId,
+
         line_items: [{ price: priceId, quantity: 1 }],
+
         success_url: successUrl.toString(),
         cancel_url: cancelUrl.toString(),
+
+        // ✅ lien technique + lien humain
         metadata: {
           fid,
           cq_id: cqId,
@@ -171,12 +161,14 @@ export async function POST(req: Request) {
     );
 
     if (!session.url) {
-      return NextResponse.json({ error: "Stripe session missing url" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Stripe session missing url" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: unknown) {
-    // ✅ meilleure détection StripeError (sans dépendre de Stripe.errors.*)
     const message =
       e instanceof Stripe.StripeError
         ? e.message
