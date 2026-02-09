@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
@@ -108,7 +108,9 @@ function getCookie(name: string): string | null {
 }
 
 function setCookie(name: string, value: string, maxAgeSeconds: number) {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; samesite=lax`;
+  if (typeof document === "undefined") return;
+  // ✅ SameSite=Lax (case correcte)
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
 }
 
 function normalizeLang(v: string | null): Lang {
@@ -140,28 +142,15 @@ function writeLangToUrl(l: Lang) {
 /* ===========================
    UI bits
 =========================== */
-function TaxChoiceCard({
-  title,
-  desc,
-  btn,
-  href,
-}: {
-  title: string;
-  desc: string;
-  btn: string;
-  href: string;
-}) {
+function TaxChoiceCard(props: { title: string; desc: string; btn: string; href: string }) {
+  const { title, desc, btn, href } = props;
   return (
     <div className={styles.choiceCard}>
       <div className={styles.choiceCardTitle}>{title}</div>
       <div className={styles.choiceCardDesc}>{desc}</div>
 
       <div className={styles.choiceCardAction}>
-        <Link
-          href={href}
-          className="btn btn-primary"
-          style={{ width: "100%", borderRadius: 10 }}
-        >
+        <Link href={href} className="btn btn-primary" style={{ width: "100%", borderRadius: 10 }}>
           {btn}
         </Link>
       </div>
@@ -209,6 +198,13 @@ export default function Home() {
   const [contactOk, setContactOk] = useState<string | null>(null);
   const [contactErr, setContactErr] = useState<string | null>(null);
 
+  const setLangAndPersist = useCallback((next: Lang) => {
+    setLang(next);
+    setCookie(LANG_COOKIE, next, LANG_COOKIE_MAX_AGE);
+    writeLangToUrl(next);
+    window.dispatchEvent(new Event("cq:lang"));
+  }, []);
+
   // ✅ Init langue: URL > cookie > fr
   useEffect(() => {
     const fromUrl = readLangFromUrl();
@@ -217,18 +213,14 @@ export default function Home() {
 
     const next = fromUrl || fromCookie || "fr";
     setLang(next);
-
-    // ✅ Persiste cookie
     setCookie(LANG_COOKIE, next, LANG_COOKIE_MAX_AGE);
 
-    // ✅ Normalise l’URL (si pas déjà)
     if (!fromUrl) writeLangToUrl(next);
 
-    // ✅ annonce aux composants
     window.dispatchEvent(new Event("cq:lang"));
   }, []);
 
-  // ✅ Check admin (on garde le check, mais on n'affiche plus le lien en haut)
+  // ✅ Check admin (lien admin discret dans hero)
   useEffect(() => {
     let alive = true;
 
@@ -247,14 +239,6 @@ export default function Home() {
     };
   }, []);
 
-  // ✅ Changement par boutons: cookie + URL + event
-  function setLangAndPersist(next: Lang) {
-    setLang(next);
-    setCookie(LANG_COOKIE, next, LANG_COOKIE_MAX_AGE);
-    writeLangToUrl(next);
-    window.dispatchEvent(new Event("cq:lang"));
-  }
-
   const COPY = useMemo(() => {
     const dict: Record<Lang, CopyDict> = {
       fr: {
@@ -271,49 +255,31 @@ export default function Home() {
         ctaMain: "Commencer mon dossier",
         heroTitle: (
           <>
-            Impôts{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>au Québec</span> avec{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              ComptaNet Québec
-            </span>
+            Impôts <span style={{ color: bleu, fontWeight: 900 }}>au Québec</span> avec{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>ComptaNet Québec</span>
           </>
         ),
         heroSub:
           "T1 (particuliers et travailleurs autonomes) et T2/CO-17 (sociétés au Québec). Dépôt de documents via portail sécurisé. Je fais vos impôts à partir des informations fournies et je vous contacte s’il manque quelque chose avant l’envoi.",
+
         chooseType: "Choisissez votre situation",
         t1Title: "Impôt personnel (T1 – Québec)",
-        t1Desc:
-          "Salarié, étudiant, retraité, etc. Préparation à partir de vos documents (T4, Relevé 1, etc.).",
+        t1Desc: "Salarié, étudiant, retraité, etc. Préparation à partir de vos documents (T4, Relevé 1, etc.).",
         t1Btn: "Commencer T1",
         autoTitle: "Travailleur autonome (T1 – Québec)",
-        autoDesc:
-          "Revenus d’entreprise + dépenses admissibles selon les pièces fournies (factures, relevés, etc.).",
+        autoDesc: "Revenus d’entreprise + dépenses admissibles selon les pièces fournies (factures, relevés, etc.).",
         autoBtn: "Commencer autonome",
         t2Title: "Société (T2 + CO-17 – Québec)",
-        t2Desc:
-          "Déclaration de société au Québec. Préparation à partir des documents et informations fournis.",
+        t2Desc: "Déclaration de société au Québec. Préparation à partir des documents et informations fournis.",
         t2Btn: "Commencer T2",
 
         servicesTitle: "Services",
-        servicesSub:
-          "Impôts au Québec (T1, autonome, T2/CO-17) — dépôt de documents par portail sécurisé.",
+        servicesSub: "Impôts au Québec (T1, autonome, T2/CO-17) — dépôt de documents par portail sécurisé.",
         services: [
-          {
-            t: "Impôt personnel (T1 – Québec)",
-            d: "Préparation de votre déclaration annuelle à partir des documents fournis.",
-          },
-          {
-            t: "Travailleur autonome (T1 – Québec)",
-            d: "Revenus et dépenses selon les pièces justificatives fournies.",
-          },
-          {
-            t: "Société (T2 + CO-17 – Québec)",
-            d: "Préparation de la déclaration de société au Québec à partir des documents fournis.",
-          },
-          {
-            t: "Portail sécurisé",
-            d: "Téléversement de vos documents (photo ou PDF). Tout au même endroit.",
-          },
+          { t: "Impôt personnel (T1 – Québec)", d: "Préparation de votre déclaration annuelle à partir des documents fournis." },
+          { t: "Travailleur autonome (T1 – Québec)", d: "Revenus et dépenses selon les pièces justificatives fournies." },
+          { t: "Société (T2 + CO-17 – Québec)", d: "Préparation de la déclaration de société au Québec à partir des documents fournis." },
+          { t: "Portail sécurisé", d: "Téléversement de vos documents (photo ou PDF). Tout au même endroit." },
         ],
 
         stepsTitle: "Comment ça fonctionne",
@@ -328,29 +294,9 @@ export default function Home() {
         pricingSub:
           "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
         plans: [
-          {
-            t: "Impôt personnel (T1 – Québec)",
-            p: "à partir de 100 $",
-            pts: ["Portail sécurisé", "Préparation selon documents fournis", "Acompte initial 100 $"],
-            href: "/tarifs/t1",
-          },
-          {
-            t: "Travailleur autonome (T1 – Québec)",
-            p: "à partir de 150 $",
-            pts: ["Revenus + dépenses selon pièces", "Portail sécurisé", "Acompte initial 150 $"],
-            href: "/tarifs/travailleur-autonome",
-          },
-          {
-            t: "Société (T2 + CO-17 – Québec)",
-            p: "à partir de 850 $",
-            pts: [
-              "Préparation selon documents fournis",
-              "Portail sécurisé",
-              "Acompte initial 450 $",
-              "Société sans revenus : à partir de 450 $",
-            ],
-            href: "/tarifs/t2",
-          },
+          { t: "Impôt personnel (T1 – Québec)", p: "à partir de 100 $", pts: ["Portail sécurisé", "Préparation selon documents fournis", "Acompte initial 100 $"], href: "/tarifs/t1" },
+          { t: "Travailleur autonome (T1 – Québec)", p: "à partir de 150 $", pts: ["Revenus + dépenses selon pièces", "Portail sécurisé", "Acompte initial 150 $"], href: "/tarifs/travailleur-autonome" },
+          { t: "Société (T2 + CO-17 – Québec)", p: "à partir de 850 $", pts: ["Préparation selon documents fournis", "Portail sécurisé", "Acompte initial 450 $", "Société sans revenus : à partir de 450 $"], href: "/tarifs/t2" },
         ],
         getPrice: "Voir les détails",
 
@@ -398,27 +344,17 @@ export default function Home() {
 
       en: {
         brand: "ComptaNet Québec",
-        nav: {
-          services: "Services",
-          steps: "Steps",
-          pricing: "Pricing",
-          faq: "FAQ",
-          contact: "Contact",
-          client: "Client portal",
-          help: "Need help?",
-        },
+        nav: { services: "Services", steps: "Steps", pricing: "Pricing", faq: "FAQ", contact: "Contact", client: "Client portal", help: "Need help?" },
         ctaMain: "Start my file",
         heroTitle: (
           <>
-            Taxes <span style={{ color: bleu, fontWeight: 900 }}>in Québec</span>{" "}
-            with{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              ComptaNet Québec
-            </span>
+            Taxes <span style={{ color: bleu, fontWeight: 900 }}>in Québec</span> with{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>ComptaNet Québec</span>
           </>
         ),
         heroSub:
           "Québec-only service for T1 (individuals and self-employed) and T2/CO-17 (corporations). Upload documents through a secure portal. I prepare your return from the information you provide and contact you if anything is missing before filing.",
+
         chooseType: "Choose your situation",
         t1Title: "Personal return (T1 – Québec)",
         t1Desc: "Prepared from the documents you provide.",
@@ -431,8 +367,7 @@ export default function Home() {
         t2Btn: "Start T2",
 
         servicesTitle: "Services",
-        servicesSub:
-          "Québec-only tax returns (T1, self-employed, T2/CO-17) — secure document portal.",
+        servicesSub: "Québec-only tax returns (T1, self-employed, T2/CO-17) — secure document portal.",
         services: [
           { t: "Personal return (T1 – Québec)", d: "Prepared from your documents." },
           { t: "Self-employed (T1 – Québec)", d: "Income and expenses based on your documents." },
@@ -451,24 +386,9 @@ export default function Home() {
         pricingTitle: "2026 Pricing",
         pricingSub: "Base pricing. Final price depends on complexity. The amount is confirmed before filing.",
         plans: [
-          {
-            t: "Personal return (T1 – Québec)",
-            p: "from $100",
-            pts: ["Secure portal", "Prepared from provided documents", "Deposit $100"],
-            href: "/tarifs/t1",
-          },
-          {
-            t: "Self-employed (T1 – Québec)",
-            p: "from $150",
-            pts: ["Income + expenses from documents", "Secure portal", "Deposit $100"],
-            href: "/tarifs/travailleur-autonome",
-          },
-          {
-            t: "Corporation (T2 + CO-17 – Québec)",
-            p: "from $850",
-            pts: ["Prepared from provided documents", "Secure portal", "Deposit $400", "No-revenue corp: from $450"],
-            href: "/tarifs/t2",
-          },
+          { t: "Personal return (T1 – Québec)", p: "from $100", pts: ["Secure portal", "Prepared from provided documents", "Deposit $100"], href: "/tarifs/t1" },
+          { t: "Self-employed (T1 – Québec)", p: "from $150", pts: ["Income + expenses from documents", "Secure portal", "Deposit $100"], href: "/tarifs/travailleur-autonome" },
+          { t: "Corporation (T2 + CO-17 – Québec)", p: "from $850", pts: ["Prepared from provided documents", "Secure portal", "Deposit $400", "No-revenue corp: from $450"], href: "/tarifs/t2" },
         ],
         getPrice: "View details",
 
@@ -516,28 +436,17 @@ export default function Home() {
 
       es: {
         brand: "ComptaNet Québec",
-        nav: {
-          services: "Servicios",
-          steps: "Pasos",
-          pricing: "Precios",
-          faq: "FAQ",
-          contact: "Contacto",
-          client: "Portal del cliente",
-          help: "¿Necesitas ayuda?",
-        },
+        nav: { services: "Servicios", steps: "Pasos", pricing: "Precios", faq: "FAQ", contact: "Contacto", client: "Portal del cliente", help: "¿Necesitas ayuda?" },
         ctaMain: "Empezar mi expediente",
         heroTitle: (
           <>
-            Impuestos{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>en Québec</span>{" "}
-            con{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              ComptaNet Québec
-            </span>
+            Impuestos <span style={{ color: bleu, fontWeight: 900 }}>en Québec</span> con{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>ComptaNet Québec</span>
           </>
         ),
         heroSub:
           "Servicio solo para Québec: T1 (personas y autónomos) y T2/CO-17 (empresas). Suba documentos por un portal seguro. Preparo la declaración con la información proporcionada y le contacto si falta algo antes de presentar.",
+
         chooseType: "Elija su situación",
         t1Title: "Declaración personal (T1 – Québec)",
         t1Desc: "Preparada con los documentos proporcionados.",
@@ -550,8 +459,7 @@ export default function Home() {
         t2Btn: "Empezar T2",
 
         servicesTitle: "Servicios",
-        servicesSub:
-          "Solo Québec (T1, autónomos, T2/CO-17) — portal seguro para documentos.",
+        servicesSub: "Solo Québec (T1, autónomos, T2/CO-17) — portal seguro para documentos.",
         services: [
           { t: "T1 personal (Québec)", d: "Preparada con sus documentos." },
           { t: "Autónomo (T1 – Québec)", d: "Ingresos y gastos según comprobantes." },
@@ -623,42 +531,13 @@ export default function Home() {
 
   const T = COPY[lang];
 
-  // ✅ Liens principaux
+  // ✅ Liens
   const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
   const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
 
-  // ✅ Toujours mettre lang dans next (URL safe)
-  const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(
-    "/formulaire-fiscal"
-  )}`;
-  const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(
-    "/formulaire-fiscal-ta"
-  )}`;
-  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(
-    "/formulaire-fiscal-t2"
-  )}`;
-
-  const LangSwitcher = () => {
-    return (
-      <div className={styles.langRow}>
-        <span className={styles.langLabel}>{T.langLabel}</span>
-
-        {(["fr", "en", "es"] as const).map((l) => (
-          <button
-            key={l}
-            onClick={() => setLangAndPersist(l)}
-            className={`${styles.langBtn} ${
-              l === lang ? styles.langBtnActive : ""
-            }`}
-            aria-pressed={l === lang}
-            type="button"
-          >
-            {T.langNames[l]}
-          </button>
-        ))}
-      </div>
-    );
-  };
+  const toT1 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
+  const toT1Auto = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
+  const toT2 = `/espace-client?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
   const onContactSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -688,12 +567,7 @@ export default function Home() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: contactName,
-          email: contactEmail,
-          message: contactMsg,
-          token,
-        }),
+        body: JSON.stringify({ name: contactName, email: contactEmail, message: contactMsg, token }),
       });
 
       if (!res.ok) throw new Error("bad_status");
@@ -707,7 +581,7 @@ export default function Home() {
       try {
         if (grecaptcha) grecaptcha.reset();
       } catch {
-        // rien
+        // ignore
       }
     } catch {
       setContactErr(T.sentErr);
@@ -718,25 +592,13 @@ export default function Home() {
 
   return (
     <main className={styles.main}>
-      <Script
-        src="https://www.google.com/recaptcha/api.js"
-        strategy="afterInteractive"
-        async
-        defer
-      />
+      <Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive" async defer />
 
-      {/* NAVBAR (doublons retirés: plus de lien Espace client / Admin en haut) */}
+      {/* NAVBAR */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
-            <Image
-              src="/logo-cq.png"
-              alt="Logo ComptaNet Québec"
-              width={36}
-              height={36}
-              style={{ borderRadius: 6 }}
-              priority
-            />
+            <Image src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} priority />
             <strong className={styles.brandName}>{T.brand}</strong>
           </div>
 
@@ -747,8 +609,22 @@ export default function Home() {
             <a href="#faq">{T.nav.faq}</a>
             <a href="#contact">{T.nav.contact}</a>
 
+            {/* Lang switch */}
             <div className={styles.langWrap}>
-              <LangSwitcher />
+              <div className={styles.langRow}>
+                <span className={styles.langLabel}>{T.langLabel}</span>
+                {(["fr", "en", "es"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLangAndPersist(l)}
+                    className={`${styles.langBtn} ${l === lang ? styles.langBtnActive : ""}`}
+                    aria-pressed={l === lang}
+                    type="button"
+                  >
+                    {T.langNames[l]}
+                  </button>
+                ))}
+              </div>
             </div>
           </nav>
         </div>
@@ -757,14 +633,7 @@ export default function Home() {
       {/* HERO */}
       <section className={styles.hero}>
         <div className={styles.heroBg}>
-          <Image
-            src="/banniere.png"
-            alt="Bannière"
-            fill
-            priority
-            sizes="100vw"
-            className={styles.heroBgImg}
-          />
+          <Image src="/banniere.png" alt="Bannière" fill priority sizes="100vw" className={styles.heroBgImg} />
         </div>
 
         <div className={styles.heroCenter}>
@@ -772,29 +641,14 @@ export default function Home() {
             <h1 className={styles.heroTitle}>{T.heroTitle}</h1>
             <p className={styles.heroSub}>{T.heroSub}</p>
 
-            {/* ✅ Boutons principaux (avec Besoin d’aide) */}
             <div className={styles.heroCtas}>
-              <Link
-                href={toT1}
-                className="btn btn-primary"
-                style={{ borderRadius: 10 }}
-              >
+              <Link href={toT1} className="btn btn-primary" style={{ borderRadius: 10 }}>
                 {T.ctaMain}
               </Link>
-
-              <Link
-                href={toClient}
-                className="btn btn-outline"
-                style={{ borderRadius: 10 }}
-              >
+              <Link href={toClient} className="btn btn-outline" style={{ borderRadius: 10 }}>
                 {T.nav.client}
               </Link>
-
-              <Link
-                href={toHelp}
-                className="btn btn-outline"
-                style={{ borderRadius: 10 }}
-              >
+              <Link href={toHelp} className="btn btn-outline" style={{ borderRadius: 10 }}>
                 {T.nav.help}
               </Link>
             </div>
@@ -803,50 +657,20 @@ export default function Home() {
               <div className={styles.choiceTitle}>{T.chooseType}</div>
 
               <div className={styles.choiceGrid}>
-                <TaxChoiceCard
-                  title={T.t1Title}
-                  desc={T.t1Desc}
-                  btn={T.t1Btn}
-                  href={toT1}
-                />
-                <TaxChoiceCard
-                  title={T.autoTitle}
-                  desc={T.autoDesc}
-                  btn={T.autoBtn}
-                  href={toT1Auto}
-                />
-                <TaxChoiceCard
-                  title={T.t2Title}
-                  desc={T.t2Desc}
-                  btn={T.t2Btn}
-                  href={toT2}
-                />
+                <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
+                <TaxChoiceCard title={T.autoTitle} desc={T.autoDesc} btn={T.autoBtn} href={toT1Auto} />
+                <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
               </div>
 
               <div style={{ marginTop: 10, textAlign: "center" }}>
-                <a
-                  href="#tarifs"
-                  style={{
-                    color: bleu,
-                    fontWeight: 800,
-                    textDecoration: "none",
-                  }}
-                >
+                <a href="#tarifs" style={{ color: bleu, fontWeight: 800, textDecoration: "none" }}>
                   {T.nav.pricing}
                 </a>
               </div>
 
-              {/* (optionnel) accès admin discret, pas en haut */}
               {isAdmin && (
                 <div style={{ marginTop: 10, textAlign: "center" }}>
-                  <Link
-                    href="/admin/dossiers"
-                    style={{
-                      fontWeight: 900,
-                      color: "#f59e0b",
-                      textDecoration: "none",
-                    }}
-                  >
+                  <Link href="/admin/dossiers" style={{ fontWeight: 900, color: "#f59e0b", textDecoration: "none" }}>
                     Admin
                   </Link>
                 </div>
@@ -895,11 +719,7 @@ export default function Home() {
 
         <div className={styles.gridCards}>
           {T.plans.map((plan, i) => (
-            <div
-              key={i}
-              className={styles.cardBox}
-              style={{ display: "flex", flexDirection: "column" }}
-            >
+            <div key={i} className={styles.cardBox} style={{ display: "flex", flexDirection: "column" }}>
               <h3>{plan.t}</h3>
               <div className={styles.planPrice}>{plan.p}</div>
 
@@ -910,27 +730,13 @@ export default function Home() {
               </ul>
 
               <div className={styles.planActions}>
-                <Link
-                  href={`${plan.href}?lang=${encodeURIComponent(lang)}`}
-                  className="btn btn-primary"
-                  style={{ borderRadius: 10 }}
-                >
+                <Link href={`${plan.href}?lang=${encodeURIComponent(lang)}`} className="btn btn-primary" style={{ borderRadius: 10 }}>
                   {T.getPrice}
                 </Link>
-
-                <Link
-                  href={toClient}
-                  className="btn btn-outline"
-                  style={{ borderRadius: 10 }}
-                >
+                <Link href={toClient} className="btn btn-outline" style={{ borderRadius: 10 }}>
                   {T.nav.client}
                 </Link>
-
-                <Link
-                  href={toHelp}
-                  className="btn btn-outline"
-                  style={{ borderRadius: 10 }}
-                >
+                <Link href={toHelp} className="btn btn-outline" style={{ borderRadius: 10 }}>
                   {T.nav.help}
                 </Link>
               </div>
@@ -960,11 +766,7 @@ export default function Home() {
       </section>
 
       {/* CONTACT */}
-      <section
-        id="contact"
-        className={styles.section}
-        style={{ marginBottom: 0 }}
-      >
+      <section id="contact" className={styles.section} style={{ marginBottom: 0 }}>
         <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
 
         <div className={styles.contactBox}>
@@ -995,29 +797,19 @@ export default function Home() {
               onChange={(e) => setContactMsg(e.target.value)}
             />
 
-            <div
-              className="g-recaptcha"
-              data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7"
-            />
+            <div className="g-recaptcha" data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7" />
 
             {contactErr && <div className={styles.err}>{contactErr}</div>}
             {contactOk && <div className={styles.ok}>{contactOk}</div>}
 
-            <button
-              type="submit"
-              disabled={contactBusy}
-              className="btn btn-primary"
-              style={{ borderRadius: 10 }}
-            >
+            <button type="submit" disabled={contactBusy} className="btn btn-primary" style={{ borderRadius: 10 }}>
               {contactBusy ? T.sending : T.send}
             </button>
           </form>
 
           <p className={styles.contactHint}>
             {T.contactHint}{" "}
-            <a href="mailto:comptanetquebec@gmail.com">
-              comptanetquebec@gmail.com
-            </a>
+            <a href="mailto:comptanetquebec@gmail.com">comptanetquebec@gmail.com</a>
           </p>
         </div>
       </section>
@@ -1035,14 +827,7 @@ export default function Home() {
               <a href="#services">{T.footerLinks.services}</a>
               <a href="#tarifs">{T.footerLinks.pricing}</a>
               <a href="#contact">{T.footerLinks.contact}</a>
-              <Link
-                href={toHelp}
-                style={{
-                  fontWeight: 800,
-                  color: "#cbd5e1",
-                  textDecoration: "none",
-                }}
-              >
+              <Link href={toHelp} style={{ fontWeight: 800, color: "#cbd5e1", textDecoration: "none" }}>
                 {T.footerLinks.help}
               </Link>
             </div>
@@ -1050,24 +835,15 @@ export default function Home() {
 
           <div className={styles.footerLegal}>
             <div className={styles.footerLegalRow}>
-              <Link
-                href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`}
-                style={{ color: "#94a3b8", textDecoration: "none" }}
-              >
+              <Link href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
                 {T.footerLinks.legal.privacy}
               </Link>
               <span className={styles.dot}>•</span>
-              <Link
-                href={`/legal/conditions?lang=${encodeURIComponent(lang)}`}
-                style={{ color: "#94a3b8", textDecoration: "none" }}
-              >
+              <Link href={`/legal/conditions?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
                 {T.footerLinks.legal.terms}
               </Link>
               <span className={styles.dot}>•</span>
-              <Link
-                href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`}
-                style={{ color: "#94a3b8", textDecoration: "none" }}
-              >
+              <Link href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
                 {T.footerLinks.legal.disclaimer}
               </Link>
             </div>
