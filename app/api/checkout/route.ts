@@ -1,6 +1,7 @@
 // app/api/checkout/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { supabaseServer } from "@/lib/supabaseServer"; // adapte selon ton projet
 
 export const runtime = "nodejs";
 
@@ -27,7 +28,6 @@ function safeOrigin(req: Request) {
 }
 
 function priceIdFor(type: TaxType, mode: PayMode): string {
-  // ✅ acompte seulement pour l’instant
   if (mode !== "acompte") {
     throw new Error("Le solde est facturé après le traitement du dossier (montant variable).");
   }
@@ -43,17 +43,46 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
   return pid;
 }
 
+async function ensureCqId(fid: string): Promise<string> {
+  const supabase = await supabaseServer();
+
+  // 1) lire cq_id existant
+  const { data: form, error: readErr } = await supabase
+    .from("formulaires_fiscaux")
+    .select("cq_id")
+    .eq("id", fid)
+    .maybeSingle();
+
+  if (readErr) throw new Error(readErr.message);
+
+  if (form?.cq_id && String(form.cq_id).startsWith("CQ-")) {
+    return String(form.cq_id);
+  }
+
+  // 2) générer via fonction SQL
+  const { data: gen, error: genErr } = await supabase.rpc("generate_cq_id");
+  if (genErr) throw new Error(genErr.message);
+  const cqId = String(gen);
+
+  // 3) update la fiche
+  const { error: upErr } = await supabase
+    .from("formulaires_fiscaux")
+    .update({ cq_id: cqId })
+    .eq("id", fid);
+
+  if (upErr) throw new Error(upErr.message);
+
+  return cqId;
+}
+
 export async function POST(req: Request) {
   try {
     const sk = process.env.STRIPE_SECRET_KEY;
-    if (!sk) {
-      return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
-    }
+    if (!sk) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
 
     const stripe = new Stripe(sk);
 
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-
     const taxType = normalizeTaxType(body["type"]);
     const payMode = normalizePayMode(body["mode"]);
     const lang = normalizeLang(body["lang"]);
@@ -63,27 +92,14 @@ export async function POST(req: Request) {
         ? body["fid"].trim()
         : null;
 
-    const cqId =
-      typeof body["cqId"] === "string" && body["cqId"].trim().startsWith("CQ-")
-        ? body["cqId"].trim()
-        : null;
-
-    if (!taxType || !payMode) {
-      return NextResponse.json({ error: "Invalid type/mode" }, { status: 400 });
-    }
-    if (!fid) {
-      return NextResponse.json({ error: "Missing fid" }, { status: 400 });
-    }
-
-    // ✅ si tu veux EXIGER cqId avant paiement, décommente ceci :
-    // if (!cqId) {
-    //   return NextResponse.json({ error: "Missing cqId" }, { status: 400 });
-    // }
+    if (!taxType || !payMode) return NextResponse.json({ error: "Invalid type/mode" }, { status: 400 });
+    if (!fid) return NextResponse.json({ error: "Missing fid" }, { status: 400 });
 
     const origin = safeOrigin(req);
-    if (!origin) {
-      return NextResponse.json({ error: "Missing site origin" }, { status: 500 });
-    }
+    if (!origin) return NextResponse.json({ error: "Missing site origin" }, { status: 500 });
+
+    // ✅ cqId pro, généré serveur
+    const cqId = await ensureCqId(fid);
 
     const successUrl = new URL("/paiement/succes", origin);
     successUrl.searchParams.set("lang", lang);
@@ -98,25 +114,18 @@ export async function POST(req: Request) {
     cancelUrl.searchParams.set("mode", payMode);
 
     const idempotencyKey = `${fid}:${taxType}:${payMode}`;
-
     const priceId = priceIdFor(taxType, payMode);
 
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-
-        // ✅ plus facile à retrouver dans Stripe
-        client_reference_id: cqId || fid,
-
-        // ✅ Price ID venant de Vercel env
+        client_reference_id: cqId, // ✅ ici tu verras CQ-... dans Stripe
         line_items: [{ price: priceId, quantity: 1 }],
-
         success_url: successUrl.toString(),
         cancel_url: cancelUrl.toString(),
-
         metadata: {
           fid,
-          cq_id: cqId || "",
+          cq_id: cqId, // ✅ et dans webhook
           type: taxType,
           mode: payMode,
           lang,
@@ -125,10 +134,7 @@ export async function POST(req: Request) {
       { idempotencyKey }
     );
 
-    if (!session.url) {
-      return NextResponse.json({ error: "Stripe session missing url" }, { status: 500 });
-    }
-
+    if (!session.url) return NextResponse.json({ error: "Stripe session missing url" }, { status: 500 });
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: unknown) {
     const message =
@@ -137,7 +143,6 @@ export async function POST(req: Request) {
         : e instanceof Error
           ? e.message
           : "Checkout error";
-
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
