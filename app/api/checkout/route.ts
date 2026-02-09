@@ -33,7 +33,6 @@ function normalizePayMode(v: unknown): PayMode | null {
 
 function parseFid(v: unknown): string | null {
   const s = typeof v === "string" ? v.trim() : "";
-  // on valide léger (uuid fait 36, mais on évite de bloquer si tu changes plus tard)
   return s.length >= 10 ? s : null;
 }
 
@@ -45,7 +44,6 @@ function safeOrigin(req: Request): string {
 }
 
 function priceIdFor(type: TaxType, mode: PayMode): string {
-  // ✅ acompte seulement pour l’instant
   if (mode !== "acompte") {
     throw new Error(
       "Le solde est facturé après le traitement du dossier (montant variable)."
@@ -64,9 +62,7 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
 }
 
 /**
- * ✅ Utilise la fonction DB existante: public.ensure_cq_id(p_fid uuid) returns text
- * - si cq_id existe -> retourne cq_id
- * - sinon -> génère + update -> retourne cq_id
+ * Utilise la fonction DB existante: public.ensure_cq_id(p_fid uuid) returns text
  */
 async function ensureCqId(fid: string): Promise<string> {
   const supabase = await supabaseServer();
@@ -81,7 +77,6 @@ async function ensureCqId(fid: string): Promise<string> {
   if (!cqId.startsWith("CQ-")) {
     throw new Error("ensure_cq_id returned an invalid cq_id");
   }
-
   return cqId;
 }
 
@@ -131,7 +126,6 @@ export async function POST(req: Request) {
 
     const priceId = priceIdFor(taxType, payMode);
 
-    // ✅ idempotency stable (évite doubles sessions)
     const idempotencyKey = `checkout:${fid}:${taxType}:${payMode}`;
 
     const stripe = new Stripe(sk);
@@ -139,16 +133,10 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-
-        // ✅ visible dans Stripe en clair
         client_reference_id: cqId,
-
         line_items: [{ price: priceId, quantity: 1 }],
-
         success_url: successUrl.toString(),
         cancel_url: cancelUrl.toString(),
-
-        // ✅ lien technique + lien humain
         metadata: {
           fid,
           cq_id: cqId,
@@ -169,13 +157,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: unknown) {
-    const message =
-      e instanceof Stripe.StripeError
-        ? e.message
-        : e instanceof Error
-          ? e.message
-          : "Checkout error";
-
+    // ✅ IMPORTANT: PAS de Stripe.StripeError (ça n'existe pas en TS)
+    const message = e instanceof Error ? e.message : "Checkout error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
