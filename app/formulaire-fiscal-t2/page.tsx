@@ -20,6 +20,7 @@ const FORMS_TABLE = "formulaires_fiscaux";
 
 type FormTypeDb = "T1" | "T2";
 type InsertIdRow = { id: string };
+type SelectOption<T extends string> = { value: T; label: string };
 
 type ProvinceCode =
   | "QC"
