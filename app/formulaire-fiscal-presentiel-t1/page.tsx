@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../ui";
+import { Field, YesNoField, SelectField, type YesNo } from "../ui";
 
 /**
  * DB
