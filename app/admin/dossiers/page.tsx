@@ -1,4 +1,5 @@
 // comptanetquebec/app/admin/dossiers/page.tsx
+import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import AdminDossiersClient, { type AdminDossierRow } from "./AdminDossiersClient";
 
@@ -8,43 +9,44 @@ type StatusRow = {
   updated_at: string | null;
 };
 
-type DocRow = {
-  formulaire_id: string | null;
+type FormRow = {
+  id: string;
   created_at: string | null;
 };
 
 export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
 
-  // ✅ Docs : dossiers existants (triés du plus récent au plus vieux)
-  const { data: docs, error: docsError } = await supabase
-    .from("formulaire_documents")
-    .select("formulaire_id, created_at")
+  // ✅ Auth obligatoire
+  const { data: auth, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !auth?.user) redirect("/espace-client?next=/admin/dossiers");
+
+  // ✅ Admin obligatoire
+  const { data: profile, error: profErr } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+
+  if (profErr || !profile?.is_admin) redirect("/espace-client?next=/admin/dossiers");
+
+  // ✅ Source de vérité: formulaires_fiscaux (même si 0 documents)
+  const { data: forms, error: formsErr } = await supabase
+    .from("formulaires_fiscaux")
+    .select("id, created_at")
     .order("created_at", { ascending: false });
 
-  if (docsError) {
+  if (formsErr) {
     return (
       <div className="p-6">
         <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
-        <p className="mt-2 text-sm opacity-80">Veuillez réessayer plus tard.</p>
+        <p className="mt-2 text-sm opacity-80">{formsErr.message}</p>
       </div>
     );
   }
 
-  const docsRows = (docs ?? []) as DocRow[];
-
-  // ✅ created_at le plus récent par formulaire_id
-  const createdAtMap = new Map<string, string | null>();
-  for (const d of docsRows) {
-    const id = (d.formulaire_id ?? "").trim();
-    if (!id) continue;
-    if (!createdAtMap.has(id)) {
-      // tri desc → premier rencontré = plus récent
-      createdAtMap.set(id, d.created_at ?? null);
-    }
-  }
-
-  const dossierIds = Array.from(createdAtMap.keys());
+  const formRows = (forms ?? []) as FormRow[];
+  const dossierIds = formRows.map((f) => f.id);
 
   // ✅ Statuts
   let statusRows: StatusRow[] = [];
@@ -58,7 +60,7 @@ export default async function AdminDossiersPage() {
       return (
         <div className="p-6">
           <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
-          <p className="mt-2 text-sm opacity-80">Veuillez réessayer plus tard.</p>
+          <p className="mt-2 text-sm opacity-80">{sErr.message}</p>
         </div>
       );
     }
@@ -66,11 +68,7 @@ export default async function AdminDossiersPage() {
     statusRows = (s ?? []) as StatusRow[];
   }
 
-  const statusMap = new Map<
-    string,
-    { status: StatusRow["status"]; updated_at: string | null }
-  >();
-
+  const statusMap = new Map<string, { status: StatusRow["status"]; updated_at: string | null }>();
   for (const s of statusRows) {
     statusMap.set(String(s.formulaire_id), {
       status: s.status,
@@ -79,13 +77,13 @@ export default async function AdminDossiersPage() {
   }
 
   // ✅ Rows UI
-  const rows: AdminDossierRow[] = dossierIds.map((id) => {
-    const st = statusMap.get(id)?.status ?? "recu";
-    const up = statusMap.get(id)?.updated_at ?? null;
+  const rows: AdminDossierRow[] = formRows.map((f) => {
+    const st = statusMap.get(f.id)?.status ?? "recu";
+    const up = statusMap.get(f.id)?.updated_at ?? null;
 
     return {
-      formulaire_id: id,
-      created_at: createdAtMap.get(id) ?? null,
+      formulaire_id: f.id,
+      created_at: f.created_at ?? null,
       status: st,
       updated_at: up,
     };
