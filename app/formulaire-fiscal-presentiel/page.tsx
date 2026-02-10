@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import PresentielClient from "./PresentielClient";
-import "../../formulaire-fiscal/formulaire-fiscal-presentiel.css";
+import "../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 
 type Lang = "fr" | "en" | "es";
 
