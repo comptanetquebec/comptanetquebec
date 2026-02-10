@@ -6,6 +6,11 @@ import "@/app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 
 type Lang = "fr" | "en" | "es";
 
+function normalizeLang(v: unknown): Lang {
+  const x = String(v ?? "").toLowerCase();
+  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -26,8 +31,9 @@ export default async function Page({
 
   if (profErr || !profile?.is_admin) redirect("/espace-client");
 
-  const lang = (searchParams.lang as Lang) ?? "fr";
+  const lang = normalizeLang(searchParams.lang);
   const fid = searchParams.fid ?? "";
 
   return <PresentielClient userId={auth.user.id} lang={lang} fid={fid} />;
 }
+
