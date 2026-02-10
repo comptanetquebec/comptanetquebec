@@ -224,28 +224,13 @@ type FormRow = {
   created_at: string;
 };
 
-/* ===========================
-   Page wrapper (PRÉSENTIEL)
-=========================== */
-
 export default function FormulaireFiscalPresentielTAPage() {
   const params = useSearchParams();
 
   const lang = normalizeLang(params.get("lang"));
   const fid = params.get("fid");
 
-  const nextPath = useMemo(() => {
-    const q = new URLSearchParams();
-    q.set("lang", lang);
-    if (fid) q.set("fid", fid);
-    return `/formulaire-fiscal-presentiel-ta?${q.toString()}`;
-  }, [lang, fid]);
-
-  return (
-    <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <Inner userId={userId} lang={lang} />}
-    </RequireAuth>
-  );
+  return <Inner userId={null} lang={lang} />;
 }
 
 /* ===========================
