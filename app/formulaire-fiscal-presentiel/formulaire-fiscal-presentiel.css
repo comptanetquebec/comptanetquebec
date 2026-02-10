@@ -1,1 +1,609 @@
+/* =========================================================
+   ComptaNet Québec — Présentiel (sans Tailwind)
+   Commun aux 3: Présentiel T1 / TA / T2
+   Palette base: bleu #004aad
+   Emplacement:
+   app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css
+========================================================= */
+
+:root{
+  --cq-blue:#004aad;
+  --cq-bg:#f1f5f9;
+  --cq-card:#ffffff;
+  --cq-muted:#64748b;
+  --cq-text:#0f172a;
+  --cq-border:#e2e8f0;
+  --cq-soft:#f8fafc;
+
+  --cq-shadow: 0 10px 30px rgba(0,0,0,.06);
+  --cq-radius: 18px;
+  --cq-radius-sm: 14px;
+}
+
+/* =========================
+   Base
+========================= */
+
+.ff-bg{
+  min-height: 100vh;
+  background: var(--cq-bg);
+  padding: 22px;
+}
+
+.ff-container{
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* utilitaires */
+.ff-muted{ color: var(--cq-muted); }
+.ff-text{ color: var(--cq-text); }
+
+.ff-row{
+  display:flex;
+  align-items:center;
+}
+
+.ff-row-between{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.ff-mt{ margin-top: 12px; }
+.ff-mt-sm{ margin-top: 8px; }
+
+/* =========================
+   Header / Brand
+========================= */
+
+.ff-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--cq-card);
+  border: 1px solid var(--cq-border);
+  border-radius: var(--cq-radius);
+  box-shadow: var(--cq-shadow);
+}
+
+.ff-brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+.ff-brand-text{
+  display:flex;
+  flex-direction:column;
+  line-height:1.15;
+}
+
+.ff-brand-text strong{
+  font-size: 14px;
+  color: var(--cq-text);
+}
+
+.ff-brand-text span{
+  font-size: 12px;
+  color: var(--cq-muted);
+}
+
+/* =========================
+   Title block
+========================= */
+
+.ff-title{
+  margin-top: 16px;
+  background: var(--cq-card);
+  border: 1px solid var(--cq-border);
+  border-radius: var(--cq-radius);
+  padding: 18px;
+  box-shadow: var(--cq-shadow);
+}
+
+.ff-title h1{
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: var(--cq-text);
+}
+
+.ff-title p{
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* =========================
+   Form layout
+========================= */
+
+.ff-form{
+  margin-top: 16px;
+  display:grid;
+  gap: 14px;
+}
+
+/* =========================
+   Cards
+========================= */
+
+.ff-card{
+  background: var(--cq-card);
+  border: 1px solid var(--cq-border);
+  border-radius: var(--cq-radius);
+  padding: 16px;
+  box-shadow: var(--cq-shadow);
+}
+
+.ff-card-head{
+  margin-bottom: 12px;
+}
+
+.ff-card-head h2{
+  margin:0;
+  font-size: 16px;
+  color: var(--cq-text);
+}
+
+.ff-card-head p{
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--cq-muted);
+}
+
+.ff-subtitle{
+  margin-top: 6px;
+  font-weight: 800;
+  color: var(--cq-text);
+  font-size: 13px;
+}
+
+.ff-softcard{
+  background: var(--cq-soft);
+  border: 1px solid var(--cq-border);
+  border-radius: var(--cq-radius-sm);
+  padding: 12px;
+}
+
+/* =========================
+   Layout helpers (grids)
+========================= */
+
+.ff-grid2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ff-grid4{
+  display:grid;
+  grid-template-columns: 140px 1fr 120px 140px;
+  gap: 12px;
+}
+
+.ff-stack{
+  display:grid;
+  gap: 12px;
+}
+
+.ff-rowbox{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--cq-border);
+  border-radius: var(--cq-radius-sm);
+  background: var(--cq-soft);
+}
+
+.ff-childbox{
+  border: 1px solid var(--cq-border);
+  border-radius: 16px;
+  background: var(--cq-soft);
+  padding: 14px;
+}
+
+.ff-childhead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ff-childtitle{
+  font-weight: 900;
+  color: var(--cq-text);
+  font-size: 13px;
+}
+
+.ff-empty{
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--cq-radius-sm);
+  color: var(--cq-muted);
+  background: var(--cq-soft);
+  font-size: 13px;
+}
+
+/* =========================
+   Fields
+========================= */
+
+.ff-field{
+  display:grid;
+  gap: 6px;
+}
+
+.ff-label{
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--cq-text);
+}
+
+.ff-input,
+.ff-select,
+.ff-textarea{
+  width:100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+  font-size: 14px;
+  background: #ffffff;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.ff-textarea{
+  min-height: 96px;
+  resize: vertical;
+}
+
+.ff-input:focus,
+.ff-select:focus,
+.ff-textarea:focus{
+  border-color: var(--cq-blue);
+  box-shadow: 0 0 0 4px rgba(0,74,173,.12);
+}
+
+.ff-help{
+  font-size: 12px;
+  color: var(--cq-muted);
+  margin: 0;
+}
+
+/* =========================
+   Checkbox
+========================= */
+
+.ff-check{
+  display:flex;
+  align-items:flex-start;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--cq-text);
+  margin-top: 6px;
+}
+
+.ff-checkbox{
+  margin-top: 2px;
+}
+
+/* =========================
+   Yes/No (matches ui.tsx)
+========================= */
+
+.ff-yn{
+  display:grid;
+  gap: 6px;
+}
+
+.ff-yn-option{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--cq-text);
+  font-weight: 700;
+}
+
+.ff-yn-option input{
+  transform: translateY(1px);
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.ff-btn{
+  border: none;
+  cursor:pointer;
+  font-weight: 900;
+  border-radius: var(--cq-radius-sm);
+  padding: 12px 14px;
+  transition: transform .06s ease, filter .15s ease, opacity .15s ease, background .15s ease;
+}
+
+.ff-btn:active{ transform: translateY(1px); }
+.ff-btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+.ff-btn-primary{
+  background: var(--cq-blue);
+  color:#ffffff;
+}
+
+.ff-btn-primary:hover{ filter: brightness(.95); }
+
+.ff-btn-outline{
+  background:#ffffff;
+  color: var(--cq-blue);
+  border: 1px solid #cbd5e1;
+}
+
+.ff-btn-outline:hover{ background: var(--cq-soft); }
+
+.ff-btn-soft{
+  background:#e5f3ff;
+  border: 1px solid rgba(0,74,173,.18);
+  color: var(--cq-text);
+}
+
+.ff-btn-soft:hover{ filter: brightness(.98); }
+
+.ff-btn-link{
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: var(--cq-blue);
+  text-decoration: underline;
+}
+
+.ff-btn-big{
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+
+/* =========================
+   Submit block
+========================= */
+
+.ff-submit{
+  background: var(--cq-card);
+  border: 1px solid var(--cq-border);
+  border-radius: var(--cq-radius);
+  padding: 16px;
+  box-shadow: var(--cq-shadow);
+}
+
+.ff-footnote{
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--cq-muted);
+  text-align:center;
+  line-height: 1.4;
+}
+
+/* ===============================
+   Documents / Upload
+================================ */
+
+.ff-docs{
+  display:grid;
+  gap: 12px;
+}
+
+/* Drop simple */
+.ff-drop{
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background: var(--cq-soft);
+  padding: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease;
+}
+
+.ff-drop:hover{
+  border-color:#94a3b8;
+  background: var(--cq-bg);
+}
+
+.ff-drop--disabled{
+  opacity:.55;
+  pointer-events:none;
+}
+
+.ff-drop__text{
+  display:grid;
+  gap: 4px;
+}
+
+.ff-drop__title{
+  font-weight: 900;
+  color: var(--cq-text);
+  font-size: 13px;
+  margin: 0;
+}
+
+.ff-drop__hint{
+  color: var(--cq-muted);
+  font-size: 12px;
+  margin: 0;
+}
+
+.ff-file-input{ display:none; }
+
+.ff-doc-actions{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ff-doc-note{
+  font-size: 12px;
+  color: var(--cq-muted);
+  margin: 0;
+}
+
+/* Liste fichiers */
+.ff-files{
+  display:grid;
+  gap: 10px;
+}
+
+.ff-file{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--cq-border);
+  border-radius: 14px;
+  background: var(--cq-card);
+}
+
+.ff-file__left{
+  display:grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ff-file__name{
+  font-weight: 900;
+  color: var(--cq-text);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.ff-file__meta{
+  font-size: 12px;
+  color: var(--cq-muted);
+  margin: 0;
+}
+
+.ff-badge{
+  display:inline-flex;
+  align-items:center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  border: 1px solid rgba(0,74,173,.18);
+  background:#e5f3ff;
+  color: var(--cq-text);
+}
+
+.ff-file__right{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ff-progress{
+  font-size: 12px;
+  color: var(--cq-muted);
+  font-weight: 800;
+}
+
+/* =========================
+   Steps (optionnel)
+========================= */
+
+.ff-steps{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin: 12px 0 18px;
+}
+
+.ff-step{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  border-radius:14px;
+  font-weight:700;
+  font-size:14px;
+  opacity:.65;
+}
+
+.ff-step-num{
+  width:26px;
+  height:26px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #e5e7eb;
+  font-weight:900;
+  opacity:.8;
+}
+
+.ff-step-active{
+  opacity:1;
+  border-color: var(--cq-blue);
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+}
+
+.ff-step-active .ff-step-num{
+  border-color: var(--cq-blue);
+  opacity:1;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 860px){
+  .ff-grid4{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+
+@media (max-width: 640px){
+  .ff-bg{ padding: 14px; }
+
+  .ff-header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .ff-grid2{
+    grid-template-columns: 1fr;
+  }
+
+  .ff-rowbox{
+    grid-template-columns: 1fr;
+  }
+
+  .ff-drop{
+    flex-direction: column;
+    align-items:flex-start;
+  }
+
+  .ff-file{
+    flex-direction: column;
+    align-items:flex-start;
+  }
+
+  .ff-file__right{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
 
