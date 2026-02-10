@@ -6,7 +6,8 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
 // ✅ CSS présentiel (global)
-import "../formulaire-fiscal/formulaire-fiscal-presentiel.css";
+// ✅ CSS présentiel (global)
+import "../formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 
 import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
 
