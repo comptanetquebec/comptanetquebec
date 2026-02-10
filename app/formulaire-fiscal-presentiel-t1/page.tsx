@@ -7,7 +7,6 @@ import { supabase } from "@/lib/supabaseClient";
 
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
-import RequireAuth from "../RequireAuth";
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../ui";
 
 /**
