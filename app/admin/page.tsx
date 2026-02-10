@@ -16,36 +16,61 @@ export default async function AdminPage() {
     .eq("id", auth.user.id)
     .maybeSingle();
 
-  if (!profile?.is_admin) return <div className="p-6">Accès refusé</div>;
+  if (!profile?.is_admin) {
+    return <div className="p-6">Accès refusé</div>;
+  }
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-2">Admin – Présentiel</h1>
-      <p className="text-sm text-gray-600 mb-6">
-        Crée un dossier et ouvre directement le formulaire (sans paiement en ligne).
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-4xl bg-white rounded-xl shadow p-8">
+        <h1 className="text-3xl font-bold mb-2">
+          Créer un dossier (présentiel)
+        </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Link className="border rounded p-4 hover:bg-gray-50" href="/admin/presentiel?flow=t1">
-          <div className="font-semibold">T1</div>
-          <div className="text-sm text-gray-600">Impôt personnel</div>
-        </Link>
+        <p className="text-gray-600 mb-8">
+          Crée un dossier et ouvre immédiatement le formulaire — sans paiement en ligne.
+        </p>
 
-        <Link className="border rounded p-4 hover:bg-gray-50" href="/admin/presentiel?flow=ta">
-          <div className="font-semibold">TA</div>
-          <div className="text-sm text-gray-600">Travailleur autonome</div>
-        </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link
+            href="/admin/presentiel?flow=t1"
+            className="border rounded-xl p-6 text-center hover:bg-gray-50 transition"
+          >
+            <div className="text-xl font-semibold mb-2">T1</div>
+            <div className="text-gray-600">
+              Impôt personnel (Québec)
+            </div>
+          </Link>
 
-        <Link className="border rounded p-4 hover:bg-gray-50" href="/admin/presentiel?flow=t2">
-          <div className="font-semibold">T2</div>
-          <div className="text-sm text-gray-600">Société</div>
-        </Link>
-      </div>
+          <Link
+            href="/admin/presentiel?flow=ta"
+            className="border rounded-xl p-6 text-center hover:bg-gray-50 transition"
+          >
+            <div className="text-xl font-semibold mb-2">TA</div>
+            <div className="text-gray-600">
+              Travailleur autonome
+            </div>
+          </Link>
 
-      <div className="mt-6">
-        <Link className="text-blue-700 hover:underline" href="/admin/dossiers">
-          Voir la liste des dossiers
-        </Link>
+          <Link
+            href="/admin/presentiel?flow=t2"
+            className="border rounded-xl p-6 text-center hover:bg-gray-50 transition"
+          >
+            <div className="text-xl font-semibold mb-2">T2</div>
+            <div className="text-gray-600">
+              Société (T2 + CO-17)
+            </div>
+          </Link>
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/admin/dossiers"
+            className="text-blue-700 hover:underline"
+          >
+            Voir la liste des dossiers
+          </Link>
+        </div>
       </div>
     </div>
   );
