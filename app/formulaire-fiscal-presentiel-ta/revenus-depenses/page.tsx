@@ -228,16 +228,18 @@ export default function FormulaireFiscalPresentielTAPage() {
   const params = useSearchParams();
 
   const lang = normalizeLang(params.get("lang"));
-  const fid = params.get("fid");
+  const uid = params.get("uid"); // ✅ présentiel: on reçoit le userId via l’URL
 
-  return <Inner userId={null} lang={lang} />;
+  return <Inner userId={uid} lang={lang} />;
 }
 
 /* ===========================
-   Inner
+   Inner (PRÉSENTIEL ADMIN)
+   - ne filtre PAS sur user_id
+   - charge/sauvegarde avec fid seulement
 =========================== */
 
-function Inner({ userId, lang }: { userId: string; lang: Lang }) {
+function Inner({ lang }: { lang: Lang }) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -336,6 +338,19 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [methodeComptable, setMethodeComptable] = useState<AccountingMethod>("");
   const [outilComptable, setOutilComptable] = useState<AccountingTool>("");
   const [compteBancaireSepare, setCompteBancaireSepare] = useState<YesNo>("");
+
+  // ✅ si fid absent, on affiche un message (après hooks)
+  if (!fid) {
+    return (
+      <main className="ff-bg">
+        <div className="ff-container">
+          <div className="ff-card" style={{ padding: 14 }}>
+            ❌ fid manquant dans l’URL. Ouvre ce dossier depuis l’admin.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const toggleInArray = useCallback(<T,>(arr: T[], val: T) => {
     return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
