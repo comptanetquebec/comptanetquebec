@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 /* ===========================
@@ -19,9 +18,6 @@ export type AdminDossierRow = {
 };
 
 type TabKey = "todo" | "waiting" | "done";
-
-type Flow = "t1" | "ta" | "t2";
-type Lang = "fr" | "en" | "es";
 
 /* ===========================
    UI helpers
@@ -53,16 +49,6 @@ function rowTab(status: DossierStatus): TabKey {
   return "todo";
 }
 
-function normalizeEmail(v: string) {
-  return v.trim().toLowerCase();
-}
-
-function isValidEmail(v: string) {
-  const x = normalizeEmail(v);
-  // validation simple (suffisante pour éviter les erreurs évidentes)
-  return x.length >= 6 && x.includes("@") && x.includes(".");
-}
-
 /* ===========================
    Component
 =========================== */
@@ -72,18 +58,9 @@ export default function AdminDossiersClient({
 }: {
   initialRows: AdminDossierRow[];
 }) {
-  const router = useRouter();
-
   const [rows, setRows] = useState<AdminDossierRow[]>(initialRows);
   const [tab, setTab] = useState<TabKey>("todo");
   const [savingId, setSavingId] = useState<string | null>(null);
-
-  // Création dossier (présentiel)
-  const [email, setEmail] = useState("");
-  const [flow, setFlow] = useState<Flow>("t1");
-  const [lang, setLang] = useState<Lang>("fr");
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
 
   const counts = useMemo(() => {
     const c: Record<TabKey, number> = { todo: 0, waiting: 0, done: 0 };
@@ -98,6 +75,8 @@ export default function AdminDossiersClient({
 
   async function updateStatus(formulaire_id: string, status: DossierStatus) {
     const prev = rows;
+
+    // Optimistic UI
     setRows((p) =>
       p.map((r) => (r.formulaire_id === formulaire_id ? { ...r, status } : r))
     );
@@ -116,53 +95,6 @@ export default function AdminDossiersClient({
     if (error) {
       setRows(prev);
       alert("Erreur sauvegarde statut: " + error.message);
-    }
-  }
-
-  async function createDossierPresentiel() {
-    setCreateError(null);
-
-    const e = normalizeEmail(email);
-    if (!isValidEmail(e)) {
-      setCreateError("Email invalide.");
-      return;
-    }
-
-    setCreating(true);
-    try {
-      const res = await fetch("/api/admin/create-dossier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: e, flow, lang }),
-      });
-
-      const json: unknown = await res.json().catch(() => ({}));
-      const data = json as { ok?: boolean; fid?: string; error?: string };
-
-      if (!res.ok || !data?.fid) {
-        throw new Error(data?.error || "Erreur création dossier");
-      }
-
-      const now = new Date().toISOString();
-      const newRow: AdminDossierRow = {
-        formulaire_id: data.fid,
-        created_at: now,
-        updated_at: now,
-        status: "recu",
-      };
-
-      // Ajoute en haut + bascule sur onglet À faire
-      setRows((p) => [newRow, ...p]);
-      setTab("todo");
-
-      // Option: ouvrir directement le dossier créé
-      // (tu peux commenter cette ligne si tu préfères rester sur la liste)
-      router.push(`/admin/dossiers/${encodeURIComponent(data.fid)}`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur";
-      setCreateError(msg);
-    } finally {
-      setCreating(false);
     }
   }
 
@@ -188,64 +120,6 @@ export default function AdminDossiersClient({
             Admin
           </Link>
         </div>
-      </div>
-
-      {/* ✅ Créer dossier client (présentiel) */}
-      <div className="rounded-lg border bg-white p-4 mb-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <div className="font-semibold">Créer un dossier client (présentiel)</div>
-            <div className="text-sm text-gray-500">
-              Tu crées le dossier dans l’admin (pas de Stripe au départ).
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_140px_140px_160px] gap-2 items-center">
-          <input
-            className="border rounded px-3 py-2 text-sm"
-            placeholder="Email du client"
-            value={email}
-            onChange={(e) => setEmail(e.currentTarget.value)}
-            inputMode="email"
-          />
-
-          <select
-            className="border rounded px-2 py-2 text-sm"
-            value={flow}
-            onChange={(e) => setFlow(e.currentTarget.value as Flow)}
-          >
-            <option value="t1">T1</option>
-            <option value="ta">TA</option>
-            <option value="t2">T2</option>
-          </select>
-
-          <select
-            className="border rounded px-2 py-2 text-sm"
-            value={lang}
-            onChange={(e) => setLang(e.currentTarget.value as Lang)}
-          >
-            <option value="fr">FR</option>
-            <option value="en">EN</option>
-            <option value="es">ES</option>
-          </select>
-
-          <button
-            onClick={createDossierPresentiel}
-            disabled={creating || !isValidEmail(email)}
-            className={`rounded px-3 py-2 text-sm border ${
-              creating ? "opacity-60" : "hover:bg-gray-50"
-            }`}
-          >
-            {creating ? "Création…" : "Créer le dossier"}
-          </button>
-        </div>
-
-        {createError ? (
-          <div className="mt-2 text-sm" style={{ color: "crimson" }}>
-            {createError}
-          </div>
-        ) : null}
       </div>
 
       {/* Cartes stats */}
@@ -300,11 +174,13 @@ export default function AdminDossiersClient({
                     <div className="font-semibold truncate">
                       ID: {r.formulaire_id}
                     </div>
+
                     {r.created_at && (
                       <div className="text-sm text-gray-500">
                         Créé: {new Date(r.created_at).toLocaleString()}
                       </div>
                     )}
+
                     {r.updated_at && (
                       <div className="text-sm text-gray-500">
                         Maj: {new Date(r.updated_at).toLocaleString()}
@@ -322,7 +198,10 @@ export default function AdminDossiersClient({
                     <select
                       value={r.status}
                       onChange={(e) =>
-                        updateStatus(r.formulaire_id, e.target.value as DossierStatus)
+                        updateStatus(
+                          r.formulaire_id,
+                          e.target.value as DossierStatus
+                        )
                       }
                       className="border rounded px-2 py-1 text-sm"
                       disabled={savingId === r.formulaire_id}
@@ -336,7 +215,9 @@ export default function AdminDossiersClient({
 
                   <div className="md:text-right">
                     <Link
-                      href={`/admin/dossiers/${encodeURIComponent(r.formulaire_id)}`}
+                      href={`/admin/dossiers/${encodeURIComponent(
+                        r.formulaire_id
+                      )}`}
                       className="text-blue-700 hover:underline text-sm"
                     >
                       Ouvrir
