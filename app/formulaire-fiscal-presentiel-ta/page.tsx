@@ -795,7 +795,7 @@ function Inner({ userId, lang, fidFromUrl }: { userId: string; lang: Lang; fidFr
           </div>
         )}
 
-        <Steps step={1} lang={lang} flow="ta" fid={formulaireId} />
+        <Steps step={1} lang={lang} fid={formulaireId} />
 
         {/* ===========================
             SECTION CLIENT
