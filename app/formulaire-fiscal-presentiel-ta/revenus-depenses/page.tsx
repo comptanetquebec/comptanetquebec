@@ -11,9 +11,6 @@ import "@/app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 // ✅ Steps TA présentiel (dossier parent)
 import Steps from "../Steps";
 
-// ✅ Auth wrapper (présentiel)
-import RequireAuth from "@/app/formulaire-fiscal-presentiel/RequireAuth";
-
 // ✅ UI shared présentiel (stable)
 import {
   Field,
