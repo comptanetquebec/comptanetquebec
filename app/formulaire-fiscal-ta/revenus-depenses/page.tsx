@@ -45,7 +45,6 @@ function formatDateInput(v: string) {
 }
 
 function formatMoneyInput(v: string) {
-  // chiffres + séparateurs (.,)
   const x = (v || "").replace(/[^\d.,]/g, "");
   return x.slice(0, 14);
 }
@@ -84,9 +83,6 @@ type AccountingTool = "aucun" | "excel" | "quickbooks" | "autre" | "";
 
 type Money = string;
 
-/**
- * Dépenses (selon ton PDF)
- */
 type TAGeneralExpenses = {
   publicitePromotion?: Money;
   fraisJuridiques?: Money;
@@ -132,25 +128,21 @@ type TABureauDomicile = {
   chauffageElectricite?: Money;
   assuranceHabitation?: Money;
 
-  // Si propriétaire (info demandée dans le PDF)
-  interetHypothecaire?: Money; // non déductible (PDF)
-  amortissement?: Money; // non déductible (PDF)
+  interetHypothecaire?: Money;
+  amortissement?: Money;
   fraisCondo?: Money;
   taxesMunicipales?: Money;
   taxesScolaires?: Money;
 
-  // Si locataire
-  loyer?: Money;
+  loyer?: Money; // si locataire
 };
 
 type TAProfil = {
-  // identité activité
   nomCommercial?: string;
   neq?: string;
   dateDebut?: string; // JJ/MM/AAAA
   activitePrincipale?: string;
 
-  // taxes
   inscritTPS?: YesNo;
   noTPS?: string;
   inscritTVQ?: YesNo;
@@ -158,26 +150,23 @@ type TAProfil = {
   aFactureTaxes?: YesNo;
   verifierObligation?: YesNo;
 
-  // revenus / encaissements
   typesRevenus?: RevenueType[];
   autresRevenusTexte?: string;
   modesPaiement?: PayMethod[];
   autresPaiementTexte?: string;
 
-  // déclencheurs pages suivantes
   inventaire?: boolean;
   immobilisations?: boolean;
   sousTraitants?: boolean;
   employes?: boolean;
 
-  // ✅ sections détaillées (PDF)
   bureauDomicile?: boolean;
   vehicule?: boolean;
+
   depensesGenerales?: TAGeneralExpenses;
   vehiculeDetails?: TAVehicule;
   bureauDomicileDetails?: TABureauDomicile;
 
-  // compta
   methodeComptable?: AccountingMethod;
   outilComptable?: AccountingTool;
   compteBancaireSepare?: YesNo;
@@ -205,19 +194,22 @@ type FormRow = {
 export default function FormulaireFiscalTAProfilActivitePage() {
   const params = useSearchParams();
   const lang = normalizeLang(params.get("lang"));
-
-  return <Inner userId={""} lang={lang} />;
+  return <Inner lang={lang} />;
 }
 
 /* ===========================
    Inner
 =========================== */
 
-function Inner({ userId, lang }: { userId: string; lang: Lang }) {
+function Inner({ lang }: { lang: Lang }) {
   const router = useRouter();
   const params = useSearchParams();
-
   const fid = params.get("fid") || "";
+
+  // Auth
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -253,14 +245,8 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [bureauDomicile, setBureauDomicile] = useState(false);
   const [vehicule, setVehicule] = useState(false);
 
-  // Accordéon (seulement pour les sections détaillées)
   type DepenseSection = "bureau" | "vehicule";
   const [openDepense, setOpenDepense] = useState<DepenseSection | null>(null);
-
-  useEffect(() => {
-    if (!bureauDomicile && openDepense === "bureau") setOpenDepense(null);
-    if (!vehicule && openDepense === "vehicule") setOpenDepense(null);
-  }, [bureauDomicile, vehicule, openDepense]);
 
   // ---- Dépenses générales (PDF)
   const [gxPublicite, setGxPublicite] = useState("");
@@ -314,6 +300,36 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const [outilComptable, setOutilComptable] = useState<AccountingTool>("");
   const [compteBancaireSepare, setCompteBancaireSepare] = useState<YesNo>("");
 
+  // ===== Effects
+
+  useEffect(() => {
+    if (!bureauDomicile && openDepense === "bureau") setOpenDepense(null);
+    if (!vehicule && openDepense === "vehicule") setOpenDepense(null);
+  }, [bureauDomicile, vehicule, openDepense]);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        if (!alive) return;
+        setUserId(data?.user?.id ?? null);
+      } catch {
+        if (!alive) return;
+        setUserId(null);
+      } finally {
+        if (!alive) return;
+        setAuthLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const toggleInArray = useCallback(<T,>(arr: T[], val: T) => {
     return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
   }, []);
@@ -337,13 +353,11 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       modesPaiement,
       autresPaiementTexte: autresPaiementTexte.trim(),
 
-      // déclencheurs
       inventaire,
       immobilisations,
       sousTraitants,
       employes,
 
-      // sections détaillées
       bureauDomicile,
       vehicule,
 
@@ -470,6 +484,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   );
 
   const loadForm = useCallback(async () => {
+    if (!userId) return;
     if (!fid) {
       setMsg("❌ fid manquant dans l’URL.");
       return;
@@ -494,7 +509,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       }
 
       const form = (data.data ?? {}) as Formdata;
-      const ta = form.taProfil ?? {};
+      const ta = (form.taProfil ?? {}) as TAProfil;
 
       setNomCommercial(ta.nomCommercial ?? "");
       setNeq(ta.neq ?? "");
@@ -522,7 +537,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setBureauDomicile(!!ta.bureauDomicile);
       setVehicule(!!ta.vehicule);
 
-      const gx = ta.depensesGenerales ?? {};
+      const gx = (ta.depensesGenerales ?? {}) as TAGeneralExpenses;
       setGxPublicite(gx.publicitePromotion ?? "");
       setGxJuridique(gx.fraisJuridiques ?? "");
       setGxComptables(gx.fraisComptables ?? "");
@@ -545,7 +560,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setGxAutre3Label(gx.autres3Label ?? "");
       setGxAutre3Montant(gx.autres3Montant ?? "");
 
-      const vv = ta.vehiculeDetails ?? {};
+      const vv = (ta.vehiculeDetails ?? {}) as TAVehicule;
       setVehPct(vv.pctUtilisationAffaires ?? "");
       setVehMarqueModele(vv.marqueModele ?? "");
       setVehPrixAchat(vv.prixAchatAvantTaxes ?? "");
@@ -558,7 +573,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setVehInterets(vv.interetsPretAuto ?? "");
       setVehLocation(vv.fraisLocation ?? "");
 
-      const bd = ta.bureauDomicileDetails ?? {};
+      const bd = (ta.bureauDomicileDetails ?? {}) as TABureauDomicile;
       setBdPct(bd.pctUtilisationDomicile ?? "");
       setBdChauffElec(bd.chauffageElectricite ?? "");
       setBdAssHab(bd.assuranceHabitation ?? "");
@@ -581,11 +596,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   }, [fid, userId]);
 
   useEffect(() => {
-    void loadForm();
-  }, [loadForm]);
+    if (!authLoading && userId) void loadForm();
+  }, [authLoading, userId, loadForm]);
 
   const saveDraft = useCallback(async () => {
     if (!fid) return;
+    if (!userId) return;
     if (hydrating.current) return;
 
     setSaving(true);
@@ -615,6 +631,8 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   }, [fid, userId, taProfilDraft, lang]);
 
   useEffect(() => {
+    if (!userId) return;
+    if (!fid) return;
     if (hydrating.current) return;
 
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
@@ -626,7 +644,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [taProfilDraft, saveDraft]);
+  }, [fid, userId, taProfilDraft, saveDraft]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -650,6 +668,34 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
   const backToStep1 = useCallback(() => {
     router.push(`/formulaire-fiscal-ta?lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
+
+  // ===========================
+  // RENDER (guards ici, après hooks)
+  // ===========================
+
+  if (authLoading) {
+    return (
+      <main className="ff-bg">
+        <div className="ff-container">
+          <div className="ff-card" style={{ padding: 14 }}>
+            ⏳ Chargement…
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <main className="ff-bg">
+        <div className="ff-container">
+          <div className="ff-card" style={{ padding: 14 }}>
+            ❌ Non connecté. Veuillez vous connecter.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="ff-bg">
@@ -901,7 +947,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxJuridique(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
-
                 <Field
                   label="Frais comptables ($)"
                   value={gxComptables}
@@ -914,7 +959,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxRepas(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
-
                 <Field
                   label="Hébergement (ex.: chambre d'hôtel) ($)"
                   value={gxHebergement}
@@ -927,7 +971,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxVoyage(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
-
                 <Field
                   label="Frais de stationnement ($)"
                   value={gxStationnement}
@@ -940,7 +983,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxFournitures(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
-
                 <Field
                   label="Assurance responsabilité professionnelle ($)"
                   value={gxAssPro}
@@ -953,7 +995,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxPermis(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
-
                 <Field
                   label="Location de bureau (loyer commercial) ($)"
                   value={gxLocationBureau}
@@ -966,7 +1007,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   onChange={(v) => setGxSalairesSousTraitants(formatMoneyInput(v))}
                   inputMode="decimal"
                 />
-
                 <Field
                   label="Frais de formation et de congrès ($)"
                   value={gxFormationCongres}
@@ -980,10 +1020,10 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                   inputMode="decimal"
                 />
                 <Field
-                label="Téléphone cellulaire (partie affaires seulement) ($)"
-                value={gxCellulaire}
-                onChange={(v) => setGxCellulaire(formatMoneyInput(v))}
-                inputMode="decimal"
+                  label="Téléphone cellulaire (partie affaires seulement) ($)"
+                  value={gxCellulaire}
+                  onChange={(v) => setGxCellulaire(formatMoneyInput(v))}
+                  inputMode="decimal"
                 />
               </div>
 
@@ -1000,7 +1040,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                     onChange={(v) => setGxAutre1Montant(formatMoneyInput(v))}
                     inputMode="decimal"
                   />
-
                   <Field label="Autre 2 — libellé" value={gxAutre2Label} onChange={setGxAutre2Label} />
                   <Field
                     label="Autre 2 — montant ($)"
@@ -1008,7 +1047,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                     onChange={(v) => setGxAutre2Montant(formatMoneyInput(v))}
                     inputMode="decimal"
                   />
-
                   <Field label="Autre 3 — libellé" value={gxAutre3Label} onChange={setGxAutre3Label} />
                   <Field
                     label="Autre 3 — montant ($)"
@@ -1020,7 +1058,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
               </div>
             </div>
 
-            {/* Déclencheurs + accordéons (seulement les sections qui ont des champs PDF) */}
+            {/* Déclencheurs + accordéons */}
             <div className="ff-stack">
               {/* BUREAU À DOMICILE */}
               <div>
@@ -1201,7 +1239,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                 )}
               </div>
 
-              {/* Déclencheurs seulement (pas de champs dans ton PDF) */}
+              {/* Déclencheurs seulement */}
               <CheckboxField label="Inventaire (produits)" checked={inventaire} onChange={setInventaire} />
               <CheckboxField
                 label="Immobilisations (équipement)"
@@ -1279,4 +1317,3 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
     </main>
   );
 }
-
