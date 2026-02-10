@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import "../../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 import Steps from "../Steps";
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../ui";
 
