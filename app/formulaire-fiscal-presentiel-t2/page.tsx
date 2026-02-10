@@ -8,8 +8,8 @@ import { supabase } from "@/lib/supabaseClient";
 // ✅ CSS présentiel (fichier global dans app/formulaire-fiscal/)
 import "../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 
-// ✅ réutilise ton Steps/UI (ajuste si ton chemin est différent)
-import { Field, YesNoField, SelectField, type YesNo } from "../ui";
+import { Field, YesNoField, SelectField, type YesNo } 
+from "@/app/formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
