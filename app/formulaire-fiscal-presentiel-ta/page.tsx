@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 import "../../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 import Steps from "../formulaire-fiscal-ta/Steps"; // adapte si ton Steps est ailleurs
 import RequireAuth from "../formulaire-fiscal-ta/RequireAuth"; // adapte si ailleurs
-import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../formulaire-fiscal-ta/ui"; // adapte
+import { Field, YesNoField, SelectField, type YesNo } from "../ui";
 
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
