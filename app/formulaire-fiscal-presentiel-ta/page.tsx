@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import "../formulaire-fiscal-ta/formulaire-fiscal.css"; // adapte si ton CSS est ailleurs
+import "../../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 import Steps from "../formulaire-fiscal-ta/Steps"; // adapte si ton Steps est ailleurs
 import RequireAuth from "../formulaire-fiscal-ta/RequireAuth"; // adapte si ailleurs
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../formulaire-fiscal-ta/ui"; // adapte
