@@ -272,27 +272,12 @@ function normalizePhone(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
 
-/* ===========================
-   PAGE WRAPPER
-=========================== */
-
 export default function FormulaireFiscalTAPresentielPage() {
   const params = useSearchParams();
   const lang = normalizeLang(params.get("lang") || "fr");
   const fid = params.get("fid") || "";
 
-  const nextPath = useMemo(() => {
-    const q = new URLSearchParams();
-    if (lang) q.set("lang", lang);
-    if (fid) q.set("fid", fid);
-    return `/formulaire-fiscal-ta-presentiel?${q.toString()}`;
-  }, [lang, fid]);
-
-  return (
-    <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <Inner userId={userId} lang={lang} fidFromUrl={fid} />}
-    </RequireAuth>
-  );
+  return <Inner lang={lang} fidFromUrl={fid} />;
 }
 
 /* ===========================
