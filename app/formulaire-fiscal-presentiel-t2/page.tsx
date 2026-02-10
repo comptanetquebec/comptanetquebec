@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 
 // ✅ réutilise ton Steps/UI (ajuste si ton chemin est différent)
-import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "../formulaire-fiscal/ui";
+import { Field, YesNoField, SelectField, type YesNo } from "../ui";
 
 /**
  * DB
