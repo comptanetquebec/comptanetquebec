@@ -11,8 +11,16 @@ import "@/app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 // ✅ Steps TA présentiel (dossier parent)
 import Steps from "../Steps";
 
+// ✅ Auth wrapper (présentiel)
+import RequireAuth from "@/app/formulaire-fiscal-presentiel/RequireAuth";
+
 // ✅ UI shared présentiel (stable)
-import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
+import {
+  Field,
+  YesNoField,
+  SelectField,
+  type YesNo,
+} from "@/app/formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
@@ -35,7 +43,12 @@ function normalizeLang(v: string | null | undefined): Lang {
 
 function supaErr(e: unknown) {
   if (!e || typeof e !== "object") return "Erreur inconnue";
-  const err = e as { message?: string; details?: string; hint?: string; code?: string };
+  const err = e as {
+    message?: string;
+    details?: string;
+    hint?: string;
+    code?: string;
+  };
   return [err.message, err.details, err.hint, err.code].filter(Boolean).join(" | ");
 }
 
@@ -57,6 +70,29 @@ function formatMoneyInput(v: string) {
 function formatPercentInput(v: string) {
   const x = (v || "").replace(/[^\d]/g, "").slice(0, 3);
   return x;
+}
+
+/** ✅ CheckboxField local (tu l’utilises partout) */
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="ff-check">
+      <input
+        className="ff-checkbox"
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.currentTarget.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
 }
 
 /* ===========================
@@ -205,7 +241,6 @@ export default function FormulaireFiscalPresentielTAPage() {
     const q = new URLSearchParams();
     q.set("lang", lang);
     if (fid) q.set("fid", fid);
-    // ✅ présentiel (étape 1)
     return `/formulaire-fiscal-presentiel-ta?${q.toString()}`;
   }, [lang, fid]);
 
@@ -604,7 +639,13 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       if (e1) throw new Error(supaErr(e1));
 
       const current = (row?.data ?? {}) as Formdata;
-      const merged: Formdata = { ...current, taProfil: taProfilDraft };
+
+      // ✅ on garde le reste de "data" intact
+      const merged: Formdata = {
+        ...current,
+        dossierType: current.dossierType ?? "autonome",
+        taProfil: taProfilDraft,
+      };
 
       const { error: e2 } = await supabase
         .from(FORMS_TABLE)
@@ -645,7 +686,9 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
       setMsg(null);
 
       router.push(
-        `/formulaire-fiscal-presentiel-ta/envoyer?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`
+        `/formulaire-fiscal-presentiel-ta/envoyer?fid=${encodeURIComponent(
+          fid
+        )}&lang=${encodeURIComponent(lang)}`
       );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur.";
@@ -653,7 +696,7 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
     }
   }, [fid, lang, router, saveDraft]);
 
-  // ✅ PRÉSENTIEL: retour sur ta page admin (mets ici ta route exacte si différente)
+  // ✅ PRÉSENTIEL: retour sur ta page admin
   const backToAdmin = useCallback(() => {
     router.push(`/admin/presentiel?flow=ta&lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
@@ -697,7 +740,6 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
         <Steps step={1} lang={lang} flow="ta" />
 
         <div className="ff-form">
-          {/* ====== (TON FORMULAIRE INCHANGÉ) ====== */}
           {/* IDENTITÉ ACTIVITÉ */}
           <section className="ff-card">
             <div className="ff-card-head">
@@ -706,7 +748,11 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
             </div>
 
             <div className="ff-grid2">
-              <Field label="Nom commercial (si applicable)" value={nomCommercial} onChange={setNomCommercial} />
+              <Field
+                label="Nom commercial (si applicable)"
+                value={nomCommercial}
+                onChange={setNomCommercial}
+              />
               <Field label="NEQ (si applicable)" value={neq} onChange={setNeq} placeholder="1234567890" />
               <Field
                 label="Date de début (JJ/MM/AAAA)"
@@ -740,7 +786,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                 onChange={setInscritTPS}
               />
               {inscritTPS === "oui" && (
-                <Field label="Numéro TPS" value={noTPS} onChange={setNoTPS} placeholder="ex.: 12345 6789 RT0001" />
+                <Field
+                  label="Numéro TPS"
+                  value={noTPS}
+                  onChange={setNoTPS}
+                  placeholder="ex.: 12345 6789 RT0001"
+                />
               )}
 
               <YesNoField
@@ -750,7 +801,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                 onChange={setInscritTVQ}
               />
               {inscritTVQ === "oui" && (
-                <Field label="Numéro TVQ" value={noTVQ} onChange={setNoTVQ} placeholder="ex.: 1234567890 TQ0001" />
+                <Field
+                  label="Numéro TVQ"
+                  value={noTVQ}
+                  onChange={setNoTVQ}
+                  placeholder="ex.: 1234567890 TQ0001"
+                />
               )}
 
               <YesNoField
@@ -1029,7 +1085,11 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                     <button
                       type="button"
                       className="ff-btn ff-btn-outline"
-                      style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                      style={{
+                        width: "100%",
+                        justifyContent: "space-between",
+                        display: "flex",
+                      }}
                       onClick={() => setOpenDepense((p) => (p === "bureau" ? null : "bureau"))}
                     >
                       <span>Bureau à domicile</span>
@@ -1110,7 +1170,11 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                     <button
                       type="button"
                       className="ff-btn ff-btn-outline"
-                      style={{ width: "100%", justifyContent: "space-between", display: "flex" }}
+                      style={{
+                        width: "100%",
+                        justifyContent: "space-between",
+                        display: "flex",
+                      }}
                       onClick={() => setOpenDepense((p) => (p === "vehicule" ? null : "vehicule"))}
                     >
                       <span>Frais de véhicule</span>
@@ -1250,7 +1314,12 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
                 ← Retour admin
               </button>
 
-              <button type="button" className="ff-btn ff-btn-primary ff-btn-big" onClick={goNext} disabled={!fid || saving}>
+              <button
+                type="button"
+                className="ff-btn ff-btn-primary ff-btn-big"
+                onClick={goNext}
+                disabled={!fid || saving}
+              >
                 {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
               </button>
             </div>
@@ -1265,4 +1334,3 @@ function Inner({ userId, lang }: { userId: string; lang: Lang }) {
     </main>
   );
 }
-
