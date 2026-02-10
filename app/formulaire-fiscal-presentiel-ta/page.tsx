@@ -5,10 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import "../../formulaire-fiscal/formulaire-fiscal-presentiel.css";
-import Steps from "../formulaire-fiscal-ta/Steps"; // adapte si ton Steps est ailleurs
-import RequireAuth from "../formulaire-fiscal-ta/RequireAuth"; // adapte si ailleurs
-import { Field, YesNoField, SelectField, type YesNo } from "../ui";
+// ✅ CSS shared présentiel (stable)
+import "@/app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
+
+// ✅ Steps spécifique au TA présentiel (même dossier)
+import Steps from "./Steps";
+
+// ✅ UI shared présentiel (stable)
+import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
 
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
