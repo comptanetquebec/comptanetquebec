@@ -9,7 +9,6 @@ import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 
 // ✅ réutilise ton Steps/UI (ajuste si ton chemin est différent)
-import Steps from "../formulaire-fiscal/Steps";
 import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "../formulaire-fiscal/ui";
 
 /**
@@ -379,9 +378,6 @@ export default function PresentielT2Client({
         </header>
 
         {msg && <div className="ff-card" style={{ padding: 14 }}>{msg}</div>}
-
-        {/* Mets Steps où tu le veux visuellement — moi je le mets juste avant le form (comme tes autres) */}
-        <Steps step={1} lang={lang} />
 
         <form className="ff-form">
           <section className="ff-card">
