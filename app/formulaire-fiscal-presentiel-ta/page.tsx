@@ -277,7 +277,7 @@ export default function FormulaireFiscalTAPresentielPage() {
   const lang = normalizeLang(params.get("lang") || "fr");
   const fid = params.get("fid") || "";
 
-  return <Inner lang={lang} fidFromUrl={fid} />;
+  return <Inner userId={""} lang={lang} fidFromUrl={fid} />;
 }
 
 /* ===========================
