@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-// ✅ CSS présentiel (fichier global dans app/formulaire-fiscal/)
+// ✅ CSS présentiel (global)
 import "../formulaire-fiscal/formulaire-fiscal-presentiel.css";
 
-import { Field, YesNoField, SelectField, type YesNo } 
-from "@/app/formulaire-fiscal-presentiel/ui";
+import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
@@ -21,7 +20,21 @@ type FormTypeDb = "T2";
 type InsertIdRow = { id: string };
 
 type ProvinceCode =
-  | "QC" | "ON" | "NB" | "NS" | "PE" | "NL" | "MB" | "SK" | "AB" | "BC" | "YT" | "NT" | "NU";
+  | "QC"
+  | "ON"
+  | "NB"
+  | "NS"
+  | "PE"
+  | "NL"
+  | "MB"
+  | "SK"
+  | "AB"
+  | "BC"
+  | "YT"
+  | "NT"
+  | "NU";
+
+type SelectOption<T extends string> = { value: T; label: string };
 
 const PROVINCES: Array<SelectOption<ProvinceCode>> = [
   { value: "QC", label: "QC" },
@@ -43,6 +56,28 @@ function supaErr(e: unknown) {
   if (!e || typeof e !== "object") return "Erreur inconnue";
   const err = e as { message?: string; details?: string; hint?: string; code?: string };
   return [err.message, err.details, err.hint, err.code].filter(Boolean).join(" | ");
+}
+
+function formatPhoneInput(v: string) {
+  const d = (v || "").replace(/\D+/g, "").slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length === 0) return "";
+  if (d.length <= 3) return `(${a}`;
+  if (d.length <= 6) return `(${a}) ${b}`;
+  return `(${a}) ${b}-${c}`;
+}
+function normalizePhone(v: string) {
+  return (v || "").replace(/\D+/g, "").slice(0, 10);
+}
+function formatPostalInput(v: string) {
+  const s = (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  if (s.length <= 3) return s;
+  return `${s.slice(0, 3)} ${s.slice(3, 6)}`;
+}
+function normalizePostal(v: string) {
+  return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 }
 
 type T2Data = {
@@ -87,28 +122,6 @@ type FormRow = {
   data: Formdata | null;
   created_at: string | null;
 };
-
-function formatPhoneInput(v: string) {
-  const d = (v || "").replace(/\D+/g, "").slice(0, 10);
-  const a = d.slice(0, 3);
-  const b = d.slice(3, 6);
-  const c = d.slice(6, 10);
-  if (d.length === 0) return "";
-  if (d.length <= 3) return `(${a}`;
-  if (d.length <= 6) return `(${a}) ${b}`;
-  return `(${a}) ${b}-${c}`;
-}
-function normalizePhone(v: string) {
-  return (v || "").replace(/\D+/g, "").slice(0, 10);
-}
-function formatPostalInput(v: string) {
-  const s = (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-  if (s.length <= 3) return s;
-  return `${s.slice(0, 3)} ${s.slice(3, 6)}`;
-}
-function normalizePostal(v: string) {
-  return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-}
 
 export default function PresentielT2Client({
   userId,
@@ -262,6 +275,8 @@ export default function PresentielT2Client({
     if (!formulaireId) return;
 
     hydrating.current = true;
+    setMsg(null);
+
     try {
       const { data: row, error } = await supabase
         .from(FORMS_TABLE)
@@ -269,10 +284,7 @@ export default function PresentielT2Client({
         .eq("id", formulaireId)
         .maybeSingle<FormRow>();
 
-      if (error) {
-        setMsg(`Erreur chargement: ${error.message}`);
-        return;
-      }
+      if (error) throw new Error(supaErr(error));
       if (!row?.data?.t2) return;
 
       const t2 = row.data.t2;
@@ -304,6 +316,8 @@ export default function PresentielT2Client({
       setRevenue(t2.revenue ?? "");
       setExpenses(t2.expenses ?? "");
       setNotes(t2.notes ?? "");
+    } catch (e: unknown) {
+      setMsg("❌ " + (e instanceof Error ? e.message : "Erreur chargement"));
     } finally {
       hydrating.current = false;
     }
@@ -347,7 +361,7 @@ export default function PresentielT2Client({
 
       const { error } = await supabase
         .from(FORMS_TABLE)
-        .update({ status: "recu", annee, data: draftData })
+        .update({ status: "recu", annee, data: draftData, lang })
         .eq("id", id);
 
       if (error) throw new Error(supaErr(error));
@@ -358,14 +372,21 @@ export default function PresentielT2Client({
     } finally {
       setSubmitting(false);
     }
-  }, [anneeImposition, draftData, saveDraft, submitting]);
+  }, [anneeImposition, draftData, saveDraft, submitting, lang]);
 
   return (
     <main className="ff-bg">
       <div className="ff-container">
         <header className="ff-header">
           <div className="ff-brand">
-            <Image src="/logo-cq.png" alt="ComptaNet Québec" width={120} height={40} priority style={{ height: 40, width: "auto" }} />
+            <Image
+              src="/logo-cq.png"
+              alt="ComptaNet Québec"
+              width={120}
+              height={40}
+              priority
+              style={{ height: 40, width: "auto" }}
+            />
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
               <span>Présentiel — Société (T2)</span>
@@ -377,7 +398,11 @@ export default function PresentielT2Client({
           </button>
         </header>
 
-        {msg && <div className="ff-card" style={{ padding: 14 }}>{msg}</div>}
+        {msg && (
+          <div className="ff-card" style={{ padding: 14 }}>
+            {msg}
+          </div>
+        )}
 
         <form className="ff-form">
           <section className="ff-card">
@@ -387,7 +412,12 @@ export default function PresentielT2Client({
             </div>
 
             <div className="ff-stack">
-              <Field label="Année d’imposition (ex.: 2025)" value={anneeImposition} onChange={setAnneeImposition} inputMode="numeric" />
+              <Field
+                label="Année d’imposition (ex.: 2025)"
+                value={anneeImposition}
+                onChange={setAnneeImposition}
+                inputMode="numeric"
+              />
 
               <div className="ff-grid2">
                 <Field label="Nom légal de l’entreprise" value={companyName} onChange={setCompanyName} required />
@@ -396,15 +426,31 @@ export default function PresentielT2Client({
 
               <div className="ff-grid2">
                 <Field label="NEQ (si Québec)" value={neq} onChange={setNeq} />
-                <Field label="Province d’incorporation" value={incProvince} onChange={setIncProvince} placeholder="QC / ON / ..." />
+                <Field
+                  label="Province d’incorporation"
+                  value={incProvince}
+                  onChange={setIncProvince}
+                  placeholder="QC / ON / ..."
+                />
               </div>
 
-              <Field label="Fin d’exercice (JJ/MM/AAAA)" value={yearEnd} onChange={setYearEnd} placeholder="31/12/2025" />
+              <Field
+                label="Fin d’exercice (JJ/MM/AAAA)"
+                value={yearEnd}
+                onChange={setYearEnd}
+                placeholder="31/12/2025"
+              />
 
               <Field label="Adresse (rue)" value={addrStreet} onChange={setAddrStreet} />
               <div className="ff-grid2 ff-mt-sm">
                 <Field label="Ville" value={addrCity} onChange={setAddrCity} />
-                <SelectField<ProvinceCode> label="Province" value={addrProv} onChange={setAddrProv} options={PROVINCES} required />
+                <SelectField<ProvinceCode>
+                  label="Province"
+                  value={addrProv}
+                  onChange={setAddrProv}
+                  options={PROVINCES}
+                  required
+                />
               </div>
 
               <div className="ff-mt-sm">
@@ -428,11 +474,26 @@ export default function PresentielT2Client({
             </div>
 
             <div className="ff-stack">
-              <YesNoField name="operatesInQuebec" label="La société exerce-t-elle au Québec ? (CO-17)" value={operatesInQuebec} onChange={setOperatesInQuebec} />
+              <YesNoField
+                name="operatesInQuebec"
+                label="La société exerce-t-elle au Québec ? (CO-17)"
+                value={operatesInQuebec}
+                onChange={setOperatesInQuebec}
+              />
               <YesNoField name="hasRevenue" label="Revenus durant l’année ?" value={hasRevenue} onChange={setHasRevenue} />
               <YesNoField name="paidSalary" label="Salaires payés (T4) ?" value={paidSalary} onChange={setPaidSalary} />
-              <YesNoField name="paidDividends" label="Dividendes versés (T5) ?" value={paidDividends} onChange={setPaidDividends} />
-              <YesNoField name="hasAssets" label="Actifs importants (ordi, véhicule, équipement) ?" value={hasAssets} onChange={setHasAssets} />
+              <YesNoField
+                name="paidDividends"
+                label="Dividendes versés (T5) ?"
+                value={paidDividends}
+                onChange={setPaidDividends}
+              />
+              <YesNoField
+                name="hasAssets"
+                label="Actifs importants (ordi, véhicule, équipement) ?"
+                value={hasAssets}
+                onChange={setHasAssets}
+              />
               <YesNoField name="hasLoans" label="Prêts / marge de crédit ?" value={hasLoans} onChange={setHasLoans} />
             </div>
           </section>
@@ -478,13 +539,22 @@ export default function PresentielT2Client({
           </section>
 
           <div className="ff-submit">
-            <button type="button" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting} onClick={terminer}>
+            <button
+              type="button"
+              className="ff-btn ff-btn-primary ff-btn-big"
+              disabled={submitting}
+              onClick={terminer}
+            >
               Enregistrer (présentiel)
             </button>
+
+            <div className="ff-muted" style={{ marginTop: 10 }}>
+              {formulaireId ? `Dossier: ${formulaireId}` : "fid manquant"}
+              {submitting ? " — enregistrement…" : ""}
+            </div>
           </div>
         </form>
       </div>
     </main>
   );
 }
-
