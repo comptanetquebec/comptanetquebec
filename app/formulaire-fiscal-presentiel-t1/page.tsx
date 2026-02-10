@@ -245,16 +245,18 @@ export default function FormulaireFiscalPresentielT1Page() {
   const type: FormTypeDb = "T1";
   const lang = normalizeLang(params.get("lang") || "fr");
 
-  const nextPath = useMemo(
-    () => `/formulaire-fiscal-presentiel/t1?lang=${encodeURIComponent(lang)}`,
-    [lang]
-  );
+  // ✅ récupère l'userId (le guard admin est déjà fait côté server)
+  const [userId, setUserId] = useState<string | null>(null);
 
-  return (
-    <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <PresentielT1Inner userId={userId} lang={lang} type={type} />}
-    </RequireAuth>
-  );
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+  }, []);
+
+  if (!userId) return null;
+
+  return <PresentielT1Inner userId={userId} lang={lang} type={type} />;
 }
 
 /* ===========================
@@ -768,7 +770,7 @@ function PresentielT1Inner({
           </div>
         )}
 
-        <Steps step={1} lang={lang} />
+        <Steps step={1} lang={lang} flow="t1" />
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
