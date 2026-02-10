@@ -14,9 +14,6 @@ import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fis
 // ✅ Steps spécifique TA présentiel (dans le même dossier)
 import Steps from "./Steps";
 
-// ✅ RequireAuth (adapte le chemin si ton fichier n’est pas ici)
-import RequireAuth from "@/app/formulaire-fiscal-presentiel/RequireAuth";
-
 /**
  * Storage / DB
  */
