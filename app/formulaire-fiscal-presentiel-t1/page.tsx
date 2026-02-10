@@ -5,8 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import { Field, YesNoField, SelectField, type YesNo } 
-from "@/app/formulaire-fiscal-presentiel/ui";
+// ✅ CSS shared présentiel (stable)
+import "@/app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
+
+// ✅ UI shared présentiel (stable)
+import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
@@ -20,6 +23,32 @@ type Lang = "fr" | "en" | "es";
 function normalizeLang(v: string | null | undefined): Lang {
   const x = (v || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
+}
+
+/* ===========================
+   UI local: CheckboxField
+   (pour éviter de dépendre d’un export manquant dans ui.tsx)
+=========================== */
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="ff-check">
+      <input
+        className="ff-checkbox"
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.currentTarget.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
 }
 
 /* ===========================
@@ -127,7 +156,7 @@ type FormQuestionsdata = {
 
 type Formdata = {
   dossierType?: string; // "T1"
-  canal?: "presentiel"; // ✅ tag simple (stocké dans data)
+  canal?: "presentiel";
   client?: FormClientdata;
   conjoint?: FormConjointdata | null;
   assuranceMedicamenteuse?: FormMedsdata | null;
@@ -236,7 +265,7 @@ function normalizePhone(v: string) {
 }
 
 /* ===========================
-   PAGE WRAPPER (RequireAuth)
+   PAGE WRAPPER
 =========================== */
 
 export default function FormulaireFiscalPresentielT1Page() {
@@ -244,7 +273,6 @@ export default function FormulaireFiscalPresentielT1Page() {
   const type: FormTypeDb = "T1";
   const lang = normalizeLang(params.get("lang") || "fr");
 
-  // ✅ récupère l'userId (le guard admin est déjà fait côté server)
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -505,7 +533,7 @@ function PresentielT1Inner({
 
   /* ===========================
      Save draft (insert/update)
-=========================== */
+  =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
     if (hydrating.current) return formulaireId ?? null;
     if (submitting) return formulaireId ?? null;
@@ -556,7 +584,6 @@ function PresentielT1Inner({
       .select("id, data, created_at, annee")
       .eq("user_id", userId)
       .eq("form_type", type)
-      // ✅ présentiel: on ne filtre PAS par année tant que l'année est vide (sinon tu bloques le preload)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<FormRow>();
@@ -707,7 +734,6 @@ function PresentielT1Inner({
 
         if (!realFid) throw new Error("Impossible d'envoyer (dossier introuvable).");
 
-        // ✅ statut présentiel : "recu" (ou garde "submitted" si tu préfères)
         const { error } = await supabase
           .from(FORMS_TABLE)
           .update({
@@ -981,12 +1007,7 @@ function PresentielT1Inner({
                     formatter={formatPhoneInput}
                     maxLength={14}
                   />
-                  <Field
-                    label="Courriel (conjoint)"
-                    value={courrielConjoint}
-                    onChange={setCourrielConjoint}
-                    type="email"
-                  />
+                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
                 </div>
 
                 <div className="ff-mt">
@@ -1299,4 +1320,3 @@ function PresentielT1Inner({
     </main>
   );
 }
-
