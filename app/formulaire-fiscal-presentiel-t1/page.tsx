@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
-import Steps from "../Steps";
 import { Field, CheckboxField, YesNoField, SelectField, type YesNo } from "../ui";
 
 /**
@@ -768,8 +767,6 @@ function PresentielT1Inner({
             {msg}
           </div>
         )}
-
-        <Steps step={1} lang={lang} flow="t1" />
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
