@@ -11,8 +11,8 @@ import "@/app/formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 // ✅ Steps spécifique au TA présentiel (même dossier)
 import Steps from "./Steps";
 
-// ✅ UI shared présentiel (stable)
-import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
+import { Field, YesNoField, SelectField, type YesNo } 
+from "@/app/formulaire-fiscal-presentiel/ui";
 
 const STORAGE_BUCKET = "client-documents";
 const DOCS_TABLE = "formulaire_documents";
