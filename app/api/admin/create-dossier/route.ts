@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
-type Flow = "t1" | "ta" | "t2";
+type Flow = "T1" | "autonome" | "T2";
 type Lang = "fr" | "en" | "es";
 
 type CreateDossierBody = {
@@ -11,8 +11,13 @@ type CreateDossierBody = {
 };
 
 function normalizeFlow(v: unknown): Flow | null {
-  const x = String(v ?? "").toLowerCase();
-  return x === "t1" || x === "ta" || x === "t2" ? (x as Flow) : null;
+  const x = String(v ?? "").trim().toLowerCase();
+
+  if (x === "t1") return "T1";
+  if (x === "ta") return "autonome";
+  if (x === "t2") return "T2";
+
+  return null;
 }
 
 function normalizeLang(v: unknown): Lang {
@@ -47,13 +52,12 @@ export async function POST(req: Request) {
   try {
     const raw: unknown = await req.json();
 
-    // on accepte seulement un objet JSON
     if (!raw || typeof raw !== "object") {
       return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
     }
 
     body = raw as CreateDossierBody;
-  } catch (e: unknown) {
+  } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
@@ -72,12 +76,12 @@ export async function POST(req: Request) {
     const { data, error } = await supabase
       .from("formulaires_fiscaux")
       .insert({
-        form_type: flow, // 't1' | 'ta' | 't2'
+        form_type: flow, // ✅ "T1" | "autonome" | "T2" (comme ta DB)
         lang,
         user_id: auth.user.id,
-        email, // null si vide ou invalide
-        status: "draft", // contrainte chk_formulaires_status
-        data: {}, // NOT NULL
+        email,
+        status: "draft",
+        data: {},
       })
       .select("id")
       .single();
