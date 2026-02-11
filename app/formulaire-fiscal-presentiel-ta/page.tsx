@@ -46,6 +46,27 @@ type EtatCivil =
 
 type CopieImpots = "espaceClient" | "courriel" | "";
 
+/** ✅ AJOUT: Revenus & dépenses (présentiel TA) */
+type Money = string;
+type TARevenusDepenses = {
+  revenusVentes?: Money;
+  revenusServices?: Money;
+  revenusPlateformes?: Money;
+  revenusAffiliation?: Money;
+  revenusAutres?: Money;
+  revenusAutresLabel?: string;
+
+  depensesAchats?: Money;
+  depensesFournitures?: Money;
+  depensesPub?: Money;
+  depensesLogiciels?: Money;
+  depensesFraisBancaires?: Money;
+  depensesAutres?: Money;
+  depensesAutresLabel?: string;
+
+  notes?: string;
+};
+
 type Formdata = {
   dossierType?: "autonome";
   canal?: "presentiel";
@@ -68,6 +89,9 @@ type Formdata = {
     biensEtranger100k?: YesNo;
     copieImpots?: CopieImpots;
   };
+
+  /** ✅ AJOUT: on met revenus/dépenses directement dans data */
+  taRevenusDepenses?: TARevenusDepenses;
 };
 
 type FormRow = {
@@ -128,6 +152,11 @@ function normalizePostal(v: string) {
   return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 }
 
+/** ✅ AJOUT: format montant (simple, stable) */
+function formatMoneyInput(v: string) {
+  return (v || "").replace(/[^\d.,]/g, "").slice(0, 16);
+}
+
 function asMsg(err: unknown) {
   if (err instanceof Error) return err.message;
   if (typeof err === "string") return err;
@@ -172,6 +201,24 @@ export default function FormulaireFiscalPresentielTAPage() {
   const [biensEtranger100k, setBiensEtranger100k] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
 
+  // ====== ✅ AJOUT: revenus & dépenses (même page)
+  const [revVentes, setRevVentes] = useState("");
+  const [revServices, setRevServices] = useState("");
+  const [revPlateformes, setRevPlateformes] = useState("");
+  const [revAffiliation, setRevAffiliation] = useState("");
+  const [revAutres, setRevAutres] = useState("");
+  const [revAutresLabel, setRevAutresLabel] = useState("");
+
+  const [depAchats, setDepAchats] = useState("");
+  const [depFournitures, setDepFournitures] = useState("");
+  const [depPub, setDepPub] = useState("");
+  const [depLogiciels, setDepLogiciels] = useState("");
+  const [depFraisBancaires, setDepFraisBancaires] = useState("");
+  const [depAutres, setDepAutres] = useState("");
+  const [depAutresLabel, setDepAutresLabel] = useState("");
+
+  const [rdNotes, setRdNotes] = useState("");
+
   // ====== auth (présentiel = toi connecté)
   useEffect(() => {
     (async () => {
@@ -185,7 +232,7 @@ export default function FormulaireFiscalPresentielTAPage() {
     })();
   }, []);
 
-  // ====== draftData
+  // ====== draftData (inclut revenus/dépenses)
   const draftData: Formdata = useMemo(() => {
     return {
       dossierType: "autonome",
@@ -209,6 +256,24 @@ export default function FormulaireFiscalPresentielTAPage() {
         biensEtranger100k,
         copieImpots,
       },
+      taRevenusDepenses: {
+        revenusVentes: revVentes.trim(),
+        revenusServices: revServices.trim(),
+        revenusPlateformes: revPlateformes.trim(),
+        revenusAffiliation: revAffiliation.trim(),
+        revenusAutres: revAutres.trim(),
+        revenusAutresLabel: revAutresLabel.trim(),
+
+        depensesAchats: depAchats.trim(),
+        depensesFournitures: depFournitures.trim(),
+        depensesPub: depPub.trim(),
+        depensesLogiciels: depLogiciels.trim(),
+        depensesFraisBancaires: depFraisBancaires.trim(),
+        depensesAutres: depAutres.trim(),
+        depensesAutresLabel: depAutresLabel.trim(),
+
+        notes: rdNotes.trim(),
+      },
     };
   }, [
     anneeImposition,
@@ -226,6 +291,20 @@ export default function FormulaireFiscalPresentielTAPage() {
     habiteSeulTouteAnnee,
     biensEtranger100k,
     copieImpots,
+    revVentes,
+    revServices,
+    revPlateformes,
+    revAffiliation,
+    revAutres,
+    revAutresLabel,
+    depAchats,
+    depFournitures,
+    depPub,
+    depLogiciels,
+    depFraisBancaires,
+    depAutres,
+    depAutresLabel,
+    rdNotes,
   ]);
 
   // ====== load si fid
@@ -250,6 +329,7 @@ export default function FormulaireFiscalPresentielTAPage() {
         const form = data.data ?? {};
         const c = form.client ?? {};
         const q = form.questionsGenerales ?? {};
+        const rd = form.taRevenusDepenses ?? {};
 
         setPrenom(c.prenom ?? "");
         setNom(c.nom ?? "");
@@ -269,6 +349,24 @@ export default function FormulaireFiscalPresentielTAPage() {
         setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
         setBiensEtranger100k(q.biensEtranger100k ?? "");
         setCopieImpots((q.copieImpots as CopieImpots) ?? "");
+
+        // ✅ Revenus/dépenses
+        setRevVentes(rd.revenusVentes ?? "");
+        setRevServices(rd.revenusServices ?? "");
+        setRevPlateformes(rd.revenusPlateformes ?? "");
+        setRevAffiliation(rd.revenusAffiliation ?? "");
+        setRevAutres(rd.revenusAutres ?? "");
+        setRevAutresLabel(rd.revenusAutresLabel ?? "");
+
+        setDepAchats(rd.depensesAchats ?? "");
+        setDepFournitures(rd.depensesFournitures ?? "");
+        setDepPub(rd.depensesPub ?? "");
+        setDepLogiciels(rd.depensesLogiciels ?? "");
+        setDepFraisBancaires(rd.depensesFraisBancaires ?? "");
+        setDepAutres(rd.depensesAutres ?? "");
+        setDepAutresLabel(rd.depensesAutresLabel ?? "");
+
+        setRdNotes(rd.notes ?? "");
       } catch (e: unknown) {
         setMsg("❌ Erreur chargement: " + asMsg(e));
       } finally {
@@ -277,7 +375,7 @@ export default function FormulaireFiscalPresentielTAPage() {
     })();
   }, [fid, userId]);
 
-  // ✅ save retourne le fid (FIABLE pour goNext)
+  // ✅ save retourne le fid (FIABLE pour navigation)
   const save = useCallback(async (): Promise<string | null> => {
     if (!userId) {
       setMsg("❌ Non connecté.");
@@ -313,7 +411,7 @@ export default function FormulaireFiscalPresentielTAPage() {
           user_id: userId,
           form_type: FORM_TYPE_TA,
           lang,
-          status: "draft", // si ta colonne existe (comme tu l'avais avant)
+          status: "draft", // si ta colonne existe
           annee: anneeImposition || null,
           data: draftData,
         })
@@ -326,7 +424,6 @@ export default function FormulaireFiscalPresentielTAPage() {
       if (newFid) {
         setFid(newFid);
 
-        // ✅ IMPORTANT: route = formulaire-fiscal-presentiel-ta (pas ta-presentiel)
         router.replace(
           `/formulaire-fiscal-presentiel-ta?fid=${encodeURIComponent(newFid)}&lang=${encodeURIComponent(lang)}`
         );
@@ -342,7 +439,7 @@ export default function FormulaireFiscalPresentielTAPage() {
     }
   }, [anneeImposition, draftData, fid, lang, router, userId]);
 
-  // ====== Next (vers revenus-depenses)
+  // ✅ Plus de Steps: bouton final -> /envoyer
   const goNext = useCallback(async () => {
     const savedFid = await save();
     const useFid = savedFid || fid || fidUrl;
@@ -353,7 +450,7 @@ export default function FormulaireFiscalPresentielTAPage() {
     }
 
     router.push(
-      `/formulaire-fiscal-presentiel-ta/revenus-depenses?fid=${encodeURIComponent(useFid)}&lang=${encodeURIComponent(lang)}`
+      `/formulaire-fiscal-presentiel-ta/envoyer?fid=${encodeURIComponent(useFid)}&lang=${encodeURIComponent(lang)}`
     );
   }, [fid, fidUrl, lang, router, save]);
 
@@ -375,7 +472,7 @@ export default function FormulaireFiscalPresentielTAPage() {
         <header className="ff-header">
           <div className="ff-brand-text">
             <strong>ComptaNet Québec</strong>
-            <span>Présentiel — Travailleur autonome (BASIC)</span>
+            <span>Présentiel — Travailleur autonome</span>
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
@@ -408,6 +505,9 @@ export default function FormulaireFiscalPresentielTAPage() {
           </div>
         )}
 
+        {/* =======================
+            CLIENT
+        ======================= */}
         <section className="ff-card">
           <div className="ff-card-head">
             <h2>Client</h2>
@@ -415,12 +515,7 @@ export default function FormulaireFiscalPresentielTAPage() {
           </div>
 
           <div className="ff-grid2">
-            <Field
-              label="Année d’imposition"
-              value={anneeImposition}
-              onChange={setAnneeImposition}
-              inputMode="numeric"
-            />
+            <Field label="Année d’imposition" value={anneeImposition} onChange={setAnneeImposition} inputMode="numeric" />
 
             <SelectField<EtatCivil>
               label="État civil"
@@ -469,12 +564,7 @@ export default function FormulaireFiscalPresentielTAPage() {
             <div className="ff-grid4 ff-mt-sm">
               <Field label="Ville" value={ville} onChange={setVille} />
 
-              <SelectField<ProvinceCode>
-                label="Province"
-                value={province}
-                onChange={setProvince}
-                options={PROVINCES}
-              />
+              <SelectField<ProvinceCode> label="Province" value={province} onChange={setProvince} options={PROVINCES} />
 
               <Field
                 label="Code postal"
@@ -498,6 +588,9 @@ export default function FormulaireFiscalPresentielTAPage() {
           </div>
         </section>
 
+        {/* =======================
+            QUESTIONS
+        ======================= */}
         <section className="ff-card">
           <div className="ff-card-head">
             <h2>Questions</h2>
@@ -521,9 +614,83 @@ export default function FormulaireFiscalPresentielTAPage() {
           </div>
         </section>
 
+        {/* =======================
+            ✅ REVENUS & DÉPENSES
+        ======================= */}
+        <section className="ff-card">
+          <div className="ff-card-head">
+            <h2>Revenus & dépenses (totaux)</h2>
+            <p>Montants totaux approximatifs. (Tu peux laisser vide.)</p>
+          </div>
+
+          <div className="ff-card" style={{ padding: 12, marginBottom: 12 }}>
+            <div className="ff-muted" style={{ marginBottom: 10 }}>
+              Revenus
+            </div>
+
+            <div className="ff-grid2">
+              <Field label="Ventes ($)" value={revVentes} onChange={(v) => setRevVentes(formatMoneyInput(v))} inputMode="decimal" />
+              <Field label="Services ($)" value={revServices} onChange={(v) => setRevServices(formatMoneyInput(v))} inputMode="decimal" />
+              <Field label="Plateformes ($)" value={revPlateformes} onChange={(v) => setRevPlateformes(formatMoneyInput(v))} inputMode="decimal" />
+              <Field label="Affiliation ($)" value={revAffiliation} onChange={(v) => setRevAffiliation(formatMoneyInput(v))} inputMode="decimal" />
+              <Field label="Autres revenus ($)" value={revAutres} onChange={(v) => setRevAutres(formatMoneyInput(v))} inputMode="decimal" />
+              <Field label="Autres revenus — préciser" value={revAutresLabel} onChange={setRevAutresLabel} />
+            </div>
+          </div>
+
+          <div className="ff-card" style={{ padding: 12 }}>
+            <div className="ff-muted" style={{ marginBottom: 10 }}>
+              Dépenses
+            </div>
+
+            <div className="ff-grid2">
+              <Field
+                label="Achats / coût des marchandises ($)"
+                value={depAchats}
+                onChange={(v) => setDepAchats(formatMoneyInput(v))}
+                inputMode="decimal"
+              />
+              <Field
+                label="Fournitures ($)"
+                value={depFournitures}
+                onChange={(v) => setDepFournitures(formatMoneyInput(v))}
+                inputMode="decimal"
+              />
+              <Field label="Publicité ($)" value={depPub} onChange={(v) => setDepPub(formatMoneyInput(v))} inputMode="decimal" />
+              <Field
+                label="Logiciels / abonnements ($)"
+                value={depLogiciels}
+                onChange={(v) => setDepLogiciels(formatMoneyInput(v))}
+                inputMode="decimal"
+              />
+              <Field
+                label="Frais bancaires ($)"
+                value={depFraisBancaires}
+                onChange={(v) => setDepFraisBancaires(formatMoneyInput(v))}
+                inputMode="decimal"
+              />
+              <Field
+                label="Autres dépenses ($)"
+                value={depAutres}
+                onChange={(v) => setDepAutres(formatMoneyInput(v))}
+                inputMode="decimal"
+              />
+              <Field label="Autres dépenses — préciser" value={depAutresLabel} onChange={setDepAutresLabel} />
+              <div />
+            </div>
+
+            <div className="ff-mt">
+              <Field label="Notes (optionnel)" value={rdNotes} onChange={setRdNotes} />
+            </div>
+          </div>
+        </section>
+
+        {/* =======================
+            ACTION
+        ======================= */}
         <div className="ff-submit">
           <button type="button" className="ff-btn ff-btn-primary ff-btn-big" disabled={saving} onClick={goNext}>
-            Suivant →
+            Envoyer →
           </button>
 
           {(fid || fidUrl) && (
@@ -536,4 +703,3 @@ export default function FormulaireFiscalPresentielTAPage() {
     </main>
   );
 }
-
