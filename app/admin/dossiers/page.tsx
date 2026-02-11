@@ -13,14 +13,28 @@ type FormRow = {
   id: string;
   created_at: string | null;
 
-  // statut paiement (Stripe / workflow)
+  // Paiement (Stripe/workflow)
   status: "draft" | "ready_for_payment" | "paid" | null;
 
-  // champs utiles
+  // Champs optionnels (selon ta DB)
+  form_type?: string | null;
+  annee?: string | number | null;
+
+  // ✅ CQ côté formulaires (existe dans ta DB)
+  cq_id?: string | null;
+};
+
+type DossierRow = {
+  formulaire_id: string;
   cq_id: string | null;
-  form_type: string | null;
   annee: string | number | null;
 };
+
+function toTaxYear(v: unknown): number | null {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && /^\d{4}$/.test(v)) return Number(v);
+  return null;
+}
 
 export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
@@ -38,10 +52,10 @@ export default async function AdminDossiersPage() {
 
   if (profErr || !profile?.is_admin) redirect("/espace-client?next=/admin/dossiers");
 
-  // ✅ Source unique: formulaires_fiscaux (CQ + date + type + année + statut paiement)
+  // ✅ Source principale: formulaires_fiscaux
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, created_at, status, cq_id, form_type, annee")
+    .select("id, created_at, status, form_type, annee, cq_id")
     .order("created_at", { ascending: false });
 
   if (formsErr) {
@@ -54,15 +68,15 @@ export default async function AdminDossiersPage() {
   }
 
   const formRows = (forms ?? []) as FormRow[];
-  const formulaireIds = formRows.map((f) => f.id);
+  const dossierIds = formRows.map((f) => f.id);
 
   // ✅ Statut de travail (dossier_statuses)
   let workStatusRows: WorkStatusRow[] = [];
-  if (formulaireIds.length > 0) {
+  if (dossierIds.length > 0) {
     const { data: s, error: sErr } = await supabase
       .from("dossier_statuses")
       .select("formulaire_id, status, updated_at")
-      .in("formulaire_id", formulaireIds);
+      .in("formulaire_id", dossierIds);
 
     if (sErr) {
       return (
@@ -88,32 +102,52 @@ export default async function AdminDossiersPage() {
     });
   }
 
-  // ✅ Rows UI (CQ + date + statuts + type + année)
+  // ✅ Optionnel: CQ + année depuis dossiers (si tu décides de l'utiliser)
+  // On ne bloque JAMAIS l'admin si cette table est vide / pas liée.
+  const dossiersMap = new Map<string, { cq_id: string | null; annee: string | number | null }>();
+
+  if (dossierIds.length > 0) {
+    const { data: d, error: dErr } = await supabase
+      .from("dossiers")
+      .select("formulaire_id, cq_id, annee")
+      .in("formulaire_id", dossierIds);
+
+    if (!dErr && d) {
+      const dossierRows = d as DossierRow[];
+      for (const r of dossierRows) {
+        dossiersMap.set(String(r.formulaire_id), {
+          cq_id: r.cq_id ?? null,
+          annee: r.annee ?? null,
+        });
+      }
+    }
+  }
+
+  // ✅ Rows UI (CQ + paiement + statuts + date)
   const rows: AdminDossierRow[] = formRows.map((f) => {
     const work = workStatusMap.get(f.id);
+    const d = dossiersMap.get(f.id);
 
     const st = work?.status ?? "recu";
     const up = work?.updated_at ?? null;
 
     const payment_status = (f.status ?? null) as AdminDossierRow["payment_status"];
 
-    const yearRaw = f.annee ?? null;
-    const yearNum =
-      typeof yearRaw === "number"
-        ? yearRaw
-        : typeof yearRaw === "string" && /^\d{4}$/.test(yearRaw)
-        ? Number(yearRaw)
-        : null;
+    // Priorité CQ: dossiers.cq_id si un jour il existe, sinon formulaires_fiscaux.cq_id
+    const cq_id = (d?.cq_id ?? f.cq_id ?? null) as string | null;
+
+    // Année: dossiers.annee si dispo, sinon formulaires_fiscaux.annee
+    const tax_year = toTaxYear(d?.annee ?? f.annee ?? null);
 
     return {
       formulaire_id: f.id,
-      cq_id: f.cq_id ?? null,
+      cq_id,
       payment_status,
       created_at: f.created_at ?? null,
       status: st,
       updated_at: up,
       form_type: f.form_type ?? null,
-      tax_year: yearNum,
+      tax_year,
     };
   });
 
