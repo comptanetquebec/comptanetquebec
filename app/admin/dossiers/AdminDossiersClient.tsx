@@ -9,12 +9,28 @@ import { supabase } from "@/lib/supabaseClient";
 =========================== */
 
 export type DossierStatus = "recu" | "en_cours" | "attente_client" | "termine";
+export type PaymentStatus = "draft" | "ready_for_payment" | "paid";
 
 export type AdminDossierRow = {
+  // Identifiant interne (UUID du formulaire)
   formulaire_id: string;
+
+  // ✅ CQ-0000xx
+  cq_id: string | null;
+
+  // ✅ statut paiement (Stripe / workflow du formulaire)
+  payment_status: PaymentStatus | null;
+
+  // Infos
   created_at: string | null;
+
+  // Statut de travail (ton pipeline interne)
   status: DossierStatus;
   updated_at: string | null;
+
+  // optionnels si tu veux afficher (pas obligatoire)
+  form_type?: string | null; // T1 / TA / T2 (si tu l’as)
+  tax_year?: number | null;  // 2025 (si tu l’as)
 };
 
 type TabKey = "todo" | "waiting" | "done";
@@ -37,6 +53,18 @@ const BADGE_CLASS: Record<DossierStatus, string> = {
   termine: "bg-green-100 text-green-800 border-green-200",
 };
 
+const PAY_LABEL: Record<PaymentStatus, string> = {
+  draft: "Draft",
+  ready_for_payment: "Prêt paiement",
+  paid: "Payé",
+};
+
+const PAY_BADGE_CLASS: Record<PaymentStatus, string> = {
+  draft: "bg-gray-100 text-gray-700 border-gray-200",
+  ready_for_payment: "bg-purple-100 text-purple-800 border-purple-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+};
+
 function tabTitle(key: TabKey) {
   if (key === "todo") return "À faire";
   if (key === "waiting") return "En attente client";
@@ -47,6 +75,13 @@ function rowTab(status: DossierStatus): TabKey {
   if (status === "attente_client") return "waiting";
   if (status === "termine") return "done";
   return "todo";
+}
+
+function safeDateLabel(iso: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString();
 }
 
 /* ===========================
@@ -155,9 +190,9 @@ export default function AdminDossiersClient({
 
       {/* Liste */}
       <div className="rounded-lg border bg-white">
-        <div className="hidden md:grid grid-cols-[1fr_220px_120px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
+        <div className="hidden md:grid grid-cols-[1fr_300px_120px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
           <div>Dossier</div>
-          <div>Statut</div>
+          <div>Statuts</div>
           <div className="text-right">Action</div>
         </div>
 
@@ -167,65 +202,94 @@ export default function AdminDossiersClient({
           </div>
         ) : (
           <ul className="divide-y">
-            {filtered.map((r) => (
-              <li key={r.formulaire_id} className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_220px_120px] gap-4 items-start">
-                  <div className="min-w-0">
-                    <div className="font-semibold truncate">
-                      ID: {r.formulaire_id}
+            {filtered.map((r) => {
+              const created = safeDateLabel(r.created_at);
+              const updated = safeDateLabel(r.updated_at);
+
+              return (
+                <li key={r.formulaire_id} className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_300px_120px] gap-4 items-start">
+                    {/* Col 1: Dossier */}
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate">
+                        {r.cq_id ? `CQ: ${r.cq_id}` : `ID: ${r.formulaire_id}`}
+                      </div>
+
+                      {/* Toujours afficher l'ID interne en dessous */}
+                      <div className="text-sm text-gray-500 truncate">
+                        ID: {r.formulaire_id}
+                      </div>
+
+                      {/* Optionnel: type/année */}
+                      {(r.form_type || r.tax_year) && (
+                        <div className="text-sm text-gray-500">
+                          {r.form_type ? `Type: ${r.form_type}` : null}
+                          {r.form_type && r.tax_year ? " • " : null}
+                          {r.tax_year ? `Année: ${r.tax_year}` : null}
+                        </div>
+                      )}
+
+                      {created && (
+                        <div className="text-sm text-gray-500">Créé: {created}</div>
+                      )}
+                      {updated && (
+                        <div className="text-sm text-gray-500">Maj: {updated}</div>
+                      )}
                     </div>
 
-                    {r.created_at && (
-                      <div className="text-sm text-gray-500">
-                        Créé: {new Date(r.created_at).toLocaleString()}
-                      </div>
-                    )}
+                    {/* Col 2: Statuts */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Paiement */}
+                      {r.payment_status && (
+                        <span
+                          className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[r.payment_status]}`}
+                          title="Statut paiement"
+                        >
+                          {PAY_LABEL[r.payment_status]}
+                        </span>
+                      )}
 
-                    {r.updated_at && (
-                      <div className="text-sm text-gray-500">
-                        Maj: {new Date(r.updated_at).toLocaleString()}
-                      </div>
-                    )}
+                      {/* Travail */}
+                      <span
+                        className={`px-2 py-1 rounded border text-sm ${BADGE_CLASS[r.status]}`}
+                        title="Statut de travail"
+                      >
+                        {LABEL[r.status]}
+                      </span>
+
+                      <select
+                        value={r.status}
+                        onChange={(e) =>
+                          updateStatus(
+                            r.formulaire_id,
+                            e.target.value as DossierStatus
+                          )
+                        }
+                        className="border rounded px-2 py-1 text-sm"
+                        disabled={savingId === r.formulaire_id}
+                      >
+                        <option value="recu">Reçu</option>
+                        <option value="en_cours">En cours</option>
+                        <option value="attente_client">En attente client</option>
+                        <option value="termine">Terminé</option>
+                      </select>
+                    </div>
+
+                    {/* Col 3: Action */}
+                    <div className="md:text-right">
+                      <Link
+                        href={`/admin/dossiers/${encodeURIComponent(
+                          r.formulaire_id
+                        )}`}
+                        className="text-blue-700 hover:underline text-sm"
+                      >
+                        Ouvrir
+                      </Link>
+                    </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span
-                      className={`px-2 py-1 rounded border text-sm ${BADGE_CLASS[r.status]}`}
-                    >
-                      {LABEL[r.status]}
-                    </span>
-
-                    <select
-                      value={r.status}
-                      onChange={(e) =>
-                        updateStatus(
-                          r.formulaire_id,
-                          e.target.value as DossierStatus
-                        )
-                      }
-                      className="border rounded px-2 py-1 text-sm"
-                      disabled={savingId === r.formulaire_id}
-                    >
-                      <option value="recu">Reçu</option>
-                      <option value="en_cours">En cours</option>
-                      <option value="attente_client">En attente client</option>
-                      <option value="termine">Terminé</option>
-                    </select>
-                  </div>
-
-                  <div className="md:text-right">
-                    <Link
-                      href={`/admin/dossiers/${encodeURIComponent(
-                        r.formulaire_id
-                      )}`}
-                      className="text-blue-700 hover:underline text-sm"
-                    >
-                      Ouvrir
-                    </Link>
-                  </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
