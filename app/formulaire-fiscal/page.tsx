@@ -134,7 +134,7 @@ type FormQuestionsdata = {
   maisonAcheteeOuVendue?: YesNo;
   appelerTechnicien?: YesNo;
   copieImpots?: CopieImpots;
-  anneeImposition?: string; // ✅ ajouté
+  anneeImposition?: string;
 };
 
 type Formdata = {
@@ -253,12 +253,20 @@ export default function FormulaireFiscalPage() {
   const params = useSearchParams();
   const type: FormTypeDb = "T1";
   const lang = normalizeLang(params.get("lang") || "fr");
+  const fid = params.get("fid"); // ✅ IMPORTANT
 
-  const nextPath = useMemo(() => `/formulaire-fiscal?type=${type}&lang=${lang}`, [type, lang]);
+  const nextPath = useMemo(() => {
+    const q = new URLSearchParams();
+    q.set("lang", lang);
+    if (fid) q.set("fid", fid);
+    return `/formulaire-fiscal?${q.toString()}`;
+  }, [lang, fid]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <FormulaireFiscalInner userId={userId} lang={lang} type={type} />}
+      {(userId) => (
+        <FormulaireFiscalInner userId={userId} lang={lang} type={type} fid={fid} />
+      )}
     </RequireAuth>
   );
 }
@@ -271,10 +279,12 @@ function FormulaireFiscalInner({
   userId,
   lang,
   type,
+  fid,
 }: {
   userId: string;
   lang: Lang;
   type: FormTypeDb;
+  fid: string | null;
 }) {
   const router = useRouter();
   const formTitle = titleFromType(type);
@@ -289,8 +299,6 @@ function FormulaireFiscalInner({
 
   // évite autosave pendant le preload
   const hydrating = useRef(false);
-
-  // debounce autosave
   const saveTimer = useRef<number | null>(null);
 
   // docs
@@ -359,11 +367,9 @@ function FormulaireFiscalInner({
      Enfants
   =========================== */
   const [enfants, setEnfants] = useState<Child[]>([]);
-
   const ajouterEnfant = useCallback(() => {
     setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
   }, []);
-
   const updateEnfant = useCallback((i: number, field: keyof Child, value: string) => {
     setEnfants((prev) => {
       const copy = [...prev];
@@ -371,7 +377,6 @@ function FormulaireFiscalInner({
       return copy;
     });
   }, []);
-
   const removeEnfant = useCallback((i: number) => {
     setEnfants((prev) => prev.filter((_, idx) => idx !== i));
   }, []);
@@ -387,7 +392,7 @@ function FormulaireFiscalInner({
   const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
   const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
-  const [anneeImposition, setAnneeImposition] = useState<string>(""); // ✅ maintenant sauvegardé
+  const [anneeImposition, setAnneeImposition] = useState<string>("");
 
   /* ===========================
      Docs helpers
@@ -397,7 +402,9 @@ function FormulaireFiscalInner({
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
-      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
+      .select(
+        "id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at"
+      )
       .eq("formulaire_id", fid)
       .order("created_at", { ascending: false });
 
@@ -411,8 +418,11 @@ function FormulaireFiscalInner({
   }, []);
 
   const getSignedUrl = useCallback(async (path: string) => {
-    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
-    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl)
+      throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
     return data.signedUrl;
   }, []);
 
@@ -448,7 +458,9 @@ function FormulaireFiscalInner({
           appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
           villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
           provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
-          codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
+          codePostalConjoint: normalizePostal(
+            adresseConjointeIdentique ? codePostal : codePostalConjoint
+          ),
           revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
         }
       : null;
@@ -501,7 +513,7 @@ function FormulaireFiscalInner({
         maisonAcheteeOuVendue,
         appelerTechnicien,
         copieImpots,
-        anneeImposition: anneeImposition.trim(), // ✅ ajouté
+        anneeImposition: anneeImposition.trim(),
       },
     };
   }, [
@@ -561,56 +573,193 @@ function FormulaireFiscalInner({
     if (hydrating.current) return formulaireId ?? null;
     if (submitting) return formulaireId ?? null;
 
-   if (formulaireId) {
-  const { error } = await supabase
-    .from(FORMS_TABLE)
-    .update({
-      lang,
-      annee: anneeImposition || null,
-      data: draftData,
-    })
-    .eq("id", formulaireId)
-    .eq("user_id", userId);
+    if (formulaireId) {
+      const { error } = await supabase
+        .from(FORMS_TABLE)
+        .update({
+          lang,
+          annee: anneeImposition || null,
+          data: draftData,
+        })
+        .eq("id", formulaireId)
+        .eq("user_id", userId);
 
-  if (error) throw new Error(supaErr(error));
-  return formulaireId;
-}
+      if (error) throw new Error(supaErr(error));
+      return formulaireId;
+    }
 
-   const { data: dataInsert, error: errorInsert } = await supabase
-  .from(FORMS_TABLE)
-  .insert({
-    user_id: userId,
-    form_type: type,
-    lang,
-    status: "draft",
-    annee: anneeImposition || null,
-    data: draftData,
-  })
-  .select("id")
-  .single<InsertIdRow>();
+    const { data: dataInsert, error: errorInsert } = await supabase
+      .from(FORMS_TABLE)
+      .insert({
+        user_id: userId,
+        form_type: type,
+        lang,
+        status: "draft",
+        annee: anneeImposition || null,
+        data: draftData,
+      })
+      .select("id")
+      .single<InsertIdRow>();
 
-if (errorInsert) throw new Error(supaErr(errorInsert));
+    if (errorInsert) throw new Error(supaErr(errorInsert));
 
-    const fid = dataInsert?.id ?? null;
-    if (fid) setFormulaireId(fid);
-    return fid;
-  }, [userId, submitting, formulaireId, type, lang, draftData]);
+    const newFid = dataInsert?.id ?? null;
+    if (newFid) setFormulaireId(newFid);
+    return newFid;
+  }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
   /* ===========================
-     Load last form (preload)
+     Apply row.data to states
+  =========================== */
+  const applyFormToState = useCallback(
+    async (row: FormRow) => {
+      const realId = row.id;
+      setFormulaireId(realId);
+      setCurrentFid(realId);
+
+      const form = row.data;
+
+      const client = form?.client ?? {};
+      setPrenom(client.prenom ?? "");
+      setNom(client.nom ?? "");
+      setNas(client.nas ? formatNASInput(client.nas) : "");
+      setDob(client.dob ?? "");
+      setEtatCivil(client.etatCivil ?? "");
+
+      setEtatCivilChange(!!client.etatCivilChange);
+      setAncienEtatCivil(client.ancienEtatCivil ?? "");
+      setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
+
+      setTel(client.tel ? formatPhoneInput(client.tel) : "");
+      setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
+      setAdresse(client.adresse ?? "");
+      setApp(client.app ?? "");
+      setVille(client.ville ?? "");
+      setProvince(client.province ?? "QC");
+      setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
+      setCourriel(client.courriel ?? "");
+
+      const cj = form?.conjoint ?? null;
+      setAUnConjoint(!!cj);
+
+      if (cj) {
+        setTraiterConjoint(!!cj.traiterConjoint);
+        setPrenomConjoint(cj.prenomConjoint ?? "");
+        setNomConjoint(cj.nomConjoint ?? "");
+        setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
+        setDobConjoint(cj.dobConjoint ?? "");
+        setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+        setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+        setCourrielConjoint(cj.courrielConjoint ?? "");
+
+        setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
+        setAdresseConjoint(cj.adresseConjoint ?? "");
+        setAppConjoint(cj.appConjoint ?? "");
+        setVilleConjoint(cj.villeConjoint ?? "");
+        setProvinceConjoint(cj.provinceConjoint ?? "QC");
+        setCodePostalConjoint(
+          cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : ""
+        );
+        setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+      } else {
+        setTraiterConjoint(true);
+        setPrenomConjoint("");
+        setNomConjoint("");
+        setNasConjoint("");
+        setDobConjoint("");
+        setTelConjoint("");
+        setTelCellConjoint("");
+        setCourrielConjoint("");
+        setAdresseConjointeIdentique(true);
+        setAdresseConjoint("");
+        setAppConjoint("");
+        setVilleConjoint("");
+        setProvinceConjoint("QC");
+        setCodePostalConjoint("");
+        setRevenuNetConjoint("");
+      }
+
+      const meds = form?.assuranceMedicamenteuse ?? null;
+      if (meds?.client) {
+        setAssuranceMedsClient(meds.client.regime ?? "");
+        setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
+      } else {
+        setAssuranceMedsClient("");
+        setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
+      }
+
+      if (meds?.conjoint) {
+        setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
+        setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
+      } else {
+        setAssuranceMedsConjoint("");
+        setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
+      }
+
+      setEnfants(form?.personnesACharge ?? []);
+
+      const q = form?.questionsGenerales ?? {};
+      setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
+      setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
+      setBiensEtranger100k(q.biensEtranger100k ?? "");
+      setCitoyenCanadien(q.citoyenCanadien ?? "");
+      setNonResident(q.nonResident ?? "");
+      setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
+      setAppelerTechnicien(q.appelerTechnicien ?? "");
+      setCopieImpots(q.copieImpots ?? "");
+      setAnneeImposition(q.anneeImposition ?? "");
+
+      await loadDocs(realId);
+    },
+    [loadDocs]
+  );
+
+  /* ===========================
+     Load by fid (URL)
+  =========================== */
+  const loadFormById = useCallback(
+    async (id: string) => {
+      hydrating.current = true;
+      setMsg(null);
+
+      const { data: row, error } = await supabase
+        .from(FORMS_TABLE)
+        .select("id, data, created_at")
+        .eq("id", id)
+        .maybeSingle<FormRow>();
+
+      if (error) {
+        setMsg(`Erreur chargement: ${error.message}`);
+        hydrating.current = false;
+        return;
+      }
+      if (!row) {
+        setMsg("❌ Dossier introuvable (fid invalide ou accès refusé).");
+        hydrating.current = false;
+        return;
+      }
+
+      await applyFormToState(row);
+      hydrating.current = false;
+    },
+    [applyFormToState]
+  );
+
+  /* ===========================
+     Load last form (fallback)
   =========================== */
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
+    setMsg(null);
 
     const { data: row, error } = await supabase
-  .from(FORMS_TABLE)
-  .select("id, data, created_at")
-  .eq("user_id", userId)
-  .eq("form_type", type)
-  .eq("annee", anneeImposition || null)
-  .order("created_at", { ascending: false })
-  .limit(1)
-  .maybeSingle<FormRow>();
+      .from(FORMS_TABLE)
+      .select("id, data, created_at")
+      .eq("user_id", userId)
+      .eq("form_type", type)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<FormRow>();
 
     if (error) {
       setMsg(`Erreur chargement: ${error.message}`);
@@ -622,107 +771,17 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
       return;
     }
 
-    const fid = row.id;
-    setFormulaireId(fid);
-
-    const form = row.data;
-
-    const client = form?.client ?? {};
-    setPrenom(client.prenom ?? "");
-    setNom(client.nom ?? "");
-    setNas(client.nas ? formatNASInput(client.nas) : "");
-    setDob(client.dob ?? "");
-    setEtatCivil(client.etatCivil ?? "");
-
-    setEtatCivilChange(!!client.etatCivilChange);
-    setAncienEtatCivil(client.ancienEtatCivil ?? "");
-    setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
-
-    setTel(client.tel ? formatPhoneInput(client.tel) : "");
-    setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
-    setAdresse(client.adresse ?? "");
-    setApp(client.app ?? "");
-    setVille(client.ville ?? "");
-    setProvince(client.province ?? "QC");
-    setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
-    setCourriel(client.courriel ?? "");
-
-    const cj = form?.conjoint ?? null;
-    setAUnConjoint(!!cj);
-
-    if (cj) {
-      setTraiterConjoint(!!cj.traiterConjoint);
-      setPrenomConjoint(cj.prenomConjoint ?? "");
-      setNomConjoint(cj.nomConjoint ?? "");
-      setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
-      setDobConjoint(cj.dobConjoint ?? "");
-      setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
-      setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
-      setCourrielConjoint(cj.courrielConjoint ?? "");
-
-      setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
-      setAdresseConjoint(cj.adresseConjoint ?? "");
-      setAppConjoint(cj.appConjoint ?? "");
-      setVilleConjoint(cj.villeConjoint ?? "");
-      setProvinceConjoint(cj.provinceConjoint ?? "QC");
-      setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
-      setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
-    } else {
-      setTraiterConjoint(true);
-      setPrenomConjoint("");
-      setNomConjoint("");
-      setNasConjoint("");
-      setDobConjoint("");
-      setTelConjoint("");
-      setTelCellConjoint("");
-      setCourrielConjoint("");
-      setAdresseConjointeIdentique(true);
-      setAdresseConjoint("");
-      setAppConjoint("");
-      setVilleConjoint("");
-      setProvinceConjoint("QC");
-      setCodePostalConjoint("");
-      setRevenuNetConjoint("");
-    }
-
-    const meds = form?.assuranceMedicamenteuse ?? null;
-    if (meds?.client) {
-      setAssuranceMedsClient(meds.client.regime ?? "");
-      setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
-    } else {
-      setAssuranceMedsClient("");
-      setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
-    }
-
-    if (meds?.conjoint) {
-      setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
-      setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
-    } else {
-      setAssuranceMedsConjoint("");
-      setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
-    }
-
-    setEnfants(form?.personnesACharge ?? []);
-
-    const q = form?.questionsGenerales ?? {};
-    setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
-    setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
-    setBiensEtranger100k(q.biensEtranger100k ?? "");
-    setCitoyenCanadien(q.citoyenCanadien ?? "");
-    setNonResident(q.nonResident ?? "");
-    setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
-    setAppelerTechnicien(q.appelerTechnicien ?? "");
-    setCopieImpots(q.copieImpots ?? "");
-    setAnneeImposition(q.anneeImposition ?? ""); // ✅ preload
-
-    await loadDocs(fid);
-
+    await applyFormToState(row);
     hydrating.current = false;
-  }, [userId, type, anneeImposition, loadDocs]);
+  }, [userId, type, applyFormToState]);
 
+  /* ===========================
+     Preload logic
+  =========================== */
   useEffect(() => {
-    void loadLastForm();
-  }, [loadLastForm]);
+    if (fid) void loadFormById(fid);
+    else void loadLastForm();
+  }, [fid, loadFormById, loadLastForm]);
 
   /* ===========================
      Autosave debounce
@@ -739,7 +798,7 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [lang, type, draftData, saveDraft]);
+  }, [draftData, lang, type, saveDraft]);
 
   /* ===========================
      Actions
@@ -754,28 +813,29 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
       setMsg("⏳ Préparation du dossier…");
 
       const fidFromSave = await saveDraft();
-      const fid = fidFromSave || fidDisplay;
+      const realFid = fidFromSave || fidDisplay;
 
-      if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
+      if (!realFid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
-      setCurrentFid(fid);
-      await loadDocs(fid);
+      setCurrentFid(realFid);
+      await loadDocs(realFid);
 
       setMsg("✅ Redirection vers le dépôt…");
 
       router.push(
-        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
+        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(realFid)}&type=${encodeURIComponent(
           type
         )}&lang=${encodeURIComponent(lang)}`
       );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
       setMsg("❌ " + message);
-      document.getElementById("ff-upload-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("ff-upload-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [saveDraft, fidDisplay, loadDocs, router, lang, type]);
 
-  // submit final sur cette page (optionnel)
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -795,7 +855,8 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
           .limit(1);
 
         if (docsErr) throw new Error(supaErr(docsErr));
-        if (!docsData || docsData.length === 0) throw new Error("Ajoutez au moins 1 document avant de soumettre.");
+        if (!docsData || docsData.length === 0)
+          throw new Error("Ajoutez au moins 1 document avant de soumettre.");
 
         const { error } = await supabase
           .from(FORMS_TABLE)
@@ -857,7 +918,8 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
           </div>
         )}
 
-        <Steps step={1} lang={lang} />
+        {/* ✅ garde fid, sinon tu le perds en navigation */}
+        <Steps step={1} lang={lang} fid={fidDisplay} />
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
@@ -1018,18 +1080,8 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
                 )}
 
                 <div className="ff-grid2 ff-mt">
-                  <Field
-                    label="Prénom (conjoint)"
-                    value={prenomConjoint}
-                    onChange={setPrenomConjoint}
-                    required={traiterConjoint}
-                  />
-                  <Field
-                    label="Nom (conjoint)"
-                    value={nomConjoint}
-                    onChange={setNomConjoint}
-                    required={traiterConjoint}
-                  />
+                  <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required={traiterConjoint} />
+                  <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required={traiterConjoint} />
 
                   <Field
                     label="NAS (conjoint)"
@@ -1378,7 +1430,7 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
             </div>
           </section>
 
-          {/* ACTION — CONTINUER (étape 1) */}
+          {/* ACTION — CONTINUER */}
           <div className="ff-submit">
             <button
               type="button"
@@ -1390,10 +1442,13 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
             </button>
 
             <div className="ff-muted" style={{ marginTop: 10 }}>
-              {docsLoading ? "Chargement des documents…" : docsCount > 0 ? `${docsCount} document(s) déjà au dossier.` : ""}
+              {docsLoading
+                ? "Chargement des documents…"
+                : docsCount > 0
+                ? `${docsCount} document(s) déjà au dossier.`
+                : ""}
             </div>
 
-            {/* Optionnel: liste de docs (si tu veux) */}
             {docsCount > 0 && (
               <div className="ff-mt">
                 <div className="ff-subtitle">Documents au dossier</div>
@@ -1412,6 +1467,11 @@ if (errorInsert) throw new Error(supaErr(errorInsert));
                 </div>
               </div>
             )}
+          </div>
+
+          {/* (optionnel) bouton submit si tu veux l’utiliser */}
+          <div className="ff-mt" style={{ display: "none" }}>
+            <button type="submit">Submit</button>
           </div>
         </form>
       </div>
