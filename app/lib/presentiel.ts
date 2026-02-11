@@ -8,7 +8,11 @@ export async function loadPresentiel(fid: string) {
     .maybeSingle();
 }
 
-export async function savePresentiel(fid: string, data: any, lang: string) {
+export async function savePresentiel(
+  fid: string,
+  data: unknown,
+  lang: string
+) {
   return supabase
     .from("formulaires_fiscaux")
     .update({ data, lang })
