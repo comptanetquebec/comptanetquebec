@@ -17,10 +17,10 @@ type FormRow = {
   status: "draft" | "ready_for_payment" | "paid" | null;
 
   // Champs optionnels (selon ta DB)
-  form_type?: string | null;
+  form_type?: string | null; // "T1" | "TA" | "T2"
   annee?: string | number | null;
 
-  // ✅ CQ côté formulaires (existe dans ta DB)
+  // CQ côté formulaires (existe dans ta DB)
   cq_id?: string | null;
 };
 
@@ -52,7 +52,7 @@ export default async function AdminDossiersPage() {
 
   if (profErr || !profile?.is_admin) redirect("/espace-client?next=/admin/dossiers");
 
-  // ✅ Source principale: formulaires_fiscaux
+  // ✅ Source principale: formulaires_fiscaux (TOUS les formulaires)
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
     .select("id, created_at, status, form_type, annee, cq_id")
@@ -68,10 +68,11 @@ export default async function AdminDossiersPage() {
   }
 
   const formRows = (forms ?? []) as FormRow[];
-  const dossierIds = formRows.map((f) => f.id);
+  const dossierIds = formRows.map((f) => String(f.id));
 
   // ✅ Statut de travail (dossier_statuses)
-  let workStatusRows: WorkStatusRow[] = [];
+  const workStatusMap = new Map<string, { status: WorkStatusRow["status"]; updated_at: string | null }>();
+
   if (dossierIds.length > 0) {
     const { data: s, error: sErr } = await supabase
       .from("dossier_statuses")
@@ -87,23 +88,16 @@ export default async function AdminDossiersPage() {
       );
     }
 
-    workStatusRows = (s ?? []) as WorkStatusRow[];
+    const workStatusRows = (s ?? []) as WorkStatusRow[];
+    for (const row of workStatusRows) {
+      workStatusMap.set(String(row.formulaire_id), {
+        status: row.status,
+        updated_at: row.updated_at ?? null,
+      });
+    }
   }
 
-  const workStatusMap = new Map<
-    string,
-    { status: WorkStatusRow["status"]; updated_at: string | null }
-  >();
-
-  for (const s of workStatusRows) {
-    workStatusMap.set(String(s.formulaire_id), {
-      status: s.status,
-      updated_at: s.updated_at ?? null,
-    });
-  }
-
-  // ✅ Optionnel: CQ + année depuis dossiers (si tu décides de l'utiliser)
-  // On ne bloque JAMAIS l'admin si cette table est vide / pas liée.
+  // ✅ Optionnel: CQ + année depuis dossiers (ne bloque jamais)
   const dossiersMap = new Map<string, { cq_id: string | null; annee: string | number | null }>();
 
   if (dossierIds.length > 0) {
@@ -123,24 +117,25 @@ export default async function AdminDossiersPage() {
     }
   }
 
-  // ✅ Rows UI (CQ + paiement + statuts + date)
+  // ✅ Rows UI
   const rows: AdminDossierRow[] = formRows.map((f) => {
-    const work = workStatusMap.get(f.id);
-    const d = dossiersMap.get(f.id);
+    const work = workStatusMap.get(String(f.id));
+    const d = dossiersMap.get(String(f.id));
 
     const st = work?.status ?? "recu";
     const up = work?.updated_at ?? null;
 
+    // paiement (doit matcher AdminDossierRow["payment_status"])
     const payment_status = (f.status ?? null) as AdminDossierRow["payment_status"];
 
-    // Priorité CQ: dossiers.cq_id si un jour il existe, sinon formulaires_fiscaux.cq_id
+    // CQ: dossiers.cq_id si présent, sinon formulaires_fiscaux.cq_id
     const cq_id = (d?.cq_id ?? f.cq_id ?? null) as string | null;
 
-    // Année: dossiers.annee si dispo, sinon formulaires_fiscaux.annee
+    // année: dossiers.annee si présent, sinon formulaires_fiscaux.annee
     const tax_year = toTaxYear(d?.annee ?? f.annee ?? null);
 
     return {
-      formulaire_id: f.id,
+      formulaire_id: String(f.id),
       cq_id,
       payment_status,
       created_at: f.created_at ?? null,
