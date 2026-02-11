@@ -6,18 +6,23 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
 // ✅ CSS présentiel (global)
-// ✅ CSS présentiel (global)
 import "../formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 
-import { Field, YesNoField, SelectField, type YesNo } from "@/app/formulaire-fiscal-presentiel/ui";
+// ✅ UI shared (stable)
+import {
+  Field,
+  YesNoField,
+  SelectField,
+  type YesNo,
+} from "@/app/formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
  */
 const FORMS_TABLE = "formulaires_fiscaux";
+const FORM_TYPE_T2 = "T2" as const;
 
 type Lang = "fr" | "en" | "es";
-type FormTypeDb = "T2";
 type InsertIdRow = { id: string };
 
 type ProvinceCode =
@@ -113,13 +118,17 @@ type T2Data = {
 };
 
 type Formdata = {
-  dossierType: FormTypeDb;
+  dossierType: typeof FORM_TYPE_T2;
   canal?: "presentiel";
   t2?: T2Data;
 };
 
 type FormRow = {
   id: string;
+  user_id: string | null;
+  form_type: string | null;
+  lang: Lang | null;
+  annee: string | null;
   data: Formdata | null;
   created_at: string | null;
 };
@@ -134,7 +143,6 @@ export default function PresentielT2Client({
   fid: string; // ✅ dossier existant (présentiel)
 }) {
   const router = useRouter();
-  const type: FormTypeDb = "T2";
 
   const [msg, setMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -146,7 +154,7 @@ export default function PresentielT2Client({
   const saveTimer = useRef<number | null>(null);
 
   // ---- champs T2
-  const [anneeImposition, setAnneeImposition] = useState<string>("");
+  const [anneeImposition, setAnneeImposition] = useState("");
 
   const [companyName, setCompanyName] = useState("");
   const [craNumber, setCraNumber] = useState("");
@@ -207,9 +215,8 @@ export default function PresentielT2Client({
       notes: notes.trim(),
     };
 
-    return { dossierType: type, canal: "presentiel", t2 };
+    return { dossierType: FORM_TYPE_T2, canal: "presentiel", t2 };
   }, [
-    type,
     anneeImposition,
     companyName,
     craNumber,
@@ -241,22 +248,25 @@ export default function PresentielT2Client({
 
     const annee = anneeImposition.trim() || null;
 
+    // ✅ UPDATE dossier existant
     if (formulaireId) {
       const { error } = await supabase
         .from(FORMS_TABLE)
         .update({ lang, annee, data: draftData })
-        .eq("id", formulaireId);
+        .eq("id", formulaireId)
+        .eq("user_id", userId) // ✅ sécurité
+        .eq("form_type", FORM_TYPE_T2); // ✅ sécurité
 
       if (error) throw new Error(supaErr(error));
       return formulaireId;
     }
 
-    // fallback (si tu ouvres sans fid)
+    // ✅ fallback (si tu ouvres sans fid)
     const { data: dataInsert, error: errorInsert } = await supabase
       .from(FORMS_TABLE)
       .insert({
         user_id: userId,
-        form_type: type,
+        form_type: FORM_TYPE_T2,
         lang,
         status: "draft",
         annee,
@@ -266,14 +276,18 @@ export default function PresentielT2Client({
       .single<InsertIdRow>();
 
     if (errorInsert) throw new Error(supaErr(errorInsert));
+
     const newId = dataInsert?.id ?? null;
     if (newId) setFormulaireId(newId);
     return newId;
-  }, [anneeImposition, draftData, formulaireId, lang, submitting, type, userId]);
+  }, [anneeImposition, draftData, formulaireId, lang, submitting, userId]);
 
-  // ✅ présentiel: charge le dossier par ID (fid)
+  // ✅ charge le dossier par ID (fid)
   const loadForm = useCallback(async () => {
-    if (!formulaireId) return;
+    if (!formulaireId) {
+      setMsg("❌ fid manquant.");
+      return;
+    }
 
     hydrating.current = true;
     setMsg(null);
@@ -281,8 +295,10 @@ export default function PresentielT2Client({
     try {
       const { data: row, error } = await supabase
         .from(FORMS_TABLE)
-        .select("id, data, created_at")
+        .select("id, user_id, form_type, lang, annee, data, created_at")
         .eq("id", formulaireId)
+        .eq("user_id", userId) // ✅ présentiel: toi
+        .eq("form_type", FORM_TYPE_T2)
         .maybeSingle<FormRow>();
 
       if (error) throw new Error(supaErr(error));
@@ -290,7 +306,7 @@ export default function PresentielT2Client({
 
       const t2 = row.data.t2;
 
-      setAnneeImposition(t2.anneeImposition ?? "");
+      setAnneeImposition(t2.anneeImposition ?? row.annee ?? "");
       setCompanyName(t2.companyName ?? "");
       setCraNumber(t2.craNumber ?? "");
       setNeq(t2.neq ?? "");
@@ -298,7 +314,7 @@ export default function PresentielT2Client({
 
       setAddrStreet(t2.addrStreet ?? "");
       setAddrCity(t2.addrCity ?? "");
-      setAddrProv(((t2.addrProv ?? "QC") as ProvinceCode));
+      setAddrProv((t2.addrProv ?? "QC") as ProvinceCode);
       setAddrPostal(t2.addrPostal ? formatPostalInput(t2.addrPostal) : "");
 
       setYearEnd(t2.yearEnd ?? "");
@@ -322,7 +338,7 @@ export default function PresentielT2Client({
     } finally {
       hydrating.current = false;
     }
-  }, [formulaireId]);
+  }, [formulaireId, userId]);
 
   useEffect(() => {
     void loadForm();
@@ -347,8 +363,8 @@ export default function PresentielT2Client({
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
 
-  // ✅ bouton “Terminer” (met le dossier en recu)
-  const terminer = useCallback(async () => {
+  // ✅ bouton “Enregistrer” (met le dossier en recu)
+  const enregistrer = useCallback(async () => {
     if (submitting) return;
     setSubmitting(true);
     setMsg(null);
@@ -363,7 +379,9 @@ export default function PresentielT2Client({
       const { error } = await supabase
         .from(FORMS_TABLE)
         .update({ status: "recu", annee, data: draftData, lang })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", userId)
+        .eq("form_type", FORM_TYPE_T2);
 
       if (error) throw new Error(supaErr(error));
 
@@ -373,7 +391,7 @@ export default function PresentielT2Client({
     } finally {
       setSubmitting(false);
     }
-  }, [anneeImposition, draftData, saveDraft, submitting, lang]);
+  }, [anneeImposition, draftData, saveDraft, submitting, lang, userId]);
 
   return (
     <main className="ff-bg">
@@ -544,7 +562,7 @@ export default function PresentielT2Client({
               type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
               disabled={submitting}
-              onClick={terminer}
+              onClick={enregistrer}
             >
               Enregistrer (présentiel)
             </button>
