@@ -26,10 +26,7 @@ function normalizeLang(v: string | null | undefined): Lang {
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
 }
 
-/* ===========================
-   Types
-=========================== */
-
+/* =========================== Types =========================== */
 type ProvinceCode =
   | "QC"
   | "ON"
@@ -48,6 +45,7 @@ type ProvinceCode =
 type Sexe = "M" | "F" | "X" | "";
 type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 type CopieImpots = "espaceClient" | "courriel" | "";
+
 type EtatCivil =
   | "celibataire"
   | "conjointDefait"
@@ -89,7 +87,6 @@ type FormClientdata = {
   etatCivilChange?: boolean;
   ancienEtatCivil?: string;
   dateChangementEtatCivil?: string;
-
   tel?: string;
   telCell?: string;
   adresse?: string;
@@ -109,14 +106,12 @@ type FormConjointdata = {
   telConjoint?: string;
   telCellConjoint?: string;
   courrielConjoint?: string;
-
   adresseConjointeIdentique?: boolean;
   adresseConjoint?: string;
   appConjoint?: string;
   villeConjoint?: string;
   provinceConjoint?: ProvinceCode;
   codePostalConjoint?: string;
-
   revenuNetConjoint?: string;
 };
 
@@ -134,7 +129,7 @@ type FormQuestionsdata = {
   maisonAcheteeOuVendue?: YesNo;
   appelerTechnicien?: YesNo;
   copieImpots?: CopieImpots;
-  anneeImposition?: string;
+  anneeImposition?: string; // ✅ ajouté
 };
 
 type Formdata = {
@@ -152,14 +147,12 @@ type FormRow = {
   form_type?: FormTypeDb;
   lang?: string;
   status?: string;
+  annee?: string | null;
   data: Formdata | null;
   created_at: string;
 };
 
-/* ===========================
-   Helpers
-=========================== */
-
+/* =========================== Helpers =========================== */
 const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "QC", label: "QC" },
   { value: "ON", label: "ON" },
@@ -176,7 +169,8 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "NU", label: "NU" },
 ];
 
-function titleFromType(_type: FormTypeDb) {
+function titleFromType(type: FormTypeDb) {
+  if (type === "T2") return "Société (T2)";
   return "Particulier (T1)";
 }
 
@@ -190,10 +184,7 @@ function updatePeriode(list: Periode[], idx: number, patch: Partial<Periode>) {
   return list.map((p, i) => (i === idx ? { ...p, ...patch } : p));
 }
 
-/* ===========================
-   Format LIVE
-=========================== */
-
+/* =========================== Format LIVE =========================== */
 function formatNASInput(v: string) {
   const d = (v || "").replace(/\D+/g, "").slice(0, 9);
   const a = d.slice(0, 3);
@@ -231,10 +222,7 @@ function formatPostalInput(v: string) {
   return `${s.slice(0, 3)} ${s.slice(3, 6)}`;
 }
 
-/* ===========================
-   Normalize
-=========================== */
-
+/* =========================== Normalize =========================== */
 function normalizeNAS(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 9);
 }
@@ -245,46 +233,36 @@ function normalizePhone(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
 
-/* ===========================
-   PAGE WRAPPER (RequireAuth)
-=========================== */
-
+/* =========================== PAGE WRAPPER (RequireAuth) =========================== */
 export default function FormulaireFiscalPage() {
   const params = useSearchParams();
-  const type: FormTypeDb = "T1";
-  const lang = normalizeLang(params.get("lang") || "fr");
-  const fid = params.get("fid"); // ✅ IMPORTANT
 
-  const nextPath = useMemo(() => {
-    const q = new URLSearchParams();
-    q.set("lang", lang);
-    if (fid) q.set("fid", fid);
-    return `/formulaire-fiscal?${q.toString()}`;
-  }, [lang, fid]);
+  // ⚠️ identique à ton code : ici c'est figé à T1
+  const type: FormTypeDb = "T1";
+
+  const lang = normalizeLang(params.get("lang") || "fr");
+
+  const nextPath = useMemo(
+    () => `/formulaire-fiscal?type=${type}&lang=${lang}`,
+    [type, lang]
+  );
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => (
-        <FormulaireFiscalInner userId={userId} lang={lang} type={type} fid={fid} />
-      )}
+      {(userId) => <FormulaireFiscalInner userId={userId} lang={lang} type={type} />}
     </RequireAuth>
   );
 }
 
-/* ===========================
-   INNER
-=========================== */
-
+/* =========================== INNER =========================== */
 function FormulaireFiscalInner({
   userId,
   lang,
   type,
-  fid,
 }: {
   userId: string;
   lang: Lang;
   type: FormTypeDb;
-  fid: string | null;
 }) {
   const router = useRouter();
   const formTitle = titleFromType(type);
@@ -299,6 +277,8 @@ function FormulaireFiscalInner({
 
   // évite autosave pendant le preload
   const hydrating = useRef(false);
+
+  // debounce autosave
   const saveTimer = useRef<number | null>(null);
 
   // docs
@@ -306,19 +286,15 @@ function FormulaireFiscalInner({
   const [docsLoading, setDocsLoading] = useState(false);
   const docsCount = docs.length;
 
-  /* ===========================
-     States - Client
-  =========================== */
+  /* =========================== States - Client =========================== */
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [nas, setNas] = useState("");
   const [dob, setDob] = useState("");
   const [etatCivil, setEtatCivil] = useState<EtatCivil>("");
-
   const [etatCivilChange, setEtatCivilChange] = useState(false);
   const [ancienEtatCivil, setAncienEtatCivil] = useState("");
   const [dateChangementEtatCivil, setDateChangementEtatCivil] = useState("");
-
   const [tel, setTel] = useState("");
   const [telCell, setTelCell] = useState("");
   const [adresse, setAdresse] = useState("");
@@ -328,12 +304,9 @@ function FormulaireFiscalInner({
   const [codePostal, setCodePostal] = useState("");
   const [courriel, setCourriel] = useState("");
 
-  /* ===========================
-     Conjoint
-  =========================== */
+  /* =========================== Conjoint =========================== */
   const [aUnConjoint, setAUnConjoint] = useState(false);
   const [traiterConjoint, setTraiterConjoint] = useState(true);
-
   const [prenomConjoint, setPrenomConjoint] = useState("");
   const [nomConjoint, setNomConjoint] = useState("");
   const [nasConjoint, setNasConjoint] = useState("");
@@ -341,7 +314,6 @@ function FormulaireFiscalInner({
   const [telConjoint, setTelConjoint] = useState("");
   const [telCellConjoint, setTelCellConjoint] = useState("");
   const [courrielConjoint, setCourrielConjoint] = useState("");
-
   const [adresseConjointeIdentique, setAdresseConjointeIdentique] = useState(true);
   const [adresseConjoint, setAdresseConjoint] = useState("");
   const [appConjoint, setAppConjoint] = useState("");
@@ -350,9 +322,7 @@ function FormulaireFiscalInner({
   const [codePostalConjoint, setCodePostalConjoint] = useState("");
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
-  /* ===========================
-     Assurance meds
-  =========================== */
+  /* =========================== Assurance meds =========================== */
   const [assuranceMedsClient, setAssuranceMedsClient] = useState<AssuranceMeds>("");
   const [assuranceMedsClientPeriodes, setAssuranceMedsClientPeriodes] = useState<Periode[]>([
     { debut: "", fin: "" },
@@ -363,13 +333,13 @@ function FormulaireFiscalInner({
     { debut: "", fin: "" },
   ]);
 
-  /* ===========================
-     Enfants
-  =========================== */
+  /* =========================== Enfants =========================== */
   const [enfants, setEnfants] = useState<Child[]>([]);
+
   const ajouterEnfant = useCallback(() => {
     setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
   }, []);
+
   const updateEnfant = useCallback((i: number, field: keyof Child, value: string) => {
     setEnfants((prev) => {
       const copy = [...prev];
@@ -377,13 +347,12 @@ function FormulaireFiscalInner({
       return copy;
     });
   }, []);
+
   const removeEnfant = useCallback((i: number) => {
     setEnfants((prev) => prev.filter((_, idx) => idx !== i));
   }, []);
 
-  /* ===========================
-     Questions
-  =========================== */
+  /* =========================== Questions =========================== */
   const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<YesNo>("");
   const [nbPersonnesMaison3112, setNbPersonnesMaison3112] = useState("");
   const [biensEtranger100k, setBiensEtranger100k] = useState<YesNo>("");
@@ -392,11 +361,9 @@ function FormulaireFiscalInner({
   const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
   const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
-  const [anneeImposition, setAnneeImposition] = useState<string>("");
+  const [anneeImposition, setAnneeImposition] = useState<string>(""); // ✅ maintenant sauvegardé
 
-  /* ===========================
-     Docs helpers
-  =========================== */
+  /* =========================== Docs helpers =========================== */
   const loadDocs = useCallback(async (fid: string) => {
     setDocsLoading(true);
 
@@ -414,15 +381,13 @@ function FormulaireFiscalInner({
       setMsg(`Erreur docs: ${error.message}`);
       return;
     }
+
     setDocs((data as DocRow[]) || []);
   }, []);
 
   const getSignedUrl = useCallback(async (path: string) => {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrl(path, 60 * 10);
-    if (error || !data?.signedUrl)
-      throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
+    const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) throw new Error(error?.message || "Impossible d’ouvrir le fichier.");
     return data.signedUrl;
   }, []);
 
@@ -439,9 +404,7 @@ function FormulaireFiscalInner({
     [getSignedUrl]
   );
 
-  /* ===========================
-     Build data (memo)
-  =========================== */
+  /* =========================== Build data (memo) =========================== */
   const draftData: Formdata = useMemo(() => {
     const conjointData: FormConjointdata | null = aUnConjoint
       ? {
@@ -458,9 +421,7 @@ function FormulaireFiscalInner({
           appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
           villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
           provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
-          codePostalConjoint: normalizePostal(
-            adresseConjointeIdentique ? codePostal : codePostalConjoint
-          ),
+          codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
           revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
         }
       : null;
@@ -513,7 +474,7 @@ function FormulaireFiscalInner({
         maisonAcheteeOuVendue,
         appelerTechnicien,
         copieImpots,
-        anneeImposition: anneeImposition.trim(),
+        anneeImposition: anneeImposition.trim(), // ✅ ajouté
       },
     };
   }, [
@@ -566,9 +527,7 @@ function FormulaireFiscalInner({
     anneeImposition,
   ]);
 
-  /* ===========================
-     Save draft (insert/update)
-  =========================== */
+  /* =========================== Save draft (insert/update) =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
     if (hydrating.current) return formulaireId ?? null;
     if (submitting) return formulaireId ?? null;
@@ -603,160 +562,21 @@ function FormulaireFiscalInner({
 
     if (errorInsert) throw new Error(supaErr(errorInsert));
 
-    const newFid = dataInsert?.id ?? null;
-    if (newFid) setFormulaireId(newFid);
-    return newFid;
+    const fid = dataInsert?.id ?? null;
+    if (fid) setFormulaireId(fid);
+    return fid;
   }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
-  /* ===========================
-     Apply row.data to states
-  =========================== */
-  const applyFormToState = useCallback(
-    async (row: FormRow) => {
-      const realId = row.id;
-      setFormulaireId(realId);
-      setCurrentFid(realId);
-
-      const form = row.data;
-
-      const client = form?.client ?? {};
-      setPrenom(client.prenom ?? "");
-      setNom(client.nom ?? "");
-      setNas(client.nas ? formatNASInput(client.nas) : "");
-      setDob(client.dob ?? "");
-      setEtatCivil(client.etatCivil ?? "");
-
-      setEtatCivilChange(!!client.etatCivilChange);
-      setAncienEtatCivil(client.ancienEtatCivil ?? "");
-      setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
-
-      setTel(client.tel ? formatPhoneInput(client.tel) : "");
-      setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
-      setAdresse(client.adresse ?? "");
-      setApp(client.app ?? "");
-      setVille(client.ville ?? "");
-      setProvince(client.province ?? "QC");
-      setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
-      setCourriel(client.courriel ?? "");
-
-      const cj = form?.conjoint ?? null;
-      setAUnConjoint(!!cj);
-
-      if (cj) {
-        setTraiterConjoint(!!cj.traiterConjoint);
-        setPrenomConjoint(cj.prenomConjoint ?? "");
-        setNomConjoint(cj.nomConjoint ?? "");
-        setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
-        setDobConjoint(cj.dobConjoint ?? "");
-        setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
-        setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
-        setCourrielConjoint(cj.courrielConjoint ?? "");
-
-        setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
-        setAdresseConjoint(cj.adresseConjoint ?? "");
-        setAppConjoint(cj.appConjoint ?? "");
-        setVilleConjoint(cj.villeConjoint ?? "");
-        setProvinceConjoint(cj.provinceConjoint ?? "QC");
-        setCodePostalConjoint(
-          cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : ""
-        );
-        setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
-      } else {
-        setTraiterConjoint(true);
-        setPrenomConjoint("");
-        setNomConjoint("");
-        setNasConjoint("");
-        setDobConjoint("");
-        setTelConjoint("");
-        setTelCellConjoint("");
-        setCourrielConjoint("");
-        setAdresseConjointeIdentique(true);
-        setAdresseConjoint("");
-        setAppConjoint("");
-        setVilleConjoint("");
-        setProvinceConjoint("QC");
-        setCodePostalConjoint("");
-        setRevenuNetConjoint("");
-      }
-
-      const meds = form?.assuranceMedicamenteuse ?? null;
-      if (meds?.client) {
-        setAssuranceMedsClient(meds.client.regime ?? "");
-        setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
-      } else {
-        setAssuranceMedsClient("");
-        setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
-      }
-
-      if (meds?.conjoint) {
-        setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
-        setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
-      } else {
-        setAssuranceMedsConjoint("");
-        setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
-      }
-
-      setEnfants(form?.personnesACharge ?? []);
-
-      const q = form?.questionsGenerales ?? {};
-      setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
-      setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
-      setBiensEtranger100k(q.biensEtranger100k ?? "");
-      setCitoyenCanadien(q.citoyenCanadien ?? "");
-      setNonResident(q.nonResident ?? "");
-      setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
-      setAppelerTechnicien(q.appelerTechnicien ?? "");
-      setCopieImpots(q.copieImpots ?? "");
-      setAnneeImposition(q.anneeImposition ?? "");
-
-      await loadDocs(realId);
-    },
-    [loadDocs]
-  );
-
-  /* ===========================
-     Load by fid (URL)
-  =========================== */
-  const loadFormById = useCallback(
-    async (id: string) => {
-      hydrating.current = true;
-      setMsg(null);
-
-      const { data: row, error } = await supabase
-        .from(FORMS_TABLE)
-        .select("id, data, created_at")
-        .eq("id", id)
-        .maybeSingle<FormRow>();
-
-      if (error) {
-        setMsg(`Erreur chargement: ${error.message}`);
-        hydrating.current = false;
-        return;
-      }
-      if (!row) {
-        setMsg("❌ Dossier introuvable (fid invalide ou accès refusé).");
-        hydrating.current = false;
-        return;
-      }
-
-      await applyFormToState(row);
-      hydrating.current = false;
-    },
-    [applyFormToState]
-  );
-
-  /* ===========================
-     Load last form (fallback)
-  =========================== */
+  /* =========================== Load last form (preload) =========================== */
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
-    setMsg(null);
 
     const { data: row, error } = await supabase
       .from(FORMS_TABLE)
       .select("id, data, created_at")
       .eq("user_id", userId)
       .eq("form_type", type)
+      .eq("annee", anneeImposition || null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<FormRow>();
@@ -766,26 +586,113 @@ function FormulaireFiscalInner({
       hydrating.current = false;
       return;
     }
+
     if (!row) {
       hydrating.current = false;
       return;
     }
 
-    await applyFormToState(row);
+    const fid = row.id;
+    setFormulaireId(fid);
+
+    const form = row.data;
+    const client = form?.client ?? {};
+
+    setPrenom(client.prenom ?? "");
+    setNom(client.nom ?? "");
+    setNas(client.nas ? formatNASInput(client.nas) : "");
+    setDob(client.dob ?? "");
+    setEtatCivil(client.etatCivil ?? "");
+    setEtatCivilChange(!!client.etatCivilChange);
+    setAncienEtatCivil(client.ancienEtatCivil ?? "");
+    setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
+    setTel(client.tel ? formatPhoneInput(client.tel) : "");
+    setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
+    setAdresse(client.adresse ?? "");
+    setApp(client.app ?? "");
+    setVille(client.ville ?? "");
+    setProvince(client.province ?? "QC");
+    setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
+    setCourriel(client.courriel ?? "");
+
+    const cj = form?.conjoint ?? null;
+    setAUnConjoint(!!cj);
+
+    if (cj) {
+      setTraiterConjoint(!!cj.traiterConjoint);
+      setPrenomConjoint(cj.prenomConjoint ?? "");
+      setNomConjoint(cj.nomConjoint ?? "");
+      setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
+      setDobConjoint(cj.dobConjoint ?? "");
+      setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+      setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+      setCourrielConjoint(cj.courrielConjoint ?? "");
+      setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
+      setAdresseConjoint(cj.adresseConjoint ?? "");
+      setAppConjoint(cj.appConjoint ?? "");
+      setVilleConjoint(cj.villeConjoint ?? "");
+      setProvinceConjoint(cj.provinceConjoint ?? "QC");
+      setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
+      setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+    } else {
+      setTraiterConjoint(true);
+      setPrenomConjoint("");
+      setNomConjoint("");
+      setNasConjoint("");
+      setDobConjoint("");
+      setTelConjoint("");
+      setTelCellConjoint("");
+      setCourrielConjoint("");
+      setAdresseConjointeIdentique(true);
+      setAdresseConjoint("");
+      setAppConjoint("");
+      setVilleConjoint("");
+      setProvinceConjoint("QC");
+      setCodePostalConjoint("");
+      setRevenuNetConjoint("");
+    }
+
+    const meds = form?.assuranceMedicamenteuse ?? null;
+
+    if (meds?.client) {
+      setAssuranceMedsClient(meds.client.regime ?? "");
+      setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
+    } else {
+      setAssuranceMedsClient("");
+      setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
+    }
+
+    if (meds?.conjoint) {
+      setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
+      setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
+    } else {
+      setAssuranceMedsConjoint("");
+      setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
+    }
+
+    setEnfants(form?.personnesACharge ?? []);
+
+    const q = form?.questionsGenerales ?? {};
+    setHabiteSeulTouteAnnee(q.habiteSeulTouteAnnee ?? "");
+    setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
+    setBiensEtranger100k(q.biensEtranger100k ?? "");
+    setCitoyenCanadien(q.citoyenCanadien ?? "");
+    setNonResident(q.nonResident ?? "");
+    setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
+    setAppelerTechnicien(q.appelerTechnicien ?? "");
+    setCopieImpots(q.copieImpots ?? "");
+    setAnneeImposition(q.anneeImposition ?? ""); // ✅ preload
+
+    await loadDocs(fid);
+
     hydrating.current = false;
-  }, [userId, type, applyFormToState]);
+  }, [userId, type, anneeImposition, loadDocs]);
 
-  /* ===========================
-     Preload logic
-  =========================== */
   useEffect(() => {
-    if (fid) void loadFormById(fid);
-    else void loadLastForm();
-  }, [fid, loadFormById, loadLastForm]);
+    void loadLastForm();
+  }, [loadLastForm]);
 
-  /* ===========================
-     Autosave debounce
-  =========================== */
+  /* =========================== Autosave debounce =========================== */
   useEffect(() => {
     if (hydrating.current) return;
 
@@ -798,11 +705,9 @@ function FormulaireFiscalInner({
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [draftData, lang, type, saveDraft]);
+  }, [lang, type, draftData, saveDraft]);
 
-  /* ===========================
-     Actions
-  =========================== */
+  /* =========================== Actions =========================== */
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
@@ -813,17 +718,17 @@ function FormulaireFiscalInner({
       setMsg("⏳ Préparation du dossier…");
 
       const fidFromSave = await saveDraft();
-      const realFid = fidFromSave || fidDisplay;
+      const fid = fidFromSave || fidDisplay;
 
-      if (!realFid) throw new Error("Impossible de créer le dossier (fid manquant).");
+      if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
-      setCurrentFid(realFid);
-      await loadDocs(realFid);
+      setCurrentFid(fid);
+      await loadDocs(fid);
 
       setMsg("✅ Redirection vers le dépôt…");
 
       router.push(
-        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(realFid)}&type=${encodeURIComponent(
+        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
           type
         )}&lang=${encodeURIComponent(lang)}`
       );
@@ -836,6 +741,7 @@ function FormulaireFiscalInner({
     }
   }, [saveDraft, fidDisplay, loadDocs, router, lang, type]);
 
+  // submit final sur cette page (optionnel)
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -877,9 +783,7 @@ function FormulaireFiscalInner({
     [saveDraft, fidDisplay, userId]
   );
 
-  /* ===========================
-     Render
-  =========================== */
+  /* =========================== Render =========================== */
   return (
     <main className="ff-bg">
       <div className="ff-container">
@@ -907,8 +811,8 @@ function FormulaireFiscalInner({
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
-            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour préparer
-            vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
+            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations
+            pour préparer vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
           </p>
         </div>
 
@@ -918,8 +822,7 @@ function FormulaireFiscalInner({
           </div>
         )}
 
-        {/* ✅ garde fid, sinon tu le perds en navigation */}
-        <Steps step={1} lang={lang} fid={fidDisplay} />
+        <Steps step={1} lang={lang} />
 
         <form onSubmit={handleSubmit} className="ff-form">
           {/* SECTION CLIENT */}
@@ -932,7 +835,6 @@ function FormulaireFiscalInner({
             <div className="ff-grid2">
               <Field label="Prénom" value={prenom} onChange={setPrenom} required />
               <Field label="Nom" value={nom} onChange={setNom} required />
-
               <Field
                 label="Numéro d’assurance sociale (NAS)"
                 value={nas}
@@ -943,7 +845,6 @@ function FormulaireFiscalInner({
                 formatter={formatNASInput}
                 maxLength={11}
               />
-
               <Field
                 label="Date de naissance (JJ/MM/AAAA)"
                 value={dob}
@@ -971,7 +872,6 @@ function FormulaireFiscalInner({
                 ]}
                 required
               />
-
               <CheckboxField
                 label="Mon état civil a changé durant l'année"
                 checked={etatCivilChange}
@@ -1023,7 +923,6 @@ function FormulaireFiscalInner({
 
             <div className="ff-mt">
               <Field label="Adresse (rue)" value={adresse} onChange={setAdresse} required />
-
               <div className="ff-grid4 ff-mt-sm">
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
                 <Field label="Ville" value={ville} onChange={setVille} required />
@@ -1080,9 +979,18 @@ function FormulaireFiscalInner({
                 )}
 
                 <div className="ff-grid2 ff-mt">
-                  <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required={traiterConjoint} />
-                  <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required={traiterConjoint} />
-
+                  <Field
+                    label="Prénom (conjoint)"
+                    value={prenomConjoint}
+                    onChange={setPrenomConjoint}
+                    required={traiterConjoint}
+                  />
+                  <Field
+                    label="Nom (conjoint)"
+                    value={nomConjoint}
+                    onChange={setNomConjoint}
+                    required={traiterConjoint}
+                  />
                   <Field
                     label="NAS (conjoint)"
                     value={nasConjoint}
@@ -1092,7 +1000,6 @@ function FormulaireFiscalInner({
                     formatter={formatNASInput}
                     maxLength={11}
                   />
-
                   <Field
                     label="Date de naissance (JJ/MM/AAAA)"
                     value={dobConjoint}
@@ -1123,12 +1030,7 @@ function FormulaireFiscalInner({
                     formatter={formatPhoneInput}
                     maxLength={14}
                   />
-                  <Field
-                    label="Courriel (conjoint)"
-                    value={courrielConjoint}
-                    onChange={setCourrielConjoint}
-                    type="email"
-                  />
+                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
                 </div>
 
                 <div className="ff-mt">
@@ -1142,7 +1044,6 @@ function FormulaireFiscalInner({
                 {!adresseConjointeIdentique && (
                   <div className="ff-mt">
                     <Field label="Adresse (rue) - conjoint" value={adresseConjoint} onChange={setAdresseConjoint} />
-
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
                       <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
@@ -1177,6 +1078,7 @@ function FormulaireFiscalInner({
               </div>
 
               <div className="ff-subtitle">Couverture du client</div>
+
               <SelectField<AssuranceMeds>
                 label="Votre couverture médicaments"
                 value={assuranceMedsClient}
@@ -1230,6 +1132,7 @@ function FormulaireFiscalInner({
               {aUnConjoint && (
                 <>
                   <div className="ff-subtitle ff-mt">Couverture du conjoint</div>
+
                   <SelectField<AssuranceMeds>
                     label="Couverture médicaments du conjoint"
                     value={assuranceMedsConjoint}
@@ -1307,7 +1210,6 @@ function FormulaireFiscalInner({
                     <div className="ff-grid2">
                       <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
                       <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
-
                       <Field
                         label="Date de naissance (JJ/MM/AAAA)"
                         value={enf.dob}
@@ -1316,7 +1218,6 @@ function FormulaireFiscalInner({
                         inputMode="numeric"
                         maxLength={10}
                       />
-
                       <Field
                         label="NAS (si attribué)"
                         value={enf.nas}
@@ -1430,7 +1331,7 @@ function FormulaireFiscalInner({
             </div>
           </section>
 
-          {/* ACTION — CONTINUER */}
+          {/* ACTION — CONTINUER (étape 1) */}
           <div className="ff-submit">
             <button
               type="button"
@@ -1442,13 +1343,10 @@ function FormulaireFiscalInner({
             </button>
 
             <div className="ff-muted" style={{ marginTop: 10 }}>
-              {docsLoading
-                ? "Chargement des documents…"
-                : docsCount > 0
-                ? `${docsCount} document(s) déjà au dossier.`
-                : ""}
+              {docsLoading ? "Chargement des documents…" : docsCount > 0 ? `${docsCount} document(s) déjà au dossier.` : ""}
             </div>
 
+            {/* Optionnel: liste de docs (si tu veux) */}
             {docsCount > 0 && (
               <div className="ff-mt">
                 <div className="ff-subtitle">Documents au dossier</div>
@@ -1467,11 +1365,6 @@ function FormulaireFiscalInner({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* (optionnel) bouton submit si tu veux l’utiliser */}
-          <div className="ff-mt" style={{ display: "none" }}>
-            <button type="submit">Submit</button>
           </div>
         </form>
       </div>
