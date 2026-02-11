@@ -13,19 +13,13 @@ type FormRow = {
   id: string;
   created_at: string | null;
 
-  // ✅ statut paiement (Stripe / workflow formulaire)
-  // tes valeurs vues dans Supabase: draft | ready_for_payment | paid
+  // statut paiement (Stripe / workflow)
   status: "draft" | "ready_for_payment" | "paid" | null;
 
-  // optionnels si tu veux
-  form_type?: string | null; // T1 / TA / T2 (si présent)
-  annee?: string | number | null; // selon ta DB (si présent)
-};
-
-type DossierRow = {
-  formulaire_id: string;
+  // champs utiles
   cq_id: string | null;
-  annee: string | number | null; // selon ta DB
+  form_type: string | null;
+  annee: string | number | null;
 };
 
 export default async function AdminDossiersPage() {
@@ -44,10 +38,10 @@ export default async function AdminDossiersPage() {
 
   if (profErr || !profile?.is_admin) redirect("/espace-client?next=/admin/dossiers");
 
-  // ✅ Source: formulaires_fiscaux (même si 0 documents)
+  // ✅ Source unique: formulaires_fiscaux (CQ + date + type + année + statut paiement)
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, created_at, status, form_type, annee")
+    .select("id, created_at, status, cq_id, form_type, annee")
     .order("created_at", { ascending: false });
 
   if (formsErr) {
@@ -60,15 +54,15 @@ export default async function AdminDossiersPage() {
   }
 
   const formRows = (forms ?? []) as FormRow[];
-  const dossierIds = formRows.map((f) => f.id);
+  const formulaireIds = formRows.map((f) => f.id);
 
   // ✅ Statut de travail (dossier_statuses)
   let workStatusRows: WorkStatusRow[] = [];
-  if (dossierIds.length > 0) {
+  if (formulaireIds.length > 0) {
     const { data: s, error: sErr } = await supabase
       .from("dossier_statuses")
       .select("formulaire_id, status, updated_at")
-      .in("formulaire_id", dossierIds);
+      .in("formulaire_id", formulaireIds);
 
     if (sErr) {
       return (
@@ -86,6 +80,7 @@ export default async function AdminDossiersPage() {
     string,
     { status: WorkStatusRow["status"]; updated_at: string | null }
   >();
+
   for (const s of workStatusRows) {
     workStatusMap.set(String(s.formulaire_id), {
       status: s.status,
@@ -93,39 +88,16 @@ export default async function AdminDossiersPage() {
     });
   }
 
-  // ✅ CQ + année: table public.dossiers
-  // (Si ta table s'appelle autrement, change ici)
-  const cqMap = new Map<string, { cq_id: string | null; annee: string | number | null }>();
-
-  if (dossierIds.length > 0) {
-    const { data: d, error: dErr } = await supabase
-      .from("dossiers")
-      .select("formulaire_id, cq_id, annee")
-      .in("formulaire_id", dossierIds);
-
-    // On ne bloque pas l'admin si dossiers n'est pas prêt
-    if (!dErr && d) {
-      const dossierRows = d as DossierRow[];
-      for (const r of dossierRows) {
-        cqMap.set(String(r.formulaire_id), { cq_id: r.cq_id ?? null, annee: r.annee ?? null });
-      }
-    }
-  }
-
-  // ✅ Rows UI (avec CQ + paiement)
+  // ✅ Rows UI (CQ + date + statuts + type + année)
   const rows: AdminDossierRow[] = formRows.map((f) => {
     const work = workStatusMap.get(f.id);
-    const cq = cqMap.get(f.id);
 
-    // statut de travail (ton pipeline)
     const st = work?.status ?? "recu";
     const up = work?.updated_at ?? null;
 
-    // statut paiement (Stripe/workflow)
     const payment_status = (f.status ?? null) as AdminDossierRow["payment_status"];
 
-    // année (priorité: dossiers.annee sinon formulaires_fiscaux.annee)
-    const yearRaw = cq?.annee ?? f.annee ?? null;
+    const yearRaw = f.annee ?? null;
     const yearNum =
       typeof yearRaw === "number"
         ? yearRaw
@@ -135,15 +107,11 @@ export default async function AdminDossiersPage() {
 
     return {
       formulaire_id: f.id,
-      cq_id: cq?.cq_id ?? null,
+      cq_id: f.cq_id ?? null,
       payment_status,
-
       created_at: f.created_at ?? null,
-
       status: st,
       updated_at: up,
-
-      // optionnels si ton composant les affiche
       form_type: f.form_type ?? null,
       tax_year: yearNum,
     };
