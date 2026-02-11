@@ -12,28 +12,21 @@ export type DossierStatus = "recu" | "en_cours" | "attente_client" | "termine";
 export type PaymentStatus = "draft" | "ready_for_payment" | "paid";
 
 export type AdminDossierRow = {
-  // Identifiant interne (UUID du formulaire)
   formulaire_id: string;
-
-  // ✅ CQ-0000xx
   cq_id: string | null;
-
-  // ✅ statut paiement (Stripe / workflow du formulaire)
   payment_status: PaymentStatus | null;
 
-  // Infos
   created_at: string | null;
 
-  // Statut de travail (ton pipeline interne)
   status: DossierStatus;
   updated_at: string | null;
 
-  // optionnels si tu veux afficher (pas obligatoire)
-  form_type?: string | null; // T1 / TA / T2 (si tu l’as)
-  tax_year?: number | null;  // 2025 (si tu l’as)
+  form_type?: string | null;
+  tax_year?: number | null;
 };
 
 type TabKey = "todo" | "waiting" | "done";
+type SortKey = "created_desc" | "created_asc" | "updated_desc" | "cq_asc";
 
 /* ===========================
    UI helpers
@@ -77,11 +70,38 @@ function rowTab(status: DossierStatus): TabKey {
   return "todo";
 }
 
-function safeDateLabel(iso: string | null) {
+function toDate(iso: string | null): Date | null {
   if (!iso) return null;
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(iso: string | null) {
+  const d = toDate(iso);
+  if (!d) return null;
+  return d.toLocaleString("fr-CA", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function normalizeSearch(s: string) {
+  return s.trim().toLowerCase();
+}
+
+function rowSearchText(r: AdminDossierRow) {
+  const parts = [
+    r.cq_id ?? "",
+    r.formulaire_id ?? "",
+    r.form_type ?? "",
+    r.tax_year ? String(r.tax_year) : "",
+    r.payment_status ?? "",
+    r.status ?? "",
+  ];
+  return normalizeSearch(parts.join(" "));
 }
 
 /* ===========================
@@ -97,16 +117,40 @@ export default function AdminDossiersClient({
   const [tab, setTab] = useState<TabKey>("todo");
   const [savingId, setSavingId] = useState<string | null>(null);
 
+  const [query, setQuery] = useState<string>("");
+  const [sort, setSort] = useState<SortKey>("created_desc");
+
   const counts = useMemo(() => {
     const c: Record<TabKey, number> = { todo: 0, waiting: 0, done: 0 };
     for (const r of rows) c[rowTab(r.status)]++;
     return c;
   }, [rows]);
 
-  const filtered = useMemo(
-    () => rows.filter((r) => rowTab(r.status) === tab),
-    [rows, tab]
-  );
+  const filtered = useMemo(() => {
+    const q = normalizeSearch(query);
+    const base = rows.filter((r) => rowTab(r.status) === tab);
+
+    const searched =
+      q.length === 0 ? base : base.filter((r) => rowSearchText(r).includes(q));
+
+    const sorted = [...searched].sort((a, b) => {
+      const ac = toDate(a.created_at)?.getTime() ?? 0;
+      const bc = toDate(b.created_at)?.getTime() ?? 0;
+
+      const au = toDate(a.updated_at)?.getTime() ?? 0;
+      const bu = toDate(b.updated_at)?.getTime() ?? 0;
+
+      if (sort === "created_desc") return bc - ac;
+      if (sort === "created_asc") return ac - bc;
+      if (sort === "updated_desc") return bu - au;
+
+      const as = (a.cq_id ?? "").toLowerCase();
+      const bs = (b.cq_id ?? "").toLowerCase();
+      return as.localeCompare(bs);
+    });
+
+    return sorted;
+  }, [rows, tab, query, sort]);
 
   async function updateStatus(formulaire_id: string, status: DossierStatus) {
     const prev = rows;
@@ -136,7 +180,7 @@ export default function AdminDossiersClient({
   return (
     <div className="w-full px-6 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Admin – Dossiers</h1>
           <div className="text-sm text-gray-500">
@@ -157,7 +201,7 @@ export default function AdminDossiersClient({
         </div>
       </div>
 
-      {/* Cartes stats */}
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-gray-500">À faire</div>
@@ -173,7 +217,7 @@ export default function AdminDossiersClient({
         </div>
       </div>
 
-      {/* Onglets */}
+      {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-4">
         {(["todo", "waiting", "done"] as TabKey[]).map((k) => (
           <button
@@ -188,9 +232,29 @@ export default function AdminDossiersClient({
         ))}
       </div>
 
-      {/* Liste */}
+      {/* Search + sort */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center mb-4">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher (CQ, ID, type, année)…"
+          className="border rounded px-3 py-2 text-sm w-full sm:max-w-md"
+        />
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          className="border rounded px-3 py-2 text-sm w-full sm:w-auto"
+        >
+          <option value="created_desc">Tri: Création (récent)</option>
+          <option value="created_asc">Tri: Création (ancien)</option>
+          <option value="updated_desc">Tri: Dernière maj (récent)</option>
+          <option value="cq_asc">Tri: CQ (A→Z)</option>
+        </select>
+      </div>
+
+      {/* List */}
       <div className="rounded-lg border bg-white">
-        <div className="hidden md:grid grid-cols-[1fr_300px_120px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
+        <div className="hidden md:grid grid-cols-[1fr_320px_120px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
           <div>Dossier</div>
           <div>Statuts</div>
           <div className="text-right">Action</div>
@@ -203,24 +267,34 @@ export default function AdminDossiersClient({
         ) : (
           <ul className="divide-y">
             {filtered.map((r) => {
-              const created = safeDateLabel(r.created_at);
-              const updated = safeDateLabel(r.updated_at);
+              const created = formatDate(r.created_at);
+              const updated = formatDate(r.updated_at);
+
+              const mainRight = created ? ` • ${created}` : "";
+
+              // ✅ CQ si dispo, sinon "en attente"
+              const mainLeftNode = r.cq_id ? (
+                <span>{r.cq_id}</span>
+              ) : (
+                <span className="text-gray-400">CQ: (en attente)</span>
+              );
 
               return (
                 <li key={r.formulaire_id} className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_300px_120px] gap-4 items-start">
-                    {/* Col 1: Dossier */}
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_320px_120px] gap-4 items-start">
+                    {/* Col 1 */}
                     <div className="min-w-0">
                       <div className="font-semibold truncate">
-                        {r.cq_id ? `CQ: ${r.cq_id}` : `ID: ${r.formulaire_id}`}
+                        {mainLeftNode}
+                        <span className="text-gray-500 font-normal">
+                          {mainRight}
+                        </span>
                       </div>
 
-                      {/* Toujours afficher l'ID interne en dessous */}
                       <div className="text-sm text-gray-500 truncate">
                         ID: {r.formulaire_id}
                       </div>
 
-                      {/* Optionnel: type/année */}
                       {(r.form_type || r.tax_year) && (
                         <div className="text-sm text-gray-500">
                           {r.form_type ? `Type: ${r.form_type}` : null}
@@ -229,17 +303,15 @@ export default function AdminDossiersClient({
                         </div>
                       )}
 
-                      {created && (
-                        <div className="text-sm text-gray-500">Créé: {created}</div>
-                      )}
                       {updated && (
-                        <div className="text-sm text-gray-500">Maj: {updated}</div>
+                        <div className="text-sm text-gray-500">
+                          Maj: {updated}
+                        </div>
                       )}
                     </div>
 
-                    {/* Col 2: Statuts */}
+                    {/* Col 2 */}
                     <div className="flex flex-wrap items-center gap-3">
-                      {/* Paiement */}
                       {r.payment_status && (
                         <span
                           className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[r.payment_status]}`}
@@ -249,7 +321,6 @@ export default function AdminDossiersClient({
                         </span>
                       )}
 
-                      {/* Travail */}
                       <span
                         className={`px-2 py-1 rounded border text-sm ${BADGE_CLASS[r.status]}`}
                         title="Statut de travail"
@@ -275,7 +346,7 @@ export default function AdminDossiersClient({
                       </select>
                     </div>
 
-                    {/* Col 3: Action */}
+                    {/* Col 3 */}
                     <div className="md:text-right">
                       <Link
                         href={`/admin/dossiers/${encodeURIComponent(
