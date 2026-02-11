@@ -66,21 +66,23 @@ function rowTab(status: DossierStatus): TabKey {
   return "todo";
 }
 
-function toDate(iso: string | null): Date | null {
+function toDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function formatDate(iso: string | null) {
+function formatDate(iso: string | null | undefined) {
   const d = toDate(iso);
   if (!d) return null;
+  // fr-CA, heure 24h (plus propre)
   return d.toLocaleString("fr-CA", {
     year: "numeric",
     month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 
@@ -93,7 +95,7 @@ function rowSearchText(r: AdminDossierRow) {
     r.cq_id ?? "",
     r.formulaire_id ?? "",
     r.form_type ?? "",
-    r.tax_year ? String(r.tax_year) : "",
+    r.tax_year != null ? String(r.tax_year) : "",
     r.payment_status ?? "",
     r.status ?? "",
     r.form_filled ? "formulaire_rempli" : "formulaire_vide",
@@ -142,7 +144,8 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
   }, [rows, tab, query, sort]);
 
   async function updateStatus(formulaire_id: string, status: DossierStatus) {
-    const prev = rows;
+    // ✅ snapshot réel (copie), pas une référence
+    const prev = rows.map((r) => ({ ...r }));
 
     setRows((p) => p.map((r) => (r.formulaire_id === formulaire_id ? { ...r, status } : r)));
     setSavingId(formulaire_id);
@@ -239,7 +242,11 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
               const updated = formatDate(r.updated_at);
               const mainRight = created ? ` • ${created}` : "";
 
-              const mainLeftNode = r.cq_id ? <span>{r.cq_id}</span> : <span className="text-gray-400">CQ: (en attente)</span>;
+              const mainLeftNode = r.cq_id ? (
+                <span>{r.cq_id}</span>
+              ) : (
+                <span className="text-gray-400">CQ: (en attente)</span>
+              );
 
               const formBadgeClass = r.form_filled
                 ? "bg-green-100 text-green-800 border-green-200"
@@ -256,11 +263,11 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
 
                       <div className="text-sm text-gray-500 truncate">ID: {r.formulaire_id}</div>
 
-                      {(r.form_type || r.tax_year) && (
+                      {(r.form_type || r.tax_year != null) && (
                         <div className="text-sm text-gray-500">
                           {r.form_type ? `Type: ${r.form_type}` : null}
-                          {r.form_type && r.tax_year ? " • " : null}
-                          {r.tax_year ? `Année: ${r.tax_year}` : null}
+                          {r.form_type && r.tax_year != null ? " • " : null}
+                          {r.tax_year != null ? `Année: ${r.tax_year}` : null}
                         </div>
                       )}
 
@@ -269,7 +276,10 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
 
                     <div className="flex flex-wrap items-center gap-3">
                       {r.payment_status && (
-                        <span className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[r.payment_status]}`} title="Statut paiement">
+                        <span
+                          className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[r.payment_status]}`}
+                          title="Statut paiement"
+                        >
                           {PAY_LABEL[r.payment_status]}
                         </span>
                       )}
@@ -278,13 +288,14 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                         {LABEL[r.status]}
                       </span>
 
-                      {/* ✅ Formulaire rempli / non */}
                       <span className={`px-2 py-1 rounded border text-sm ${formBadgeClass}`} title="Formulaire rempli">
                         {r.form_filled ? "Formulaire: OK" : "Formulaire: vide"}
                       </span>
 
-                      {/* ✅ Docs count */}
-                      <span className="px-2 py-1 rounded border text-sm bg-slate-100 text-slate-700 border-slate-200" title="Documents déposés">
+                      <span
+                        className="px-2 py-1 rounded border text-sm bg-slate-100 text-slate-700 border-slate-200"
+                        title="Documents déposés"
+                      >
                         Docs: {r.docs_count}
                       </span>
 
