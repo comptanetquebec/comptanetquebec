@@ -14,7 +14,7 @@ import {
   YesNoField,
   SelectField,
   type YesNo,
-} from "@/app/formulaire-fiscal-presentiel/ui";
+} from "../formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
