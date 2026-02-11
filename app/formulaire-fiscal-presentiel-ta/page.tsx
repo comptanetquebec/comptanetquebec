@@ -5,8 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 // ✅ LOCAL uniquement
-import "./formulaire-fiscal-presentiel.css";
-import { Field, YesNoField, SelectField, type YesNo } from "./ui";
+import "../formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
+import {
+  Field,
+  YesNoField,
+  SelectField,
+  type YesNo,
+} from "../formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
