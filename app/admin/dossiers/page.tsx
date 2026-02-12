@@ -15,6 +15,7 @@ type FormRow = {
 };
 
 type DocCountRow = { formulaire_id: string; count: number };
+
 type StatusRow = {
   formulaire_id: string;
   status: "recu" | "en_cours" | "attente_client" | "termine";
@@ -35,7 +36,9 @@ export default async function AdminDossiersPage() {
     .eq("id", auth.user.id)
     .maybeSingle<ProfileRow>();
 
-  if (profErr || !profile?.is_admin) return <div className="p-6">Accès refusé</div>;
+  if (profErr || !profile?.is_admin) {
+    return <div className="p-6">Accès refusé</div>;
+  }
 
   // 3) Formulaires (dossiers)
   const { data: forms, error: formsErr } = await supabase
@@ -46,11 +49,19 @@ export default async function AdminDossiersPage() {
     .returns<FormRow[]>();
 
   if (formsErr) {
-    return <div className="p-6">Erreur chargement formulaires: {formsErr.message}</div>;
+    return (
+      <div className="p-6">
+        Erreur chargement formulaires: {formsErr.message}
+      </div>
+    );
   }
 
-  const ids = (forms ?? []).map((f) => f.id);
-  if (ids.length === 0) return <AdminDossiersClient rows={[]} />;
+  const list = forms ?? [];
+  const ids = list.map((f) => f.id);
+
+  if (ids.length === 0) {
+    return <AdminDossiersClient initialRows={[]} />;
+  }
 
   // 4) Docs count (optionnel)
   const { data: docsAgg, error: docsErr } = await supabase
@@ -59,7 +70,7 @@ export default async function AdminDossiersPage() {
     .in("formulaire_id", ids)
     .returns<DocCountRow[]>();
 
-  const safeDocsAgg = docsErr ? [] : (docsAgg ?? []);
+  const safeDocsAgg: DocCountRow[] = docsErr ? [] : (docsAgg ?? []);
 
   // 5) Status (optionnel)
   let statuses: StatusRow[] = [];
@@ -71,13 +82,17 @@ export default async function AdminDossiersPage() {
 
   if (!stErr && stData) statuses = stData;
 
+  // Maps
   const docsMap = new Map<string, number>();
-  safeDocsAgg.forEach((r) => docsMap.set(r.formulaire_id, Number(r.count ?? 0)));
+  safeDocsAgg.forEach((r) =>
+    docsMap.set(r.formulaire_id, Number(r.count ?? 0))
+  );
 
   const statusMap = new Map<string, StatusRow>();
   statuses.forEach((s) => statusMap.set(s.formulaire_id, s));
 
-  const rows: AdminDossierRow[] = (forms ?? []).map((f) => {
+  // Rows UI
+  const rows: AdminDossierRow[] = list.map((f) => {
     const filled =
       !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
 
@@ -86,16 +101,16 @@ export default async function AdminDossiersPage() {
     return {
       formulaire_id: f.id,
       cq_id: f.user_id ?? null,
+      payment_status: null, // si tu ajoutes payment_status plus tard
       created_at: f.created_at ?? null,
-      updated_at: st?.updated_at ?? null,
       status: st?.status ?? "recu",
+      updated_at: st?.updated_at ?? null,
       form_type: f.form_type ?? null,
       tax_year: f.annee ?? null,
-      payment_status: null,
       form_filled: filled,
       docs_count: docsMap.get(f.id) ?? 0,
     };
   });
 
-  return <AdminDossiersClient rows={rows} />;
+  return <AdminDossiersClient initialRows={rows} />;
 }
