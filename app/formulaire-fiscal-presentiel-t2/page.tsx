@@ -444,7 +444,12 @@ export default function PresentielT2Client({
 
               <div className="ff-grid2">
                 <Field label="NEQ (si Québec)" value={neq} onChange={setNeq} />
-                <Field label="Province d’incorporation" value={incProvince} onChange={setIncProvince} placeholder="QC / ON / ..." />
+                <Field
+                  label="Province d’incorporation"
+                  value={incProvince}
+                  onChange={setIncProvince}
+                  placeholder="QC / ON / ..."
+                />
               </div>
 
               <Field label="Fin d’exercice (JJ/MM/AAAA)" value={yearEnd} onChange={setYearEnd} placeholder="31/12/2025" />
@@ -452,13 +457,7 @@ export default function PresentielT2Client({
               <Field label="Adresse (rue)" value={addrStreet} onChange={setAddrStreet} />
               <div className="ff-grid2 ff-mt-sm">
                 <Field label="Ville" value={addrCity} onChange={setAddrCity} />
-                <SelectField<ProvinceCode>
-                  label="Province"
-                  value={addrProv}
-                  onChange={setAddrProv}
-                  options={PROVINCES}
-                  required
-                />
+                <SelectField<ProvinceCode> label="Province" value={addrProv} onChange={setAddrProv} options={PROVINCES} required />
               </div>
 
               <div className="ff-mt-sm">
