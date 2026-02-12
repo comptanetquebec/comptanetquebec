@@ -245,12 +245,17 @@ export default function PresentielT2Client({
     const annee = anneeImposition.trim() || null;
 
     const { error } = await supabase
-      .from(FORMS_TABLE)
-      .update({ lang, annee, data: draftData })
-      .eq("id", formulaireId)
-      .eq("user_id", userId)
-      .eq("form_type", FORM_TYPE_T2);
-
+  .from(FORMS_TABLE)
+  .update({
+    lang,
+    annee,
+    data: draftData,
+    status: "en_cours", // ✅ AJOUTE ÇA
+  })
+  .eq("id", formulaireId)
+  .eq("user_id", userId)
+  .eq("form_type", FORM_TYPE_T2);
+    
     if (error) throw new Error(supaErr(error));
     return formulaireId;
   }, [anneeImposition, draftData, formulaireId, lang, submitting, userId]);
