@@ -485,20 +485,21 @@ function Inner({
 
     const fid = formulaireId;
 
-    // UPDATE
-    if (fid) {
-      const { error } = await supabase
-        .from(FORMS_TABLE)
-        .update({
-          lang,
-          annee: anneeImposition || null,
-          data: draftData,
-        })
-        .eq("id", fid)
+   // UPDATE
+if (fid) {
+  const { error } = await supabase
+    .from(FORMS_TABLE)
+    .update({
+      lang,
+      annee: anneeImposition || null,
+      data: draftData,
+      status: "en_cours", // ✅ IMPORTANT
+    })
+    .eq("id", fid);
 
-      if (error) throw new Error(error.message);
-      return fid;
-    }
+  if (error) throw new Error(error.message);
+  return fid;
+}
 
     // INSERT
     const { data: dataInsert, error: errorInsert } = await supabase
