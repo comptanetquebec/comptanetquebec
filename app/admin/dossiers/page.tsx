@@ -1,157 +1,101 @@
-// comptanetquebec/app/admin/dossiers/page.tsx
+// app/admin/dossiers/page.tsx
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import AdminDossiersClient, { type AdminDossierRow } from "./AdminDossiersClient";
 
-type WorkStatusRow = {
+type ProfileRow = { is_admin: boolean | null };
+
+type FormRow = {
+  id: string;
+  created_at: string | null;
+  form_type: string | null;
+  annee: number | null;
+  data: any | null;
+  user_id: string | null;
+};
+
+type DocCountRow = { formulaire_id: string; count: number };
+type StatusRow = {
   formulaire_id: string;
   status: "recu" | "en_cours" | "attente_client" | "termine";
   updated_at: string | null;
 };
 
-type FormRow = {
-  id: string;
-  created_at: string | null;
-
-  // Paiement (Stripe/workflow)
-  status: "draft" | "ready_for_payment" | "paid" | null;
-
-  // Champs optionnels
-  form_type?: string | null; // "T1" | "TA" | "T2"
-  annee?: string | number | null;
-
-  // CQ côté formulaires
-  cq_id?: string | null;
-};
-
-type DossierRow = {
-  formulaire_id: string;
-  cq_id: string | null;
-  annee: string | number | null;
-};
-
-function toTaxYear(v: unknown): number | null {
-  if (typeof v === "number") return Number.isFinite(v) ? v : null;
-  if (typeof v === "string" && /^\d{4}$/.test(v)) return Number(v);
-  return null;
-}
-
 export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
 
-  // ✅ Auth obligatoire
+  // 1) Auth
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth?.user) redirect("/espace-client?next=/admin/dossiers");
 
-  // ✅ Admin obligatoire
+  // 2) Admin check
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", auth.user.id)
-    .maybeSingle();
+    .maybeSingle<ProfileRow>();
 
-  if (profErr || !profile?.is_admin) redirect("/espace-client?next=/admin/dossiers");
+  if (profErr || !profile?.is_admin) return <div className="p-6">Accès refusé</div>;
 
-  // ✅ Source principale : formulaires_fiscaux
+  // 3) Formulaires (dossiers)
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, created_at, status, form_type, annee, cq_id")
-    .order("created_at", { ascending: false });
+    .select("id, created_at, form_type, annee, data, user_id")
+    .order("created_at", { ascending: false })
+    .limit(500)
+    .returns<FormRow[]>();
 
   if (formsErr) {
-    return (
-      <div className="p-6">
-        <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
-        <p className="mt-2 text-sm opacity-80">{formsErr.message}</p>
-      </div>
-    );
+    return <div className="p-6">Erreur chargement formulaires: {formsErr.message}</div>;
   }
 
-  const formRows: FormRow[] = (forms ?? []) as FormRow[];
-  const dossierIds = formRows.map((f) => String(f.id));
+  const ids = (forms ?? []).map((f) => f.id);
+  if (ids.length === 0) return <AdminDossiersClient rows={[]} />;
 
-  // ✅ Statut de travail (dossier_statuses)
-  const workStatusMap = new Map<string, { status: WorkStatusRow["status"]; updated_at: string | null }>();
+  // 4) Docs count (optionnel)
+  const { data: docsAgg, error: docsErr } = await supabase
+    .from("formulaire_documents")
+    .select("formulaire_id, count:id")
+    .in("formulaire_id", ids)
+    .returns<DocCountRow[]>();
 
-  if (dossierIds.length > 0) {
-    const { data: s, error: sErr } = await supabase
-      .from("dossier_statuses")
-      .select("formulaire_id, status, updated_at")
-      .in("formulaire_id", dossierIds);
+  const safeDocsAgg = docsErr ? [] : (docsAgg ?? []);
 
-    if (sErr) {
-      return (
-        <div className="p-6">
-          <h1 className="text-xl font-semibold">Une erreur est survenue</h1>
-          <p className="mt-2 text-sm opacity-80">{sErr.message}</p>
-        </div>
-      );
-    }
+  // 5) Status (optionnel)
+  let statuses: StatusRow[] = [];
+  const { data: stData, error: stErr } = await supabase
+    .from("dossier_statuses")
+    .select("formulaire_id, status, updated_at")
+    .in("formulaire_id", ids)
+    .returns<StatusRow[]>();
 
-    const workStatusRows = (s ?? []) as WorkStatusRow[];
-    for (const row of workStatusRows) {
-      workStatusMap.set(String(row.formulaire_id), {
-        status: row.status,
-        updated_at: row.updated_at ?? null,
-      });
-    }
-  }
+  if (!stErr && stData) statuses = stData;
 
-  // ✅ Optionnel : CQ + année depuis dossiers (ne bloque jamais)
-  const dossiersMap = new Map<string, { cq_id: string | null; annee: string | number | null }>();
+  const docsMap = new Map<string, number>();
+  safeDocsAgg.forEach((r) => docsMap.set(r.formulaire_id, Number(r.count ?? 0)));
 
-  if (dossierIds.length > 0) {
-    const { data: d, error: dErr } = await supabase
-      .from("dossiers")
-      .select("formulaire_id, cq_id, annee")
-      .in("formulaire_id", dossierIds);
+  const statusMap = new Map<string, StatusRow>();
+  statuses.forEach((s) => statusMap.set(s.formulaire_id, s));
 
-    if (!dErr && d) {
-      const dossierRows = d as DossierRow[];
-      for (const r of dossierRows) {
-        dossiersMap.set(String(r.formulaire_id), {
-          cq_id: r.cq_id ?? null,
-          annee: r.annee ?? null,
-        });
-      }
-    }
-  }
+  const rows: AdminDossierRow[] = (forms ?? []).map((f) => {
+    const filled =
+      !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
 
-  // ✅ Rows UI (doit matcher EXACTEMENT AdminDossierRow)
-  const rows: AdminDossierRow[] = formRows.map((f) => {
-    const fid = String(f.id);
-
-    const work = workStatusMap.get(fid);
-    const d = dossiersMap.get(fid);
-
-    const st = work?.status ?? "recu";
-    const up = work?.updated_at ?? null;
-
-    // paiement (doit matcher AdminDossierRow["payment_status"])
-    const payment_status = (f.status ?? null) as AdminDossierRow["payment_status"];
-
-    // CQ : dossiers.cq_id si présent, sinon formulaires_fiscaux.cq_id
-    const cq_id = (d?.cq_id ?? f.cq_id ?? null) as string | null;
-
-    // année : dossiers.annee si présent, sinon formulaires_fiscaux.annee
-    const tax_year = toTaxYear(d?.annee ?? f.annee ?? null);
+    const st = statusMap.get(f.id);
 
     return {
-      formulaire_id: fid,
-      cq_id,
-      payment_status,
+      formulaire_id: f.id,
+      cq_id: f.user_id ?? null,
       created_at: f.created_at ?? null,
-      status: st,
-      updated_at: up,
+      updated_at: st?.updated_at ?? null,
+      status: st?.status ?? "recu",
       form_type: f.form_type ?? null,
-      tax_year,
-
-      // ✅ champs manquants qui faisaient échouer le build
-      // (valeurs safe — tu pourras brancher une vraie source après)
-      form_filled: false,
-      docs_count: 0,
+      tax_year: f.annee ?? null,
+      payment_status: null,
+      form_filled: filled,
+      docs_count: docsMap.get(f.id) ?? 0,
     };
   });
 
-  return <AdminDossiersClient initialRows={rows} />;
+  return <AdminDossiersClient rows={rows} />;
 }
