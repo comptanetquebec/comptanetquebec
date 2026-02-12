@@ -177,8 +177,8 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
   >
     FORMULAIRE PRÉSENTIEL
   </Link>
+</div> 
 </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-gray-500">À faire</div>
