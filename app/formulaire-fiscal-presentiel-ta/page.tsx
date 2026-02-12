@@ -323,7 +323,7 @@ export default function FormulaireFiscalPresentielTAPage() {
       try {
         const { data, error } = await supabase
           .from(FORMS_TABLE)
-          .select("id, user_id, form_type, lang, annee, data")
+          .select("id, user_id, form_type, lang, annee, data, status")
           .eq("id", fid)
           .maybeSingle<FormRow>();
 
@@ -413,7 +413,7 @@ if (fid) {
           user_id: userId,
           form_type: FORM_TYPE_TA,
           lang,
-          status: "draft", // si ta colonne existe
+          status: "en_cours",
           annee: anneeImposition || null,
           data: draftData,
         })
