@@ -170,15 +170,14 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
           <div className="text-sm text-gray-500">{savingId ? "Sauvegarde en cours…" : " "}</div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link href="/espace-client" className="text-sm text-blue-700 hover:underline">
-            Espace client
-          </Link>
-          <Link href="/admin" className="text-sm text-blue-700 hover:underline">
-            Admin
-          </Link>
-        </div>
-      </div>
+        <div className="flex items-center">
+  <Link
+    href="/admin"
+    className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium"
+  >
+    FORMULAIRE PRÉSENTIEL
+  </Link>
+</div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="rounded-lg border bg-white p-4">
