@@ -5,11 +5,12 @@ import SubmitWithoutPaymentButton from "./SubmitWithoutPaymentButton";
 
 type FormRow = {
   id: string;
-  form_type: string | null; // "T1" | "TA" | "T2" (selon ta DB)
+  form_type: string | null; // "T1" | "TA" | "T2"
   annee: string | number | null;
   status: "draft" | "ready_for_payment" | "paid" | null;
   cq_id: string | null;
   created_at: string | null;
+  data: unknown | null; // ✅ AJOUT: ce que le client a rempli
 };
 
 function toTaxYear(v: unknown): number | null {
@@ -21,15 +22,11 @@ function toTaxYear(v: unknown): number | null {
 function formLink(form_type: string | null, fid: string) {
   const q = new URLSearchParams();
   q.set("fid", fid);
-  // si tu veux forcer langue admin:
-  // q.set("lang", "fr");
 
-  // ⚠️ adapte ici si tes routes exactes sont différentes
   if (form_type === "T1") return `/formulaire-fiscal?${q}`;
   if (form_type === "TA") return `/formulaire-fiscal-ta?${q}`;
   if (form_type === "T2") return `/formulaire-fiscal-t2?${q}`;
 
-  // fallback
   return `/admin/dossiers/${encodeURIComponent(fid)}`;
 }
 
@@ -56,10 +53,10 @@ export default async function AdminDossierPage({
 
   const fid = params.formulaireId;
 
-  // ✅ Lire le formulaire (pour afficher type, année, paiement, etc.)
+  // ✅ Lire le formulaire + data
   const { data: form, error: formErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, form_type, annee, status, cq_id, created_at")
+    .select("id, form_type, annee, status, cq_id, created_at, data")
     .eq("id", fid)
     .maybeSingle<FormRow>();
 
@@ -83,11 +80,17 @@ export default async function AdminDossierPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-2xl font-bold">Dossier {form.cq_id ?? "CQ: (en attente)"}</h1>
+          <h1 className="text-2xl font-bold">
+            Dossier {form.cq_id ?? "CQ: (en attente)"}
+          </h1>
+
           <div className="text-sm text-gray-600 mt-1">
             ID: {fid}
-            {form.created_at ? ` • Créé: ${new Date(form.created_at).toLocaleString("fr-CA")}` : ""}
+            {form.created_at
+              ? ` • Créé: ${new Date(form.created_at).toLocaleString("fr-CA")}`
+              : ""}
           </div>
+
           <div className="text-sm text-gray-600 mt-1">
             {form.form_type ? `Type: ${form.form_type}` : "Type: -"}
             {year ? ` • Année: ${year}` : ""}
@@ -96,11 +99,13 @@ export default async function AdminDossierPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/admin/dossiers" className="text-sm text-blue-700 hover:underline">
+          <Link
+            href="/admin/dossiers"
+            className="text-sm text-blue-700 hover:underline"
+          >
             ← Retour dossiers
           </Link>
 
-          {/* ✅ Ouvrir le formulaire (auto selon type) */}
           <Link
             href={openHref}
             className="text-sm bg-black text-white px-3 py-2 rounded"
@@ -110,10 +115,20 @@ export default async function AdminDossierPage({
         </div>
       </div>
 
-      {/* ✅ Bouton admin (présentiel) : soumettre sans paiement */}
+      {/* Bouton admin (présentiel) : soumettre sans paiement */}
       <div className="mb-6">
         <SubmitWithoutPaymentButton fid={fid} />
       </div>
+
+      {/* ✅ Ce que le client a rempli */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold mb-2">
+          Formulaire rempli (JSON)
+        </h2>
+        <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-[600px]">
+          {JSON.stringify(form.data ?? {}, null, 2)}
+        </pre>
+      </section>
 
       {/* Docs */}
       <div className="flex items-center justify-between mb-2">
@@ -139,7 +154,9 @@ export default async function AdminDossierPage({
                 <td className="p-2">{d.original_name}</td>
                 <td className="p-2">{d.mime_type ?? "-"}</td>
                 <td className="p-2">
-                  {d.created_at ? new Date(d.created_at).toLocaleString("fr-CA") : "-"}
+                  {d.created_at
+                    ? new Date(d.created_at).toLocaleString("fr-CA")
+                    : "-"}
                 </td>
                 <td className="p-2 text-right">
                   <OpenDocButton docId={d.id} />
