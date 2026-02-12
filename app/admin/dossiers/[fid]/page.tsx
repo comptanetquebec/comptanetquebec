@@ -3,21 +3,20 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 type ProfileRow = { is_admin: boolean | null };
-
-type FormRow = {
-  id: string;
-  form_type: string | null;
-};
+type FormRow = { id: string; form_type: string | null };
 
 function routeForForm(form_type: string | null) {
   const t = (form_type ?? "").toLowerCase();
+
+  // adapte selon TES routes
   if (t === "t1" || t.includes("t1")) return "/formulaire-fiscal";
   if (t === "ta" || t.includes("autonome") || t.includes("ta")) return "/formulaire-fiscal-ta";
   if (t === "t2" || t.includes("t2")) return "/formulaire-fiscal-t2";
+
   return "/formulaire-fiscal";
 }
 
-export default async function AdminDossierOpenPage({
+export default async function AdminOpenDossierPage({
   params,
 }: {
   params: { fid: string };
