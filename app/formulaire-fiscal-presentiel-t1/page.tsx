@@ -229,7 +229,13 @@ type Formdata = {
   };
 };
 
-type FormStatus = "recu" | "en_cours" | "attente_client" | "termine";
+type FormStatus =
+  | "draft"
+  | "ready_for_payment"
+  | "recu"
+  | "en_cours"
+  | "attente_client"
+  | "termine";
 
 type FormRow = {
   id: string;
