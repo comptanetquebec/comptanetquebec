@@ -10,7 +10,7 @@ type FormRow = {
   created_at: string | null;
   form_type: string | null;
   annee: number | null;
-  data: any | null;
+  data: Record<string, unknown> | null;
   user_id: string | null;
 };
 
