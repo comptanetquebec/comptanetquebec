@@ -9,12 +9,14 @@ type Lang = "fr" | "en" | "es";
 type DocRow = {
   id: string;
   formulaire_id: string;
+  user_id: string | null;
   original_name: string;
   created_at: string;
 };
 
 type FormRow = {
   id: string;
+  user_id: string | null;
   form_type: "T1" | "autonome" | "T2" | string | null;
   data: unknown;
   status: string | null;
@@ -28,6 +30,10 @@ function routeForFormType(ft: string | null | undefined) {
   return "/formulaire-fiscal-presentiel-t1"; // default T1
 }
 
+function encodeQS(v: string) {
+  return encodeURIComponent(v ?? "");
+}
+
 export default function PresentielClient({
   userId,
   lang,
@@ -38,6 +44,7 @@ export default function PresentielClient({
   fid: string;
 }) {
   const router = useRouter();
+
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [form, setForm] = useState<FormRow | null>(null);
 
@@ -45,20 +52,29 @@ export default function PresentielClient({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadAll() {
-      setError(null);
+    let cancelled = false;
 
-      if (!fid) {
+    async function loadAll() {
+      setLoading(true);
+      setError(null);
+      setForm(null);
+      setDocs([]);
+
+      const cleanFid = (fid || "").trim();
+      if (!cleanFid) {
         setLoading(false);
         return;
       }
 
-      // 1) Charger le dossier (formulaire)
+      // 1) Charger le dossier (formulaire) — ✅ filtré par user_id
       const { data: f, error: fErr } = await supabase
         .from("formulaires_fiscaux")
-        .select("id, form_type, data, status, tax_year, lang")
-        .eq("id", fid)
+        .select("id, user_id, form_type, data, status, tax_year, lang")
+        .eq("id", cleanFid)
+        .eq("user_id", userId)
         .maybeSingle<FormRow>();
+
+      if (cancelled) return;
 
       if (fErr) {
         setError(fErr.message);
@@ -68,12 +84,15 @@ export default function PresentielClient({
 
       setForm(f ?? null);
 
-      // 2) Charger les documents
+      // 2) Charger les documents — ✅ filtré par formulaire_id + user_id
       const { data: d, error: dErr } = await supabase
         .from("formulaire_documents")
-        .select("id, formulaire_id, original_name, created_at")
-        .eq("formulaire_id", fid)
+        .select("id, formulaire_id, user_id, original_name, created_at")
+        .eq("formulaire_id", cleanFid)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
+
+      if (cancelled) return;
 
       if (dErr) {
         setError(dErr.message);
@@ -84,13 +103,23 @@ export default function PresentielClient({
       setLoading(false);
     }
 
-    loadAll();
-  }, [fid]);
+    void loadAll();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fid, userId]);
 
   const openExisting = () => {
-    if (!form?.form_type || !fid) return;
+    const cleanFid = (fid || "").trim();
+    if (!form?.form_type || !cleanFid) return;
+
     const base = routeForFormType(form.form_type);
-    router.push(`${base}?lang=${lang}&fid=${fid}`);
+    router.push(`${base}?lang=${encodeQS(lang)}&fid=${encodeQS(cleanFid)}`);
+  };
+
+  const goStart = (path: string) => {
+    router.push(`${path}?lang=${encodeQS(lang)}`);
   };
 
   return (
@@ -99,9 +128,10 @@ export default function PresentielClient({
         <header className="ff-header">
           <h1>Présentiel — Admin</h1>
           <p className="ff-muted">Utilisateur : {userId}</p>
-          {fid && (
+
+          {(fid || "").trim() && (
             <p className="ff-muted">
-              Dossier (fid) : <strong>{fid}</strong>
+              Dossier (fid) : <strong>{(fid || "").trim()}</strong>
             </p>
           )}
         </header>
@@ -111,48 +141,39 @@ export default function PresentielClient({
           <h2>Démarrer un dossier</h2>
 
           <div className="ff-actions">
-            <button
-              className="ff-btn"
-              onClick={() => router.push(`/formulaire-fiscal-presentiel-ta?lang=${lang}`)}
-            >
+            <button className="ff-btn" type="button" onClick={() => goStart("/formulaire-fiscal-presentiel-ta")}>
               Travailleur autonome
             </button>
 
-            <button
-              className="ff-btn"
-              onClick={() => router.push(`/formulaire-fiscal-presentiel-t1?lang=${lang}`)}
-            >
+            <button className="ff-btn" type="button" onClick={() => goStart("/formulaire-fiscal-presentiel-t1")}>
               Déclaration T1
             </button>
 
-            <button
-              className="ff-btn"
-              onClick={() => router.push(`/formulaire-fiscal-presentiel-t2?lang=${lang}`)}
-            >
+            <button className="ff-btn" type="button" onClick={() => goStart("/formulaire-fiscal-presentiel-t2")}>
               Société (T2)
             </button>
           </div>
 
           {/* ✅ Ouvrir le dossier existant */}
-          {fid && (
+          {(fid || "").trim() && (
             <div style={{ marginTop: 12 }}>
               <h3 style={{ marginBottom: 8 }}>Dossier existant</h3>
 
-              {form ? (
+              {loading ? (
+                <p className="ff-muted">Chargement…</p>
+              ) : form ? (
                 <>
                   <p className="ff-muted" style={{ marginBottom: 10 }}>
                     Type: <strong>{String(form.form_type)}</strong> — Statut:{" "}
                     <strong>{String(form.status ?? "")}</strong>
                   </p>
 
-                  <button className="ff-btn" onClick={openExisting}>
+                  <button className="ff-btn" type="button" onClick={openExisting}>
                     Ouvrir le formulaire du dossier
                   </button>
                 </>
               ) : (
-                !loading && (
-                  <p className="ff-muted">Aucun dossier trouvé pour ce fid.</p>
-                )
+                <p className="ff-muted">Aucun dossier trouvé pour ce fid (ou accès refusé).</p>
               )}
             </div>
           )}
@@ -162,22 +183,20 @@ export default function PresentielClient({
         <div className="ff-card">
           <h2>Documents au dossier</h2>
 
-          {loading && <p>Chargement…</p>}
           {error && <p className="ff-error">{error}</p>}
+          {loading && <p>Chargement…</p>}
 
-          {!loading && docs.length === 0 && (
+          {!loading && !error && docs.length === 0 && (
             <p className="ff-muted">Aucun document pour ce dossier.</p>
           )}
 
-          {docs.length > 0 && (
+          {!loading && docs.length > 0 && (
             <ul className="ff-doclist">
               {docs.map((d) => (
                 <li key={d.id}>
                   <strong>{d.original_name}</strong>
                   <br />
-                  <small>
-                    Ajouté le {new Date(d.created_at).toLocaleDateString("fr-CA")}
-                  </small>
+                  <small>Ajouté le {new Date(d.created_at).toLocaleDateString("fr-CA")}</small>
                 </li>
               ))}
             </ul>
