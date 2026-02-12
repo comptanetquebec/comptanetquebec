@@ -325,7 +325,6 @@ export default function FormulaireFiscalPresentielTAPage() {
           .from(FORMS_TABLE)
           .select("id, user_id, form_type, lang, annee, data")
           .eq("id", fid)
-          .eq("user_id", userId)
           .maybeSingle<FormRow>();
 
         if (error) throw error;
@@ -391,24 +390,22 @@ export default function FormulaireFiscalPresentielTAPage() {
     setMsg("⏳ Sauvegarde…");
 
     try {
-      // UPDATE
-      if (fid) {
-        const { error } = await supabase
-          .from(FORMS_TABLE)
-          .update({
-            lang,
-            annee: anneeImposition || null,
-            data: draftData,
-          })
-          .eq("id", fid)
-          .eq("user_id", userId);
+     // UPDATE
+if (fid) {
+  const { error } = await supabase
+    .from(FORMS_TABLE)
+    .update({
+      lang,
+      annee: anneeImposition || null,
+      data: draftData,
+    })
+    .eq("id", fid);
 
-        if (error) throw error;
+  if (error) throw error;
 
-        setMsg("✅ Sauvegardé.");
-        return fid;
-      }
-
+  setMsg("✅ Sauvegardé.");
+  return fid;
+}
       // INSERT
       const { data, error } = await supabase
         .from(FORMS_TABLE)
