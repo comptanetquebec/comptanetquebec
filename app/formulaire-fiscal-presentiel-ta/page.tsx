@@ -390,7 +390,7 @@ export default function FormulaireFiscalPresentielTAPage() {
     setMsg("⏳ Sauvegarde…");
 
     try {
-     // UPDATE
+    // UPDATE
 if (fid) {
   const { error } = await supabase
     .from(FORMS_TABLE)
@@ -398,6 +398,7 @@ if (fid) {
       lang,
       annee: anneeImposition || null,
       data: draftData,
+      status: "en_cours", // ✅ indispensable
     })
     .eq("id", fid);
 
