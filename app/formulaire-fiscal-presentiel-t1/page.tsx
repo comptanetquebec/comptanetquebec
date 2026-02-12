@@ -229,14 +229,15 @@ type Formdata = {
   };
 };
 
-type InsertIdRow = { id: string };
+type FormStatus = "recu" | "en_cours" | "attente_client" | "termine";
+
 type FormRow = {
   id: string;
   user_id: string;
   form_type: string;
   lang: Lang | null;
   annee: string | null;
-  status?: string | null;
+  status: FormStatus; // ✅ plus de string libre
   data: Formdata | null;
   created_at?: string | null;
 };
@@ -506,7 +507,7 @@ function Inner({
         user_id: userId,
         form_type: FORM_TYPE_T1,
         lang,
-        status: "draft", // si colonne existe
+        status: "en_cours",
         annee: anneeImposition || null,
         data: draftData,
       })
@@ -534,7 +535,7 @@ function Inner({
     try {
       const { data: row, error } = await supabase
         .from(FORMS_TABLE)
-        .select("id, data, annee, lang, user_id, form_type")
+        .select("id, data, annee, lang, user_id, form_type, status")
         .eq("id", fidToLoad)
         .maybeSingle<FormRow>();
 
