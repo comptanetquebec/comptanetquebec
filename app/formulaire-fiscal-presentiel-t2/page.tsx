@@ -9,12 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal-presentiel/formulaire-fiscal-presentiel.css";
 
 // ✅ UI shared (stable)
-import {
-  Field,
-  YesNoField,
-  SelectField,
-  type YesNo,
-} from "../formulaire-fiscal-presentiel/ui";
+import { Field, YesNoField, SelectField, type YesNo } from "../formulaire-fiscal-presentiel/ui";
 
 /**
  * DB
@@ -23,7 +18,6 @@ const FORMS_TABLE = "formulaires_fiscaux";
 const FORM_TYPE_T2 = "T2" as const;
 
 type Lang = "fr" | "en" | "es";
-type InsertIdRow = { id: string };
 
 type ProvinceCode =
   | "QC"
@@ -140,15 +134,16 @@ export default function PresentielT2Client({
 }: {
   userId: string;
   lang: Lang;
-  fid: string; // ✅ dossier existant (présentiel)
+  fid: string; // ✅ dossier EXISTANT (présentiel)
 }) {
   const router = useRouter();
 
+  // ✅ présentiel: fid = dossier courant, point final
+  const formulaireId = (fid || "").trim();
+
   const [msg, setMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  // ✅ présentiel: on prend fid comme dossier courant
-  const [formulaireId, setFormulaireId] = useState<string | null>(fid || null);
+  const [loading, setLoading] = useState(false);
 
   const hydrating = useRef(false);
   const saveTimer = useRef<number | null>(null);
@@ -241,54 +236,33 @@ export default function PresentielT2Client({
     notes,
   ]);
 
-  // ✅ présentiel: UPDATE si formulaireId existe (fid), sinon INSERT (fallback)
-  const saveDraft = useCallback(async (): Promise<string | null> => {
-    if (hydrating.current) return formulaireId ?? null;
-    if (submitting) return formulaireId ?? null;
+  // ✅ UPDATE ONLY (aucun INSERT ici)
+  const saveDraft = useCallback(async (): Promise<string> => {
+    if (!formulaireId) throw new Error("fid manquant");
+    if (hydrating.current) return formulaireId;
+    if (submitting) return formulaireId;
 
     const annee = anneeImposition.trim() || null;
 
-    // ✅ UPDATE dossier existant
-    if (formulaireId) {
-      const { error } = await supabase
-        .from(FORMS_TABLE)
-        .update({ lang, annee, data: draftData })
-        .eq("id", formulaireId)
-        .eq("user_id", userId) // ✅ sécurité
-        .eq("form_type", FORM_TYPE_T2); // ✅ sécurité
-
-      if (error) throw new Error(supaErr(error));
-      return formulaireId;
-    }
-
-    // ✅ fallback (si tu ouvres sans fid)
-    const { data: dataInsert, error: errorInsert } = await supabase
+    const { error } = await supabase
       .from(FORMS_TABLE)
-      .insert({
-        user_id: userId,
-        form_type: FORM_TYPE_T2,
-        lang,
-        status: "draft",
-        annee,
-        data: draftData,
-      })
-      .select("id")
-      .single<InsertIdRow>();
+      .update({ lang, annee, data: draftData })
+      .eq("id", formulaireId)
+      .eq("user_id", userId)
+      .eq("form_type", FORM_TYPE_T2);
 
-    if (errorInsert) throw new Error(supaErr(errorInsert));
-
-    const newId = dataInsert?.id ?? null;
-    if (newId) setFormulaireId(newId);
-    return newId;
+    if (error) throw new Error(supaErr(error));
+    return formulaireId;
   }, [anneeImposition, draftData, formulaireId, lang, submitting, userId]);
 
-  // ✅ charge le dossier par ID (fid)
+  // ✅ load dossier (fid obligatoire)
   const loadForm = useCallback(async () => {
     if (!formulaireId) {
       setMsg("❌ fid manquant.");
       return;
     }
 
+    setLoading(true);
     hydrating.current = true;
     setMsg(null);
 
@@ -297,7 +271,7 @@ export default function PresentielT2Client({
         .from(FORMS_TABLE)
         .select("id, user_id, form_type, lang, annee, data, created_at")
         .eq("id", formulaireId)
-        .eq("user_id", userId) // ✅ présentiel: toi
+        .eq("user_id", userId)
         .eq("form_type", FORM_TYPE_T2)
         .maybeSingle<FormRow>();
 
@@ -337,6 +311,7 @@ export default function PresentielT2Client({
       setMsg("❌ " + (e instanceof Error ? e.message : "Erreur chargement"));
     } finally {
       hydrating.current = false;
+      setLoading(false);
     }
   }, [formulaireId, userId]);
 
@@ -344,9 +319,11 @@ export default function PresentielT2Client({
     void loadForm();
   }, [loadForm]);
 
-  // autosave debounce
+  // ✅ autosave debounce (stable)
   useEffect(() => {
+    if (!formulaireId) return;
     if (hydrating.current) return;
+
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
 
     saveTimer.current = window.setTimeout(() => {
@@ -356,23 +333,27 @@ export default function PresentielT2Client({
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [draftData, saveDraft]);
+  }, [draftData, saveDraft, formulaireId]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
 
-  // ✅ bouton “Enregistrer” (met le dossier en recu)
+  // ✅ bouton “Enregistrer (présentiel)” = met status = recu
   const enregistrer = useCallback(async () => {
+    if (!formulaireId) {
+      setMsg("❌ fid manquant.");
+      return;
+    }
     if (submitting) return;
+
     setSubmitting(true);
     setMsg(null);
 
     try {
       setMsg("⏳ Sauvegarde…");
       const id = await saveDraft();
-      if (!id) throw new Error("fid manquant");
 
       const annee = anneeImposition.trim() || null;
 
@@ -391,7 +372,19 @@ export default function PresentielT2Client({
     } finally {
       setSubmitting(false);
     }
-  }, [anneeImposition, draftData, saveDraft, submitting, lang, userId]);
+  }, [anneeImposition, draftData, formulaireId, saveDraft, submitting, lang, userId]);
+
+  if (!formulaireId) {
+    return (
+      <main className="ff-bg">
+        <div className="ff-container">
+          <div className="ff-card" style={{ padding: 14 }}>
+            ❌ fid manquant (présentiel).
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="ff-bg">
@@ -423,6 +416,12 @@ export default function PresentielT2Client({
           </div>
         )}
 
+        {loading && (
+          <div className="ff-card" style={{ padding: 14 }}>
+            Chargement…
+          </div>
+        )}
+
         <form className="ff-form">
           <section className="ff-card">
             <div className="ff-card-head">
@@ -445,20 +444,10 @@ export default function PresentielT2Client({
 
               <div className="ff-grid2">
                 <Field label="NEQ (si Québec)" value={neq} onChange={setNeq} />
-                <Field
-                  label="Province d’incorporation"
-                  value={incProvince}
-                  onChange={setIncProvince}
-                  placeholder="QC / ON / ..."
-                />
+                <Field label="Province d’incorporation" value={incProvince} onChange={setIncProvince} placeholder="QC / ON / ..." />
               </div>
 
-              <Field
-                label="Fin d’exercice (JJ/MM/AAAA)"
-                value={yearEnd}
-                onChange={setYearEnd}
-                placeholder="31/12/2025"
-              />
+              <Field label="Fin d’exercice (JJ/MM/AAAA)" value={yearEnd} onChange={setYearEnd} placeholder="31/12/2025" />
 
               <Field label="Adresse (rue)" value={addrStreet} onChange={setAddrStreet} />
               <div className="ff-grid2 ff-mt-sm">
@@ -558,17 +547,12 @@ export default function PresentielT2Client({
           </section>
 
           <div className="ff-submit">
-            <button
-              type="button"
-              className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={submitting}
-              onClick={enregistrer}
-            >
+            <button type="button" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting} onClick={enregistrer}>
               Enregistrer (présentiel)
             </button>
 
             <div className="ff-muted" style={{ marginTop: 10 }}>
-              {formulaireId ? `Dossier: ${formulaireId}` : "fid manquant"}
+              Dossier: <strong>{formulaireId}</strong>
               {submitting ? " — enregistrement…" : ""}
             </div>
           </div>
