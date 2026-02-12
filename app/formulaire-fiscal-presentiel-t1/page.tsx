@@ -512,7 +512,7 @@ function Inner({
         data: draftData,
       })
       .select("id")
-      .single<InsertIdRow>();
+      .single<{ id: string }>();
 
     if (errorInsert) throw new Error(errorInsert.message);
 
