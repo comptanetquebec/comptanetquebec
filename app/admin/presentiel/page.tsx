@@ -34,10 +34,10 @@ const LANG_LABEL: Record<Lang, string> = {
 function formUrl(flow: Flow, fid: string, lang: Lang) {
   const base =
     flow === "t1"
-      ? "/formulaire-fiscal"
+      ? "/formulaire-fiscal-presentiel-t1"
       : flow === "ta"
-      ? "/formulaire-fiscal-ta"
-      : "/formulaire-fiscal-t2";
+      ? "/formulaire-fiscal-presentiel-ta"
+      : "/formulaire-fiscal-presentiel-t2";
 
   const q = new URLSearchParams({
     fid,
