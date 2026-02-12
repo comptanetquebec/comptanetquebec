@@ -17,7 +17,7 @@ import {
  * DB
  */
 const FORMS_TABLE = "formulaires_fiscaux";
-const FORM_TYPE_T1 = "t1" as const;
+const FORM_TYPE_T1 = "T1" as const;
 
 type Lang = "fr" | "en" | "es";
 function normalizeLang(v: string | null | undefined): Lang {
@@ -494,7 +494,6 @@ function Inner({
           data: draftData,
         })
         .eq("id", fid)
-        .eq("user_id", userId);
 
       if (error) throw new Error(error.message);
       return fid;
@@ -537,7 +536,6 @@ function Inner({
         .from(FORMS_TABLE)
         .select("id, data, annee, lang, user_id, form_type")
         .eq("id", fidToLoad)
-        .eq("user_id", userId)
         .maybeSingle<FormRow>();
 
       if (error) throw error;
@@ -703,7 +701,6 @@ function Inner({
             lang,
           })
           .eq("id", realFid)
-          .eq("user_id", userId);
 
         if (error) throw error;
 
