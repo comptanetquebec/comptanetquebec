@@ -159,6 +159,7 @@ function TaxChoiceCard(props: {
   href: string;
 }) {
   const { title, desc, btn, href } = props;
+
   return (
     <div className={styles.choiceCard}>
       <div className={styles.choiceCardTitle}>{title}</div>
@@ -169,6 +170,8 @@ function TaxChoiceCard(props: {
           href={href}
           className="btn btn-primary"
           style={{ width: "100%", borderRadius: 10 }}
+          aria-label={btn}
+          prefetch
         >
           {btn}
         </Link>
@@ -240,6 +243,8 @@ function TrustBar({ items }: { items: TrustItem[] }) {
 
 export default function Home() {
   const bleu = "#004aad" as const;
+
+  const btnRadius = 10;
 
   const [lang, setLang] = useState<Lang>("fr");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -315,12 +320,14 @@ export default function Home() {
           </>
         ),
 
-        heroExperience: "Plus de 30 ans d’expérience en impôt.",
+        heroExperience:
+          "Plus de 30 ans d’expérience. Des milliers de déclarations produites au Québec.",
         heroSub:
           "Service indépendant de préparation de déclarations de revenus au Québec. Vous ouvrez votre dossier, vous téléversez vos documents via un portail sécurisé, puis je prépare à partir des informations fournies. Je vous contacte s’il manque quelque chose avant l’envoi.",
 
         trust: [
           { t: "Québec seulement" },
+          { t: "Des milliers de déclarations produites" },
           { t: "Acompte requis pour ouvrir le dossier" },
           { t: "Paiement sécurisé (Stripe)" },
           { t: "Accréditation TED (transmission électronique)" },
@@ -331,17 +338,16 @@ export default function Home() {
         chooseType: "Choisissez votre situation",
         t1Title: "👤 Salarié(e), étudiant(e) ou retraité(e)",
         t1Desc: "T4, Relevé 1, pension, études, etc.",
-        t1Btn: "Ouvrir mon dossier sécurisé",
+        t1Btn: "Commencer ma déclaration maintenant",
 
         autoTitle: "💼 Travailleur autonome / à mon compte",
-        autoDesc:
-          "Revenus + dépenses d’entreprise (factures, relevés, etc.).",
-        autoBtn: "Ouvrir mon dossier sécurisé",
+        autoDesc: "Revenus + dépenses d’entreprise (factures, relevés, etc.).",
+        autoBtn: "Commencer ma déclaration maintenant",
 
         t2Title: "🏢 Compagnie incorporée",
         t2Desc:
           "Déclaration de société (T2 + CO-17) selon les documents fournis.",
-        t2Btn: "Ouvrir mon dossier sécurisé",
+        t2Btn: "Créer mon dossier corporatif",
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
         seoP1:
@@ -442,8 +448,8 @@ export default function Home() {
         whyTitle: "Pourquoi choisir ComptaNet Québec",
         whyPoints: [
           {
-            t: "Plus de 30 ans d’expérience",
-            d: "Préparation de déclarations d’impôt au Québec, avec un processus clair.",
+            t: "30+ ans d’expérience — des milliers de déclarations",
+            d: "Préparation de déclarations d’impôt au Québec, avec un processus clair et éprouvé.",
           },
           {
             t: "Accréditation TED",
@@ -537,12 +543,15 @@ export default function Home() {
             — <span style={{ color: bleu, fontWeight: 900 }}>online</span>
           </>
         ),
-        heroExperience: "Over 30 years of experience in tax returns.",
+
+        heroExperience:
+          "Over 30 years of experience. Thousands of tax returns prepared in Québec.",
         heroSub:
           "Independent Québec-only tax return preparation service. Open your file, upload documents through a secure portal, and your return is prepared from the information you provide. You’ll be contacted if anything is missing before filing.",
 
         trust: [
           { t: "Québec only" },
+          { t: "Thousands of returns prepared" },
           { t: "Deposit required to open the file" },
           { t: "Secure payment (Stripe)" },
           { t: "TED e-filing accreditation" },
@@ -553,15 +562,15 @@ export default function Home() {
         chooseType: "Choose your situation",
         t1Title: "👤 Employee, student or retiree",
         t1Desc: "T4, RL-1, pension, studies, etc.",
-        t1Btn: "Open my secure file",
+        t1Btn: "Start my tax return now",
 
         autoTitle: "💼 Self-employed / business income",
         autoDesc: "Income + expenses based on supporting documents.",
-        autoBtn: "Open my secure file",
+        autoBtn: "Start my tax return now",
 
         t2Title: "🏢 Incorporated business",
         t2Desc: "Corporate filing (T2 + CO-17) based on your documents.",
-        t2Btn: "Open my secure file",
+        t2Btn: "Open my corporate file",
 
         seoTitle: "Québec tax return service, simple and guided",
         seoP1:
@@ -635,7 +644,10 @@ export default function Home() {
 
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
-          { t: "30+ years of experience", d: "Québec tax return preparation with a clear process." },
+          {
+            t: "30+ years — thousands of returns prepared",
+            d: "Québec tax return preparation with a clear, proven process.",
+          },
           { t: "TED accreditation", d: "Electronic filing (TED) when applicable." },
           { t: "Confidentiality", d: "Information is handled strictly confidentially." },
           { t: "Secure portal", d: "Upload documents (photo or PDF) in one place." },
@@ -697,12 +709,15 @@ export default function Home() {
             — <span style={{ color: bleu, fontWeight: 900 }}>en línea</span>
           </>
         ),
-        heroExperience: "Más de 30 años de experiencia en impuestos.",
+
+        heroExperience:
+          "Más de 30 años de experiencia. Miles de declaraciones preparadas en Québec.",
         heroSub:
           "Servicio independiente solo para Québec. Abra su expediente, suba documentos por un portal seguro y preparo la declaración con la información proporcionada. Le contacto si falta algo antes de presentar.",
 
         trust: [
           { t: "Solo Québec" },
+          { t: "Miles de declaraciones preparadas" },
           { t: "Depósito requerido para abrir el expediente" },
           { t: "Pago seguro (Stripe)" },
           { t: "Acreditación TED (presentación electrónica)" },
@@ -713,15 +728,15 @@ export default function Home() {
         chooseType: "Elija su situación",
         t1Title: "👤 Empleado/a, estudiante o jubilado/a",
         t1Desc: "T4, RL-1, pensión, estudios, etc.",
-        t1Btn: "Abrir mi expediente seguro",
+        t1Btn: "Comenzar mi declaración ahora",
 
         autoTitle: "💼 Autónomo / por cuenta propia",
         autoDesc: "Ingresos + gastos según sus comprobantes.",
-        autoBtn: "Abrir mi expediente seguro",
+        autoBtn: "Comenzar mi declaración ahora",
 
         t2Title: "🏢 Empresa incorporada",
         t2Desc: "Declaración de empresa (T2 + CO-17) según sus documentos.",
-        t2Btn: "Abrir mi expediente seguro",
+        t2Btn: "Abrir mi expediente corporativo",
 
         seoTitle: "Servicio de impuestos en Québec, simple y guiado",
         seoP1:
@@ -792,7 +807,10 @@ export default function Home() {
 
         whyTitle: "Por qué elegir ComptaNet Québec",
         whyPoints: [
-          { t: "Más de 30 años de experiencia", d: "Preparación de declaraciones en Québec con un proceso claro." },
+          {
+            t: "Más de 30 años — miles de declaraciones",
+            d: "Preparación de impuestos en Québec con un proceso claro y comprobado.",
+          },
           { t: "Acreditación TED", d: "Presentación electrónica (TED) cuando aplique." },
           { t: "Confidencialidad", d: "La información se trata de forma estrictamente confidencial." },
           { t: "Portal seguro", d: "Suba documentos (foto o PDF) en un solo lugar." },
@@ -1018,13 +1036,13 @@ export default function Home() {
             <TrustBar items={T.trust} />
 
             <div className={styles.heroLinks}>
-              <Link href={toClient} className={styles.heroLink}>
+              <Link href={toClient} className={styles.heroLink} prefetch>
                 {T.nav.client}
               </Link>
 
               <span className={styles.heroSep}>•</span>
 
-              <Link href={toHelp} className={styles.heroLink}>
+              <Link href={toHelp} className={styles.heroLink} prefetch>
                 {T.nav.help}
               </Link>
 
@@ -1062,7 +1080,7 @@ export default function Home() {
                 />
               </div>
 
-              {/* ✅ Micro-ligne ultra claire */}
+              {/* ✅ Micro-ligne (trilingue) */}
               <div
                 style={{
                   marginTop: 12,
@@ -1071,8 +1089,11 @@ export default function Home() {
                   opacity: 0.95,
                 }}
               >
-                ✅ Acompte requis • ✅ Paiement sécurisé (Stripe) • ✅ Accréditation
-                TED
+                {lang === "fr"
+                  ? "✅ Acompte requis • ✅ Paiement sécurisé (Stripe) • ✅ Accréditation TED"
+                  : lang === "en"
+                  ? "✅ Deposit required • ✅ Secure payment (Stripe) • ✅ TED accreditation"
+                  : "✅ Depósito requerido • ✅ Pago seguro (Stripe) • ✅ Acreditación TED"}
               </div>
 
               <div style={{ marginTop: 10, textAlign: "center" }}>
@@ -1099,7 +1120,6 @@ export default function Home() {
         <p className={styles.sectionSub}>{T.seoP2}</p>
         <p className={styles.sectionSub}>{T.seoP3}</p>
 
-        {/* ✅ SEO local (sans promesse de couverture réelle autre que "en ligne") */}
         <p className={styles.sectionSub}>
           Service 100 % en ligne partout au Québec (ex. Québec, Montréal, Laval,
           Gatineau, Lévis, Sherbrooke, Trois-Rivières).
@@ -1163,21 +1183,24 @@ export default function Home() {
                 <Link
                   href={`${plan.href}?lang=${encodeURIComponent(lang)}`}
                   className="btn btn-primary"
-                  style={{ borderRadius: 10 }}
+                  style={{ borderRadius: btnRadius }}
+                  prefetch
                 >
                   {T.getPrice}
                 </Link>
                 <Link
                   href={toClient}
                   className="btn btn-outline"
-                  style={{ borderRadius: 10 }}
+                  style={{ borderRadius: btnRadius }}
+                  prefetch
                 >
                   {T.nav.client}
                 </Link>
                 <Link
                   href={toHelp}
                   className="btn btn-outline"
-                  style={{ borderRadius: 10 }}
+                  style={{ borderRadius: btnRadius }}
+                  prefetch
                 >
                   {T.nav.help}
                 </Link>
@@ -1208,7 +1231,11 @@ export default function Home() {
       </section>
 
       {/* CONTACT */}
-      <section id="contact" className={styles.section} style={{ marginBottom: 0 }}>
+      <section
+        id="contact"
+        className={styles.section}
+        style={{ marginBottom: 0 }}
+      >
         <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
 
         <div className={styles.contactBox}>
@@ -1251,7 +1278,7 @@ export default function Home() {
               type="submit"
               disabled={contactBusy}
               className="btn btn-primary"
-              style={{ borderRadius: 10 }}
+              style={{ borderRadius: btnRadius }}
             >
               {contactBusy ? T.sending : T.send}
             </button>
@@ -1286,6 +1313,7 @@ export default function Home() {
                   color: "#cbd5e1",
                   textDecoration: "none",
                 }}
+                prefetch
               >
                 {T.footerLinks.help}
               </Link>
@@ -1297,6 +1325,7 @@ export default function Home() {
               <Link
                 href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`}
                 style={{ color: "#94a3b8", textDecoration: "none" }}
+                prefetch
               >
                 {T.footerLinks.legal.privacy}
               </Link>
@@ -1304,6 +1333,7 @@ export default function Home() {
               <Link
                 href={`/legal/conditions?lang=${encodeURIComponent(lang)}`}
                 style={{ color: "#94a3b8", textDecoration: "none" }}
+                prefetch
               >
                 {T.footerLinks.legal.terms}
               </Link>
@@ -1311,6 +1341,7 @@ export default function Home() {
               <Link
                 href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`}
                 style={{ color: "#94a3b8", textDecoration: "none" }}
+                prefetch
               >
                 {T.footerLinks.legal.disclaimer}
               </Link>
