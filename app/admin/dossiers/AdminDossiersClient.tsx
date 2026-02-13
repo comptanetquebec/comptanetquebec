@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 export type DossierStatus = "recu" | "en_cours" | "attente_client" | "termine";
-export type PaymentStatus = "draft" | "ready_for_payment" | "paid";
+export type PaymentStatus = "unpaid" | "paid";
 
 export type AdminDossierRow = {
   formulaire_id: string;
@@ -20,7 +20,6 @@ export type AdminDossierRow = {
   form_type?: string | null;
   tax_year?: number | null;
 
-  // ✅ NOUVEAU
   form_filled: boolean;
   docs_count: number;
 };
@@ -43,14 +42,12 @@ const BADGE_CLASS: Record<DossierStatus, string> = {
 };
 
 const PAY_LABEL: Record<PaymentStatus, string> = {
-  draft: "Draft",
-  ready_for_payment: "Prêt paiement",
+  unpaid: "Non payé",
   paid: "Payé",
 };
 
 const PAY_BADGE_CLASS: Record<PaymentStatus, string> = {
-  draft: "bg-gray-100 text-gray-700 border-gray-200",
-  ready_for_payment: "bg-purple-100 text-purple-800 border-purple-200",
+  unpaid: "bg-gray-100 text-gray-700 border-gray-200",
   paid: "bg-green-100 text-green-800 border-green-200",
 };
 
@@ -75,7 +72,6 @@ function toDate(iso: string | null | undefined): Date | null {
 function formatDate(iso: string | null | undefined) {
   const d = toDate(iso);
   if (!d) return null;
-  // fr-CA, heure 24h (plus propre)
   return d.toLocaleString("fr-CA", {
     year: "numeric",
     month: "short",
@@ -144,7 +140,6 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
   }, [rows, tab, query, sort]);
 
   async function updateStatus(formulaire_id: string, status: DossierStatus) {
-    // ✅ snapshot réel (copie), pas une référence
     const prev = rows.map((r) => ({ ...r }));
 
     setRows((p) => p.map((r) => (r.formulaire_id === formulaire_id ? { ...r, status } : r)));
@@ -171,14 +166,12 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
         </div>
 
         <div className="flex items-center">
-  <Link
-    href="/admin"
-    className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium"
-  >
-    FORMULAIRE PRÉSENTIEL
-  </Link>
-</div> 
-</div>
+          <Link href="/admin" className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium">
+            FORMULAIRE PRÉSENTIEL
+          </Link>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-gray-500">À faire</div>
@@ -210,7 +203,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher (CQ, ID, type, année)…"
+          placeholder="Rechercher (CQ, ID, type, année, payé)…"
           className="border rounded px-3 py-2 text-sm w-full sm:max-w-md"
         />
         <select
@@ -241,15 +234,13 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
               const updated = formatDate(r.updated_at);
               const mainRight = created ? ` • ${created}` : "";
 
-              const mainLeftNode = r.cq_id ? (
-                <span>{r.cq_id}</span>
-              ) : (
-                <span className="text-gray-400">CQ: (en attente)</span>
-              );
+              const mainLeftNode = r.cq_id ? <span>{r.cq_id}</span> : <span className="text-gray-400">CQ: (en attente)</span>;
 
               const formBadgeClass = r.form_filled
                 ? "bg-green-100 text-green-800 border-green-200"
                 : "bg-gray-100 text-gray-700 border-gray-200";
+
+              const pay: PaymentStatus = r.payment_status ?? "unpaid";
 
               return (
                 <li key={r.formulaire_id} className="p-4">
@@ -274,14 +265,9 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                      {r.payment_status && (
-                        <span
-                          className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[r.payment_status]}`}
-                          title="Statut paiement"
-                        >
-                          {PAY_LABEL[r.payment_status]}
-                        </span>
-                      )}
+                      <span className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[pay]}`} title="Paiement">
+                        {PAY_LABEL[pay]}
+                      </span>
 
                       <span className={`px-2 py-1 rounded border text-sm ${BADGE_CLASS[r.status]}`} title="Statut de travail">
                         {LABEL[r.status]}
@@ -312,7 +298,10 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                     </div>
 
                     <div className="md:text-right">
-                      <Link href={`/admin/dossiers/${encodeURIComponent(r.formulaire_id)}`} className="text-blue-700 hover:underline text-sm">
+                      <Link
+                        href={`/admin/dossiers/${encodeURIComponent(r.formulaire_id)}`}
+                        className="text-blue-700 hover:underline text-sm"
+                      >
                         Ouvrir
                       </Link>
                     </div>
