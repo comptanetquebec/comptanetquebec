@@ -11,10 +11,7 @@ import Steps from "./Steps";
 import RequireAuth from "./RequireAuth";
 import { Field, YesNoField, SelectField, type YesNo, type SelectOption } from "./ui";
 
-import {
-  resolveLangFromParamsT2 as resolveLangFromParams,
-  type Lang,
-} from "./_lib/lang";
+import { resolveLangFromParamsT2 as resolveLangFromParams, type Lang } from "./_lib/lang";
 
 /**
  * DB
@@ -139,33 +136,27 @@ function normalizePostal(v: string) {
 
 export default function FormulaireFiscalT2Page() {
   const paramsRO = useSearchParams();
-  const params = useMemo(
-    () => new URLSearchParams(paramsRO.toString()),
-    [paramsRO]
-  );
+  const params = useMemo(() => new URLSearchParams(paramsRO.toString()), [paramsRO]);
 
   const type: FormTypeDb = "T2";
   const lang: Lang = useMemo(() => resolveLangFromParams(params), [params]);
 
   const yearParam = (params.get("year") || "").trim();
+  const fid = (params.get("fid") || "").trim() || null;
 
-  // ✅ pas de window ici (safe pour build/SSR)
+  // ✅ revenir après login en gardant fid/year
   const nextPath = useMemo(() => {
     const qs = new URLSearchParams();
     qs.set("lang", lang);
     if (yearParam) qs.set("year", yearParam);
+    if (fid) qs.set("fid", fid);
     return `/formulaire-fiscal-t2?${qs.toString()}`;
-  }, [lang, yearParam]);
+  }, [lang, yearParam, fid]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
       {(userId) => (
-        <FormulaireFiscalT2Inner
-          userId={userId}
-          lang={lang}
-          type={type}
-          initialYear={yearParam}
-        />
+        <FormulaireFiscalT2Inner userId={userId} lang={lang} type={type} initialYear={yearParam} initialFid={fid} />
       )}
     </RequireAuth>
   );
@@ -180,18 +171,24 @@ function FormulaireFiscalT2Inner({
   lang,
   type,
   initialYear,
+  initialFid,
 }: {
   userId: string;
   lang: Lang;
   type: FormTypeDb;
   initialYear: string;
+  initialFid: string | null;
 }) {
   const router = useRouter();
   const formTitle = titleFromType(type);
 
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [formulaireId, setFormulaireId] = useState<string | null>(null);
+
+  // dossier courant (fid)
+  const [formulaireId, setFormulaireId] = useState<string | null>(initialFid);
+  const [currentFid, setCurrentFid] = useState<string | null>(initialFid);
+  const fidDisplay = currentFid || formulaireId;
 
   // évite autosave pendant preload
   const hydrating = useRef(false);
@@ -286,22 +283,31 @@ function FormulaireFiscalT2Inner({
     notes,
   ]);
 
+  /* ===========================
+     Save draft (insert/update)
+     - update si fid existe
+     - insert sinon
+  =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
-    if (hydrating.current) return formulaireId ?? null;
-    if (submitting) return formulaireId ?? null;
+    if (hydrating.current) return fidDisplay ?? null;
+    if (submitting) return fidDisplay ?? null;
 
     const annee = anneeImposition.trim() || null;
+    const targetId = fidDisplay ?? null;
 
     // UPDATE
-    if (formulaireId) {
+    if (targetId) {
       const { error } = await supabase
         .from(FORMS_TABLE)
         .update({ lang, annee, data: draftData })
-        .eq("id", formulaireId)
+        .eq("id", targetId)
         .eq("user_id", userId);
 
       if (error) throw new Error(supaErr(error));
-      return formulaireId;
+
+      setFormulaireId(targetId);
+      setCurrentFid(targetId);
+      return targetId;
     }
 
     // INSERT
@@ -321,69 +327,111 @@ function FormulaireFiscalT2Inner({
     if (errorInsert) throw new Error(supaErr(errorInsert));
 
     const fid = dataInsert?.id ?? null;
-    if (fid) setFormulaireId(fid);
+    if (fid) {
+      setFormulaireId(fid);
+      setCurrentFid(fid);
+    }
     return fid;
-  }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
+  }, [anneeImposition, draftData, fidDisplay, lang, submitting, type, userId]);
 
-  // Charge le dernier T2 (peu importe l'année) puis hydrate les champs depuis data.t2
+  /* ===========================
+     Load form
+     - si fid dans l'URL : charge CE dossier
+     - sinon : charge le dernier T2
+     (et ne dépend PAS de anneeImposition)
+  =========================== */
+  const loadFormById = useCallback(
+    async (fid: string) => {
+      const { data: row, error } = await supabase
+        .from(FORMS_TABLE)
+        .select("id, data, created_at")
+        .eq("id", fid)
+        .eq("user_id", userId)
+        .eq("form_type", type)
+        .maybeSingle<FormRow>();
+
+      if (error) throw new Error(error.message);
+      if (!row) return null;
+      return row;
+    },
+    [type, userId]
+  );
+
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
 
-    const { data: row, error } = await supabase
-      .from(FORMS_TABLE)
-      .select("id, data, created_at")
-      .eq("user_id", userId)
-      .eq("form_type", type)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<FormRow>();
+    try {
+      setMsg(null);
 
-    if (error) {
-      setMsg(`Erreur chargement: ${error.message}`);
+      let row: FormRow | null = null;
+
+      // 1) priorité au fid de l'URL
+      if (initialFid) {
+        try {
+          row = await loadFormById(initialFid);
+        } catch {
+          row = null;
+        }
+      }
+
+      // 2) sinon dernier dossier T2
+      if (!row) {
+        const { data: last, error } = await supabase
+          .from(FORMS_TABLE)
+          .select("id, data, created_at")
+          .eq("user_id", userId)
+          .eq("form_type", type)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<FormRow>();
+
+        if (error) {
+          setMsg(`Erreur chargement: ${error.message}`);
+          return;
+        }
+        row = last ?? null;
+      }
+
+      if (!row?.data?.t2) return;
+
+      const fid = row.id;
+      setFormulaireId(fid);
+      setCurrentFid(fid);
+
+      const t2 = row.data.t2;
+
+      setAnneeImposition(t2.anneeImposition ?? "");
+
+      setCompanyName(t2.companyName ?? "");
+      setCraNumber(t2.craNumber ?? "");
+      setNeq(t2.neq ?? "");
+      setIncProvince(t2.incProvince ?? "");
+
+      setAddrStreet(t2.addrStreet ?? "");
+      setAddrCity(t2.addrCity ?? "");
+      setAddrProv(((t2.addrProv ?? "QC") as ProvinceCode));
+      setAddrPostal(t2.addrPostal ? formatPostalInput(t2.addrPostal) : "");
+
+      setYearEnd(t2.yearEnd ?? "");
+
+      setOperatesInQuebec(t2.operatesInQuebec ?? "");
+      setHasRevenue(t2.hasRevenue ?? "");
+      setPaidSalary(t2.paidSalary ?? "");
+      setPaidDividends(t2.paidDividends ?? "");
+      setHasAssets(t2.hasAssets ?? "");
+      setHasLoans(t2.hasLoans ?? "");
+
+      setContactName(t2.contactName ?? "");
+      setContactPhone(t2.contactPhone ? formatPhoneInput(t2.contactPhone) : "");
+      setContactEmail(t2.contactEmail ?? "");
+
+      setRevenue(t2.revenue ?? "");
+      setExpenses(t2.expenses ?? "");
+      setNotes(t2.notes ?? "");
+    } finally {
       hydrating.current = false;
-      return;
     }
-
-    if (!row?.data?.t2) {
-      hydrating.current = false;
-      return;
-    }
-
-    setFormulaireId(row.id);
-
-    const t2 = row.data.t2;
-
-    setAnneeImposition(t2.anneeImposition ?? "");
-
-    setCompanyName(t2.companyName ?? "");
-    setCraNumber(t2.craNumber ?? "");
-    setNeq(t2.neq ?? "");
-    setIncProvince(t2.incProvince ?? "");
-
-    setAddrStreet(t2.addrStreet ?? "");
-    setAddrCity(t2.addrCity ?? "");
-    setAddrProv(((t2.addrProv ?? "QC") as ProvinceCode));
-    setAddrPostal(t2.addrPostal ? formatPostalInput(t2.addrPostal) : "");
-
-    setYearEnd(t2.yearEnd ?? "");
-
-    setOperatesInQuebec(t2.operatesInQuebec ?? "");
-    setHasRevenue(t2.hasRevenue ?? "");
-    setPaidSalary(t2.paidSalary ?? "");
-    setPaidDividends(t2.paidDividends ?? "");
-    setHasAssets(t2.hasAssets ?? "");
-    setHasLoans(t2.hasLoans ?? "");
-
-    setContactName(t2.contactName ?? "");
-    setContactPhone(t2.contactPhone ? formatPhoneInput(t2.contactPhone) : "");
-    setContactEmail(t2.contactEmail ?? "");
-
-    setRevenue(t2.revenue ?? "");
-    setExpenses(t2.expenses ?? "");
-    setNotes(t2.notes ?? "");
-
-    hydrating.current = false;
-  }, [userId, type]);
+  }, [initialFid, loadFormById, type, userId]);
 
   useEffect(() => {
     void loadLastForm();
@@ -401,7 +449,7 @@ function FormulaireFiscalT2Inner({
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [lang, draftData, saveDraft]);
+  }, [draftData, saveDraft]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -409,30 +457,25 @@ function FormulaireFiscalT2Inner({
   }, [router, lang]);
 
   const goToDepotDocuments = useCallback(async () => {
-    if (submitting) return;
-    setSubmitting(true);
-    setMsg(null);
-
     try {
       setMsg("⏳ Préparation du dossier…");
-      const fid = await saveDraft();
+
+      const fidFromSave = await saveDraft();
+      const fid = fidFromSave || fidDisplay;
+
       if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
-      setMsg("✅ Redirection vers le dépôt…");
-      router.push(
-        `/formulaire-fiscal-t2/depot-documents?fid=${encodeURIComponent(
-          fid
-        )}&lang=${encodeURIComponent(lang)}`
-      );
+      setCurrentFid(fid);
+      setMsg(null);
+
+      router.push(`/formulaire-fiscal-t2/depot-documents?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
       setMsg("❌ " + message);
-      setSubmitting(false);
     }
-  }, [saveDraft, router, lang, submitting]);
+  }, [fidDisplay, lang, router, saveDraft]);
 
-  const btnContinue =
-    lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →";
+  const btnContinue = lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →";
 
   return (
     <main className="ff-bg">
@@ -461,8 +504,7 @@ function FormulaireFiscalT2Inner({
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
-            Merci de remplir ce formulaire. Ces informations servent à préparer la
-            déclaration T2 (et CO-17 si requis).
+            Merci de remplir ce formulaire. Ces informations servent à préparer la déclaration T2 (et CO-17 si requis).
           </p>
         </div>
 
@@ -472,7 +514,7 @@ function FormulaireFiscalT2Inner({
           </div>
         )}
 
-        <Steps step={1} lang={lang} />
+        <Steps step={1} lang={lang} flow="t2" />
 
         <form className="ff-form">
           {/* SECTION 1 */}
@@ -492,12 +534,7 @@ function FormulaireFiscalT2Inner({
               />
 
               <div className="ff-grid2">
-                <Field
-                  label="Nom légal de l’entreprise"
-                  value={companyName}
-                  onChange={setCompanyName}
-                  required
-                />
+                <Field label="Nom légal de l’entreprise" value={companyName} onChange={setCompanyName} required />
                 <Field
                   label="Numéro d’entreprise (ARC) – BN (9 chiffres)"
                   value={craNumber}
@@ -507,33 +544,17 @@ function FormulaireFiscalT2Inner({
 
               <div className="ff-grid2">
                 <Field label="NEQ (si Québec)" value={neq} onChange={setNeq} />
-                <Field
-                  label="Province d’incorporation"
-                  value={incProvince}
-                  onChange={setIncProvince}
-                  placeholder="QC / ON / ..."
-                />
+                <Field label="Province d’incorporation" value={incProvince} onChange={setIncProvince} placeholder="QC / ON / ..." />
               </div>
 
-              <Field
-                label="Fin d’exercice (JJ/MM/AAAA)"
-                value={yearEnd}
-                onChange={setYearEnd}
-                placeholder="31/12/2024"
-              />
+              <Field label="Fin d’exercice (JJ/MM/AAAA)" value={yearEnd} onChange={setYearEnd} placeholder="31/12/2024" />
 
               <Field label="Adresse (rue)" value={addrStreet} onChange={setAddrStreet} />
 
               <div className="ff-grid2 ff-mt-sm">
                 <Field label="Ville" value={addrCity} onChange={setAddrCity} />
 
-                <SelectField<ProvinceCode>
-                  label="Province"
-                  value={addrProv}
-                  onChange={setAddrProv}
-                  options={PROVINCES}
-                  required
-                />
+                <SelectField<ProvinceCode> label="Province" value={addrProv} onChange={setAddrProv} options={PROVINCES} required />
               </div>
 
               <div className="ff-mt-sm">
@@ -564,18 +585,8 @@ function FormulaireFiscalT2Inner({
                 value={operatesInQuebec}
                 onChange={setOperatesInQuebec}
               />
-              <YesNoField
-                name="hasRevenue"
-                label="Avez-vous eu des revenus durant l’année ?"
-                value={hasRevenue}
-                onChange={setHasRevenue}
-              />
-              <YesNoField
-                name="paidSalary"
-                label="Avez-vous payé des salaires (T4) ?"
-                value={paidSalary}
-                onChange={setPaidSalary}
-              />
+              <YesNoField name="hasRevenue" label="Avez-vous eu des revenus durant l’année ?" value={hasRevenue} onChange={setHasRevenue} />
+              <YesNoField name="paidSalary" label="Avez-vous payé des salaires (T4) ?" value={paidSalary} onChange={setPaidSalary} />
               <YesNoField
                 name="paidDividends"
                 label="Avez-vous versé des dividendes (T5) ?"
@@ -618,12 +629,7 @@ function FormulaireFiscalT2Inner({
             </div>
 
             <div className="ff-mt">
-              <Field
-                label="Courriel"
-                value={contactEmail}
-                onChange={setContactEmail}
-                type="email"
-              />
+              <Field label="Courriel" value={contactEmail} onChange={setContactEmail} type="email" />
             </div>
           </section>
 
@@ -651,12 +657,7 @@ function FormulaireFiscalT2Inner({
 
           {/* ACTION */}
           <div className="ff-submit">
-            <button
-              type="button"
-              className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={submitting}
-              onClick={goToDepotDocuments}
-            >
+            <button type="button" className="ff-btn ff-btn-primary ff-btn-big" disabled={submitting} onClick={goToDepotDocuments}>
               {btnContinue}
             </button>
           </div>
