@@ -21,6 +21,7 @@ type ServiceItem = { t: string; d: string };
 type StepItem = { n: string; t: string; d: string };
 type PlanItem = { t: string; p: string; pts: string[]; href: string };
 type WhyItem = { t: string; d: string };
+type TrustItem = { t: string }; // ✅ court, pour le bandeau confiance
 
 type CopyDict = {
   brand: string;
@@ -36,6 +37,10 @@ type CopyDict = {
 
   heroTitle: React.ReactNode;
   heroSub: string;
+
+  // ✅ AJOUTS CONFIANCE
+  heroExperience: string; // ex: "Plus de 30 ans d’expérience en impôt."
+  trust: TrustItem[]; // bandeau confiance sous le heroSub
 
   chooseType: string;
   t1Title: string;
@@ -189,6 +194,41 @@ function FAQ({ items }: { items: FAQItem[] }) {
   );
 }
 
+/** ✅ Bandeau confiance (sans icônes externes) */
+function TrustBar({ items }: { items: TrustItem[] }) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        justifyContent: "center",
+      }}
+    >
+      {items.map((x, i) => (
+        <div
+          key={i}
+          style={{
+            border: "1px solid rgba(0,0,0,0.10)",
+            borderRadius: 999,
+            padding: "6px 10px",
+            fontSize: 13,
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(4px)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span aria-hidden="true">✓</span>
+          <span>{x.t}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const bleu = "#004aad" as const;
 
@@ -262,8 +302,19 @@ export default function Home() {
             <span style={{ color: bleu, fontWeight: 900 }}>service en ligne</span>
           </>
         ),
+
+        // ✅ AJOUT CONFIANCE (expérience)
+        heroExperience: "Plus de 30 ans d’expérience en impôt.",
         heroSub:
           "Service indépendant de préparation de déclarations de revenus au Québec. Particulier, travailleur autonome ou compagnie incorporée : vous téléversez vos documents via un portail sécurisé. Je prépare à partir des informations fournies et je vous contacte s’il manque quelque chose avant l’envoi.",
+
+        // ✅ Bandeau confiance
+        trust: [
+          { t: "Québec seulement" },
+          { t: "Portail sécurisé" },
+          { t: "Confidentialité" },
+          { t: "Délais habituels : 3 à 7 jours ouvrables (dossier complet)" },
+        ],
 
         chooseType: "Quelle est votre situation ?",
         t1Title: "Déclaration d’impôt — Particulier",
@@ -326,12 +377,13 @@ export default function Home() {
         ],
         getPrice: "Voir les détails",
 
+        // ✅ Renforcé confiance, sans inventer
         whyTitle: "Pourquoi choisir ComptaNet Québec",
         whyPoints: [
-          { t: "Simple et clair", d: "Un processus guidé, sans papier." },
-          { t: "Portail sécurisé", d: "Téléversement de vos documents au même endroit." },
-          { t: "Québec seulement", d: "Service centré sur la réalité du Québec." },
-          { t: "Suivi du dossier", d: "Je vous contacte si un document ou une info manque." },
+          { t: "Plus de 30 ans d’expérience", d: "Préparation de déclarations d’impôt au Québec, avec un processus clair." },
+          { t: "Confidentialité", d: "Traitement des informations de façon strictement confidentielle." },
+          { t: "Portail sécurisé", d: "Téléversement de documents (photo ou PDF), tout au même endroit." },
+          { t: "Suivi du dossier", d: "Si un document ou une information manque, vous êtes contacté avant l’envoi." },
         ],
 
         faqTitle: "FAQ",
@@ -379,8 +431,16 @@ export default function Home() {
             <span style={{ color: bleu, fontWeight: 900 }}>online service</span>
           </>
         ),
+        heroExperience: "Over 30 years of experience in tax returns.",
         heroSub:
           "Independent Québec-only tax return preparation service. Individual, self-employed, or incorporated business: upload documents through a secure portal. I prepare from the information you provide and contact you if anything is missing before filing.",
+
+        trust: [
+          { t: "Québec only" },
+          { t: "Secure portal" },
+          { t: "Confidentiality" },
+          { t: "Typical turnaround: 3–7 business days (complete file)" },
+        ],
 
         chooseType: "What is your situation?",
         t1Title: "Tax return — Individual",
@@ -422,17 +482,17 @@ export default function Home() {
         pricingSub: "Base pricing. Final price depends on complexity. The amount is confirmed before filing.",
         plans: [
           { t: "Tax return — Individual", p: "from $100", pts: ["Secure portal", "Prepared from provided documents", "Deposit $100"], href: "/tarifs/t1" },
-          { t: "Tax return — Self-employed", p: "from $150", pts: ["Income + expenses from documents", "Secure portal", "Deposit $100"], href: "/tarifs/travailleur-autonome" },
-          { t: "Tax return — Incorporated business", p: "from $850", pts: ["Prepared from provided documents", "Secure portal", "Deposit $400", "No-revenue corp: from $450"], href: "/tarifs/t2" },
+          { t: "Tax return — Self-employed", p: "from $150", pts: ["Income + expenses from documents", "Secure portal", "Deposit $150"], href: "/tarifs/travailleur-autonome" },
+          { t: "Tax return — Incorporated business", p: "from $850", pts: ["Prepared from provided documents", "Secure portal", "Deposit $450", "No-revenue corp: from $450"], href: "/tarifs/t2" },
         ],
         getPrice: "View details",
 
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
-          { t: "Simple process", d: "Clear steps and paperless workflow." },
-          { t: "Secure portal", d: "Everything in one place." },
-          { t: "Québec only", d: "Focused on Québec." },
-          { t: "File follow-up", d: "I contact you if something is missing." },
+          { t: "30+ years of experience", d: "Québec tax return preparation with a clear process." },
+          { t: "Confidentiality", d: "Information is handled strictly confidentially." },
+          { t: "Secure portal", d: "Upload documents (photo or PDF) in one place." },
+          { t: "File follow-up", d: "If something is missing, you will be contacted before filing." },
         ],
 
         faqTitle: "FAQ",
@@ -480,8 +540,16 @@ export default function Home() {
             <span style={{ color: bleu, fontWeight: 900 }}>servicio en línea</span>
           </>
         ),
+        heroExperience: "Más de 30 años de experiencia en impuestos.",
         heroSub:
           "Servicio independiente solo para Québec. Particular, autónomo o empresa incorporada: suba documentos por un portal seguro. Preparo la declaración con la información proporcionada y le contacto si falta algo antes de presentar.",
+
+        trust: [
+          { t: "Solo Québec" },
+          { t: "Portal seguro" },
+          { t: "Confidencialidad" },
+          { t: "Plazo habitual: 3–7 días hábiles (expediente completo)" },
+        ],
 
         chooseType: "¿Cuál es su situación?",
         t1Title: "Impuestos — Particular",
@@ -523,17 +591,17 @@ export default function Home() {
         pricingSub: "Precios base. El monto final depende de la complejidad y se confirma antes de presentar.",
         plans: [
           { t: "Impuestos — Particular", p: "desde $100", pts: ["Portal seguro", "Según documentos", "Depósito $100"], href: "/tarifs/t1" },
-          { t: "Impuestos — Autónomo", p: "desde $150", pts: ["Ingresos + gastos", "Portal seguro", "Depósito $100"], href: "/tarifs/travailleur-autonome" },
-          { t: "Impuestos — Empresa incorporada", p: "desde $850", pts: ["Según documentos", "Portal seguro", "Depósito $400", "Sin ingresos: desde $450"], href: "/tarifs/t2" },
+          { t: "Impuestos — Autónomo", p: "desde $150", pts: ["Ingresos + gastos", "Portal seguro", "Depósito $150"], href: "/tarifs/travailleur-autonome" },
+          { t: "Impuestos — Empresa incorporada", p: "desde $850", pts: ["Según documentos", "Portal seguro", "Depósito $450", "Sin ingresos: desde $450"], href: "/tarifs/t2" },
         ],
         getPrice: "Ver detalles",
 
         whyTitle: "Por qué elegir ComptaNet Québec",
         whyPoints: [
-          { t: "Proceso simple", d: "Pasos claros y sin papel." },
-          { t: "Portal seguro", d: "Todo en un solo lugar." },
-          { t: "Solo Québec", d: "Servicio enfocado en Québec." },
-          { t: "Seguimiento", d: "Le contacto si falta algo." },
+          { t: "Más de 30 años de experiencia", d: "Preparación de declaraciones en Québec con un proceso claro." },
+          { t: "Confidencialidad", d: "La información se trata de forma estrictamente confidencial." },
+          { t: "Portal seguro", d: "Suba documentos (foto o PDF) en un solo lugar." },
+          { t: "Seguimiento", d: "Si falta algo, le contactaremos antes de presentar." },
         ],
 
         faqTitle: "FAQ",
@@ -655,24 +723,13 @@ export default function Home() {
       <Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive" async defer />
 
       {/* FAQ JSON-LD */}
-      <Script
-        id="faq-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      <Script id="faq-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       {/* NAVBAR (landing) */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
-            <Image
-              src="/logo-cq.png"
-              alt="Logo ComptaNet Québec"
-              width={36}
-              height={36}
-              style={{ borderRadius: 6 }}
-              priority
-            />
+            <Image src="/logo-cq.png" alt="Logo ComptaNet Québec" width={36} height={36} style={{ borderRadius: 6 }} priority />
             <strong className={styles.brandName}>{T.brand}</strong>
           </div>
 
@@ -707,20 +764,30 @@ export default function Home() {
       {/* HERO */}
       <section className={styles.hero}>
         <div className={styles.heroBg}>
-          <Image
-            src="/banniere.png"
-            alt="Bannière"
-            fill
-            priority
-            sizes="100vw"
-            className={styles.heroBgImg}
-          />
+          <Image src="/banniere.png" alt="Bannière" fill priority sizes="100vw" className={styles.heroBgImg} />
         </div>
 
         <div className={styles.heroCenter}>
           <div className={styles.heroCard}>
             <h1 className={styles.heroTitle}>{T.heroTitle}</h1>
+
+            {/* ✅ AJOUT: expérience ultra visible */}
+            <div
+              style={{
+                marginTop: 8,
+                textAlign: "center",
+                fontWeight: 900,
+                color: bleu,
+                letterSpacing: 0.2,
+              }}
+            >
+              {T.heroExperience}
+            </div>
+
             <p className={styles.heroSub}>{T.heroSub}</p>
+
+            {/* ✅ AJOUT: bandeau confiance */}
+            <TrustBar items={T.trust} />
 
             {/* Liens discrets */}
             <div className={styles.heroLinks}>
@@ -763,7 +830,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SEO INTRO (texte lisible pour Google + humains) */}
+      {/* SEO INTRO */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>{T.seoTitle}</h2>
         <p className={styles.sectionSub}>{T.seoP1}</p>
