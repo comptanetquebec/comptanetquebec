@@ -51,7 +51,7 @@ export default async function AdminOpenDossierPage({
   const baseForm = routeForFormPresentiel(form.form_type);
 
   const formUrl = `${baseForm}?fid=${encodeURIComponent(form.id)}&lang=${lang}`;
-  const docsUrl = `/admin/dossiers/${encodeURIComponent(form.id)}/docs?lang=${lang}`;
+  const docsUrl = `/admin/dossiers/docs?fid=${encodeURIComponent(form.id)}&lang=${lang}`;
 
   // ✅ Page choix simple: Formulaire / Docs
   return (
