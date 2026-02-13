@@ -18,9 +18,7 @@ const DOCS_TABLE = "formulaire_documents";
 const FORMS_TABLE = "formulaires_fiscaux";
 
 /**
- * IMPORTANT:
- * Mets ici EXACTEMENT la valeur attendue dans ta colonne `form_type` pour le TA.
- * (Ex: "autonome" si c’est ce que tu utilises déjà en DB.)
+ * IMPORTANT: valeur EXACTE dans ta colonne `form_type` pour TA
  */
 const FORM_TYPE_TA = "autonome" as const;
 
@@ -144,7 +142,7 @@ type FormQuestionsdata = {
 };
 
 type Formdata = {
-  dossierType?: string; // on peut mettre "autonome" ici aussi si tu veux
+  dossierType?: string;
   client?: FormClientdata;
   conjoint?: FormConjointdata | null;
   assuranceMedicamenteuse?: FormMedsdata | null;
@@ -250,13 +248,17 @@ function normalizePhone(v: string) {
 export default function FormulaireFiscalTAPage() {
   const params = useSearchParams();
   const lang = normalizeLang(params.get("lang") || "fr");
+  const fid = params.get("fid"); // ✅ garder le dossier si présent
 
-  // IMPORTANT: revenir sur TA après login
-  const nextPath = useMemo(() => `/formulaire-fiscal-ta?lang=${encodeURIComponent(lang)}`, [lang]);
+  // ✅ revenir sur TA après login EN GARDANT fid si présent
+  const nextPath = useMemo(() => {
+    const base = `/formulaire-fiscal-ta?lang=${encodeURIComponent(lang)}`;
+    return fid ? `${base}&fid=${encodeURIComponent(fid)}` : base;
+  }, [lang, fid]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <FormulaireFiscalTAInner userId={userId} lang={lang} />}
+      {(userId) => <FormulaireFiscalTAInner userId={userId} lang={lang} initialFid={fid} />}
     </RequireAuth>
   );
 }
@@ -265,7 +267,15 @@ export default function FormulaireFiscalTAPage() {
    INNER
 =========================== */
 
-function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang }) {
+function FormulaireFiscalTAInner({
+  userId,
+  lang,
+  initialFid,
+}: {
+  userId: string;
+  lang: Lang;
+  initialFid: string | null;
+}) {
   const router = useRouter();
   const formTitle = "Travailleur autonome (T1)";
 
@@ -273,8 +283,8 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
   const [submitting, setSubmitting] = useState(false);
 
   // dossier courant
-  const [formulaireId, setFormulaireId] = useState<string | null>(null);
-  const [currentFid, setCurrentFid] = useState<string | null>(null);
+  const [formulaireId, setFormulaireId] = useState<string | null>(initialFid);
+  const [currentFid, setCurrentFid] = useState<string | null>(initialFid);
   const fidDisplay = currentFid || formulaireId;
 
   // évite autosave pendant le preload
@@ -382,23 +392,27 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
   /* ===========================
      Docs helpers
   =========================== */
-  const loadDocs = useCallback(async (fid: string) => {
-    setDocsLoading(true);
+  const loadDocs = useCallback(
+    async (fid: string) => {
+      setDocsLoading(true);
 
-    const { data, error } = await supabase
-      .from(DOCS_TABLE)
-      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
-      .eq("formulaire_id", fid)
-      .order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from(DOCS_TABLE)
+        .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
+        .eq("formulaire_id", fid)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-    setDocsLoading(false);
+      setDocsLoading(false);
 
-    if (error) {
-      setMsg(`Erreur docs: ${error.message}`);
-      return;
-    }
-    setDocs((data as DocRow[]) || []);
-  }, []);
+      if (error) {
+        setMsg(`Erreur docs: ${error.message}`);
+        return;
+      }
+      setDocs((data as DocRow[]) || []);
+    },
+    [userId]
+  );
 
   const getSignedUrl = useCallback(async (path: string) => {
     const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
@@ -495,227 +509,270 @@ function FormulaireFiscalTAInner({ userId, lang }: { userId: string; lang: Lang 
       },
     };
   }, [
-    prenom,
-    nom,
-    nas,
-    dob,
-    etatCivil,
-    etatCivilChange,
-    ancienEtatCivil,
-    dateChangementEtatCivil,
-    tel,
-    telCell,
-    adresse,
-    app,
-    ville,
-    province,
-    codePostal,
-    courriel,
     aUnConjoint,
-    traiterConjoint,
-    prenomConjoint,
-    nomConjoint,
-    nasConjoint,
-    dobConjoint,
-    telConjoint,
-    telCellConjoint,
-    courrielConjoint,
+    adresse,
     adresseConjointeIdentique,
     adresseConjoint,
+    ancienEtatCivil,
+    anneeImposition,
+    app,
     appConjoint,
-    villeConjoint,
-    provinceConjoint,
-    codePostalConjoint,
-    revenuNetConjoint,
+    appelerTechnicien,
     assuranceMedsClient,
     assuranceMedsClientPeriodes,
     assuranceMedsConjoint,
     assuranceMedsConjointPeriodes,
-    enfants,
-    habiteSeulTouteAnnee,
-    nbPersonnesMaison3112,
     biensEtranger100k,
     citoyenCanadien,
-    nonResident,
+    codePostal,
+    codePostalConjoint,
+    courriel,
+    courrielConjoint,
+    dateChangementEtatCivil,
+    dob,
+    dobConjoint,
+    enfants,
+    etatCivil,
+    etatCivilChange,
+    habiteSeulTouteAnnee,
     maisonAcheteeOuVendue,
-    appelerTechnicien,
+    nas,
+    nasConjoint,
+    nbPersonnesMaison3112,
+    nom,
+    nomConjoint,
+    nonResident,
+    prenom,
+    prenomConjoint,
+    province,
+    provinceConjoint,
+    revenuNetConjoint,
+    tel,
+    telCell,
+    telCellConjoint,
+    telConjoint,
+    traiterConjoint,
+    ville,
+    villeConjoint,
     copieImpots,
-    anneeImposition,
   ]);
-/* ===========================
-   Save draft (insert/update)
-=========================== */
-const saveDraft = useCallback(async (): Promise<string | null> => {
-  if (hydrating.current) return formulaireId ?? null;
-  if (submitting) return formulaireId ?? null;
 
-  // UPDATE
-  if (formulaireId) {
-    const { error } = await supabase
+  /* ===========================
+     Save draft (insert/update)
+  =========================== */
+  const saveDraft = useCallback(async (): Promise<string | null> => {
+    if (hydrating.current) return fidDisplay ?? null;
+    if (submitting) return fidDisplay ?? null;
+
+    const targetId = fidDisplay ?? null;
+
+    // UPDATE (si on a déjà un fid)
+    if (targetId) {
+      const { error } = await supabase
+        .from(FORMS_TABLE)
+        .update({
+          lang,
+          annee: anneeImposition.trim() || null,
+          data: draftData,
+        })
+        .eq("id", targetId)
+        .eq("user_id", userId);
+
+      if (error) throw new Error(supaErr(error));
+
+      // garder les states cohérents
+      setFormulaireId(targetId);
+      setCurrentFid(targetId);
+      return targetId;
+    }
+
+    // INSERT (nouveau dossier)
+    const { data: dataInsert, error: errorInsert } = await supabase
       .from(FORMS_TABLE)
-      .update({
+      .insert({
+        user_id: userId,
+        form_type: FORM_TYPE_TA,
         lang,
-        annee: anneeImposition || null,
+        status: "draft",
+        annee: anneeImposition.trim() || null,
         data: draftData,
       })
-      .eq("id", formulaireId)
-      .eq("user_id", userId);
+      .select("id")
+      .single<InsertIdRow>();
 
-    if (error) throw new Error(supaErr(error));
-    return formulaireId;
-  }
+    if (errorInsert) throw new Error(supaErr(errorInsert));
 
-  // INSERT
-  const { data: dataInsert, error: errorInsert } = await supabase
-    .from(FORMS_TABLE)
-    .insert({
-      user_id: userId,
-      form_type: FORM_TYPE_TA,
-      lang,
-      status: "draft",
-      annee: anneeImposition || null,
-      data: draftData,
-    })
-    .select("id")
-    .single<InsertIdRow>();
-
-  if (errorInsert) throw new Error(supaErr(errorInsert));
-
-  const fid = dataInsert?.id ?? null;
-  if (fid) setFormulaireId(fid);
-  return fid;
-}, [draftData, formulaireId, lang, userId, anneeImposition, submitting]);
-
-/* ===========================
-   Load last form (preload)
-=========================== */
-const loadLastForm = useCallback(async () => {
-  hydrating.current = true;
-
-  try {
-    let query = supabase
-      .from(FORMS_TABLE)
-      .select("id, data, created_at")
-      .eq("user_id", userId)
-      .eq("form_type", FORM_TYPE_TA);
-
-    if (anneeImposition.trim()) {
-      query = query.eq("annee", anneeImposition.trim());
+    const fid = dataInsert?.id ?? null;
+    if (fid) {
+      setFormulaireId(fid);
+      setCurrentFid(fid);
     }
+    return fid;
+  }, [anneeImposition, draftData, fidDisplay, lang, submitting, userId]);
 
-    const { data: row, error } = await query
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<FormRow>();
+  /* ===========================
+     Load form (preload)
+     - si fid dans l'URL : charge CE dossier
+     - sinon : charge le dernier dossier TA
+  =========================== */
+  const loadFormById = useCallback(
+    async (fid: string) => {
+      const { data: row, error } = await supabase
+        .from(FORMS_TABLE)
+        .select("id, data, created_at")
+        .eq("id", fid)
+        .eq("user_id", userId)
+        .eq("form_type", FORM_TYPE_TA)
+        .maybeSingle<FormRow>();
 
-    if (error) {
-      setMsg(`Erreur chargement: ${error.message}`);
-      return;
+      if (error) throw new Error(error.message);
+      if (!row) return null;
+      return row;
+    },
+    [userId]
+  );
+
+  const loadLastForm = useCallback(async () => {
+    hydrating.current = true;
+
+    try {
+      setMsg(null);
+
+      let row: FormRow | null = null;
+
+      // 1) priorité au fid de l'URL (initialFid)
+      if (initialFid) {
+        try {
+          row = await loadFormById(initialFid);
+        } catch (e) {
+          // si fid invalide, on retombe sur "dernier"
+          row = null;
+        }
+      }
+
+      // 2) sinon: dernier dossier TA
+      if (!row) {
+        const { data: last, error } = await supabase
+          .from(FORMS_TABLE)
+          .select("id, data, created_at")
+          .eq("user_id", userId)
+          .eq("form_type", FORM_TYPE_TA)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<FormRow>();
+
+        if (error) {
+          setMsg(`Erreur chargement: ${error.message}`);
+          return;
+        }
+        row = last ?? null;
+      }
+
+      if (!row) return;
+
+      const fid = row.id;
+      setFormulaireId(fid);
+      setCurrentFid(fid);
+
+      const form = row.data ?? {};
+
+      const client = form.client ?? {};
+      setPrenom(client.prenom ?? "");
+      setNom(client.nom ?? "");
+      setNas(client.nas ? formatNASInput(client.nas) : "");
+      setDob(client.dob ?? "");
+      setEtatCivil(client.etatCivil ?? "");
+
+      setEtatCivilChange(!!client.etatCivilChange);
+      setAncienEtatCivil(client.ancienEtatCivil ?? "");
+      setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
+
+      setTel(client.tel ? formatPhoneInput(client.tel) : "");
+      setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
+      setAdresse(client.adresse ?? "");
+      setApp(client.app ?? "");
+      setVille(client.ville ?? "");
+      setProvince((client.province as ProvinceCode) ?? "QC");
+      setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
+      setCourriel(client.courriel ?? "");
+
+      const cj = form.conjoint ?? null;
+      setAUnConjoint(!!cj);
+
+      if (cj) {
+        setTraiterConjoint(!!cj.traiterConjoint);
+        setPrenomConjoint(cj.prenomConjoint ?? "");
+        setNomConjoint(cj.nomConjoint ?? "");
+        setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
+        setDobConjoint(cj.dobConjoint ?? "");
+        setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+        setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+        setCourrielConjoint(cj.courrielConjoint ?? "");
+
+        setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
+        setAdresseConjoint(cj.adresseConjoint ?? "");
+        setAppConjoint(cj.appConjoint ?? "");
+        setVilleConjoint(cj.villeConjoint ?? "");
+        setProvinceConjoint((cj.provinceConjoint as ProvinceCode) ?? "QC");
+        setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
+        setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+      } else {
+        setTraiterConjoint(true);
+        setPrenomConjoint("");
+        setNomConjoint("");
+        setNasConjoint("");
+        setDobConjoint("");
+        setTelConjoint("");
+        setTelCellConjoint("");
+        setCourrielConjoint("");
+        setAdresseConjointeIdentique(true);
+        setAdresseConjoint("");
+        setAppConjoint("");
+        setVilleConjoint("");
+        setProvinceConjoint("QC");
+        setCodePostalConjoint("");
+        setRevenuNetConjoint("");
+      }
+
+      const meds = form.assuranceMedicamenteuse ?? null;
+      if (meds?.client) {
+        setAssuranceMedsClient((meds.client.regime as AssuranceMeds) ?? "");
+        setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
+      } else {
+        setAssuranceMedsClient("");
+        setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
+      }
+
+      if (meds?.conjoint) {
+        setAssuranceMedsConjoint((meds.conjoint.regime as AssuranceMeds) ?? "");
+        setAssuranceMedsConjointPeriodes(meds.conjoint.periodes ?? [{ debut: "", fin: "" }]);
+      } else {
+        setAssuranceMedsConjoint("");
+        setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
+      }
+
+      setEnfants(form.personnesACharge ?? []);
+
+      const questions = form.questionsGenerales ?? {};
+      setHabiteSeulTouteAnnee((questions.habiteSeulTouteAnnee as YesNo) ?? "");
+      setNbPersonnesMaison3112(questions.nbPersonnesMaison3112 ?? "");
+      setBiensEtranger100k((questions.biensEtranger100k as YesNo) ?? "");
+      setCitoyenCanadien((questions.citoyenCanadien as YesNo) ?? "");
+      setNonResident((questions.nonResident as YesNo) ?? "");
+      setMaisonAcheteeOuVendue((questions.maisonAcheteeOuVendue as YesNo) ?? "");
+      setAppelerTechnicien((questions.appelerTechnicien as YesNo) ?? "");
+      setCopieImpots((questions.copieImpots as CopieImpots) ?? "");
+      setAnneeImposition(questions.anneeImposition ?? "");
+
+      await loadDocs(fid);
+    } finally {
+      hydrating.current = false;
     }
-    if (!row) return;
+  }, [initialFid, loadDocs, loadFormById, userId]);
 
-    const fid = row.id;
-    setFormulaireId(fid);
-
-    const form = row.data ?? {};
-
-    const client = form.client ?? {};
-    setPrenom(client.prenom ?? "");
-    setNom(client.nom ?? "");
-    setNas(client.nas ? formatNASInput(client.nas) : "");
-    setDob(client.dob ?? "");
-    setEtatCivil(client.etatCivil ?? "");
-
-    setEtatCivilChange(!!client.etatCivilChange);
-    setAncienEtatCivil(client.ancienEtatCivil ?? "");
-    setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
-
-    setTel(client.tel ? formatPhoneInput(client.tel) : "");
-    setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
-    setAdresse(client.adresse ?? "");
-    setApp(client.app ?? "");
-    setVille(client.ville ?? "");
-    setProvince(client.province ?? "QC");
-    setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
-    setCourriel(client.courriel ?? "");
-
-    const cj = form.conjoint ?? null;
-    setAUnConjoint(!!cj);
-
-    if (cj) {
-      setTraiterConjoint(!!cj.traiterConjoint);
-      setPrenomConjoint(cj.prenomConjoint ?? "");
-      setNomConjoint(cj.nomConjoint ?? "");
-      setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
-      setDobConjoint(cj.dobConjoint ?? "");
-      setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
-      setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
-      setCourrielConjoint(cj.courrielConjoint ?? "");
-
-      setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
-      setAdresseConjoint(cj.adresseConjoint ?? "");
-      setAppConjoint(cj.appConjoint ?? "");
-      setVilleConjoint(cj.villeConjoint ?? "");
-      setProvinceConjoint(cj.provinceConjoint ?? "QC");
-      setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
-      setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
-    } else {
-      setTraiterConjoint(true);
-      setPrenomConjoint("");
-      setNomConjoint("");
-      setNasConjoint("");
-      setDobConjoint("");
-      setTelConjoint("");
-      setTelCellConjoint("");
-      setCourrielConjoint("");
-      setAdresseConjointeIdentique(true);
-      setAdresseConjoint("");
-      setAppConjoint("");
-      setVilleConjoint("");
-      setProvinceConjoint("QC");
-      setCodePostalConjoint("");
-      setRevenuNetConjoint("");
-    }
-
-    const meds = form.assuranceMedicamenteuse ?? null;
-    if (meds?.client) {
-      setAssuranceMedsClient(meds.client.regime ?? "");
-      setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
-    } else {
-      setAssuranceMedsClient("");
-      setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
-    }
-
-    if (meds?.conjoint) {
-      setAssuranceMedsConjoint(meds.conjoint.regime ?? "");
-      setAssuranceMedsConjointPeriodes(meds.conjoint.periodes ?? [{ debut: "", fin: "" }]);
-    } else {
-      setAssuranceMedsConjoint("");
-      setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
-    }
-
-    setEnfants(form.personnesACharge ?? []);
-
-    const questions = form.questionsGenerales ?? {};
-    setHabiteSeulTouteAnnee(questions.habiteSeulTouteAnnee ?? "");
-    setNbPersonnesMaison3112(questions.nbPersonnesMaison3112 ?? "");
-    setBiensEtranger100k(questions.biensEtranger100k ?? "");
-    setCitoyenCanadien(questions.citoyenCanadien ?? "");
-    setNonResident(questions.nonResident ?? "");
-    setMaisonAcheteeOuVendue(questions.maisonAcheteeOuVendue ?? "");
-    setAppelerTechnicien(questions.appelerTechnicien ?? "");
-    setCopieImpots(questions.copieImpots ?? "");
-    setAnneeImposition(questions.anneeImposition ?? "");
-
-    await loadDocs(fid);
-  } finally {
-    hydrating.current = false;
-  }
-}, [loadDocs, userId, anneeImposition]);
-
-useEffect(() => {
-  void loadLastForm();
-}, [loadLastForm]);
+  useEffect(() => {
+    void loadLastForm();
+  }, [loadLastForm]);
 
   /* ===========================
      Autosave debounce
@@ -742,29 +799,27 @@ useEffect(() => {
     router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
   }, [router, lang]);
 
- // ✅ Étape 1 → Étape 2 (revenus & dépenses)
-const goToDepotDocuments = useCallback(async () => {
-  try {
-    setMsg("⏳ Préparation du dossier…");
+  // ✅ Étape 1 → Étape 2 (revenus & dépenses)
+  const goToDepotDocuments = useCallback(async () => {
+    try {
+      setMsg("⏳ Préparation du dossier…");
 
-    const fidFromSave = await saveDraft();
-    const fid = fidFromSave || fidDisplay;
+      const fidFromSave = await saveDraft();
+      const fid = fidFromSave || fidDisplay;
 
-    if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
+      if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
 
-    setCurrentFid(fid);
-    await loadDocs(fid);
+      setCurrentFid(fid);
+      await loadDocs(fid);
 
-    setMsg(null);
+      setMsg(null);
 
-    router.push(
-      `/formulaire-fiscal-ta/revenus-depenses?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`
-    );
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Erreur redirection.";
-    setMsg("❌ " + message);
-  }
-}, [fidDisplay, lang, loadDocs, router, saveDraft]);
+      router.push(`/formulaire-fiscal-ta/revenus-depenses?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Erreur redirection.";
+      setMsg("❌ " + message);
+    }
+  }, [fidDisplay, lang, loadDocs, router, saveDraft]);
 
   /* ===========================
      Render
@@ -796,8 +851,8 @@ const goToDepotDocuments = useCallback(async () => {
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
-            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour préparer
-            vos déclarations d’impôt.
+            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour préparer vos
+            déclarations d’impôt.
           </p>
         </div>
 
@@ -809,7 +864,7 @@ const goToDepotDocuments = useCallback(async () => {
 
         <Steps step={1} lang={lang} flow="ta" />
 
-        {/* Étape 1 = FORM ONLY (pas de submit final ici) */}
+        {/* Étape 1 = FORM ONLY */}
         <div className="ff-form">
           {/* SECTION CLIENT */}
           <section className="ff-card">
@@ -870,12 +925,7 @@ const goToDepotDocuments = useCallback(async () => {
 
             {etatCivilChange && (
               <div className="ff-grid2 ff-mt">
-                <Field
-                  label="Ancien état civil"
-                  value={ancienEtatCivil}
-                  onChange={setAncienEtatCivil}
-                  placeholder="ex.: Célibataire"
-                />
+                <Field label="Ancien état civil" value={ancienEtatCivil} onChange={setAncienEtatCivil} placeholder="ex.: Célibataire" />
                 <Field
                   label="Date du changement (JJ/MM/AAAA)"
                   value={dateChangementEtatCivil}
@@ -916,13 +966,7 @@ const goToDepotDocuments = useCallback(async () => {
               <div className="ff-grid4 ff-mt-sm">
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
                 <Field label="Ville" value={ville} onChange={setVille} required />
-                <SelectField<ProvinceCode>
-                  label="Province"
-                  value={province}
-                  onChange={setProvince}
-                  options={PROVINCES}
-                  required
-                />
+                <SelectField<ProvinceCode> label="Province" value={province} onChange={setProvince} options={PROVINCES} required />
                 <Field
                   label="Code postal"
                   value={codePostal}
@@ -1030,12 +1074,7 @@ const goToDepotDocuments = useCallback(async () => {
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
                       <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
-                      <SelectField<ProvinceCode>
-                        label="Province"
-                        value={provinceConjoint}
-                        onChange={setProvinceConjoint}
-                        options={PROVINCES}
-                      />
+                      <SelectField<ProvinceCode> label="Province" value={provinceConjoint} onChange={setProvinceConjoint} options={PROVINCES} />
                       <Field
                         label="Code postal"
                         value={codePostalConjoint}
@@ -1128,9 +1167,7 @@ const goToDepotDocuments = useCallback(async () => {
                           label="De (JJ/MM/AAAA)"
                           value={p.debut}
                           onChange={(val) =>
-                            setAssuranceMedsConjointPeriodes((prev) =>
-                              updatePeriode(prev, idx, { debut: formatDateInput(val) })
-                            )
+                            setAssuranceMedsConjointPeriodes((prev) => updatePeriode(prev, idx, { debut: formatDateInput(val) }))
                           }
                           placeholder="01/01/2024"
                           inputMode="numeric"
@@ -1315,11 +1352,7 @@ const goToDepotDocuments = useCallback(async () => {
             </button>
 
             <div className="ff-muted" style={{ marginTop: 10 }}>
-              {docsLoading
-                ? "Chargement des documents…"
-                : docsCount > 0
-                ? `${docsCount} document(s) déjà au dossier.`
-                : ""}
+              {docsLoading ? "Chargement des documents…" : docsCount > 0 ? `${docsCount} document(s) déjà au dossier.` : ""}
             </div>
 
             {docsCount > 0 && (
