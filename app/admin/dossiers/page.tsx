@@ -5,7 +5,7 @@ import AdminDossiersClient, { type AdminDossierRow } from "./AdminDossiersClient
 
 type ProfileRow = { is_admin: boolean | null };
 
-type PaymentStatus = "unpaid" | "paid" | "refunded";
+type PaymentStatus = "unpaid" | "paid";
 
 type FormRow = {
   id: string;
