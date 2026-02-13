@@ -86,6 +86,24 @@ function normalizeSearch(s: string) {
   return s.trim().toLowerCase();
 }
 
+function safeInt(v: unknown, fallback = 0) {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function safePaymentStatus(v: unknown): PaymentStatus {
+  return v === "paid" ? "paid" : "unpaid";
+}
+
+function normalizeRows(input: AdminDossierRow[]): AdminDossierRow[] {
+  return (input ?? []).map((r) => ({
+    ...r,
+    form_filled: Boolean(r.form_filled),
+    docs_count: safeInt(r.docs_count, 0),
+    payment_status: r.payment_status ? safePaymentStatus(r.payment_status) : null,
+  }));
+}
+
 function rowSearchText(r: AdminDossierRow) {
   const parts = [
     r.cq_id ?? "",
@@ -95,13 +113,16 @@ function rowSearchText(r: AdminDossierRow) {
     r.payment_status ?? "",
     r.status ?? "",
     r.form_filled ? "formulaire_rempli" : "formulaire_vide",
-    String(r.docs_count ?? 0),
+    String(safeInt(r.docs_count, 0)),
   ];
   return normalizeSearch(parts.join(" "));
 }
 
 export default function AdminDossiersClient({ initialRows }: { initialRows: AdminDossierRow[] }) {
-  const [rows, setRows] = useState<AdminDossierRow[]>(initialRows);
+  // ✅ IMPORTANT: normalise dès le départ pour éliminer Docs: NaN partout (UI + recherche + tri)
+  const normalizedInitial = useMemo(() => normalizeRows(initialRows), [initialRows]);
+  const [rows, setRows] = useState<AdminDossierRow[]>(() => normalizedInitial);
+
   const [tab, setTab] = useState<TabKey>("todo");
   const [savingId, setSavingId] = useState<string | null>(null);
 
@@ -234,13 +255,18 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
               const updated = formatDate(r.updated_at);
               const mainRight = created ? ` • ${created}` : "";
 
-              const mainLeftNode = r.cq_id ? <span>{r.cq_id}</span> : <span className="text-gray-400">CQ: (en attente)</span>;
+              const mainLeftNode = r.cq_id ? (
+                <span>{r.cq_id}</span>
+              ) : (
+                <span className="text-gray-400">CQ: (en attente)</span>
+              );
 
               const formBadgeClass = r.form_filled
                 ? "bg-green-100 text-green-800 border-green-200"
                 : "bg-gray-100 text-gray-700 border-gray-200";
 
               const pay: PaymentStatus = r.payment_status ?? "unpaid";
+              const docsCountSafe = safeInt(r.docs_count, 0);
 
               return (
                 <li key={r.formulaire_id} className="p-4">
@@ -281,7 +307,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                         className="px-2 py-1 rounded border text-sm bg-slate-100 text-slate-700 border-slate-200"
                         title="Documents déposés"
                       >
-                        Docs: {r.docs_count}
+                        Docs: {docsCountSafe}
                       </span>
 
                       <select
