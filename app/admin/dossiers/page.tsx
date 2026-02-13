@@ -5,6 +5,8 @@ import AdminDossiersClient, { type AdminDossierRow } from "./AdminDossiersClient
 
 type ProfileRow = { is_admin: boolean | null };
 
+type PaymentStatus = "unpaid" | "paid" | "refunded";
+
 type FormRow = {
   id: string;
   created_at: string | null;
@@ -12,6 +14,8 @@ type FormRow = {
   annee: number | null;
   data: Record<string, unknown> | null;
   user_id: string | null;
+  cq_id: string | null;
+  payment_status: PaymentStatus | null;
 };
 
 type DocCountRow = { formulaire_id: string; count: number };
@@ -43,17 +47,13 @@ export default async function AdminDossiersPage() {
   // 3) Formulaires (dossiers)
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, created_at, form_type, annee, data, user_id")
+    .select("id, created_at, form_type, annee, data, user_id, cq_id, payment_status")
     .order("created_at", { ascending: false })
     .limit(500)
     .returns<FormRow[]>();
 
   if (formsErr) {
-    return (
-      <div className="p-6">
-        Erreur chargement formulaires: {formsErr.message}
-      </div>
-    );
+    return <div className="p-6">Erreur chargement formulaires: {formsErr.message}</div>;
   }
 
   const list = forms ?? [];
@@ -84,24 +84,20 @@ export default async function AdminDossiersPage() {
 
   // Maps
   const docsMap = new Map<string, number>();
-  safeDocsAgg.forEach((r) =>
-    docsMap.set(r.formulaire_id, Number(r.count ?? 0))
-  );
+  safeDocsAgg.forEach((r) => docsMap.set(r.formulaire_id, Number(r.count ?? 0)));
 
   const statusMap = new Map<string, StatusRow>();
   statuses.forEach((s) => statusMap.set(s.formulaire_id, s));
 
   // Rows UI
   const rows: AdminDossierRow[] = list.map((f) => {
-    const filled =
-      !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
-
+    const filled = !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
     const st = statusMap.get(f.id);
 
     return {
       formulaire_id: f.id,
-      cq_id: f.user_id ?? null,
-      payment_status: null, // si tu ajoutes payment_status plus tard
+      cq_id: f.cq_id ?? null,
+      payment_status: f.payment_status ?? "unpaid",
       created_at: f.created_at ?? null,
       status: st?.status ?? "recu",
       updated_at: st?.updated_at ?? null,
