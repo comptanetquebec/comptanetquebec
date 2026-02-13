@@ -147,6 +147,42 @@ function DepotDocumentsInner({
   const docsCount = docs.length;
   const disabledUpload = uploading || !userId || !fid;
 
+  /**
+   * ✅ TEST bucket: si ce test échoue (404 / 403), ton problème est Storage / policies / bucket name.
+   */
+  const testBucket = useCallback(async () => {
+    try {
+      // list("") est le test le plus simple pour valider bucket + droits
+      const res = await supabase.storage.from(STORAGE_BUCKET).list("", { limit: 1 });
+      console.log("BUCKET TEST", { bucket: STORAGE_BUCKET, res });
+      if (res.error) {
+        setMsg(
+          "❌ " +
+            t(
+              lang,
+              `Storage: impossible d'accéder au bucket "${STORAGE_BUCKET}" — ${res.error.message}`,
+              `Storage: cannot access bucket "${STORAGE_BUCKET}" — ${res.error.message}`,
+              `Storage: no se puede acceder al bucket "${STORAGE_BUCKET}" — ${res.error.message}`
+            )
+        );
+      }
+    } catch (e: unknown) {
+      console.log("BUCKET TEST EX", e);
+      setMsg(
+        "❌ " +
+          errMessage(
+            e,
+            t(
+              lang,
+              "Storage: erreur test bucket.",
+              "Storage: bucket test error.",
+              "Storage: error de prueba del bucket."
+            )
+          )
+      );
+    }
+  }, [lang]);
+
   const loadDocs = useCallback(async () => {
     if (!fid) return;
 
@@ -160,6 +196,8 @@ function DepotDocumentsInner({
       .order("created_at", { ascending: false });
 
     setLoadingDocs(false);
+
+    console.log("LOAD DOCS RESULT", { fid, error, data });
 
     if (error) {
       setMsg("❌ " + error.message);
@@ -178,14 +216,15 @@ function DepotDocumentsInner({
   }, [fid]);
 
   useEffect(() => {
+    void testBucket();
     void loadDocs();
-  }, [loadDocs]);
+  }, [testBucket, loadDocs]);
 
   const getSignedUrl = useCallback(
     async (path: string) => {
-      const { data, error } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .createSignedUrl(path, 60 * 10);
+      const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+
+      console.log("SIGNED URL RESULT", { path, error, data });
 
       if (error || !data?.signedUrl) {
         throw new Error(
@@ -224,6 +263,8 @@ function DepotDocumentsInner({
       setUploading(true);
       setMsg(null);
 
+      console.log("UPLOAD START", { fid, userId, bucket: STORAGE_BUCKET, n: files.length });
+
       try {
         for (const file of Array.from(files)) {
           if (!isAllowedFile(file)) {
@@ -246,6 +287,9 @@ function DepotDocumentsInner({
             upsert: false,
             contentType: file.type || undefined,
           });
+
+          console.log("UPLOAD RESULT", { file: file.name, storagePath, up });
+
           if (up.error) throw new Error(up.error.message);
 
           const ins = await supabase.from(DOCS_TABLE).insert({
@@ -256,12 +300,16 @@ function DepotDocumentsInner({
             mime_type: file.type || null,
             size_bytes: file.size || null,
           });
+
+          console.log("INSERT RESULT", { file: file.name, ins });
+
           if (ins.error) throw new Error(ins.error.message);
         }
 
         setMsg(t(lang, "✅ Upload terminé.", "✅ Upload complete.", "✅ Subida completada."));
         await loadDocs();
       } catch (e: unknown) {
+        console.log("UPLOAD ERROR", e);
         setMsg("❌ " + errMessage(e, t(lang, "Erreur upload.", "Upload error.", "Error de subida.")));
       } finally {
         setUploading(false);
@@ -299,7 +347,12 @@ function DepotDocumentsInner({
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
               <span>
-                {t(lang, "Étape 2/3 — Dépôt de documents", "Step 2/3 — Upload documents", "Paso 2/3 — Subir documentos")}
+                {t(
+                  lang,
+                  "Étape 2/3 — Dépôt de documents",
+                  "Step 2/3 — Upload documents",
+                  "Paso 2/3 — Subir documentos"
+                )}
               </span>
             </div>
           </div>
@@ -345,7 +398,9 @@ function DepotDocumentsInner({
                 <p className="ff-drop__title">
                   {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
                 </p>
-                <p className="ff-drop__hint">{t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}</p>
+                <p className="ff-drop__hint">
+                  {t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}
+                </p>
               </div>
 
               <div className="ff-doc-actions">
