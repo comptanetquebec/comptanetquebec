@@ -351,11 +351,13 @@ export default function Home() {
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
         seoP1:
-          "ComptaNet Québec propose un service en ligne pour préparer votre déclaration de revenus au Québec. Le processus est simple : vous ouvrez votre dossier, vous téléversez vos documents et votre déclaration est préparée à partir des informations fournies.",
-        seoP2:
-          "Ce service convient aux particuliers (salariés, retraités, étudiants), aux travailleurs autonomes (revenus d’entreprise et dépenses) et aux compagnies incorporées (déclaration de société).",
-        seoP3:
-          "Vous n’avez pas besoin de connaître les termes fiscaux. Choisissez simplement votre situation et suivez les étapes. Si un document manque, vous serez contacté avant l’envoi.",
+"ComptaNet Québec offre un service de déclaration d’impôt en ligne au Québec. Ouvrez votre dossier sécurisé, téléversez vos documents et votre déclaration est préparée à partir des informations fournies.",
+
+seoP2:
+"Le service s’adresse aux particuliers (T1), aux travailleurs autonomes et aux compagnies incorporées (T2). Transmission électronique (TED) lorsque applicable.",
+
+seoP3:
+"Service fiscal indépendant, simple et confidentiel, disponible partout au Québec.",
 
         servicesTitle: "Services",
         servicesSub:
