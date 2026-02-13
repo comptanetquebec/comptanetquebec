@@ -6,7 +6,7 @@ import { sendAdminNotifyEmail } from "@/lib/emails/adminNotify";
 
 export const runtime = "nodejs";
 
-// ✅ ne pas forcer apiVersion
+// ✅ Ne pas forcer apiVersion
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 type DossierType = "T1" | "TA" | "T2";
@@ -14,7 +14,6 @@ type DossierType = "T1" | "TA" | "T2";
 function jsonOk() {
   return NextResponse.json({ received: true }, { status: 200 });
 }
-
 function jsonErr(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
@@ -47,20 +46,13 @@ function supabaseAdmin(): SupabaseClient {
  *     id text primary key,
  *     created_at timestamptz default now()
  *   );
- *
- * Si l'insert échoue avec 23505 => déjà traité => OK.
- * Toute autre erreur => throw (500) pour Stripe retry.
  */
-type PostgrestLikeError = {
-  message: string;
-  code?: string;
-};
+type PostgrestLikeError = { message: string; code?: string };
 
 function getPgErrorCode(err: unknown): string | undefined {
   if (!err || typeof err !== "object") return undefined;
   const rec = err as Record<string, unknown>;
-  const code = rec.code;
-  return typeof code === "string" ? code : undefined;
+  return typeof rec.code === "string" ? rec.code : undefined;
 }
 
 async function ensureNotProcessed(sb: SupabaseClient, eventId: string) {
@@ -70,13 +62,14 @@ async function ensureNotProcessed(sb: SupabaseClient, eventId: string) {
 
   const code = getPgErrorCode(error);
 
-  // 23505 = unique_violation (déjà inséré)
+  // 23505 = unique_violation => déjà traité
   if (code === "23505") {
-    const already = Object.assign(new Error("ALREADY_PROCESSED"), { code: "ALREADY_PROCESSED" as const });
+    const already = Object.assign(new Error("ALREADY_PROCESSED"), {
+      code: "ALREADY_PROCESSED" as const,
+    });
     throw already;
   }
 
-  // message toujours présent côté PostgREST/Supabase
   const msg = (error as PostgrestLikeError).message || "Supabase insert error";
   throw new Error(msg);
 }
@@ -89,7 +82,7 @@ export async function POST(req: NextRequest) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) return jsonErr("Missing STRIPE_WEBHOOK_SECRET", 500);
 
-    // ⚠️ raw body obligatoire pour Stripe signature
+    // ⚠️ raw body obligatoire pour vérifier la signature Stripe
     const body = await req.text();
 
     let event: Stripe.Event;
@@ -100,12 +93,12 @@ export async function POST(req: NextRequest) {
       return jsonErr(msg, 400);
     }
 
-    // ✅ on ne traite que checkout.session.completed
+    // ✅ On ne traite que checkout.session.completed
     if (event.type !== "checkout.session.completed") return jsonOk();
 
     const sb = supabaseAdmin();
 
-    // ✅ idempotence (AVANT toute action)
+    // ✅ Idempotence AVANT toute action
     try {
       await ensureNotProcessed(sb, event.id);
     } catch (e: unknown) {
@@ -117,10 +110,10 @@ export async function POST(req: NextRequest) {
 
     const session = event.data.object as Stripe.Checkout.Session;
 
+    // metadata fid = id du dossier (formulaires_fiscaux.id)
     const fid = getStr(session.metadata?.fid);
     if (!fid) return jsonOk(); // rien à lier
 
-    // type peut être manquant => fallback "T2"
     const type: DossierType = normalizeType(getStr(session.metadata?.type)) ?? "T2";
     const mode = getStr(session.metadata?.mode);
     const lang = getStr(session.metadata?.lang);
@@ -128,7 +121,10 @@ export async function POST(req: NextRequest) {
     const amountTotal = typeof session.amount_total === "number" ? session.amount_total : null;
     const currency = getStr(session.currency);
     const stripeSessionId = getStr(session.id);
-    const paymentStatus = getStr(session.payment_status);
+
+    // Stripe payment_status est souvent "paid" quand checkout.session.completed
+    const paid = session.payment_status === "paid";
+    const paymentStatusText = paid ? "paid" : "unpaid";
 
     // 1) lire cq_id existant
     const { data: existing, error: readErr } = await sb
@@ -148,21 +144,25 @@ export async function POST(req: NextRequest) {
       finalCqId = typeof generated === "string" && generated.trim() ? generated.trim() : null;
     }
 
-    // 3) update dossier
+    // 3) update dossier (✅ status workflow + ✅ payment_status paiement)
+    // IMPORTANT:
+    // - status doit respecter chk_formulaires_status (ex: 'recu','en_cours','attente_client','termine')
+    // - payment_status doit exister en DB et respecter sa contrainte (ex: 'unpaid','paid','refunded')
     const { error: upErr } = await sb
       .from("formulaires_fiscaux")
       .update({
-        status: "paid",
+        status: "recu",
+        payment_status: paymentStatusText,
         cq_id: finalCqId || undefined,
         updated_at: new Date().toISOString(),
         // stripe_session_id: stripeSessionId || undefined,
-        // paid_at: new Date().toISOString(),
+        // paid_at: paid ? new Date().toISOString() : undefined,
       })
       .eq("id", fid);
 
     if (upErr) throw new Error(upErr.message);
 
-    // 4) email admin best-effort
+    // 4) email admin (best-effort)
     try {
       await sendAdminNotifyEmail({
         subject: `Paiement reçu — ${finalCqId || fid}`,
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
           `Mode: ${mode || "—"}\n` +
           `Lang: ${lang || "—"}\n` +
           `Stripe session: ${stripeSessionId || "—"}\n` +
-          `Payment status: ${paymentStatus || "—"}\n` +
+          `Payment status: ${paymentStatusText}\n` +
           `Montant: ${amountTotal != null ? amountTotal / 100 : "—"} ${currency || ""}\n`,
       });
     } catch {
