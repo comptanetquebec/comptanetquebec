@@ -119,7 +119,6 @@ function rowSearchText(r: AdminDossierRow) {
 }
 
 export default function AdminDossiersClient({ initialRows }: { initialRows: AdminDossierRow[] }) {
-  // ✅ IMPORTANT: normalise dès le départ pour éliminer Docs: NaN partout (UI + recherche + tri)
   const normalizedInitial = useMemo(() => normalizeRows(initialRows), [initialRows]);
   const [rows, setRows] = useState<AdminDossierRow[]>(() => normalizedInitial);
 
@@ -186,7 +185,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
           <div className="text-sm text-gray-500">{savingId ? "Sauvegarde en cours…" : " "}</div>
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Link href="/admin" className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium">
             FORMULAIRE PRÉSENTIEL
           </Link>
@@ -240,7 +239,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
       </div>
 
       <div className="rounded-lg border bg-white">
-        <div className="hidden md:grid grid-cols-[1fr_420px_120px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
+        <div className="hidden md:grid grid-cols-[1fr_420px_170px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
           <div>Dossier</div>
           <div>Statuts</div>
           <div className="text-right">Action</div>
@@ -255,11 +254,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
               const updated = formatDate(r.updated_at);
               const mainRight = created ? ` • ${created}` : "";
 
-              const mainLeftNode = r.cq_id ? (
-                <span>{r.cq_id}</span>
-              ) : (
-                <span className="text-gray-400">CQ: (en attente)</span>
-              );
+              const mainLeftNode = r.cq_id ? <span>{r.cq_id}</span> : <span className="text-gray-400">CQ: (en attente)</span>;
 
               const formBadgeClass = r.form_filled
                 ? "bg-green-100 text-green-800 border-green-200"
@@ -270,7 +265,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
 
               return (
                 <li key={r.formulaire_id} className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_420px_120px] gap-4 items-start">
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_420px_170px] gap-4 items-start">
                     <div className="min-w-0">
                       <div className="font-semibold truncate">
                         {mainLeftNode}
@@ -323,12 +318,20 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                       </select>
                     </div>
 
-                    <div className="md:text-right">
+                    <div className="md:text-right flex md:flex-col gap-2 md:items-end">
                       <Link
                         href={`/admin/dossiers/${encodeURIComponent(r.formulaire_id)}`}
                         className="text-blue-700 hover:underline text-sm"
                       >
                         Ouvrir
+                      </Link>
+
+                      <Link
+                        href={`/admin/dossiers/docs?fid=${encodeURIComponent(r.formulaire_id)}`}
+                        className="text-blue-700 hover:underline text-sm"
+                        title="Voir / ouvrir les documents du dossier"
+                      >
+                        Docs
                       </Link>
                     </div>
                   </div>
