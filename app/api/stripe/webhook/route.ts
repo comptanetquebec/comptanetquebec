@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 type DossierType = "T1" | "TA" | "T2";
+type PaymentStatus = "unpaid" | "paid";
 
 function jsonOk() {
   return NextResponse.json({ received: true }, { status: 200 });
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
 
     // metadata fid = id du dossier (formulaires_fiscaux.id)
     const fid = getStr(session.metadata?.fid);
-    if (!fid) return jsonOk(); // rien à lier
+    if (!fid) return jsonOk();
 
     const type: DossierType = normalizeType(getStr(session.metadata?.type)) ?? "T2";
     const mode = getStr(session.metadata?.mode);
@@ -122,9 +123,9 @@ export async function POST(req: NextRequest) {
     const currency = getStr(session.currency);
     const stripeSessionId = getStr(session.id);
 
-    // Stripe payment_status est souvent "paid" quand checkout.session.completed
-    const paid = session.payment_status === "paid";
-    const paymentStatusText = paid ? "paid" : "unpaid";
+    // Stripe: session.payment_status est souvent "paid" ici, mais pas garanti (paiement async)
+    const isPaid = session.payment_status === "paid";
+    const payment_status: PaymentStatus = isPaid ? "paid" : "unpaid";
 
     // 1) lire cq_id existant
     const { data: existing, error: readErr } = await sb
@@ -137,26 +138,22 @@ export async function POST(req: NextRequest) {
 
     let finalCqId = getStr(existing?.cq_id ?? null);
 
-    // 2) générer si absent
+    // 2) générer cq_id si absent
     if (!finalCqId) {
       const { data: generated, error: genErr } = await sb.rpc("generate_dossier_number", { p_type: type });
       if (genErr) throw new Error(genErr.message);
       finalCqId = typeof generated === "string" && generated.trim() ? generated.trim() : null;
     }
 
-    // 3) update dossier (✅ status workflow + ✅ payment_status paiement)
-    // IMPORTANT:
-    // - status doit respecter chk_formulaires_status (ex: 'recu','en_cours','attente_client','termine')
-    // - payment_status doit exister en DB et respecter sa contrainte (ex: 'unpaid','paid','refunded')
+    // 3) update dossier (⚠️ NE PAS toucher `status` ici)
     const { error: upErr } = await sb
       .from("formulaires_fiscaux")
       .update({
-        status: "recu",
-        payment_status: paymentStatusText,
+        payment_status,
         cq_id: finalCqId || undefined,
         updated_at: new Date().toISOString(),
         // stripe_session_id: stripeSessionId || undefined,
-        // paid_at: paid ? new Date().toISOString() : undefined,
+        // paid_at: isPaid ? new Date().toISOString() : undefined,
       })
       .eq("id", fid);
 
@@ -165,16 +162,16 @@ export async function POST(req: NextRequest) {
     // 4) email admin (best-effort)
     try {
       await sendAdminNotifyEmail({
-        subject: `Paiement reçu — ${finalCqId || fid}`,
+        subject: isPaid ? `Paiement reçu — ${finalCqId || fid}` : `Checkout complété (non payé) — ${finalCqId || fid}`,
         text:
-          `Paiement confirmé (Stripe)\n\n` +
+          `Stripe checkout.session.completed\n\n` +
           `CQ: ${finalCqId || "—"}\n` +
           `fid: ${fid}\n` +
           `Type: ${type}\n` +
           `Mode: ${mode || "—"}\n` +
           `Lang: ${lang || "—"}\n` +
           `Stripe session: ${stripeSessionId || "—"}\n` +
-          `Payment status: ${paymentStatusText}\n` +
+          `Payment status: ${payment_status}\n` +
           `Montant: ${amountTotal != null ? amountTotal / 100 : "—"} ${currency || ""}\n`,
       });
     } catch {
