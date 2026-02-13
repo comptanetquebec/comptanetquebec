@@ -18,22 +18,11 @@ type FormRow = {
   payment_status: PaymentStatus | null;
 };
 
-// ✅ type correct pour la requête d'agrégat
-type DocsAggRow = {
-  formulaire_id: string;
-  count: number | null; // count peut revenir null selon supabase / pg
-};
-
 type StatusRow = {
   formulaire_id: string;
   status: "recu" | "en_cours" | "attente_client" | "termine";
   updated_at: string | null;
 };
-
-function safeInt(v: unknown, fallback = 0) {
-  const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 function safePayment(v: unknown): PaymentStatus {
   return v === "paid" ? "paid" : "unpaid";
@@ -76,16 +65,20 @@ export default async function AdminDossiersPage() {
     return <AdminDossiersClient initialRows={[]} />;
   }
 
-  // 4) Docs count (✅ FIX: vrai count par formulaire_id)
-  // On utilise une requête agrégée avec group by automatique via Supabase
-  // alias "count" = count(id)
-  const { data: docsAgg, error: docsErr } = await supabase
+  // 4) ✅ Docs count (FIABLE) : on récupère toutes les lignes puis on compte en JS
+  // (évite les NaN / null / agrégats instables)
+  const { data: docsRows, error: docsErr } = await supabase
     .from("formulaire_documents")
-    .select("formulaire_id, count:id")
+    .select("formulaire_id")
     .in("formulaire_id", ids)
-    .returns<DocsAggRow[]>();
+    .limit(100000); // au besoin ajuste
 
-  const safeDocsAgg: DocsAggRow[] = docsErr ? [] : (docsAgg ?? []);
+  const docsMap = new Map<string, number>();
+  if (!docsErr && docsRows) {
+    for (const r of docsRows as { formulaire_id: string }[]) {
+      docsMap.set(r.formulaire_id, (docsMap.get(r.formulaire_id) ?? 0) + 1);
+    }
+  }
 
   // 5) Status (optionnel)
   const { data: stData, error: stErr } = await supabase
@@ -94,20 +87,12 @@ export default async function AdminDossiersPage() {
     .in("formulaire_id", ids)
     .returns<StatusRow[]>();
 
-  const statuses: StatusRow[] = !stErr && stData ? stData : [];
-
-  // Maps
-  const docsMap = new Map<string, number>();
-  for (const r of safeDocsAgg) {
-    docsMap.set(r.formulaire_id, safeInt(r.count, 0));
-  }
-
   const statusMap = new Map<string, StatusRow>();
-  for (const s of statuses) {
-    statusMap.set(s.formulaire_id, s);
+  if (!stErr && stData) {
+    for (const s of stData) statusMap.set(s.formulaire_id, s);
   }
 
-  // Rows UI (✅ tout normalisé => plus de NaN)
+  // 6) Rows UI (✅ plus de NaN)
   const rows: AdminDossierRow[] = list.map((f) => {
     const filled = !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
     const st = statusMap.get(f.id);
