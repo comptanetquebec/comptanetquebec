@@ -193,7 +193,7 @@ export default function DeclarationImpotQuebecPage() {
 
         pricingTitle: "Tarifs",
         pricingText:
-          "Les tarifs de base sont affichés sur la page Tarifs. Le prix final dépend de la complexité et est confirmé avant l’envoi.",
+          "Les tarifs détaillés sont affichés sur les pages Tarifs. Le prix final dépend de la complexité et est confirmé avant l’envoi.",
 
         faqTitle: "FAQ",
         faq: [
@@ -278,7 +278,7 @@ export default function DeclarationImpotQuebecPage() {
 
         pricingTitle: "Pricing",
         pricingText:
-          "Base pricing is on the Pricing page. Final price depends on complexity and is confirmed before filing.",
+          "Full pricing is on the pricing pages. Final price depends on complexity and is confirmed before filing.",
 
         faqTitle: "FAQ",
         faq: [
@@ -363,7 +363,7 @@ export default function DeclarationImpotQuebecPage() {
 
         pricingTitle: "Precios",
         pricingText:
-          "Los precios base están en la página de Precios. El monto final depende de la complejidad y se confirma antes de presentar.",
+          "Los precios detallados están en las páginas de precios. El monto final depende de la complejidad y se confirma antes de presentar.",
 
         faqTitle: "FAQ",
         faq: [
@@ -383,9 +383,13 @@ export default function DeclarationImpotQuebecPage() {
 
   const T = COPY[lang];
 
-  // Links (mêmes routes que ta home)
+  // Links
   const toHome = `/?lang=${encodeURIComponent(lang)}`;
-  const toPricing = `/tarifs?lang=${encodeURIComponent(lang)}`;
+
+  // ✅ FIX: tu n'as pas /tarifs global => on pointe vers T1 (et on met les 3 liens dans le bloc)
+  const toPricingT1 = `/tarifs/t1?lang=${encodeURIComponent(lang)}`;
+  const toPricingTA = `/tarifs/travailleur-autonome?lang=${encodeURIComponent(lang)}`;
+  const toPricingT2 = `/tarifs/t2?lang=${encodeURIComponent(lang)}`;
 
   const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
 
@@ -412,7 +416,7 @@ export default function DeclarationImpotQuebecPage() {
     };
   }, [T.sections.faq]);
 
-  // SEO meta via <head> client-side (simple) + JSON-LD
+  // SEO meta via <head> client-side + JSON-LD
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.title = T.metaTitle;
@@ -478,10 +482,68 @@ export default function DeclarationImpotQuebecPage() {
           <Link href={toT2} className="btn btn-outline">
             {T.ctas.t2}
           </Link>
-          <Link href={toPricing} className="btn btn-outline">
+          {/* ✅ FIX: bouton "Voir les tarifs" => T1 */}
+          <Link href={toPricingT1} className="btn btn-outline">
             {T.ctas.pricing}
           </Link>
         </div>
+
+        {/* ✅ AJOUT: bloc "Tarifs indicatifs" sous les boutons */}
+        <section className={styles.priceTeaser}>
+          <h2 className={styles.priceTitle}>
+            {lang === "fr" ? "Tarifs indicatifs" : lang === "en" ? "Starting prices" : "Precios desde"}
+          </h2>
+
+          <p className={styles.priceNote}>
+            {lang === "fr"
+              ? "Les détails complets sont sur les pages Tarifs. Le prix final dépend de la complexité."
+              : lang === "en"
+              ? "Full details are on the pricing pages. Final price depends on complexity."
+              : "Los detalles completos están en las páginas de precios. El precio final depende de la complejidad."}
+          </p>
+
+          <div className={styles.priceGrid}>
+            <div className={styles.priceCard}>
+              <div className={styles.priceCardTitle}>
+                {lang === "fr" ? "Particulier (T1)" : lang === "en" ? "Individual (T1)" : "Particular (T1)"}
+              </div>
+              <div className={styles.priceCardValue}>
+                {lang === "fr" ? "à partir de 100 $" : lang === "en" ? "from $100" : "desde $100"}
+              </div>
+              <Link className={styles.priceLink} href={toPricingT1} prefetch>
+                {lang === "fr" ? "Voir les tarifs T1" : lang === "en" ? "View T1 pricing" : "Ver precios T1"}
+              </Link>
+            </div>
+
+            <div className={styles.priceCard}>
+              <div className={styles.priceCardTitle}>
+                {lang === "fr" ? "Travailleur autonome" : lang === "en" ? "Self-employed" : "Autónomo"}
+              </div>
+              <div className={styles.priceCardValue}>
+                {lang === "fr" ? "à partir de 150 $" : lang === "en" ? "from $150" : "desde $150"}
+              </div>
+              <Link className={styles.priceLink} href={toPricingTA} prefetch>
+                {lang === "fr"
+                  ? "Voir les tarifs TA"
+                  : lang === "en"
+                  ? "View self-employed pricing"
+                  : "Ver precios autónomo"}
+              </Link>
+            </div>
+
+            <div className={styles.priceCard}>
+              <div className={styles.priceCardTitle}>
+                {lang === "fr" ? "Société (T2)" : lang === "en" ? "Corporation (T2)" : "Empresa (T2)"}
+              </div>
+              <div className={styles.priceCardValue}>
+                {lang === "fr" ? "à partir de 850 $" : lang === "en" ? "from $850" : "desde $850"}
+              </div>
+              <Link className={styles.priceLink} href={toPricingT2} prefetch>
+                {lang === "fr" ? "Voir les tarifs T2" : lang === "en" ? "View T2 pricing" : "Ver precios T2"}
+              </Link>
+            </div>
+          </div>
+        </section>
       </section>
 
       <div className={styles.container}>
@@ -549,7 +611,8 @@ export default function DeclarationImpotQuebecPage() {
           <h2 className={styles.h2}>{T.sections.pricingTitle}</h2>
           <p className={styles.p}>{T.sections.pricingText}</p>
           <div className={styles.ctaRow2}>
-            <Link href={toPricing} className="btn btn-primary">
+            {/* ✅ FIX: ici aussi on pointe vers T1 */}
+            <Link href={toPricingT1} className="btn btn-primary">
               {T.ctas.pricing}
             </Link>
             <Link href={toClient} className="btn btn-outline">
