@@ -387,43 +387,43 @@ export default function Home() {
           { n: "4", t: "Validation et envoi", d: "Paiement du solde avant l’envoi (TED si applicable)." },
         ],
 
-        pricingTitle: "Tarifs 2026",
-        pricingSub:
-          "Tarifs de base. Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
-        plans: [
-          {
-            t: "Déclaration d’impôt — Particulier",
-            p: "à partir de 100 $",
-            pts: [
-              "Acompte requis : 100 $",
-              "Portail sécurisé",
-              "Préparation selon documents fournis",
-            ],
-            href: "/tarifs/t1",
-          },
-          {
-            t: "Travailleur autonome",
-            p: "à partir de 150 $",
-            pts: [
-              "Acompte requis : 150 $",
-              "Portail sécurisé",
-              "Revenus + dépenses selon pièces",
-            ],
-            href: "/tarifs/travailleur-autonome",
-          },
-          {
-            t: "Compagnie incorporée",
-            p: "à partir de 850 $",
-            pts: [
-              "Acompte requis : 450 $",
-              "Portail sécurisé",
-              "T2 + CO-17",
-              "Société sans revenus : à partir de 450 $",
-            ],
-            href: "/tarifs/t2",
-          },
-        ],
-        getPrice: "Voir les détails",
+       pricingTitle: "Tarifs 2026",
+pricingSub:
+  "Tarifs de base (taxes incluses). Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
+plans: [
+  {
+    t: "Déclaration d’impôt — Particulier",
+    p: "à partir de 100 $ (taxes incluses)",
+    pts: [
+      "Acompte requis : 100 $ (taxes incluses)",
+      "Portail sécurisé",
+      "Préparation selon documents fournis",
+    ],
+    href: "/tarifs/t1",
+  },
+  {
+    t: "Travailleur autonome",
+    p: "à partir de 150 $ (taxes incluses)",
+    pts: [
+      "Acompte requis : 150 $ (taxes incluses)",
+      "Portail sécurisé",
+      "Revenus + dépenses selon pièces",
+    ],
+    href: "/tarifs/travailleur-autonome",
+  },
+  {
+    t: "Compagnie incorporée",
+    p: "à partir de 850 $ (taxes incluses)",
+    pts: [
+      "Acompte requis : 450 $ (taxes incluses)",
+      "Portail sécurisé",
+      "T2 + CO-17",
+      "Société sans revenus : à partir de 450 $ (taxes incluses)",
+    ],
+    href: "/tarifs/t2",
+  },
+],
+getPrice: "Voir les détails",
 
         whyTitle: "Pourquoi choisir ComptaNet Québec",
         whyPoints: [
@@ -482,11 +482,12 @@ export default function Home() {
           contact: "Contact",
           help: "Besoin d’aide ?",
           legal: {
-            privacy: "Politique de confidentialité",
-            terms: "Conditions d’utilisation",
-            disclaimer: "Avis légal",
-            note: "Service indépendant. Nous ne sommes pas l’ARC ni Revenu Québec. Les déclarations sont préparées et transmises à partir des informations fournies par le client.",
-          },
+  privacy: "Politique de confidentialité",
+  terms: "Conditions d’utilisation",
+  disclaimer: "Avis légal",
+  note:
+    "ComptaNet Québec est une marque exploitée par Les Entreprises Kema Inc. (NEQ : 1175912972). Service indépendant — nous ne sommes pas l’ARC ni Revenu Québec. Les déclarations sont préparées et transmises à partir des informations fournies par le client. Tous les prix sont en dollars canadiens (CAD) et incluent les taxes applicables (TPS/TVQ).",
+},
         },
       },
 
@@ -580,33 +581,44 @@ export default function Home() {
 
         pricingTitle: "2026 Pricing",
         pricingSub:
-          "Base pricing. Final price depends on complexity and is confirmed before filing.",
-        plans: [
-          {
-            t: "Tax return — Individual",
-            p: "from $100",
-            pts: ["Deposit: $100", "Secure portal", "Prepared from documents"],
-            href: "/tarifs/t1",
-          },
-          {
-            t: "Self-employed",
-            p: "from $150",
-            pts: ["Deposit: $150", "Secure portal", "Income + expenses"],
-            href: "/tarifs/travailleur-autonome",
-          },
-          {
-            t: "Incorporated business",
-            p: "from $850",
-            pts: [
-              "Deposit: $450",
-              "Secure portal",
-              "T2 + CO-17",
-              "No-revenue corp: from $450",
-            ],
-            href: "/tarifs/t2",
-          },
-        ],
-        getPrice: "View details",
+          "Base pricing. Final price depends on complexity (multiple income sources, rental properties, missing bookkeeping, etc.) and is confirmed before filing. All prices are in Canadian dollars (CAD) and include applicable taxes (GST/QST).",
+plans: [
+  {
+    t: "Tax return — Individual",
+    p: "from $100",
+    pts: [
+      "Deposit: $100",
+      "Secure client portal",
+      "Prepared from documents provided",
+      "Taxes included (CAD)"
+    ],
+    href: "/tarifs/t1",
+  },
+  {
+    t: "Self-employed",
+    p: "from $150",
+    pts: [
+      "Deposit: $150",
+      "Secure client portal",
+      "Income and expenses based on documents",
+      "Taxes included (CAD)"
+    ],
+    href: "/tarifs/travailleur-autonome",
+  },
+  {
+    t: "Incorporated business",
+    p: "from $450",
+    pts: [
+      "Deposit: $450",
+      "Secure client portal",
+      "T2 + CO-17 corporate filing",
+      "No-revenue corporation: from $450",
+      "Taxes included (CAD)"
+    ],
+    href: "/tarifs/t2",
+  },
+],
+getPrice: "View details",
 
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
@@ -643,11 +655,12 @@ export default function Home() {
           contact: "Contact",
           help: "Need help?",
           legal: {
-            privacy: "Privacy policy",
-            terms: "Terms of use",
-            disclaimer: "Legal notice",
-            note: "Independent service. We are not the CRA nor Revenu Québec. Returns are prepared and filed based on client-provided information.",
-          },
+  privacy: "Privacy policy",
+  terms: "Terms of use",
+  disclaimer: "Legal notice",
+  note:
+    "ComptaNet Québec is a brand operated by Les Entreprises Kema Inc. (NEQ: 1175912972). Independent service — we are not the CRA nor Revenu Québec. Returns are prepared and filed based solely on client-provided information. All prices are in Canadian dollars (CAD) and include applicable taxes (GST/QST).",
+},
         },
       },
 
@@ -735,13 +748,43 @@ export default function Home() {
 
         pricingTitle: "Precios 2026",
         pricingSub:
-          "Precios base. El monto final depende de la complejidad y se confirma antes de presentar.",
-        plans: [
-          { t: "Impuestos — Particular", p: "desde $100", pts: ["Depósito: $100", "Portal seguro", "Según documentos"], href: "/tarifs/t1" },
-          { t: "Autónomo", p: "desde $150", pts: ["Depósito: $150", "Portal seguro", "Ingresos + gastos"], href: "/tarifs/travailleur-autonome" },
-          { t: "Empresa incorporada", p: "desde $850", pts: ["Depósito: $450", "Portal seguro", "T2 + CO-17", "Sin ingresos: desde $450"], href: "/tarifs/t2" },
-        ],
-        getPrice: "Ver detalles",
+  "Precios base. El monto final depende de la complejidad (múltiples ingresos, propiedades en alquiler, contabilidad incompleta, etc.) y se confirma antes de presentar la declaración. Todos los precios están en dólares canadienses (CAD) e incluyen los impuestos aplicables (GST/QST).",
+
+plans: [
+  {
+    t: "Impuestos — Particular",
+    p: "desde $100 CAD (impuestos incluidos)",
+    pts: [
+      "Depósito requerido: $100",
+      "Portal seguro",
+      "Preparación según documentos proporcionados",
+    ],
+    href: "/tarifs/t1",
+  },
+  {
+    t: "Autónomo",
+    p: "desde $150 CAD (impuestos incluidos)",
+    pts: [
+      "Depósito requerido: $150",
+      "Portal seguro",
+      "Ingresos y gastos según comprobantes",
+    ],
+    href: "/tarifs/travailleur-autonome",
+  },
+  {
+    t: "Empresa incorporada",
+    p: "desde $850 CAD (impuestos incluidos)",
+    pts: [
+      "Depósito requerido: $450",
+      "Portal seguro",
+      "T2 + CO-17",
+      "Empresa sin ingresos: desde $450 CAD",
+    ],
+    href: "/tarifs/t2",
+  },
+],
+
+getPrice: "Ver detalles",
 
         whyTitle: "Por qué elegir ComptaNet Québec",
         whyPoints: [
@@ -778,11 +821,12 @@ export default function Home() {
           contact: "Contacto",
           help: "¿Necesitas ayuda?",
           legal: {
-            privacy: "Política de privacidad",
-            terms: "Términos de uso",
-            disclaimer: "Aviso legal",
-            note: "Servicio independiente. No somos la CRA ni Revenu Québec. Las declaraciones se preparan con la información proporcionada por el cliente.",
-          },
+  privacy: "Política de privacidad",
+  terms: "Términos de uso",
+  disclaimer: "Aviso legal",
+  note:
+    "ComptaNet Québec es una marca operada por Les Entreprises Kema Inc. (NEQ: 1175912972). Servicio independiente — no somos la CRA ni Revenu Québec. Las declaraciones se preparan y presentan únicamente con la información proporcionada por el cliente. Todos los precios están en dólares canadienses (CAD) e incluyen los impuestos aplicables (GST/QST).",
+},
         },
       },
     };
