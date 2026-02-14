@@ -227,7 +227,6 @@ export default function Home() {
 
   const [lang, setLang] = useState<Lang>("fr");
   const [isAdmin, setIsAdmin] = useState(false);
-
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const [contactName, setContactName] = useState("");
@@ -575,16 +574,8 @@ export default function Home() {
         steps: [
           { n: "1", t: "Open your file", d: "Secure portal + deposit." },
           { n: "2", t: "Upload documents", d: "Photo or PDF." },
-          {
-            n: "3",
-            t: "Preparation",
-            d: "We contact you if something is missing.",
-          },
-          {
-            n: "4",
-            t: "Review & file",
-            d: "Pay balance before filing (TED when applicable).",
-          },
+          { n: "3", t: "Preparation", d: "We contact you if something is missing." },
+          { n: "4", t: "Review & file", d: "Pay balance before filing (TED when applicable)." },
         ],
 
         pricingTitle: "2026 Pricing",
@@ -606,7 +597,12 @@ export default function Home() {
           {
             t: "Incorporated business",
             p: "from $850",
-            pts: ["Deposit: $450", "Secure portal", "T2 + CO-17", "No-revenue corp: from $450"],
+            pts: [
+              "Deposit: $450",
+              "Secure portal",
+              "T2 + CO-17",
+              "No-revenue corp: from $450",
+            ],
             href: "/tarifs/t2",
           },
         ],
@@ -615,40 +611,19 @@ export default function Home() {
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
           { t: "30+ years experience", d: "Clear process, Québec only." },
-          {
-            t: "TED accreditation",
-            d: "Electronic filing when applicable.",
-          },
+          { t: "TED accreditation", d: "Electronic filing when applicable." },
           { t: "Confidentiality", d: "Strictly confidential." },
           { t: "Secure portal", d: "Upload photo/PDF, all in one place." },
         ],
 
         faqTitle: "FAQ",
         faq: [
-          {
-            q: "Is it Québec only?",
-            a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations.",
-          },
-          {
-            q: "I’m not sure which option to choose.",
-            a: "Pick the closest match. If unsure, contact us and we’ll guide you.",
-          },
-          {
-            q: "How do I send documents?",
-            a: "After creating your account, upload documents (photo or PDF) in the portal.",
-          },
-          {
-            q: "How long does it take?",
-            a: "Individual: 24–48 business hours if complete. Peak: 3–7 business days. Self-employed/corp varies; estimate after review.",
-          },
-          {
-            q: "How do payments work?",
-            a: "Deposit to open. Balance paid when ready, before filing.",
-          },
-          {
-            q: "Which documents do I need?",
-            a: "Depends on your situation. A simple checklist is provided after opening.",
-          },
+          { q: "Is it Québec only?", a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations." },
+          { q: "I’m not sure which option to choose.", a: "Pick the closest match. If unsure, contact us and we’ll guide you." },
+          { q: "How do I send documents?", a: "After creating your account, upload documents (photo or PDF) in the portal." },
+          { q: "How long does it take?", a: "Individual: 24–48 business hours if complete. Peak: 3–7 business days. Self-employed/corp varies; estimate after review." },
+          { q: "How do payments work?", a: "Deposit to open. Balance paid when ready, before filing." },
+          { q: "Which documents do I need?", a: "Depends on your situation. A simple checklist is provided after opening." },
         ],
 
         contactTitle: "Contact",
@@ -759,7 +734,8 @@ export default function Home() {
         ],
 
         pricingTitle: "Precios 2026",
-        pricingSub: "Precios base. El monto final depende de la complejidad y se confirma antes de presentar.",
+        pricingSub:
+          "Precios base. El monto final depende de la complejidad y se confirma antes de presentar.",
         plans: [
           { t: "Impuestos — Particular", p: "desde $100", pts: ["Depósito: $100", "Portal seguro", "Según documentos"], href: "/tarifs/t1" },
           { t: "Autónomo", p: "desde $150", pts: ["Depósito: $150", "Portal seguro", "Ingresos + gastos"], href: "/tarifs/travailleur-autonome" },
@@ -914,7 +890,7 @@ export default function Home() {
   const learnMoreLabel =
     lang === "fr" ? "En savoir plus" : lang === "en" ? "Learn more" : "Saber más";
 
-  // ✅ Nouveau CTA principal (3 langues)
+  // ✅ CTA principal (3 langues)
   const primaryCta =
     lang === "fr"
       ? "Choisir mon type d’impôt"
@@ -939,7 +915,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      {/* ORG JSON-LD */}
+      {/* Organization JSON-LD */}
       <Script
         id="org-jsonld"
         type="application/ld+json"
@@ -1064,7 +1040,7 @@ export default function Home() {
 
             <p className={styles.heroSub}>{T.heroSubShort}</p>
 
-            {/* ✅ CTA PRINCIPAL (nouveau, ne casse rien) */}
+            {/* ✅ CTA principal */}
             <div className={styles.heroPrimaryCtaRow}>
               <a
                 href="#types-impot"
@@ -1075,7 +1051,7 @@ export default function Home() {
               </a>
             </div>
 
-            {/* ✅ En savoir plus = secondaire (après le CTA) */}
+            {/* ✅ Lien secondaire */}
             <div className={styles.heroMoreLinkRow}>
               <Link
                 href={`/declaration-impot-quebec?lang=${encodeURIComponent(lang)}`}
@@ -1372,4 +1348,3 @@ export default function Home() {
     </main>
   );
 }
-
