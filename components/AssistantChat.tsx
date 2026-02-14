@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { askAssistant, type AIResponse, type Lang } from "@/lib/assistant";
 
 type Role = "user" | "assistant";
@@ -12,6 +13,7 @@ type Msg = {
 };
 
 const MAX_CHARS = 1500;
+const BRAND_BLUE = "#004aad"; // couleur ComptaNet (ajuste si besoin)
 
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
@@ -30,12 +32,12 @@ function welcomeFor(lang: Lang): Msg {
   };
 }
 
-function safetyLine(lang: Lang) {
-  if (lang === "en")
-    return "Security: do not share SIN, passwords, card numbers, or full ID documents in chat. Use the secure portal for documents.";
-  if (lang === "es")
-    return "Seguridad: no compartas NAS/SIN, contraseñas, tarjetas, ni documentos de identidad completos. Usa el portal seguro.";
-  return "Sécurité : ne partagez pas votre NAS, mots de passe, numéros de carte, ni documents d’identité complets dans le chat. Utilisez le portail sécurisé.";
+function microSafety(lang: Lang) {
+  return lang === "fr"
+    ? "Astuce : évitez de partager des infos sensibles (NAS, carte, mots de passe)."
+    : lang === "en"
+    ? "Tip: avoid sharing sensitive info (SIN, card numbers, passwords)."
+    : "Consejo: evita compartir datos sensibles (NAS/SIN, tarjetas, contraseñas).";
 }
 
 function quickPrompts(lang: Lang): string[] {
@@ -61,6 +63,22 @@ function quickPrompts(lang: Lang): string[] {
     "Différence entre T1, autonome et T2 ?",
     "Comment fonctionne le portail sécurisé ?",
   ];
+}
+
+function reportBody(lang: Lang, messages: Msg[]) {
+  const lastMsgs = messages
+    .slice(-6)
+    .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+    .join("\n\n");
+
+  const intro =
+    lang === "fr"
+      ? "Décrivez le problème (ex: réponse inappropriée, demande dangereuse, etc.).\n\n"
+      : lang === "en"
+      ? "Describe the issue (e.g., inappropriate answer, unsafe request, etc.).\n\n"
+      : "Describe el problema (p. ej., respuesta inapropiada, solicitud peligrosa, etc.).\n\n";
+
+  return `${microSafety(lang)}\n\n${intro}${lastMsgs}`;
 }
 
 export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
@@ -120,7 +138,10 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
       const res: AIResponse = await askAssistant(raw, lang);
       if (myReq !== reqIdRef.current) return;
 
-      setMessages((prev) => [...prev, { id: uid(), role: "assistant", content: res.content }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: uid(), role: "assistant", content: res.content },
+      ]);
     } catch (e: unknown) {
       if (myReq !== reqIdRef.current) return;
       const msg = e instanceof Error ? e.message : "Erreur inattendue";
@@ -139,7 +160,9 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
   }
 
   function copyLastAssistant() {
-    const last = [...messages].reverse().find((m) => m.role === "assistant" && m.id !== "welcome");
+    const last = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant" && m.id !== "welcome");
     if (!last) return;
     navigator.clipboard?.writeText(last.content).catch(() => {});
   }
@@ -152,17 +175,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
         ? "Report — ComptaNet Assistant"
         : "Reporte — Asistente ComptaNet";
 
-    const lastMsgs = messages.slice(-6).map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
-    const body =
-      `${safetyLine(lang)}\n\n` +
-      (lang === "fr"
-        ? "Décrivez le problème (ex: réponse inappropriée, demande dangereuse, etc.).\n\n"
-        : lang === "en"
-        ? "Describe the issue (e.g., inappropriate answer, unsafe request, etc.).\n\n"
-        : "Describe el problema (p. ej., respuesta inapropiada, solicitud peligrosa, etc.).\n\n") +
-      lastMsgs;
-
-    // adapte l'email si tu veux (support@..., etc.)
+    const body = reportBody(lang, messages);
     window.location.href = `mailto:comptanetquebec@gmail.com?subject=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(body)}`;
@@ -173,21 +186,40 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
       {/* Header */}
       <div className="border-b px-4 py-3">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold">Assistant ComptaNet</p>
-            <p className="text-xs text-neutral-600">
-              {lang === "fr"
-                ? "Info générale seulement. Aucun avis personnalisé."
-                : lang === "en"
-                ? "General information only. No personalized advice."
-                : "Solo información general. Sin asesoría personalizada."}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="relative h-8 w-8 overflow-hidden rounded-lg border bg-white">
+              <Image
+                src="/logo-cq.png"
+                alt="ComptaNet Québec"
+                fill
+                sizes="32px"
+                className="object-contain p-1"
+                priority={false}
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-neutral-900">
+                Assistant ComptaNet
+              </p>
+              <p className="text-xs text-neutral-600">
+                {lang === "fr"
+                  ? "Information générale seulement — aucun avis personnalisé."
+                  : lang === "en"
+                  ? "General information only — no personalized advice."
+                  : "Solo información general — sin asesoría personalizada."}
+              </p>
+
+              <p className="mt-1 text-[11px] text-neutral-500">
+                {microSafety(lang)}
+              </p>
+            </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
-              className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50"
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={copyLastAssistant}
               title={lang === "fr" ? "Copier la dernière réponse" : "Copy last answer"}
             >
@@ -196,7 +228,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
             <button
               type="button"
-              className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50"
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={report}
               title={lang === "fr" ? "Signaler" : "Report"}
             >
@@ -205,17 +237,12 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
             <button
               type="button"
-              className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50"
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={onReset}
             >
               {lang === "fr" ? "Nouvelle" : lang === "en" ? "New" : "Nueva"}
             </button>
           </div>
-        </div>
-
-        {/* Safety banner */}
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          {safetyLine(lang)}
         </div>
 
         {/* Quick prompts */}
@@ -225,8 +252,8 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
               key={p}
               type="button"
               onClick={() => onSend(p)}
-              className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50"
               disabled={status === "thinking"}
+              className="rounded-full border bg-white px-3 py-1 text-xs text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
             >
               {p}
             </button>
@@ -245,7 +272,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
           {errorMsg && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {(lang === "fr" ? "Erreur : " : lang === "en" ? "Error: " : "Error: ") + errorMsg}
+              {(lang === "fr" ? "Erreur : " : "Error: ") + errorMsg}
             </div>
           )}
 
@@ -257,7 +284,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
       <div className="border-t p-4">
         <div className="flex gap-2">
           <textarea
-            className="min-h-[44px] max-h-[140px] flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-neutral-200"
+            className="min-h-[44px] max-h-[140px] flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[rgba(0,74,173,0.20)]"
             placeholder={
               lang === "fr"
                 ? "Écrivez votre question… (Entrée pour envoyer)"
@@ -277,9 +304,10 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
           <button
             type="button"
-            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             disabled={!canSend}
             onClick={() => onSend()}
+            className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-40"
+            style={{ backgroundColor: BRAND_BLUE }}
           >
             {status === "thinking"
               ? "…"
@@ -316,8 +344,9 @@ function Bubble({ role, content }: { role: Role; content: string }) {
       <div
         className={[
           "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed",
-          isUser ? "bg-black text-white" : "bg-neutral-100 text-neutral-900",
+          isUser ? "text-white" : "bg-neutral-100 text-neutral-900",
         ].join(" ")}
+        style={isUser ? { backgroundColor: BRAND_BLUE } : undefined}
       >
         {content}
       </div>
