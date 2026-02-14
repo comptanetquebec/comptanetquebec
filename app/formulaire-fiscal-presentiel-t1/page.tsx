@@ -630,8 +630,7 @@ if (fid) {
       hydrating.current = false;
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+    }, []);
 
   const loadLastForm = useCallback(async () => {
     setLoading(true);
@@ -658,7 +657,7 @@ if (fid) {
       hydrating.current = false;
       setLoading(false);
     }
-     }, [loadByFid]);
+     }, [loadByFid, userId]);
 
   // init: si fid dans url -> load, sinon load last
   useEffect(() => {
