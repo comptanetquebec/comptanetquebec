@@ -7,7 +7,6 @@
 
 /* =========================
    Tokens (CSS variables)
-   NOTE: en module CSS, :root reste global.
 ========================================= */
 :root{
   --cq-blue:#004aad;
@@ -39,7 +38,7 @@
   color:var(--cq-ink);
   background:#ffffff;
 
-  /* ✅ UX/SEO: scroll anchor smooth + offset header sticky */
+  /* UX: anchors */
   scroll-behavior:smooth;
   scroll-padding-top:76px;
 }
@@ -105,7 +104,7 @@
   text-decoration-color:rgba(0,0,0,.2);
 }
 
-/* CTA container (dans ton TSX: <div className={styles.navCtas}>...) */
+/* CTA container */
 .navCtas{
   display:flex;
   align-items:center;
@@ -115,8 +114,7 @@
 }
 
 /* =========================
-   Mobile header actions
-   (ton TSX utilise: headerActions, langInline, mobileNavBtn)
+   Header actions
 ========================= */
 .headerActions{
   display:flex;
@@ -124,6 +122,7 @@
   gap:10px;
 }
 
+/* Lang switch */
 .langInline{
   display:flex;
   gap:8px;
@@ -171,9 +170,11 @@
   color:#fff;
 }
 
-/* ===== Hamburger SIMPLE et propre ===== */
+/* =========================
+   Hamburger (✅ 3 lignes horizontales)
+========================= */
 .mobileNavBtn{
-  display:none;
+  display:none;              /* caché desktop */
   width:44px;
   height:40px;
   border-radius:12px;
@@ -182,24 +183,19 @@
   cursor:pointer;
 
   padding:0;
-
-  display:flex;
-  flex-direction:column;     /* empile les lignes */
-  justify-content:center;
   align-items:center;
-  gap:5px;                   /* espace entre les lignes */
+  justify-content:center;
+
+  /* empile les lignes */
+  flex-direction:column;
+  gap:5px;
 }
 
 .mobileNavBtn span{
-  width:20px;                /* largeur des lignes */
-  height:2px;                /* épaisseur */
+  width:20px;
+  height:2px;
   background:#334155;
   border-radius:999px;
-}
-
-/* ton spacing marche très bien */
-.mobileNavBtn span + span{
-  margin-top:4px;
 }
 
 .mobileNavBtn:active{
@@ -227,7 +223,7 @@
   filter:saturate(1.02);
 }
 
-/* voile doux (lisibilité) */
+/* voile */
 .hero::after{
   content:"";
   position:absolute;
@@ -282,7 +278,7 @@
   line-height:1.55;
 }
 
-/* ✅ NOUVEAU: rangée CTA principal */
+/* CTA principal */
 .heroPrimaryCtaRow{
   margin-top:12px;
   display:flex;
@@ -295,7 +291,7 @@
   justify-content:center;
 }
 
-/* liens texte discrets */
+/* liens discrets */
 .heroLinks{
   margin-top:12px;
   display:inline-flex;
@@ -333,9 +329,7 @@
   text-decoration:underline;
 }
 
-/* =========================
-   Trust bar (pills)
-========================= */
+/* Trust bar */
 .trustBar{
   margin-top:12px;
   display:flex;
@@ -359,7 +353,7 @@
 }
 
 /* ==========================
-   Choix situation (3 cartes)
+   Choix situation
 ========================== */
 .choiceBox{
   margin-top:14px;
@@ -368,8 +362,6 @@
   border:1px solid var(--cq-border);
   border-radius:var(--cq-radius-md);
   padding:12px 12px 14px;
-
-  /* ✅ pour l'ancre #types-impot avec header sticky */
   scroll-margin-top:76px;
 }
 
@@ -471,9 +463,7 @@
   line-height:1.55;
 }
 
-/* =================
-   Grids / Cards
-================= */
+/* Grids / Cards */
 .gridCards{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
@@ -501,9 +491,7 @@
   line-height:1.55;
 }
 
-/* =================
-   Steps section
-================= */
+/* Steps */
 .stepsWrap{
   background:var(--cq-soft);
   border-top:1px solid var(--cq-border2);
@@ -516,7 +504,6 @@
   padding:38px 16px;
 }
 
-/* numéros 1-2-3-4 en bleu */
 .stepNum{
   width:34px;
   height:34px;
@@ -530,9 +517,7 @@
   box-shadow:0 8px 18px rgba(0,74,173,.18);
 }
 
-/* =================
-   Pricing
-================= */
+/* Pricing */
 .planPrice{
   color:var(--cq-ink);
   font-weight:900;
@@ -555,9 +540,7 @@
   flex-wrap:wrap;
 }
 
-/* =================
-   FAQ
-================= */
+/* FAQ */
 .faqTitle{
   color:var(--cq-ink);
   margin:0 0 12px;
@@ -604,9 +587,7 @@
   color:var(--cq-muted);
 }
 
-/* =================
-   Contact
-================= */
+/* Contact */
 .contactBox{
   border:1px solid var(--cq-border);
   border-radius:var(--cq-radius-md);
@@ -666,9 +647,7 @@
   text-decoration:underline;
 }
 
-/* =================
-   Footer
-================= */
+/* Footer */
 .footer{
   background:#0f172a;
   color:#cbd5e1;
@@ -756,6 +735,34 @@
   line-height:1.5;
 }
 
+/* =========================
+   Lien secondaire (Hero)
+========================= */
+.heroMoreLinkRow{
+  margin-top:10px;
+  display:flex;
+  justify-content:center;
+}
+
+.heroMoreBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid rgba(0,74,173,.25);
+  background:#fff;
+  color:var(--cq-blue);
+  font-weight:900;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.heroMoreBtn:hover{
+  border-color:rgba(0,74,173,.45);
+  text-decoration:underline;
+}
+
 /* =========================================
    Responsive — Mobile
 ========================================= */
@@ -770,7 +777,6 @@
     min-width:auto;
   }
 
-  /* ✅ le nom ne pousse plus tout */
   .brandName{
     font-size:16px;
     max-width:150px;
@@ -778,27 +784,23 @@
     text-overflow:ellipsis;
   }
 
-  /* ✅ Langues sur 1 ligne (pas de wrap) */
+  /* ✅ OPTION A (actuel): langues en ligne */
   .langInline{
     flex-wrap:nowrap;
     gap:6px;
   }
-
-  .langLabel{
-    display:none;
-  }
-
+  .langLabel{ display:none; }
   .langBtn{
     padding:6px 8px;
     min-width:40px;
   }
 
-  /* Afficher hamburger */
+  /* ✅ Afficher hamburger */
   .mobileNavBtn{
-    display:inline-flex;
+    display:flex; /* IMPORTANT: flex (pas inline-flex) */
   }
 
-  /* Nav devient un panneau */
+  /* Nav devient panneau */
   .nav{
     position:fixed;
     top:62px;
@@ -847,16 +849,8 @@
     justify-content:center;
   }
 
-  /* ✅ Hero moins haut pour afficher CTA plus vite */
-  .hero{
-    min-height:480px;
-  }
-
-  .heroCenter{
-    min-height:480px;
-    padding:14px 12px;
-  }
-
+  .hero{ min-height:480px; }
+  .heroCenter{ min-height:480px; padding:14px 12px; }
   .heroCard{
     width:100%;
     max-width:560px;
@@ -864,101 +858,46 @@
     border-radius:16px;
   }
 
-  /* CTA principal: full width */
   .heroPrimaryCtaRow :global(.btn){
     max-width:none;
   }
 
-  /* Choice cards: 1 colonne */
-  .choiceBox{
-    padding:12px;
-  }
+  .choiceBox{ padding:12px; }
+  .choiceGrid{ grid-template-columns:1fr; gap:10px; }
+  .choiceCard{ min-height:auto; padding:12px; }
 
-  .choiceGrid{
-    grid-template-columns:1fr;
-    gap:10px;
-  }
-
-  .choiceCard{
-    min-height:auto;
-    padding:12px;
-  }
-
-  /* Microline plus lisible */
   .microLine{
     font-size:11px;
     line-height:1.35;
   }
 
-  /* Sections: moins d'espace */
   .section{
     margin:34px auto;
     padding:0 12px;
   }
 
-  .stepsInner{
-    padding:30px 12px;
-  }
+  .stepsInner{ padding:30px 12px; }
 
-  /* Pricing: boutons en colonne */
-  .planActions{
-    flex-direction:column;
-  }
-
+  .planActions{ flex-direction:column; }
   .planActions :global(.btn){
     width:100%;
     justify-content:center;
   }
 }
 
-/* ✅ Lien secondaire */
-.heroMoreLinkRow{
-  margin-top:10px;
-  display:flex;
-  justify-content:center;
-}
-
-.heroMoreBtn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:10px 14px;
-  border-radius:12px;
-  border:1px solid rgba(0,74,173,.25);
-  background:#fff;
-  color:var(--cq-blue);
-  font-weight:900;
-  text-decoration:none;
-  cursor:pointer;
-}
-/* =========================================
-   Override hamburger mobile (vertical)
-========================================= */
+/* =========================
+   OPTION B (si tu veux langues en colonne)
+   -> décommente ce bloc et commente l'OPTION A
+========================= */
+/*
 @media (max-width: 900px){
-
-  .mobileNavBtn{
-    display:inline-flex;
-    width:44px;
-    height:40px;
-    padding:0;
-    align-items:center;
-    justify-content:center;
-    gap:4px;
+  .langInline{
+    flex-direction:column;
+    align-items:stretch;
+    gap:6px;
   }
-
-  .mobileNavBtn span{
-    width:3px;
-    height:14px;
-    border-radius:999px;
-    background:#334155;
-  }
-
-  .mobileNavBtn span + span{
-    margin-top:0;
+  .langBtn{
+    width:56px;
   }
 }
-
-.heroMoreBtn:hover{
-  border-color:rgba(0,74,173,.45);
-  text-decoration:underline;
-}
+*/
