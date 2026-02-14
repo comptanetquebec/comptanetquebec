@@ -298,8 +298,7 @@ function Inner({
   fidUrl: string;
 }) {
   const router = useRouter();
-  const params = useSearchParams();
-
+  
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
