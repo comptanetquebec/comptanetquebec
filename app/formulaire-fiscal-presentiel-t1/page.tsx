@@ -656,15 +656,15 @@ if (fid) {
     }
      }, [loadByFid, userId]);
 
-  // init: si fid dans url -> load, sinon load last
-  useEffect(() => {
-    const fidFromUrl = (params.get("fid") || "").trim();
-    if (fidFromUrl) {
-      void loadByFid(fidFromUrl);
-      return;
-    }
-    void loadLastForm();
-  }, [loadByFid, loadLastForm, params]);
+ // init: si fid dans url -> load, sinon load last
+useEffect(() => {
+  const fidFromUrl = (fidUrl || "").trim();
+  if (fidFromUrl) {
+    void loadByFid(fidFromUrl);
+    return;
+  }
+  void loadLastForm();
+}, [fidUrl, loadByFid, loadLastForm]);
 
   // autosave
   useEffect(() => {
