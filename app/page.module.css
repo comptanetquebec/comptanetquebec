@@ -1,37 +1,42 @@
 /* =========================================
    ComptaNet Québec — Home page (page.module.css)
    Accent principal: BLEU (#004aad)
-   Objectif: pro + mobile friendly (sans casser le TSX)
+   Objectif: pro + mobile friendly
+   Compatible avec ton TSX actuel (classes existantes)
 ========================================= */
 
+/* =========================
+   Tokens (CSS variables)
+   NOTE: en module CSS, :root reste global.
+========================================= */
 :root{
   --cq-blue:#004aad;
   --cq-blue-600:#003c8f;
   --cq-blue-700:#003377;
 
-  --ink:#0f172a;
-  --muted:#64748b;
-  --muted2:#475569;
+  --cq-ink:#0f172a;
+  --cq-muted:#64748b;
+  --cq-muted2:#475569;
 
-  --border:#e5e7eb;
-  --border2:#eef2f7;
+  --cq-border:#e5e7eb;
+  --cq-border2:#eef2f7;
 
-  --card:rgba(255,255,255,.96);
-  --soft:#f8fafc;
+  --cq-card:rgba(255,255,255,.96);
+  --cq-soft:#f8fafc;
 
-  --shadow:0 20px 60px rgba(0,0,0,.16);
-  --shadow-soft:0 6px 22px rgba(0,0,0,.08);
+  --cq-shadow:0 20px 60px rgba(0,0,0,.16);
+  --cq-shadow-soft:0 6px 22px rgba(0,0,0,.08);
 
-  --radius-lg:18px;
-  --radius-md:14px;
-  --radius-sm:12px;
+  --cq-radius-lg:18px;
+  --cq-radius-md:14px;
+  --cq-radius-sm:12px;
 }
 
 /* =================
    Base / Layout
 ================= */
 .main{
-  color:var(--ink);
+  color:var(--cq-ink);
   background:#ffffff;
 }
 
@@ -44,7 +49,7 @@
   z-index:40;
   background:rgba(255,255,255,.92);
   backdrop-filter:saturate(180%) blur(10px);
-  border-bottom:1px solid var(--border2);
+  border-bottom:1px solid var(--cq-border2);
 }
 
 .headerInner{
@@ -55,7 +60,6 @@
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  flex-wrap:wrap;
 }
 
 .brand{
@@ -65,19 +69,23 @@
   min-width:160px;
 }
 
+.brandLogo{
+  border-radius:10px;
+}
+
 .brandName{
   font-weight:900;
   white-space:nowrap;
   letter-spacing:-.2px;
-  color:var(--ink);
+  color:var(--cq-ink);
 }
 
+/* Desktop nav */
 .nav{
   display:flex;
   align-items:center;
   gap:14px;
   font-size:14px;
-  flex-wrap:wrap;
   max-width:100%;
 }
 
@@ -93,12 +101,26 @@
   text-decoration-color:rgba(0,0,0,.2);
 }
 
-.langWrap{ margin-left:8px; }
+/* CTA container (dans ton TSX: <div className={styles.navCtas}>...) */
+.navCtas{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-left:10px;
+}
 
-/* =================
-   Lang switcher
-================= */
-.langRow{
+/* =========================
+   Mobile header actions
+   (ton TSX utilise: headerActions, langInline, mobileNavBtn)
+========================= */
+.headerActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.langInline{
   display:flex;
   gap:8px;
   align-items:center;
@@ -107,12 +129,12 @@
 
 .langLabel{
   font-size:12px;
-  color:var(--muted);
-  font-weight:700;
+  color:var(--cq-muted);
+  font-weight:800;
 }
 
 .langBtn{
-  border:1px solid var(--border);
+  border:1px solid var(--cq-border);
   background:#fff;
   color:#334155;
   padding:6px 10px;
@@ -121,9 +143,13 @@
   cursor:pointer;
   white-space:nowrap;
   line-height:1;
-  font-weight:800;
+  font-weight:900;
   min-width:44px;
-  transition:background .15s ease, border-color .15s ease, color .15s ease, transform .06s ease;
+  transition:
+    background .15s ease,
+    border-color .15s ease,
+    color .15s ease,
+    transform .06s ease;
 }
 
 .langBtn:hover{
@@ -141,11 +167,28 @@
   color:#fff;
 }
 
-.langSelect{
-  border:1px solid var(--border);
-  padding:6px 10px;
-  border-radius:10px;
-  font-size:12px;
+/* Hamburger */
+.mobileNavBtn{
+  display:none;
+  width:44px;
+  height:40px;
+  border-radius:12px;
+  border:1px solid var(--cq-border);
+  background:#fff;
+  cursor:pointer;
+  padding:10px;
+}
+
+.mobileNavBtn span{
+  display:block;
+  height:2px;
+  width:100%;
+  background:#334155;
+  border-radius:999px;
+}
+
+.mobileNavBtn span + span{
+  margin-top:6px;
 }
 
 /* =================
@@ -194,11 +237,11 @@
 
 .heroCard{
   width:min(860px, 96vw);
-  background:var(--card);
+  background:var(--cq-card);
   border:1px solid rgba(15,23,42,.10);
-  border-radius:var(--radius-lg);
+  border-radius:var(--cq-radius-lg);
   padding:18px 18px 16px;
-  box-shadow:var(--shadow);
+  box-shadow:var(--cq-shadow);
   text-align:center;
 }
 
@@ -207,12 +250,19 @@
   line-height:1.15;
   margin:0;
   letter-spacing:-.3px;
-  color:var(--ink);
+  color:var(--cq-ink);
+}
+
+.heroExperience{
+  margin-top:10px;
+  font-weight:900;
+  font-size:13px;
+  letter-spacing:-.1px;
 }
 
 .heroSub{
   margin-top:10px;
-  color:var(--muted2);
+  color:var(--cq-muted2);
   font-size:clamp(14px, 1.7vw, 16px);
   line-height:1.55;
 }
@@ -232,7 +282,7 @@
 .heroLink{
   color:#334155;
   text-decoration:none;
-  font-weight:800;
+  font-weight:900;
 }
 
 .heroLink:hover{
@@ -255,13 +305,30 @@
   text-decoration:underline;
 }
 
-/* si tu gardes un bloc de boutons */
-.heroCtas{
+/* =========================
+   Trust bar (pills)
+   (ton TSX: trustBar, trustPill)
+========================= */
+.trustBar{
   margin-top:12px;
   display:flex;
-  gap:10px;
-  justify-content:center;
   flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+}
+
+.trustPill{
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  padding:8px 10px;
+  border:1px solid var(--cq-border);
+  border-radius:999px;
+  background:#fff;
+  font-weight:900;
+  font-size:12px;
+  color:#334155;
+  box-shadow:0 1px 0 rgba(15,23,42,.04);
 }
 
 /* ==========================
@@ -270,16 +337,16 @@
 .choiceBox{
   margin-top:14px;
   text-align:left;
-  background:var(--soft);
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
+  background:var(--cq-soft);
+  border:1px solid var(--cq-border);
+  border-radius:var(--cq-radius-md);
   padding:12px 12px 14px;
 }
 
 .choiceTitle{
   font-weight:900;
   font-size:13px;
-  color:var(--ink);
+  color:var(--cq-ink);
   margin-bottom:10px;
   text-align:center;
   letter-spacing:-.1px;
@@ -292,8 +359,8 @@
 }
 
 .choiceCard{
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
+  border:1px solid var(--cq-border);
+  border-radius:var(--cq-radius-md);
   background:#fff;
   padding:14px;
   display:flex;
@@ -306,20 +373,20 @@
 .choiceCard:hover{
   transform:translateY(-1px);
   border-color:rgba(0,74,173,.25);
-  box-shadow:var(--shadow-soft);
+  box-shadow:var(--cq-shadow-soft);
 }
 
 .choiceCardTitle{
   font-weight:900;
   font-size:14px;
-  color:var(--ink);
+  color:var(--cq-ink);
   line-height:1.35;
   letter-spacing:-.1px;
 }
 
 .choiceCardDesc{
   font-size:13px;
-  color:var(--muted);
+  color:var(--cq-muted);
   margin-top:8px;
   line-height:1.45;
 }
@@ -327,6 +394,30 @@
 .choiceCardAction{
   margin-top:auto;
   padding-top:12px;
+}
+
+.microLine{
+  margin-top:10px;
+  text-align:center;
+  font-size:12px;
+  color:var(--cq-muted);
+  font-weight:800;
+}
+
+.heroCtaLinkRow{
+  margin-top:10px;
+  display:flex;
+  justify-content:center;
+}
+
+.heroCtaLink{
+  color:var(--cq-blue);
+  font-weight:900;
+  text-decoration:none;
+}
+
+.heroCtaLink:hover{
+  text-decoration:underline;
 }
 
 /* =================
@@ -339,13 +430,13 @@
 }
 
 .sectionTitle{
-  color:var(--ink);
+  color:var(--cq-ink);
   margin:0 0 10px;
   letter-spacing:-.2px;
 }
 
 .sectionSub{
-  color:var(--muted2);
+  color:var(--cq-muted2);
   margin:0 0 18px;
   line-height:1.55;
 }
@@ -360,8 +451,8 @@
 }
 
 .cardBox{
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
+  border:1px solid var(--cq-border);
+  border-radius:var(--cq-radius-md);
   padding:16px;
   background:#fff;
   box-shadow:0 1px 0 rgba(15,23,42,.04);
@@ -369,14 +460,14 @@
 
 .cardBox h3{
   margin:0 0 8px 0;
-  color:var(--ink);
+  color:var(--cq-ink);
   font-size:16px;
   letter-spacing:-.1px;
 }
 
 .cardBox p{
   margin:0;
-  color:var(--muted);
+  color:var(--cq-muted);
   line-height:1.55;
 }
 
@@ -384,9 +475,9 @@
    Steps section
 ================= */
 .stepsWrap{
-  background:var(--soft);
-  border-top:1px solid var(--border2);
-  border-bottom:1px solid var(--border2);
+  background:var(--cq-soft);
+  border-top:1px solid var(--cq-border2);
+  border-bottom:1px solid var(--cq-border2);
 }
 
 .stepsInner{
@@ -413,7 +504,7 @@
    Pricing
 ================= */
 .planPrice{
-  color:var(--ink);
+  color:var(--cq-ink);
   font-weight:900;
   font-size:18px;
   margin:8px 0 10px;
@@ -422,7 +513,7 @@
 .planList{
   margin:0;
   padding-left:18px;
-  color:var(--muted);
+  color:var(--cq-muted);
   font-size:14px;
   line-height:1.55;
 }
@@ -438,16 +529,19 @@
    FAQ
 ================= */
 .faqTitle{
-  color:var(--ink);
+  color:var(--cq-ink);
   margin:0 0 12px;
   letter-spacing:-.2px;
 }
 
-.faqWrap{ display:grid; gap:10px; }
+.faqWrap{
+  display:grid;
+  gap:10px;
+}
 
 .faqItem{
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
+  border:1px solid var(--cq-border);
+  border-radius:var(--cq-radius-md);
   overflow:hidden;
   background:#fff;
   box-shadow:0 1px 0 rgba(15,23,42,.04);
@@ -461,44 +555,51 @@
   border:none;
   cursor:pointer;
   font-weight:900;
-  color:var(--ink);
+  color:var(--cq-ink);
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:10px;
 }
 
 .faqAnswer{
   padding:0 14px 14px;
-  color:var(--muted2);
+  color:var(--cq-muted2);
   font-size:14px;
   line-height:1.55;
 }
 
-.faqIcon{ font-size:18px; color:var(--muted); }
+.faqIcon{
+  font-size:18px;
+  color:var(--cq-muted);
+}
 
 /* =================
    Contact
 ================= */
 .contactBox{
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
+  border:1px solid var(--cq-border);
+  border-radius:var(--cq-radius-md);
   padding:16px;
   background:#fff;
   max-width:700px;
   box-shadow:0 1px 0 rgba(15,23,42,.04);
 }
 
-.contactForm{ display:grid; gap:12px; }
+.contactForm{
+  display:grid;
+  gap:12px;
+}
 
 .input{
   width:100%;
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
+  border:1px solid var(--cq-border);
+  border-radius:var(--cq-radius-sm);
   padding:12px 14px;
   outline:none;
   font-size:14px;
   font-family:inherit;
-  color:var(--ink);
+  color:var(--cq-ink);
   background:#fff;
 }
 
@@ -507,18 +608,27 @@
   box-shadow:0 0 0 3px rgba(0,74,173,.16);
 }
 
-.ok{ color:#166534; font-weight:900; font-size:13px; }
-.err{ color:#b91c1c; font-weight:900; font-size:13px; }
+.ok{
+  color:#166534;
+  font-weight:900;
+  font-size:13px;
+}
+
+.err{
+  color:#b91c1c;
+  font-weight:900;
+  font-size:13px;
+}
 
 .contactHint{
-  color:var(--muted);
+  color:var(--cq-muted);
   margin-top:12px;
   font-size:14px;
 }
 
 .contactHint a{
   color:var(--cq-blue);
-  font-weight:800;
+  font-weight:900;
   text-decoration:none;
 }
 
@@ -562,10 +672,23 @@
   color:#cbd5e1;
   text-decoration:none;
   white-space:nowrap;
-  font-weight:700;
+  font-weight:800;
 }
 
-.footerLinks a:hover{ text-decoration:underline; }
+.footerLinks a:hover{
+  text-decoration:underline;
+}
+
+.footerHelpLink{
+  color:#cbd5e1;
+  text-decoration:none;
+  white-space:nowrap;
+  font-weight:900;
+}
+
+.footerHelpLink:hover{
+  text-decoration:underline;
+}
 
 .footerLegal{
   border-top:1px solid rgba(255,255,255,0.1);
@@ -584,7 +707,19 @@
   line-height:1.5;
 }
 
-.dot{ opacity:.4; }
+.footerLegalLink{
+  color:#cbd5e1;
+  text-decoration:none;
+  font-weight:900;
+}
+
+.footerLegalLink:hover{
+  text-decoration:underline;
+}
+
+.dot{
+  opacity:.4;
+}
 
 .footerNote{
   max-width:800px;
@@ -592,12 +727,10 @@
 }
 
 /* =========================================
-   Responsive — Mobile (cell-first)
-   NOTE: on garde les mêmes classes → safe
+   Responsive — Mobile
+   (ton TSX a un menu mobile: navOpen + bouton hamburger)
 ========================================= */
 @media (max-width: 900px){
-
-  /* Navbar: éviter le “wrap” qui scrappe tout */
   .headerInner{
     flex-wrap:nowrap;
     gap:10px;
@@ -607,21 +740,63 @@
     min-width:auto;
   }
 
+  /* Afficher hamburger */
+  .mobileNavBtn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* Nav devient un panneau */
   .nav{
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:6px;
-    gap:10px;
+    position:fixed;
+    top:62px;
+    left:0;
+    right:0;
+    z-index:50;
+
+    display:none;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+
+    padding:12px;
+    background:rgba(255,255,255,.98);
+    border-bottom:1px solid var(--cq-border2);
+    box-shadow:0 18px 40px rgba(0,0,0,.14);
   }
 
-  .nav::-webkit-scrollbar{ height:6px; }
-  .nav::-webkit-scrollbar-thumb{
-    background:rgba(15,23,42,.18);
-    border-radius:999px;
+  .navOpen{
+    display:flex;
   }
 
-  /* Hero: un peu plus haut + card pleine largeur */
+  .nav a{
+    padding:10px 10px;
+    border-radius:12px;
+    background:#fff;
+    border:1px solid var(--cq-border);
+    text-decoration:none;
+  }
+
+  .nav a:hover{
+    text-decoration:none;
+    border-color:rgba(0,74,173,.35);
+  }
+
+  .navCtas{
+    margin-left:0;
+    margin-top:6px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  .navCtas :global(.btn){
+    width:100%;
+    justify-content:center;
+  }
+
+  /* Hero */
   .hero{
     min-height:540px;
   }
@@ -638,7 +813,7 @@
     border-radius:16px;
   }
 
-  /* Choice cards: 1 colonne, plus compact */
+  /* Choice cards: 1 colonne */
   .choiceBox{
     padding:12px;
   }
@@ -653,7 +828,7 @@
     padding:12px;
   }
 
-  /* Sections: moins d'espace vertical */
+  /* Sections: moins d'espace */
   .section{
     margin:34px auto;
     padding:0 12px;
