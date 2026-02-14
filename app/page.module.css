@@ -928,6 +928,32 @@
   text-decoration:none;
   cursor:pointer;
 }
+/* =========================================
+   Override hamburger mobile (vertical)
+========================================= */
+@media (max-width: 900px){
+
+  .mobileNavBtn{
+    display:inline-flex;
+    width:44px;
+    height:40px;
+    padding:0;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+  }
+
+  .mobileNavBtn span{
+    width:3px;
+    height:14px;
+    border-radius:999px;
+    background:#334155;
+  }
+
+  .mobileNavBtn span + span{
+    margin-top:0;
+  }
+}
 
 .heroMoreBtn:hover{
   border-color:rgba(0,74,173,.45);
