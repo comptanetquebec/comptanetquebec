@@ -9,22 +9,21 @@ export const metadata = {
 
 export default function AidePage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <header className="mb-6">
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <header className="mb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Assistant ComptaNet</h1>
-
-            <p className="mt-2 text-sm text-neutral-600">
-              Posez vos questions <span className="font-medium">générales</span> sur les impôts au Québec,
-              les documents à fournir et le fonctionnement du service.
+            <p className="mt-1 text-sm text-neutral-600">
+              Questions <span className="font-medium">générales</span> sur l’impôt au Québec, les documents
+              requis et le fonctionnement du service.
             </p>
           </div>
 
           <div className="flex gap-2">
             <Link
               href="/espace-client"
-              className="rounded-xl bg-[#004aad] px-4 py-2 text-sm font-medium text-white"
+              className="rounded-xl bg-[#004aad] px-4 py-2 text-sm font-medium text-white hover:opacity-95"
             >
               Ouvrir un dossier
             </Link>
@@ -37,34 +36,19 @@ export default function AidePage() {
           </div>
         </div>
 
-        {/* Bloc information générale */}
-        <div className="mt-4 rounded-xl border bg-white p-4 text-sm text-neutral-700">
-          <p className="font-medium">Important</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+        {/* Bloc unique compact */}
+        <div className="mt-3 rounded-xl border bg-neutral-50 p-3 text-sm text-neutral-700">
+          <p className="font-medium">Information importante</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            <li>Information générale seulement — aucun avis personnalisé.</li>
             <li>
-              Cet assistant donne de <span className="font-medium">l’information générale</span> seulement.
-            </li>
-            <li>
-              Il ne remplace pas un comptable et ne fournit pas de <span className="font-medium">conseils personnalisés</span>.
-            </li>
-            <li>
-              Pour une réponse adaptée, il faut <span className="font-medium">ouvrir un dossier</span> et analyser vos documents.
+              N’écrivez pas d’infos sensibles (NAS, carte, mots de passe). Pour les documents, utilisez le
+              portail sécurisé.
             </li>
           </ul>
         </div>
-
-        {/* Bloc sécurité simplifié (moins agressif visuellement) */}
-        <div className="mt-3 rounded-xl border bg-neutral-50 p-4 text-sm text-neutral-700">
-          <p className="font-medium">Confidentialité</p>
-          <p className="mt-1">
-            Ne partagez pas d’informations sensibles dans le chat (NAS, mots de passe,
-            numéros de carte, documents d’identité complets). Utilisez le portail sécurisé
-            pour transmettre vos documents.
-          </p>
-        </div>
       </header>
 
-      {/* Chat */}
       <AssistantChat lang="fr" />
     </main>
   );
