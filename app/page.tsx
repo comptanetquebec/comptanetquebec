@@ -243,7 +243,6 @@ function TrustBar({ items }: { items: TrustItem[] }) {
 
 export default function Home() {
   const bleu = "#004aad" as const;
-
   const btnRadius = 10;
 
   const [lang, setLang] = useState<Lang>("fr");
@@ -332,7 +331,9 @@ export default function Home() {
           { t: "Paiement sécurisé (Stripe)" },
           { t: "Accréditation TED (transmission électronique)" },
           { t: "Confidentialité" },
-          { t: "Délais habituels : 3 à 7 jours ouvrables (dossier complet)" },
+          {
+            t: "Délais : Particulier 24 à 48 h ouvrables (dossier complet) • Période de pointe : 3 à 7 jours ouvrables selon le volume • Compagnie incorporée : estimation après analyse",
+          },
         ],
 
         chooseType: "Choisissez votre situation",
@@ -351,13 +352,11 @@ export default function Home() {
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
         seoP1:
-"ComptaNet Québec offre un service de déclaration d’impôt en ligne au Québec. Ouvrez votre dossier sécurisé, téléversez vos documents et votre déclaration est préparée à partir des informations fournies.",
-
-seoP2:
-"Le service s’adresse aux particuliers (T1), aux travailleurs autonomes et aux compagnies incorporées (T2). Transmission électronique (TED) lorsque applicable.",
-
-seoP3:
-"Service fiscal indépendant, simple et confidentiel, disponible partout au Québec.",
+          "ComptaNet Québec offre un service de déclaration d’impôt en ligne au Québec. Ouvrez votre dossier sécurisé, téléversez vos documents et votre déclaration est préparée à partir des informations fournies.",
+        seoP2:
+          "Le service s’adresse aux particuliers, aux travailleurs autonomes et aux compagnies incorporées. Transmission électronique (TED) lorsque applicable.",
+        seoP3:
+          "Service fiscal indépendant, simple et confidentiel, disponible partout au Québec.",
 
         servicesTitle: "Services",
         servicesSub:
@@ -483,7 +482,7 @@ seoP3:
           },
           {
             q: "Combien de temps ça prend ?",
-            a: "Habituellement 3 à 7 jours ouvrables après réception complète des documents. En haute saison, les dossiers incomplets peuvent prendre plus de temps.",
+            a: "Particulier : 24 à 48 heures ouvrables si le dossier est complet. En période de pointe (mars-avril) : 3 à 7 jours ouvrables selon le volume. Travailleur autonome : délai variable selon la tenue de livres et les pièces fournies. Compagnie incorporée : délai variable — une estimation est communiquée après analyse des documents.",
           },
           {
             q: "Comment se fait le paiement ?",
@@ -558,7 +557,9 @@ seoP3:
           { t: "Secure payment (Stripe)" },
           { t: "TED e-filing accreditation" },
           { t: "Confidentiality" },
-          { t: "Typical turnaround: 3–7 business days (complete file)" },
+          {
+            t: "Turnaround: Individual 24–48 business hours (complete file) • Peak season: 3–7 business days depending on volume • Incorporated business: estimate after review",
+          },
         ],
 
         chooseType: "Choose your situation",
@@ -578,7 +579,7 @@ seoP3:
         seoP1:
           "ComptaNet Québec provides an online service to prepare Québec tax returns. Open your file, upload your documents, and your return is prepared from the information you provide.",
         seoP2:
-          "This service is for individuals, self-employed workers (income and expenses), and incorporated businesses (corporate filing).",
+          "This service is for individuals, self-employed workers, and incorporated businesses. E-filing (TED) when applicable.",
         seoP3:
           "No need to know tax forms. Choose your situation and follow the steps. If something is missing, you will be contacted before filing.",
 
@@ -657,12 +658,30 @@ seoP3:
 
         faqTitle: "FAQ",
         faq: [
-          { q: "Is it Québec only?", a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations." },
-          { q: "I’m not sure which option to choose. What should I do?", a: "Pick the description that matches your situation. If unsure, contact us and we’ll guide you." },
-          { q: "How do I send my documents?", a: "After creating your account, you upload documents in the secure portal (photo or PDF)." },
-          { q: "How long does it take?", a: "Usually 3–7 business days after receiving complete documents. Peak season may take longer for incomplete files." },
-          { q: "How do payments work?", a: "A deposit is required. The balance is paid when the return is ready, before filing." },
-          { q: "What documents do I need?", a: "It depends on your situation. After opening your file, you’ll receive a simple checklist." },
+          {
+            q: "Is it Québec only?",
+            a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations.",
+          },
+          {
+            q: "I’m not sure which option to choose. What should I do?",
+            a: "Pick the description that matches your situation. If unsure, contact us and we’ll guide you.",
+          },
+          {
+            q: "How do I send my documents?",
+            a: "After creating your account, you upload documents in the secure portal (photo or PDF).",
+          },
+          {
+            q: "How long does it take?",
+            a: "Individual: typically 24–48 business hours if the file is complete. Peak season (Mar–Apr): 3–7 business days depending on volume. Self-employed: varies depending on bookkeeping and supporting documents. Incorporated business: varies — an estimate is provided after reviewing the documents.",
+          },
+          {
+            q: "How do payments work?",
+            a: "A deposit is required. The balance is paid when the return is ready, before filing.",
+          },
+          {
+            q: "What documents do I need?",
+            a: "It depends on your situation. After opening your file, you’ll receive a simple checklist.",
+          },
         ],
 
         contactTitle: "Contact",
@@ -671,7 +690,11 @@ seoP3:
         sending: "Sending...",
         sentOk: "Message sent. Thank you!",
         sentErr: "Unable to send. Please try again or email us.",
-        contactPlaceholders: { name: "Your name", email: "Your email", msg: "Your message" },
+        contactPlaceholders: {
+          name: "Your name",
+          email: "Your email",
+          msg: "Your message",
+        },
 
         langLabel: "Language",
         langNames: { fr: "FR", en: "EN", es: "ES" },
@@ -724,7 +747,9 @@ seoP3:
           { t: "Pago seguro (Stripe)" },
           { t: "Acreditación TED (presentación electrónica)" },
           { t: "Confidencialidad" },
-          { t: "Plazo habitual: 3–7 días hábiles (expediente completo)" },
+          {
+            t: "Plazos: Particular 24–48 horas hábiles (expediente completo) • Temporada alta: 3–7 días hábiles según el volumen • Empresa incorporada: estimación tras revisión",
+          },
         ],
 
         chooseType: "Elija su situación",
@@ -744,7 +769,7 @@ seoP3:
         seoP1:
           "ComptaNet Québec ofrece un servicio en línea para preparar declaraciones de impuestos en Québec. Abra su expediente, suba sus documentos y preparamos la declaración con la información proporcionada.",
         seoP2:
-          "Este servicio es para particulares, autónomos (ingresos y gastos) y empresas incorporadas (declaración de empresa).",
+          "Este servicio es para particulares, autónomos y empresas incorporadas. Presentación electrónica (TED) cuando aplique.",
         seoP3:
           "No necesita conocer los formularios. Elija su situación y siga los pasos. Si falta algo, le contactaremos antes de presentar.",
 
@@ -823,7 +848,10 @@ seoP3:
           { q: "¿Es solo para Québec?", a: "Sí. ComptaNet Québec atiende residentes y empresas de Québec." },
           { q: "No sé cuál opción elegir. ¿Qué hago?", a: "Elija la descripción que coincida con su situación. Si tiene dudas, contáctenos y le guiamos." },
           { q: "¿Cómo envío mis documentos?", a: "Después de crear la cuenta, sube los documentos en el portal seguro (foto o PDF)." },
-          { q: "¿Cuánto tarda?", a: "Normalmente 3–7 días hábiles con documentos completos. En temporada alta puede tardar más si falta información." },
+          {
+            q: "¿Cuánto tarda?",
+            a: "Particular: normalmente 24–48 horas hábiles si el expediente está completo. Temporada alta (marzo-abril): 3–7 días hábiles según el volumen. Autónomo: varía según la contabilidad y los comprobantes. Empresa incorporada: varía — se entrega una estimación después de revisar los documentos.",
+          },
           { q: "¿Cómo se paga?", a: "Se requiere un depósito. El saldo se paga cuando esté listo, antes de presentar." },
           { q: "¿Qué documentos necesito?", a: "Depende de su situación. Tras abrir el expediente, recibirá una lista simple." },
         ],
