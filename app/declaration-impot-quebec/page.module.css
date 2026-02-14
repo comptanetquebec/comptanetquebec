@@ -254,3 +254,63 @@
     justify-content:center;
   }
 }
+.priceTeaser{
+  margin-top:16px;
+  border:1px solid rgba(15,23,42,.10);
+  background:rgba(255,255,255,.9);
+  border-radius:16px;
+  padding:14px;
+}
+
+.priceTitle{
+  margin:0 0 6px;
+  font-size:16px;
+  font-weight:900;
+}
+
+.priceNote{
+  margin:0 0 12px;
+  color:#475569;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.priceGrid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:10px;
+}
+
+.priceCard{
+  border:1px solid rgba(15,23,42,.10);
+  background:#fff;
+  border-radius:14px;
+  padding:12px;
+}
+
+.priceCardTitle{
+  font-weight:900;
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.priceCardValue{
+  font-weight:900;
+  font-size:15px;
+  margin-bottom:8px;
+  color:#0f172a;
+}
+
+.priceLink{
+  color:#004aad;
+  font-weight:900;
+  text-decoration:none;
+}
+
+.priceLink:hover{
+  text-decoration:underline;
+}
+
+@media (max-width: 900px){
+  .priceGrid{ grid-template-columns:1fr; }
+}
