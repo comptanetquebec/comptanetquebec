@@ -5,6 +5,10 @@ import React from "react";
 export default function AvisLegalPage() {
   const bleu = "#004aad";
 
+  const NOM_LEGAL = "Les Entreprises Kema Inc.";
+  const NEQ = "1175912972";
+  const MARQUE = "ComptaNet Québec";
+
   return (
     <main
       style={{
@@ -36,53 +40,78 @@ export default function AvisLegalPage() {
           Dernière mise à jour : {new Date().getFullYear()}
         </p>
 
+        {/* IDENTITÉ LÉGALE */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={h2Style}>1. Nous ne sommes pas l’ARC ni Revenu Québec</h2>
+          <h2 style={h2Style}>1. Identité de l’entreprise</h2>
+
           <p style={pStyle}>
-            ComptaNet Québec est un service privé de préparation et de
-            transmission de déclarations de revenus. Nous ne sommes pas
-            l’Agence du revenu du Canada (ARC), Revenu Québec, ni aucun
-            gouvernement provincial ou territorial.
+            <strong>{MARQUE}</strong> est une marque exploitée par{" "}
+            <strong>{NOM_LEGAL}</strong>, entreprise incorporée au Québec.
+          </p>
+
+          <p style={pStyle}>
+            <strong>NEQ :</strong> {NEQ}
+          </p>
+
+          <p style={pStyle}>
+            Les services sont offerts principalement en ligne à l’ensemble des
+            résidents et entreprises du Québec.
           </p>
         </section>
 
+        {/* NON AFFILIATION */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={h2Style}>2. Information fournie par le client</h2>
+          <h2 style={h2Style}>2. Nous ne sommes pas l’ARC ni Revenu Québec</h2>
           <p style={pStyle}>
-            Vos déclarations sont préparées à partir des informations et des
-            documents que vous nous transmettez. Vous demeurez responsable de
-            l’exactitude, de l’exhaustivité et de la véracité de ces
-            informations.
-          </p>
-          <p style={pStyle}>
-            Toute omission, erreur ou oubli dans les informations fournies peut
-            affecter votre résultat fiscal, vos soldes à payer ou vos pénalités.
+            {MARQUE} est un service privé de préparation et de transmission de
+            déclarations de revenus. Nous ne sommes pas l’Agence du revenu du
+            Canada (ARC), Revenu Québec, ni aucun gouvernement provincial ou
+            territorial.
           </p>
         </section>
 
+        {/* RESPONSABILITÉ CLIENT */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={h2Style}>3. Aucune garantie de résultat fiscal</h2>
+          <h2 style={h2Style}>3. Information fournie par le client</h2>
           <p style={pStyle}>
-            Nous ne garantissons pas un remboursement spécifique, un montant
-            d’impôt à payer spécifique, ni l’acceptation automatique d’une
-            déduction ou d’un crédit fiscal. Les autorités fiscales ont toujours
-            le dernier mot.
+            Les déclarations sont préparées à partir des informations et des
+            documents transmis par le client. Le client demeure responsable de
+            l’exactitude, de l’exhaustivité et de la véracité des informations
+            fournies.
+          </p>
+          <p style={pStyle}>
+            Toute omission ou erreur peut affecter les résultats fiscaux, les
+            soldes à payer ou les pénalités applicables.
           </p>
         </section>
 
+        {/* AUCUNE GARANTIE */}
         <section style={{ marginBottom: 32 }}>
-          <h2 style={h2Style}>4. Délais de traitement</h2>
+          <h2 style={h2Style}>4. Aucune garantie de résultat fiscal</h2>
           <p style={pStyle}>
-            Les délais indiqués (ex. quelques jours ouvrables) sont des délais
-            habituels et non garantis. En haute saison ou si votre dossier est
-            incomplet, le traitement peut être plus long.
+            Aucun remboursement spécifique ni montant d’impôt à payer ne peut
+            être garanti. Les autorités fiscales conservent le pouvoir final
+            d’acceptation ou de révision des déclarations.
           </p>
         </section>
 
+        {/* DÉLAIS */}
+        <section style={{ marginBottom: 32 }}>
+          <h2 style={h2Style}>5. Délais de traitement</h2>
+          <p style={pStyle}>
+            Les délais de traitement sont fournis à titre indicatif seulement.
+            Ils peuvent varier selon la période de l’année, la complexité du
+            dossier et la complétude des documents transmis.
+          </p>
+        </section>
+
+        {/* CONTACT */}
         <section>
-          <h2 style={h2Style}>5. Contact</h2>
+          <h2 style={h2Style}>6. Contact</h2>
           <p style={pStyle}>
-            Pour toute question concernant cet avis légal :{" "}
+            Pour toute question concernant le présent avis légal :
+          </p>
+          <p style={pStyle}>
             <a href="mailto:comptanetquebec@gmail.com">
               comptanetquebec@gmail.com
             </a>
