@@ -181,8 +181,10 @@
   background:#fff;
   cursor:pointer;
 
-  /* IMPORTANT: enlever padding qui étire les lignes */
   padding:0;
+
+  display:flex;              /* ✅ important */
+  flex-direction:column;     /* ✅ 3 lignes une sous l’autre */
   align-items:center;
   justify-content:center;
 }
@@ -190,13 +192,14 @@
 .mobileNavBtn span{
   display:block;
   height:2px;
-  width:18px; /* ✅ lignes courtes */
+  width:18px;
   background:#334155;
   border-radius:999px;
 }
 
+/* ton spacing marche très bien */
 .mobileNavBtn span + span{
-  margin-top:4px; /* ✅ spacing clean */
+  margin-top:4px;
 }
 
 .mobileNavBtn:active{
