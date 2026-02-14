@@ -1347,11 +1347,11 @@ getPrice: "Ver detalles",
           {lang === "fr" ? "Courriel" : lang === "en" ? "Email" : "Correo"}
         </span>
         <a
-          className={styles.contactValueLink}
-          href="mailto:comptanetquebec@gmail.com"
-        >
-          comptanetquebec@gmail.com
-        </a>
+  className={styles.contactValueLink}
+  href="mailto:info@comptanetquebec.com"
+>
+  info@comptanetquebec.com
+</a>
       </div>
 
       <div className={styles.contactNote}>
