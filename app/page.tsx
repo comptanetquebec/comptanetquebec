@@ -33,11 +33,12 @@ type CopyDict = {
     contact: string;
     client: string;
     help: string;
+    menu: string;
+    close: string;
   };
 
   heroTitle: React.ReactNode;
   heroSub: string;
-
   heroExperience: string;
   trust: TrustItem[];
 
@@ -56,6 +57,7 @@ type CopyDict = {
   seoP1: string;
   seoP2: string;
   seoP3: string;
+  seoCities: string;
 
   servicesTitle: string;
   servicesSub: string;
@@ -150,7 +152,7 @@ function writeLangToUrl(l: Lang) {
 }
 
 /* ===========================
-   UI bits
+   Small components
 =========================== */
 function TaxChoiceCard(props: {
   title: string;
@@ -164,7 +166,6 @@ function TaxChoiceCard(props: {
     <div className={styles.choiceCard}>
       <div className={styles.choiceCardTitle}>{title}</div>
       <div className={styles.choiceCardDesc}>{desc}</div>
-
       <div className={styles.choiceCardAction}>
         <Link
           href={href}
@@ -198,7 +199,6 @@ function FAQ({ items }: { items: FAQItem[] }) {
               <span>{it.q}</span>
               <span className={styles.faqIcon}>{isOpen ? "−" : "+"}</span>
             </button>
-
             {isOpen && <div className={styles.faqAnswer}>{it.a}</div>}
           </div>
         );
@@ -209,30 +209,9 @@ function FAQ({ items }: { items: FAQItem[] }) {
 
 function TrustBar({ items }: { items: TrustItem[] }) {
   return (
-    <div
-      style={{
-        marginTop: 12,
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 8,
-        justifyContent: "center",
-      }}
-    >
+    <div className={styles.trustBar}>
       {items.map((x, i) => (
-        <div
-          key={i}
-          style={{
-            border: "1px solid rgba(0,0,0,0.10)",
-            borderRadius: 999,
-            padding: "6px 10px",
-            fontSize: 13,
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(4px)",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
+        <div key={i} className={styles.trustPill}>
           <span aria-hidden="true">✓</span>
           <span>{x.t}</span>
         </div>
@@ -247,6 +226,8 @@ export default function Home() {
 
   const [lang, setLang] = useState<Lang>("fr");
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -276,7 +257,7 @@ export default function Home() {
     window.dispatchEvent(new Event("cq:lang"));
   }, []);
 
-  // ✅ Check admin (lien admin discret dans hero)
+  // ✅ Check admin
   useEffect(() => {
     let alive = true;
 
@@ -295,6 +276,15 @@ export default function Home() {
     };
   }, []);
 
+  // ✅ ferme le menu mobile quand on change de langue
+  useEffect(() => {
+    if (mobileNavOpen) setMobileNavOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
+  // ✅ fermer menu mobile si on clique un anchor
+  const closeMobile = useCallback(() => setMobileNavOpen(false), []);
+
   const COPY = useMemo(() => {
     const dict: Record<Lang, CopyDict> = {
       fr: {
@@ -307,6 +297,8 @@ export default function Home() {
           contact: "Contact",
           client: "Espace client",
           help: "Besoin d’aide ?",
+          menu: "Menu",
+          close: "Fermer",
         },
 
         heroTitle: (
@@ -326,14 +318,11 @@ export default function Home() {
 
         trust: [
           { t: "Québec seulement" },
-          { t: "Des milliers de déclarations produites" },
-          { t: "Acompte requis pour ouvrir le dossier" },
           { t: "Paiement sécurisé (Stripe)" },
-          { t: "Accréditation TED (transmission électronique)" },
+          { t: "Accréditation TED" },
+          { t: "Portail sécurisé" },
           { t: "Confidentialité" },
-          {
-            t: "Délais : Particulier 24 à 48 h ouvrables (dossier complet) • Période de pointe : 3 à 7 jours ouvrables selon le volume • Compagnie incorporée : estimation après analyse",
-          },
+          { t: "Acompte requis" },
         ],
 
         chooseType: "Choisissez votre situation",
@@ -346,8 +335,7 @@ export default function Home() {
         autoBtn: "Commencer ma déclaration maintenant",
 
         t2Title: "🏢 Compagnie incorporée",
-        t2Desc:
-          "Déclaration de société (T2 + CO-17) selon les documents fournis.",
+        t2Desc: "Déclaration de société (T2 + CO-17) selon les documents fournis.",
         t2Btn: "Créer mon dossier corporatif",
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
@@ -357,6 +345,8 @@ export default function Home() {
           "Le service s’adresse aux particuliers, aux travailleurs autonomes et aux compagnies incorporées. Transmission électronique (TED) lorsque applicable.",
         seoP3:
           "Service fiscal indépendant, simple et confidentiel, disponible partout au Québec.",
+        seoCities:
+          "Service 100 % en ligne partout au Québec (ex. Québec, Montréal, Laval, Gatineau, Lévis, Sherbrooke, Trois-Rivières).",
 
         servicesTitle: "Services",
         servicesSub:
@@ -374,38 +364,16 @@ export default function Home() {
             t: "Impôt — Compagnie incorporée",
             d: "Préparation de la déclaration de société (T2 + CO-17) à partir des documents fournis.",
           },
-          {
-            t: "Accréditation TED",
-            d: "Transmission électronique (TED) lorsque applicable.",
-          },
-          {
-            t: "Portail sécurisé",
-            d: "Téléversement de vos documents (photo ou PDF). Tout au même endroit.",
-          },
+          { t: "Accréditation TED", d: "Transmission électronique (TED) lorsque applicable." },
+          { t: "Portail sécurisé", d: "Téléversement de vos documents (photo ou PDF)." },
         ],
 
         stepsTitle: "Comment ça fonctionne",
         steps: [
-          {
-            n: "1",
-            t: "Ouvrez votre dossier",
-            d: "Création de votre espace client sécurisé + paiement de l’acompte.",
-          },
-          {
-            n: "2",
-            t: "Téléversez vos documents",
-            d: "Glissez vos documents (photo ou PDF) dans le portail.",
-          },
-          {
-            n: "3",
-            t: "Préparation",
-            d: "Préparation à partir des informations fournies. Je vous contacte si quelque chose manque.",
-          },
-          {
-            n: "4",
-            t: "Validation et envoi",
-            d: "Paiement du solde avant l’envoi. Transmission (TED) lorsque applicable.",
-          },
+          { n: "1", t: "Ouvrez votre dossier", d: "Espace client sécurisé + acompte." },
+          { n: "2", t: "Téléversez vos documents", d: "Photo ou PDF dans le portail." },
+          { n: "3", t: "Préparation", d: "Je vous contacte si quelque chose manque." },
+          { n: "4", t: "Validation et envoi", d: "Paiement du solde avant l’envoi (TED si applicable)." },
         ],
 
         pricingTitle: "Tarifs 2026",
@@ -415,32 +383,19 @@ export default function Home() {
           {
             t: "Déclaration d’impôt — Particulier",
             p: "à partir de 100 $",
-            pts: [
-              "Acompte requis : 100 $ (ouverture du dossier)",
-              "Portail sécurisé",
-              "Préparation selon documents fournis",
-            ],
+            pts: ["Acompte requis : 100 $", "Portail sécurisé", "Préparation selon documents fournis"],
             href: "/tarifs/t1",
           },
           {
             t: "Travailleur autonome",
             p: "à partir de 150 $",
-            pts: [
-              "Acompte requis : 150 $ (ouverture du dossier)",
-              "Portail sécurisé",
-              "Revenus + dépenses selon pièces",
-            ],
+            pts: ["Acompte requis : 150 $", "Portail sécurisé", "Revenus + dépenses selon pièces"],
             href: "/tarifs/travailleur-autonome",
           },
           {
             t: "Compagnie incorporée",
             p: "à partir de 850 $",
-            pts: [
-              "Acompte requis : 450 $ (ouverture du dossier)",
-              "Portail sécurisé",
-              "T2 + CO-17 selon documents fournis",
-              "Société sans revenus : à partir de 450 $",
-            ],
+            pts: ["Acompte requis : 450 $", "Portail sécurisé", "T2 + CO-17", "Société sans revenus : à partir de 450 $"],
             href: "/tarifs/t2",
           },
         ],
@@ -448,50 +403,23 @@ export default function Home() {
 
         whyTitle: "Pourquoi choisir ComptaNet Québec",
         whyPoints: [
-          {
-            t: "30+ ans d’expérience — des milliers de déclarations",
-            d: "Préparation de déclarations d’impôt au Québec, avec un processus clair et éprouvé.",
-          },
-          {
-            t: "Accréditation TED",
-            d: "Transmission électronique (TED) lorsque applicable.",
-          },
-          {
-            t: "Confidentialité",
-            d: "Traitement des informations de façon strictement confidentielle.",
-          },
-          {
-            t: "Portail sécurisé",
-            d: "Téléversement de documents (photo ou PDF), tout au même endroit.",
-          },
+          { t: "30+ ans d’expérience", d: "Processus clair et éprouvé, Québec seulement." },
+          { t: "Accréditation TED", d: "Transmission électronique (TED) lorsque applicable." },
+          { t: "Confidentialité", d: "Traitement strictement confidentiel." },
+          { t: "Portail sécurisé", d: "Téléversement photo/PDF, tout au même endroit." },
         ],
 
         faqTitle: "FAQ",
         faq: [
-          {
-            q: "Est-ce que c’est seulement pour le Québec ?",
-            a: "Oui. ComptaNet Québec sert les résidents et entreprises du Québec.",
-          },
-          {
-            q: "Je ne sais pas quel type choisir. Quoi faire ?",
-            a: "Choisissez la description qui correspond à votre situation. Si vous hésitez, écrivez-nous et on vous guide.",
-          },
-          {
-            q: "Comment j’envoie mes documents ?",
-            a: "Après création du compte, vous téléversez vos documents dans le portail (photo ou PDF).",
-          },
+          { q: "Est-ce seulement pour le Québec ?", a: "Oui. ComptaNet Québec sert les résidents et entreprises du Québec." },
+          { q: "Je ne sais pas quel type choisir.", a: "Choisissez la description la plus proche. Si vous hésitez, écrivez-nous et on vous guide." },
+          { q: "Comment j’envoie mes documents ?", a: "Après création du compte, vous téléversez vos documents (photo ou PDF) dans le portail." },
           {
             q: "Combien de temps ça prend ?",
-            a: "Particulier : 24 à 48 heures ouvrables si le dossier est complet. En période de pointe (mars-avril) : 3 à 7 jours ouvrables selon le volume. Travailleur autonome : délai variable selon la tenue de livres et les pièces fournies. Compagnie incorporée : délai variable — une estimation est communiquée après analyse des documents.",
+            a: "Particulier : 24 à 48 h ouvrables si dossier complet. Période de pointe : 3 à 7 jours ouvrables selon le volume. Travailleur autonome et compagnie : variable selon documents; estimation après analyse.",
           },
-          {
-            q: "Comment se fait le paiement ?",
-            a: "Un acompte est demandé. Le solde est payable quand la déclaration est prête, avant l’envoi.",
-          },
-          {
-            q: "Quels documents dois-je fournir ?",
-            a: "Ça dépend de votre situation. Après ouverture du dossier, vous aurez une liste simple des documents à téléverser.",
-          },
+          { q: "Comment se fait le paiement ?", a: "Acompte à l’ouverture. Solde payable quand la déclaration est prête, avant l’envoi." },
+          { q: "Quels documents dois-je fournir ?", a: "Ça dépend de votre situation. Une checklist simple est fournie après ouverture du dossier." },
         ],
 
         contactTitle: "Contact",
@@ -500,11 +428,7 @@ export default function Home() {
         sending: "Envoi...",
         sentOk: "Message envoyé. Merci!",
         sentErr: "Impossible d’envoyer. Réessayez ou écrivez-nous par courriel.",
-        contactPlaceholders: {
-          name: "Votre nom",
-          email: "Votre courriel",
-          msg: "Votre message",
-        },
+        contactPlaceholders: { name: "Votre nom", email: "Votre courriel", msg: "Votre message" },
 
         langLabel: "Langue",
         langNames: { fr: "FR", en: "EN", es: "ES" },
@@ -533,33 +457,30 @@ export default function Home() {
           contact: "Contact",
           client: "Client portal",
           help: "Need help?",
+          menu: "Menu",
+          close: "Close",
         },
 
         heroTitle: (
           <>
             Québec{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              tax return service
-            </span>{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>tax return service</span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>online</span>
           </>
         ),
 
         heroExperience:
-          "Over 30 years of experience. Thousands of tax returns prepared in Québec.",
+          "Over 30 years of experience. Thousands of Québec returns prepared.",
         heroSub:
-          "Independent Québec-only tax return preparation service. Open your file, upload documents through a secure portal, and your return is prepared from the information you provide. You’ll be contacted if anything is missing before filing.",
+          "Independent Québec-only tax preparation service. Open your file, upload documents via a secure portal, and your return is prepared from what you provide. You’ll be contacted if anything is missing before filing.",
 
         trust: [
           { t: "Québec only" },
-          { t: "Thousands of returns prepared" },
-          { t: "Deposit required to open the file" },
           { t: "Secure payment (Stripe)" },
           { t: "TED e-filing accreditation" },
+          { t: "Secure portal" },
           { t: "Confidentiality" },
-          {
-            t: "Turnaround: Individual 24–48 business hours (complete file) • Peak season: 3–7 business days depending on volume • Incorporated business: estimate after review",
-          },
+          { t: "Deposit required" },
         ],
 
         chooseType: "Choose your situation",
@@ -579,109 +500,56 @@ export default function Home() {
         seoP1:
           "ComptaNet Québec provides an online service to prepare Québec tax returns. Open your file, upload your documents, and your return is prepared from the information you provide.",
         seoP2:
-          "This service is for individuals, self-employed workers, and incorporated businesses. E-filing (TED) when applicable.",
+          "For individuals, self-employed workers, and incorporated businesses. E-filing (TED) when applicable.",
         seoP3:
-          "No need to know tax forms. Choose your situation and follow the steps. If something is missing, you will be contacted before filing.",
+          "Independent, simple and confidential.",
+        seoCities:
+          "100% online across Québec (e.g., Québec City, Montréal, Laval, Gatineau, Lévis, Sherbrooke, Trois-Rivières).",
 
         servicesTitle: "Services",
         servicesSub: "Québec-only tax returns — secure document portal.",
         services: [
           { t: "Tax return — Individual", d: "Prepared from your documents." },
-          {
-            t: "Tax return — Self-employed",
-            d: "Income and expenses based on your documents.",
-          },
-          {
-            t: "Tax return — Incorporated business",
-            d: "Corporate filing (T2 + CO-17) prepared from your information and documents.",
-          },
-          { t: "TED accreditation", d: "Electronic filing (TED) when applicable." },
-          { t: "Secure portal", d: "Upload documents (photo or PDF). Paperless." },
+          { t: "Tax return — Self-employed", d: "Income and expenses from documents." },
+          { t: "Tax return — Incorporated business", d: "Corporate filing (T2 + CO-17) from documents." },
+          { t: "TED accreditation", d: "Electronic filing when applicable." },
+          { t: "Secure portal", d: "Upload documents (photo or PDF)." },
         ],
 
         stepsTitle: "How it works",
         steps: [
-          { n: "1", t: "Open your file", d: "Create your secure portal + pay the deposit." },
-          { n: "2", t: "Upload documents", d: "Upload documents (photo or PDF) into the portal." },
-          { n: "3", t: "Preparation", d: "Prepared from the information provided. You’ll be contacted if something is missing." },
-          { n: "4", t: "Review & file", d: "Pay the balance before filing. E-filing (TED) when applicable." },
+          { n: "1", t: "Open your file", d: "Secure portal + deposit." },
+          { n: "2", t: "Upload documents", d: "Photo or PDF." },
+          { n: "3", t: "Preparation", d: "We contact you if something is missing." },
+          { n: "4", t: "Review & file", d: "Pay balance before filing (TED when applicable)." },
         ],
 
         pricingTitle: "2026 Pricing",
         pricingSub:
-          "Base pricing. Final price depends on complexity. The amount is confirmed before filing.",
+          "Base pricing. Final price depends on complexity and is confirmed before filing.",
         plans: [
-          {
-            t: "Tax return — Individual",
-            p: "from $100",
-            pts: [
-              "Deposit required: $100 (opens the file)",
-              "Secure portal",
-              "Prepared from provided documents",
-            ],
-            href: "/tarifs/t1",
-          },
-          {
-            t: "Self-employed",
-            p: "from $150",
-            pts: [
-              "Deposit required: $150 (opens the file)",
-              "Secure portal",
-              "Income + expenses from documents",
-            ],
-            href: "/tarifs/travailleur-autonome",
-          },
-          {
-            t: "Incorporated business",
-            p: "from $850",
-            pts: [
-              "Deposit required: $450 (opens the file)",
-              "Secure portal",
-              "T2 + CO-17 from documents",
-              "No-revenue corp: from $450",
-            ],
-            href: "/tarifs/t2",
-          },
+          { t: "Tax return — Individual", p: "from $100", pts: ["Deposit: $100", "Secure portal", "Prepared from documents"], href: "/tarifs/t1" },
+          { t: "Self-employed", p: "from $150", pts: ["Deposit: $150", "Secure portal", "Income + expenses"], href: "/tarifs/travailleur-autonome" },
+          { t: "Incorporated business", p: "from $850", pts: ["Deposit: $450", "Secure portal", "T2 + CO-17", "No-revenue corp: from $450"], href: "/tarifs/t2" },
         ],
         getPrice: "View details",
 
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
-          {
-            t: "30+ years — thousands of returns prepared",
-            d: "Québec tax return preparation with a clear, proven process.",
-          },
-          { t: "TED accreditation", d: "Electronic filing (TED) when applicable." },
-          { t: "Confidentiality", d: "Information is handled strictly confidentially." },
-          { t: "Secure portal", d: "Upload documents (photo or PDF) in one place." },
+          { t: "30+ years experience", d: "Clear process, Québec only." },
+          { t: "TED accreditation", d: "Electronic filing when applicable." },
+          { t: "Confidentiality", d: "Strictly confidential." },
+          { t: "Secure portal", d: "Upload photo/PDF, all in one place." },
         ],
 
         faqTitle: "FAQ",
         faq: [
-          {
-            q: "Is it Québec only?",
-            a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations.",
-          },
-          {
-            q: "I’m not sure which option to choose. What should I do?",
-            a: "Pick the description that matches your situation. If unsure, contact us and we’ll guide you.",
-          },
-          {
-            q: "How do I send my documents?",
-            a: "After creating your account, you upload documents in the secure portal (photo or PDF).",
-          },
-          {
-            q: "How long does it take?",
-            a: "Individual: typically 24–48 business hours if the file is complete. Peak season (Mar–Apr): 3–7 business days depending on volume. Self-employed: varies depending on bookkeeping and supporting documents. Incorporated business: varies — an estimate is provided after reviewing the documents.",
-          },
-          {
-            q: "How do payments work?",
-            a: "A deposit is required. The balance is paid when the return is ready, before filing.",
-          },
-          {
-            q: "What documents do I need?",
-            a: "It depends on your situation. After opening your file, you’ll receive a simple checklist.",
-          },
+          { q: "Is it Québec only?", a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations." },
+          { q: "I’m not sure which option to choose.", a: "Pick the closest match. If unsure, contact us and we’ll guide you." },
+          { q: "How do I send documents?", a: "After creating your account, upload documents (photo or PDF) in the portal." },
+          { q: "How long does it take?", a: "Individual: 24–48 business hours if complete. Peak: 3–7 business days. Self-employed/corp varies; estimate after review." },
+          { q: "How do payments work?", a: "Deposit to open. Balance paid when ready, before filing." },
+          { q: "Which documents do I need?", a: "Depends on your situation. A simple checklist is provided after opening." },
         ],
 
         contactTitle: "Contact",
@@ -690,11 +558,7 @@ export default function Home() {
         sending: "Sending...",
         sentOk: "Message sent. Thank you!",
         sentErr: "Unable to send. Please try again or email us.",
-        contactPlaceholders: {
-          name: "Your name",
-          email: "Your email",
-          msg: "Your message",
-        },
+        contactPlaceholders: { name: "Your name", email: "Your email", msg: "Your message" },
 
         langLabel: "Language",
         langNames: { fr: "FR", en: "EN", es: "ES" },
@@ -708,7 +572,7 @@ export default function Home() {
             privacy: "Privacy policy",
             terms: "Terms of use",
             disclaimer: "Legal notice",
-            note: "Independent service. We are not the CRA nor Revenu Québec. Returns are prepared and filed based on the information provided by the client.",
+            note: "Independent service. We are not the CRA nor Revenu Québec. Returns are prepared and filed based on client-provided information.",
           },
         },
       },
@@ -723,14 +587,14 @@ export default function Home() {
           contact: "Contacto",
           client: "Portal del cliente",
           help: "¿Necesitas ayuda?",
+          menu: "Menú",
+          close: "Cerrar",
         },
 
         heroTitle: (
           <>
             Servicio de{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              impuestos en Québec
-            </span>{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>impuestos en Québec</span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>en línea</span>
           </>
         ),
@@ -742,118 +606,80 @@ export default function Home() {
 
         trust: [
           { t: "Solo Québec" },
-          { t: "Miles de declaraciones preparadas" },
-          { t: "Depósito requerido para abrir el expediente" },
           { t: "Pago seguro (Stripe)" },
-          { t: "Acreditación TED (presentación electrónica)" },
+          { t: "Acreditación TED" },
+          { t: "Portal seguro" },
           { t: "Confidencialidad" },
-          {
-            t: "Plazos: Particular 24–48 horas hábiles (expediente completo) • Temporada alta: 3–7 días hábiles según el volumen • Empresa incorporada: estimación tras revisión",
-          },
+          { t: "Depósito requerido" },
         ],
 
         chooseType: "Elija su situación",
         t1Title: "👤 Empleado/a, estudiante o jubilado/a",
         t1Desc: "T4, RL-1, pensión, estudios, etc.",
-        t1Btn: "Comenzar mi declaración ahora",
+        t1Btn: "Comenzar ahora",
 
         autoTitle: "💼 Autónomo / por cuenta propia",
-        autoDesc: "Ingresos + gastos según sus comprobantes.",
-        autoBtn: "Comenzar mi declaración ahora",
+        autoDesc: "Ingresos + gastos según comprobantes.",
+        autoBtn: "Comenzar ahora",
 
         t2Title: "🏢 Empresa incorporada",
-        t2Desc: "Declaración de empresa (T2 + CO-17) según sus documentos.",
-        t2Btn: "Abrir mi expediente corporativo",
+        t2Desc: "Declaración (T2 + CO-17) según sus documentos.",
+        t2Btn: "Abrir expediente corporativo",
 
         seoTitle: "Servicio de impuestos en Québec, simple y guiado",
         seoP1:
-          "ComptaNet Québec ofrece un servicio en línea para preparar declaraciones de impuestos en Québec. Abra su expediente, suba sus documentos y preparamos la declaración con la información proporcionada.",
+          "ComptaNet Québec ofrece un servicio en línea para preparar declaraciones de impuestos en Québec. Abra su expediente, suba sus documentos y se prepara la declaración con la información proporcionada.",
         seoP2:
-          "Este servicio es para particulares, autónomos y empresas incorporadas. Presentación electrónica (TED) cuando aplique.",
+          "Para particulares, autónomos y empresas incorporadas. Presentación electrónica (TED) cuando aplique.",
         seoP3:
-          "No necesita conocer los formularios. Elija su situación y siga los pasos. Si falta algo, le contactaremos antes de presentar.",
+          "Servicio independiente, simple y confidencial.",
+        seoCities:
+          "100% en línea en todo Québec (ej. Québec, Montréal, Laval, Gatineau, Lévis, Sherbrooke, Trois-Rivières).",
 
         servicesTitle: "Servicios",
         servicesSub: "Solo Québec — portal seguro para documentos.",
         services: [
           { t: "Impuestos — Particular", d: "Preparada con sus documentos." },
           { t: "Impuestos — Autónomo", d: "Ingresos y gastos según comprobantes." },
-          {
-            t: "Impuestos — Empresa incorporada",
-            d: "Declaración de empresa (T2 + CO-17) con sus documentos e información.",
-          },
-          { t: "Acreditación TED", d: "Presentación electrónica (TED) cuando aplique." },
-          { t: "Portal seguro", d: "Suba documentos (foto o PDF). Sin papel." },
+          { t: "Impuestos — Empresa incorporada", d: "Declaración (T2 + CO-17) con documentos." },
+          { t: "Acreditación TED", d: "Presentación electrónica cuando aplique." },
+          { t: "Portal seguro", d: "Suba documentos (foto o PDF)." },
         ],
 
         stepsTitle: "Cómo funciona",
         steps: [
-          { n: "1", t: "Abra su expediente", d: "Cree su portal seguro + pague el depósito." },
-          { n: "2", t: "Suba documentos", d: "Suba documentos (foto o PDF) en el portal." },
-          { n: "3", t: "Preparación", d: "Con la información proporcionada. Le contactamos si falta algo." },
-          { n: "4", t: "Validación y presentación", d: "Pague el saldo antes de presentar. TED cuando aplique." },
+          { n: "1", t: "Abra su expediente", d: "Portal seguro + depósito." },
+          { n: "2", t: "Suba documentos", d: "Foto o PDF." },
+          { n: "3", t: "Preparación", d: "Le contactamos si falta algo." },
+          { n: "4", t: "Validación y presentación", d: "Pague el saldo antes de presentar (TED si aplica)." },
         ],
 
         pricingTitle: "Precios 2026",
         pricingSub:
           "Precios base. El monto final depende de la complejidad y se confirma antes de presentar.",
         plans: [
-          {
-            t: "Impuestos — Particular",
-            p: "desde $100",
-            pts: [
-              "Depósito requerido: $100 (abre el expediente)",
-              "Portal seguro",
-              "Según documentos",
-            ],
-            href: "/tarifs/t1",
-          },
-          {
-            t: "Autónomo",
-            p: "desde $150",
-            pts: [
-              "Depósito requerido: $150 (abre el expediente)",
-              "Portal seguro",
-              "Ingresos + gastos",
-            ],
-            href: "/tarifs/travailleur-autonome",
-          },
-          {
-            t: "Empresa incorporada",
-            p: "desde $850",
-            pts: [
-              "Depósito requerido: $450 (abre el expediente)",
-              "Portal seguro",
-              "T2 + CO-17 según documentos",
-              "Sin ingresos: desde $450",
-            ],
-            href: "/tarifs/t2",
-          },
+          { t: "Impuestos — Particular", p: "desde $100", pts: ["Depósito: $100", "Portal seguro", "Según documentos"], href: "/tarifs/t1" },
+          { t: "Autónomo", p: "desde $150", pts: ["Depósito: $150", "Portal seguro", "Ingresos + gastos"], href: "/tarifs/travailleur-autonome" },
+          { t: "Empresa incorporada", p: "desde $850", pts: ["Depósito: $450", "Portal seguro", "T2 + CO-17", "Sin ingresos: desde $450"], href: "/tarifs/t2" },
         ],
         getPrice: "Ver detalles",
 
         whyTitle: "Por qué elegir ComptaNet Québec",
         whyPoints: [
-          {
-            t: "Más de 30 años — miles de declaraciones",
-            d: "Preparación de impuestos en Québec con un proceso claro y comprobado.",
-          },
-          { t: "Acreditación TED", d: "Presentación electrónica (TED) cuando aplique." },
-          { t: "Confidencialidad", d: "La información se trata de forma estrictamente confidencial." },
-          { t: "Portal seguro", d: "Suba documentos (foto o PDF) en un solo lugar." },
+          { t: "Más de 30 años", d: "Proceso claro, solo Québec." },
+          { t: "Acreditación TED", d: "Presentación electrónica cuando aplique." },
+          { t: "Confidencialidad", d: "Estrictamente confidencial." },
+          { t: "Portal seguro", d: "Suba foto/PDF, todo en un lugar." },
         ],
 
         faqTitle: "FAQ",
         faq: [
           { q: "¿Es solo para Québec?", a: "Sí. ComptaNet Québec atiende residentes y empresas de Québec." },
-          { q: "No sé cuál opción elegir. ¿Qué hago?", a: "Elija la descripción que coincida con su situación. Si tiene dudas, contáctenos y le guiamos." },
-          { q: "¿Cómo envío mis documentos?", a: "Después de crear la cuenta, sube los documentos en el portal seguro (foto o PDF)." },
-          {
-            q: "¿Cuánto tarda?",
-            a: "Particular: normalmente 24–48 horas hábiles si el expediente está completo. Temporada alta (marzo-abril): 3–7 días hábiles según el volumen. Autónomo: varía según la contabilidad y los comprobantes. Empresa incorporada: varía — se entrega una estimación después de revisar los documentos.",
-          },
-          { q: "¿Cómo se paga?", a: "Se requiere un depósito. El saldo se paga cuando esté listo, antes de presentar." },
-          { q: "¿Qué documentos necesito?", a: "Depende de su situación. Tras abrir el expediente, recibirá una lista simple." },
+          { q: "No sé cuál opción elegir.", a: "Elija la más cercana. Si tiene dudas, contáctenos y le guiamos." },
+          { q: "¿Cómo envío documentos?", a: "Después de crear la cuenta, suba documentos (foto o PDF) en el portal." },
+          { q: "¿Cuánto tarda?", a: "Particular: 24–48 horas hábiles si completo. Temporada alta: 3–7 días. Autónomo/empresa varía; estimación tras revisión." },
+          { q: "¿Cómo se paga?", a: "Depósito para abrir. Saldo cuando esté listo, antes de presentar." },
+          { q: "¿Qué documentos necesito?", a: "Depende. Se entrega una lista simple tras abrir el expediente." },
         ],
 
         contactTitle: "Contacto",
@@ -876,7 +702,7 @@ export default function Home() {
             privacy: "Política de privacidad",
             terms: "Términos de uso",
             disclaimer: "Aviso legal",
-            note: "Servicio independiente. No somos la CRA ni Revenu Québec. Las declaraciones se preparan y se presentan con la información proporcionada por el cliente.",
+            note: "Servicio independiente. No somos la CRA ni Revenu Québec. Las declaraciones se preparan con la información proporcionada por el cliente.",
           },
         },
       },
@@ -987,7 +813,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      {/* NAVBAR (landing) */}
+      {/* NAVBAR */}
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}>
@@ -996,37 +822,73 @@ export default function Home() {
               alt="Logo ComptaNet Québec"
               width={36}
               height={36}
-              style={{ borderRadius: 6 }}
+              className={styles.brandLogo}
               priority
             />
             <strong className={styles.brandName}>{T.brand}</strong>
           </div>
 
-          <nav className={styles.nav}>
-            <a href="#services">{T.nav.services}</a>
-            <a href="#etapes">{T.nav.steps}</a>
-            <a href="#tarifs">{T.nav.pricing}</a>
-            <a href="#faq">{T.nav.faq}</a>
-            <a href="#contact">{T.nav.contact}</a>
+          {/* Mobile actions */}
+          <div className={styles.headerActions}>
+            <div className={styles.langInline}>
+              <span className={styles.langLabel}>{T.langLabel}</span>
+              {(["fr", "en", "es"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLangAndPersist(l)}
+                  className={`${styles.langBtn} ${
+                    l === lang ? styles.langBtnActive : ""
+                  }`}
+                  aria-pressed={l === lang}
+                  type="button"
+                >
+                  {T.langNames[l]}
+                </button>
+              ))}
+            </div>
 
-            {/* Lang switch */}
-            <div className={styles.langWrap}>
-              <div className={styles.langRow}>
-                <span className={styles.langLabel}>{T.langLabel}</span>
-                {(["fr", "en", "es"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLangAndPersist(l)}
-                    className={`${styles.langBtn} ${
-                      l === lang ? styles.langBtnActive : ""
-                    }`}
-                    aria-pressed={l === lang}
-                    type="button"
-                  >
-                    {T.langNames[l]}
-                  </button>
-                ))}
-              </div>
+            <button
+              type="button"
+              className={styles.mobileNavBtn}
+              aria-label={mobileNavOpen ? T.nav.close : T.nav.menu}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((v) => !v)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
+
+          <nav className={`${styles.nav} ${mobileNavOpen ? styles.navOpen : ""}`}>
+            <a href="#services" onClick={closeMobile}>
+              {T.nav.services}
+            </a>
+            <a href="#etapes" onClick={closeMobile}>
+              {T.nav.steps}
+            </a>
+            <a href="#tarifs" onClick={closeMobile}>
+              {T.nav.pricing}
+            </a>
+            <a href="#faq" onClick={closeMobile}>
+              {T.nav.faq}
+            </a>
+            <a href="#contact" onClick={closeMobile}>
+              {T.nav.contact}
+            </a>
+
+            <div className={styles.navCtas}>
+              <Link href={toClient} className="btn btn-primary" prefetch onClick={closeMobile}>
+                {T.nav.client}
+              </Link>
+              <Link href={toHelp} className="btn btn-outline" prefetch onClick={closeMobile}>
+                {T.nav.help}
+              </Link>
+              {isAdmin && (
+                <Link href="/admin/dossiers" className="btn btn-outline" onClick={closeMobile}>
+                  Admin
+                </Link>
+              )}
             </div>
           </nav>
         </div>
@@ -1049,15 +911,7 @@ export default function Home() {
           <div className={styles.heroCard}>
             <h1 className={styles.heroTitle}>{T.heroTitle}</h1>
 
-            <div
-              style={{
-                marginTop: 8,
-                textAlign: "center",
-                fontWeight: 900,
-                color: bleu,
-                letterSpacing: 0.2,
-              }}
-            >
+            <div className={styles.heroExperience} style={{ color: bleu }}>
               {T.heroExperience}
             </div>
 
@@ -1069,13 +923,10 @@ export default function Home() {
               <Link href={toClient} className={styles.heroLink} prefetch>
                 {T.nav.client}
               </Link>
-
               <span className={styles.heroSep}>•</span>
-
               <Link href={toHelp} className={styles.heroLink} prefetch>
                 {T.nav.help}
               </Link>
-
               {isAdmin && (
                 <>
                   <span className={styles.heroSep}>•</span>
@@ -1110,15 +961,7 @@ export default function Home() {
                 />
               </div>
 
-              {/* ✅ Micro-ligne (trilingue) */}
-              <div
-                style={{
-                  marginTop: 12,
-                  textAlign: "center",
-                  fontWeight: 800,
-                  opacity: 0.95,
-                }}
-              >
+              <div className={styles.microLine}>
                 {lang === "fr"
                   ? "✅ Acompte requis • ✅ Paiement sécurisé (Stripe) • ✅ Accréditation TED"
                   : lang === "en"
@@ -1126,15 +969,8 @@ export default function Home() {
                   : "✅ Depósito requerido • ✅ Pago seguro (Stripe) • ✅ Acreditación TED"}
               </div>
 
-              <div style={{ marginTop: 10, textAlign: "center" }}>
-                <a
-                  href="#tarifs"
-                  style={{
-                    color: bleu,
-                    fontWeight: 800,
-                    textDecoration: "none",
-                  }}
-                >
+              <div className={styles.heroCtaLinkRow}>
+                <a href="#tarifs" className={styles.heroCtaLink}>
                   {T.nav.pricing}
                 </a>
               </div>
@@ -1149,11 +985,7 @@ export default function Home() {
         <p className={styles.sectionSub}>{T.seoP1}</p>
         <p className={styles.sectionSub}>{T.seoP2}</p>
         <p className={styles.sectionSub}>{T.seoP3}</p>
-
-        <p className={styles.sectionSub}>
-          Service 100 % en ligne partout au Québec (ex. Québec, Montréal, Laval,
-          Gatineau, Lévis, Sherbrooke, Trois-Rivières).
-        </p>
+        <p className={styles.sectionSub}>{T.seoCities}</p>
       </section>
 
       {/* SERVICES */}
@@ -1195,11 +1027,7 @@ export default function Home() {
 
         <div className={styles.gridCards}>
           {T.plans.map((plan, i) => (
-            <div
-              key={i}
-              className={styles.cardBox}
-              style={{ display: "flex", flexDirection: "column" }}
-            >
+            <div key={i} className={styles.cardBox} style={{ display: "flex", flexDirection: "column" }}>
               <h3>{plan.t}</h3>
               <div className={styles.planPrice}>{plan.p}</div>
 
@@ -1261,11 +1089,7 @@ export default function Home() {
       </section>
 
       {/* CONTACT */}
-      <section
-        id="contact"
-        className={styles.section}
-        style={{ marginBottom: 0 }}
-      >
+      <section id="contact" className={styles.section} style={{ marginBottom: 0 }}>
         <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
 
         <div className={styles.contactBox}>
@@ -1296,10 +1120,7 @@ export default function Home() {
               onChange={(e) => setContactMsg(e.target.value)}
             />
 
-            <div
-              className="g-recaptcha"
-              data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7"
-            />
+            <div className="g-recaptcha" data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7" />
 
             {contactErr && <div className={styles.err}>{contactErr}</div>}
             {contactOk && <div className={styles.ok}>{contactOk}</div>}
@@ -1316,9 +1137,7 @@ export default function Home() {
 
           <p className={styles.contactHint}>
             {T.contactHint}{" "}
-            <a href="mailto:comptanetquebec@gmail.com">
-              comptanetquebec@gmail.com
-            </a>
+            <a href="mailto:comptanetquebec@gmail.com">comptanetquebec@gmail.com</a>
           </p>
         </div>
       </section>
@@ -1336,15 +1155,7 @@ export default function Home() {
               <a href="#services">{T.footerLinks.services}</a>
               <a href="#tarifs">{T.footerLinks.pricing}</a>
               <a href="#contact">{T.footerLinks.contact}</a>
-              <Link
-                href={toHelp}
-                style={{
-                  fontWeight: 800,
-                  color: "#cbd5e1",
-                  textDecoration: "none",
-                }}
-                prefetch
-              >
+              <Link href={toHelp} className={styles.footerHelpLink} prefetch>
                 {T.footerLinks.help}
               </Link>
             </div>
@@ -1354,7 +1165,7 @@ export default function Home() {
             <div className={styles.footerLegalRow}>
               <Link
                 href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`}
-                style={{ color: "#94a3b8", textDecoration: "none" }}
+                className={styles.footerLegalLink}
                 prefetch
               >
                 {T.footerLinks.legal.privacy}
@@ -1362,7 +1173,7 @@ export default function Home() {
               <span className={styles.dot}>•</span>
               <Link
                 href={`/legal/conditions?lang=${encodeURIComponent(lang)}`}
-                style={{ color: "#94a3b8", textDecoration: "none" }}
+                className={styles.footerLegalLink}
                 prefetch
               >
                 {T.footerLinks.legal.terms}
@@ -1370,7 +1181,7 @@ export default function Home() {
               <span className={styles.dot}>•</span>
               <Link
                 href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`}
-                style={{ color: "#94a3b8", textDecoration: "none" }}
+                className={styles.footerLegalLink}
                 prefetch
               >
                 {T.footerLinks.legal.disclaimer}
