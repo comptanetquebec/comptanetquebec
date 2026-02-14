@@ -915,3 +915,14 @@
 .contactPreferText{opacity:.92;line-height:1.35}
 .contactCtas{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 @media (max-width:900px){.contactGrid{grid-template-columns:1fr}.contactLabel{min-width:92px}}
+.contactPriority{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(245,158,11,.10); /* petit accent */
+  border:1px solid rgba(245,158,11,.22);
+  font-weight:900;
+  color:#92400e;
+  line-height:1.3;
+}
+
