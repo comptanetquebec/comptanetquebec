@@ -11,6 +11,8 @@ type Msg = {
   content: string;
 };
 
+const MAX_CHARS = 1500;
+
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
@@ -28,17 +30,49 @@ function welcomeFor(lang: Lang): Msg {
   };
 }
 
+function safetyLine(lang: Lang) {
+  if (lang === "en")
+    return "Security: do not share SIN, passwords, card numbers, or full ID documents in chat. Use the secure portal for documents.";
+  if (lang === "es")
+    return "Seguridad: no compartas NAS/SIN, contraseñas, tarjetas, ni documentos de identidad completos. Usa el portal seguro.";
+  return "Sécurité : ne partagez pas votre NAS, mots de passe, numéros de carte, ni documents d’identité complets dans le chat. Utilisez le portail sécurisé.";
+}
+
+function quickPrompts(lang: Lang): string[] {
+  if (lang === "en") {
+    return [
+      "What documents are needed for an individual return (T1)?",
+      "What documents are needed for self-employed?",
+      "What is the difference between T1, self-employed, and corporate (T2)?",
+      "How does the secure portal work?",
+    ];
+  }
+  if (lang === "es") {
+    return [
+      "¿Qué documentos se necesitan para una declaración personal (T1)?",
+      "¿Qué documentos se necesitan para autónomo?",
+      "¿Cuál es la diferencia entre T1, autónomo y corporación (T2)?",
+      "¿Cómo funciona el portal seguro?",
+    ];
+  }
+  return [
+    "Quels documents pour une déclaration T1 (particulier) ?",
+    "Quels documents pour travailleur autonome ?",
+    "Différence entre T1, autonome et T2 ?",
+    "Comment fonctionne le portail sécurisé ?",
+  ];
+}
+
 export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
   const [messages, setMessages] = useState<Msg[]>([welcomeFor(lang)]);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "thinking">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const wrapRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const reqIdRef = useRef(0);
 
-  // Si la langue change, on reset proprement (optionnel)
+  // Reset si la langue change
   useEffect(() => {
     setMessages([welcomeFor(lang)]);
     setInput("");
@@ -47,16 +81,32 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
     reqIdRef.current++;
   }, [lang]);
 
-  const canSend = useMemo(() => input.trim().length > 0 && status !== "thinking", [input, status]);
+  const remaining = MAX_CHARS - input.length;
 
-  // Auto-scroll dès qu’on ajoute un message / change status
+  const canSend = useMemo(() => {
+    const t = input.trim();
+    return status !== "thinking" && t.length > 0 && t.length <= MAX_CHARS;
+  }, [input, status]);
+
+  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, status, errorMsg]);
 
-  async function onSend() {
-    const text = input.trim();
-    if (!text || status === "thinking") return;
+  async function onSend(textOverride?: string) {
+    const raw = (textOverride ?? input).trim();
+    if (!raw || status === "thinking") return;
+
+    if (raw.length > MAX_CHARS) {
+      setErrorMsg(
+        lang === "fr"
+          ? `Message trop long (max ${MAX_CHARS} caractères).`
+          : lang === "en"
+          ? `Message too long (max ${MAX_CHARS} characters).`
+          : `Mensaje demasiado largo (máx ${MAX_CHARS} caracteres).`
+      );
+      return;
+    }
 
     setErrorMsg(null);
     setStatus("thinking");
@@ -64,17 +114,13 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
     const myReq = ++reqIdRef.current;
 
-    // add user msg
-    const userMsg: Msg = { id: uid(), role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { id: uid(), role: "user", content: raw }]);
 
     try {
-      const res: AIResponse = await askAssistant(text, lang);
+      const res: AIResponse = await askAssistant(raw, lang);
+      if (myReq !== reqIdRef.current) return;
 
-      if (myReq !== reqIdRef.current) return; // ignore old request
-
-      const assistantMsg: Msg = { id: uid(), role: "assistant", content: res.content };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, { id: uid(), role: "assistant", content: res.content }]);
     } catch (e: unknown) {
       if (myReq !== reqIdRef.current) return;
       const msg = e instanceof Error ? e.message : "Erreur inattendue";
@@ -98,6 +144,30 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
     navigator.clipboard?.writeText(last.content).catch(() => {});
   }
 
+  function report() {
+    const subject =
+      lang === "fr"
+        ? "Signalement — Assistant ComptaNet"
+        : lang === "en"
+        ? "Report — ComptaNet Assistant"
+        : "Reporte — Asistente ComptaNet";
+
+    const lastMsgs = messages.slice(-6).map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+    const body =
+      `${safetyLine(lang)}\n\n` +
+      (lang === "fr"
+        ? "Décrivez le problème (ex: réponse inappropriée, demande dangereuse, etc.).\n\n"
+        : lang === "en"
+        ? "Describe the issue (e.g., inappropriate answer, unsafe request, etc.).\n\n"
+        : "Describe el problema (p. ej., respuesta inapropiada, solicitud peligrosa, etc.).\n\n") +
+      lastMsgs;
+
+    // adapte l'email si tu veux (support@..., etc.)
+    window.location.href = `mailto:comptanetquebec@gmail.com?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+  }
+
   return (
     <section className="rounded-2xl border bg-white shadow-sm">
       {/* Header */}
@@ -106,7 +176,11 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
           <div>
             <p className="text-sm font-semibold">Assistant ComptaNet</p>
             <p className="text-xs text-neutral-600">
-              Info générale seulement. Aucun avis personnalisé.
+              {lang === "fr"
+                ? "Info générale seulement. Aucun avis personnalisé."
+                : lang === "en"
+                ? "General information only. No personalized advice."
+                : "Solo información general. Sin asesoría personalizada."}
             </p>
           </div>
 
@@ -115,9 +189,18 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
               type="button"
               className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50"
               onClick={copyLastAssistant}
-              title="Copier la dernière réponse"
+              title={lang === "fr" ? "Copier la dernière réponse" : "Copy last answer"}
             >
-              Copier
+              {lang === "fr" ? "Copier" : lang === "en" ? "Copy" : "Copiar"}
+            </button>
+
+            <button
+              type="button"
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50"
+              onClick={report}
+              title={lang === "fr" ? "Signaler" : "Report"}
+            >
+              {lang === "fr" ? "Signaler" : lang === "en" ? "Report" : "Reportar"}
             </button>
 
             <button
@@ -125,14 +208,34 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
               className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-neutral-50"
               onClick={onReset}
             >
-              Nouvelle
+              {lang === "fr" ? "Nouvelle" : lang === "en" ? "New" : "Nueva"}
             </button>
           </div>
+        </div>
+
+        {/* Safety banner */}
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          {safetyLine(lang)}
+        </div>
+
+        {/* Quick prompts */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {quickPrompts(lang).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onSend(p)}
+              className="rounded-full border bg-white px-3 py-1 text-xs hover:bg-neutral-50"
+              disabled={status === "thinking"}
+            >
+              {p}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Messages */}
-      <div ref={wrapRef} className="h-[420px] overflow-y-auto px-4 py-4">
+      <div className="h-[420px] overflow-y-auto px-4 py-4">
         <div className="space-y-3">
           {messages.map((m) => (
             <Bubble key={m.id} role={m.role} content={m.content} />
@@ -142,8 +245,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
           {errorMsg && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {lang === "fr" ? "Erreur : " : lang === "en" ? "Error: " : "Error: "}
-              {errorMsg}
+              {(lang === "fr" ? "Erreur : " : lang === "en" ? "Error: " : "Error: ") + errorMsg}
             </div>
           )}
 
@@ -177,12 +279,10 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
             type="button"
             className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             disabled={!canSend}
-            onClick={onSend}
+            onClick={() => onSend()}
           >
             {status === "thinking"
-              ? lang === "fr"
-                ? "…"
-                : "…"
+              ? "…"
               : lang === "fr"
               ? "Envoyer"
               : lang === "en"
@@ -191,13 +291,19 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
           </button>
         </div>
 
-        <p className="mt-2 text-xs text-neutral-500">
-          {lang === "fr"
-            ? "Pour un avis personnalisé, il faut analyser votre situation et vos documents."
-            : lang === "en"
-            ? "For personalized advice, we must review your situation and documents."
-            : "Para una respuesta personalizada, debemos revisar tu situación y documentos."}
-        </p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="text-xs text-neutral-500">
+            {lang === "fr"
+              ? "Pour un avis personnalisé, il faut analyser votre situation et vos documents."
+              : lang === "en"
+              ? "For personalized advice, we must review your situation and documents."
+              : "Para una respuesta personalizada, debemos revisar tu situación y documentos."}
+          </p>
+
+          <p className={`text-xs ${remaining < 0 ? "text-red-600" : "text-neutral-500"}`}>
+            {remaining}
+          </p>
+        </div>
       </div>
     </section>
   );
