@@ -25,10 +25,10 @@ function welcomeFor(lang: Lang): Msg {
     role: "assistant",
     content:
       lang === "fr"
-        ? "Bonjour 👋 Posez votre question sur l’impôt au Québec."
+        ? "Bonjour 👋 Je suis l’assistant de ComptaNet Québec.\nComment puis-je vous aider avec vos impôts aujourd’hui ?"
         : lang === "en"
-        ? "Hi 👋 Ask your question about Québec taxes."
-        : "Hola 👋 Haz tu pregunta sobre impuestos en Québec.",
+        ? "Hi 👋 I’m the ComptaNet Québec assistant.\nHow can I help you with your taxes today?"
+        : "Hola 👋 Soy el asistente de ComptaNet Québec.\n¿Cómo puedo ayudarte con tus impuestos hoy?",
   };
 }
 
@@ -201,7 +201,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-neutral-900">
-                Assistant ComptaNet
+                Assistant ComptaNet Québec
               </p>
               <p className="truncate text-xs text-neutral-600">
                 {lang === "fr"
