@@ -38,6 +38,10 @@
 .main{
   color:var(--cq-ink);
   background:#ffffff;
+
+  /* ✅ UX/SEO: scroll anchor smooth + offset header sticky */
+  scroll-behavior:smooth;
+  scroll-padding-top:76px;
 }
 
 /* =================
@@ -267,6 +271,19 @@
   line-height:1.55;
 }
 
+/* ✅ NOUVEAU: rangée CTA principal */
+.heroPrimaryCtaRow{
+  margin-top:12px;
+  display:flex;
+  justify-content:center;
+}
+
+.heroPrimaryCtaRow :global(.btn){
+  width:100%;
+  max-width:520px;
+  justify-content:center;
+}
+
 /* liens texte discrets */
 .heroLinks{
   margin-top:12px;
@@ -307,7 +324,6 @@
 
 /* =========================
    Trust bar (pills)
-   (ton TSX: trustBar, trustPill)
 ========================= */
 .trustBar{
   margin-top:12px;
@@ -341,6 +357,9 @@
   border:1px solid var(--cq-border);
   border-radius:var(--cq-radius-md);
   padding:12px 12px 14px;
+
+  /* ✅ pour l'ancre #types-impot avec header sticky */
+  scroll-margin-top:76px;
 }
 
 .choiceTitle{
@@ -796,14 +815,14 @@
     justify-content:center;
   }
 
-  /* Hero */
+  /* ✅ Hero moins haut pour afficher CTA plus vite */
   .hero{
-    min-height:540px;
+    min-height:480px;
   }
 
   .heroCenter{
-    min-height:540px;
-    padding:16px 12px;
+    min-height:480px;
+    padding:14px 12px;
   }
 
   .heroCard{
@@ -828,6 +847,12 @@
     padding:12px;
   }
 
+  /* Microline plus lisible */
+  .microLine{
+    font-size:11px;
+    line-height:1.35;
+  }
+
   /* Sections: moins d'espace */
   .section{
     margin:34px auto;
@@ -848,6 +873,8 @@
     justify-content:center;
   }
 }
+
+/* ✅ Lien secondaire */
 .heroMoreLinkRow{
   margin-top:10px;
   display:flex;
