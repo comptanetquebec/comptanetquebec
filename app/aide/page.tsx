@@ -24,7 +24,7 @@ export default function AidePage() {
           <div className="flex gap-2">
             <Link
               href="/espace-client"
-              className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+              className="rounded-xl bg-[#004aad] px-4 py-2 text-sm font-medium text-white"
             >
               Ouvrir un dossier
             </Link>
@@ -37,7 +37,7 @@ export default function AidePage() {
           </div>
         </div>
 
-        {/* Bloc “info générale / pas un avis pro” */}
+        {/* Bloc information générale */}
         <div className="mt-4 rounded-xl border bg-white p-4 text-sm text-neutral-700">
           <p className="font-medium">Important</p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
@@ -53,24 +53,14 @@ export default function AidePage() {
           </ul>
         </div>
 
-        {/* Bloc “ne pas partager d’infos sensibles” */}
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">Sécurité</p>
+        {/* Bloc sécurité simplifié (moins agressif visuellement) */}
+        <div className="mt-3 rounded-xl border bg-neutral-50 p-4 text-sm text-neutral-700">
+          <p className="font-medium">Confidentialité</p>
           <p className="mt-1">
-            Ne partagez jamais d’informations sensibles dans le chat (ex. NAS, mots de passe, numéros de carte,
-            documents d’identité complets). Pour transmettre des documents, utilisez le portail sécurisé.
+            Ne partagez pas d’informations sensibles dans le chat (NAS, mots de passe,
+            numéros de carte, documents d’identité complets). Utilisez le portail sécurisé
+            pour transmettre vos documents.
           </p>
-        </div>
-
-        {/* Exemples */}
-        <div className="mt-4 rounded-xl border bg-neutral-50 p-4 text-sm text-neutral-700">
-          <p className="font-medium">Exemples de questions</p>
-          <ul className="mt-2 list-disc pl-5 space-y-1">
-            <li>Quels documents dois-je fournir pour un travailleur autonome ?</li>
-            <li>Quelle est la différence entre T1, Travailleur autonome et T2 ?</li>
-            <li>Comment fonctionne le dépôt de documents et l’envoi du dossier ?</li>
-            <li>Quels types de dépenses sont généralement demandés en justificatifs ?</li>
-          </ul>
         </div>
       </header>
 
