@@ -171,7 +171,10 @@
   color:#fff;
 }
 
-/* Hamburger */
+/* =========================
+   Hamburger (FIX PRO)
+   → traits pas trop longs + spacing constant
+========================= */
 .mobileNavBtn{
   display:none;
   width:44px;
@@ -180,19 +183,27 @@
   border:1px solid var(--cq-border);
   background:#fff;
   cursor:pointer;
-  padding:10px;
+
+  /* ✅ important */
+  padding:0;
+  align-items:center;
+  justify-content:center;
 }
 
 .mobileNavBtn span{
   display:block;
+  width:18px;        /* ✅ largeur fixe */
   height:2px;
-  width:100%;
   background:#334155;
   border-radius:999px;
 }
 
 .mobileNavBtn span + span{
-  margin-top:6px;
+  margin-top:4px;    /* ✅ spacing plus clean */
+}
+
+.mobileNavBtn:active{
+  transform:translateY(1px);
 }
 
 /* =================
@@ -271,7 +282,7 @@
   line-height:1.55;
 }
 
-/* ✅ NOUVEAU: rangée CTA principal */
+/* ✅ rangée CTA principal */
 .heroPrimaryCtaRow{
   margin-top:12px;
   display:flex;
@@ -747,7 +758,6 @@
 
 /* =========================================
    Responsive — Mobile
-   (ton TSX a un menu mobile: navOpen + bouton hamburger)
 ========================================= */
 @media (max-width: 900px){
   .headerInner{
@@ -759,11 +769,24 @@
     min-width:auto;
   }
 
+  /* ✅ Langue: 1 ligne propre (FIX) */
+  .langInline{
+    flex-wrap:nowrap;
+    gap:6px;
+  }
+
+  .langLabel{
+    display:none; /* gain de place */
+  }
+
+  .langBtn{
+    padding:6px 8px;
+    min-width:40px;
+  }
+
   /* Afficher hamburger */
   .mobileNavBtn{
     display:inline-flex;
-    align-items:center;
-    justify-content:center;
   }
 
   /* Nav devient un panneau */
@@ -830,6 +853,11 @@
     max-width:560px;
     padding:16px 14px 14px;
     border-radius:16px;
+  }
+
+  /* CTA principal: full width */
+  .heroPrimaryCtaRow :global(.btn){
+    max-width:none;
   }
 
   /* Choice cards: 1 colonne */
