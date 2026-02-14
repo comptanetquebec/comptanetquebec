@@ -1,6 +1,7 @@
 /* =========================================
    ComptaNet Québec — Home page (page.module.css)
    Accent principal: BLEU (#004aad)
+   Objectif: pro + mobile friendly (sans casser le TSX)
 ========================================= */
 
 :root{
@@ -17,19 +18,26 @@
 
   --card:rgba(255,255,255,.96);
   --soft:#f8fafc;
+
+  --shadow:0 20px 60px rgba(0,0,0,.16);
+  --shadow-soft:0 6px 22px rgba(0,0,0,.08);
+
+  --radius-lg:18px;
+  --radius-md:14px;
+  --radius-sm:12px;
 }
 
-/* ==============
+/* =================
    Base / Layout
-============== */
+================= */
 .main{
   color:var(--ink);
   background:#ffffff;
 }
 
-/* ==============
+/* =================
    Navbar
-============== */
+================= */
 .header{
   position:sticky;
   top:0;
@@ -87,9 +95,9 @@
 
 .langWrap{ margin-left:8px; }
 
-/* ==============
+/* =================
    Lang switcher
-============== */
+================= */
 .langRow{
   display:flex;
   gap:8px;
@@ -140,9 +148,9 @@
   font-size:12px;
 }
 
-/* ==============
+/* =================
    HERO
-============== */
+================= */
 .hero{
   position:relative;
   width:100%;
@@ -157,11 +165,11 @@
 
 .heroBgImg{
   object-fit:cover;
-  object-position: 50% 18%;
+  object-position:50% 18%;
   filter:saturate(1.02);
 }
 
-/* voile doux (plus pro, meilleure lisibilité) */
+/* voile doux (lisibilité) */
 .hero::after{
   content:"";
   position:absolute;
@@ -188,9 +196,9 @@
   width:min(860px, 96vw);
   background:var(--card);
   border:1px solid rgba(15,23,42,.10);
-  border-radius:18px;
+  border-radius:var(--radius-lg);
   padding:18px 18px 16px;
-  box-shadow:0 20px 60px rgba(0,0,0,.16);
+  box-shadow:var(--shadow);
   text-align:center;
 }
 
@@ -209,7 +217,7 @@
   line-height:1.55;
 }
 
-/* liens texte discrets (si tu les utilises) */
+/* liens texte discrets */
 .heroLinks{
   margin-top:12px;
   display:inline-flex;
@@ -247,7 +255,7 @@
   text-decoration:underline;
 }
 
-/* si tu gardes l'ancien bloc de boutons */
+/* si tu gardes un bloc de boutons */
 .heroCtas{
   margin-top:12px;
   display:flex;
@@ -256,15 +264,15 @@
   flex-wrap:wrap;
 }
 
-/* ==============
+/* ==========================
    Choix situation (3 cartes)
-============== */
+========================== */
 .choiceBox{
   margin-top:14px;
   text-align:left;
   background:var(--soft);
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:var(--radius-md);
   padding:12px 12px 14px;
 }
 
@@ -285,7 +293,7 @@
 
 .choiceCard{
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:var(--radius-md);
   background:#fff;
   padding:14px;
   display:flex;
@@ -298,7 +306,7 @@
 .choiceCard:hover{
   transform:translateY(-1px);
   border-color:rgba(0,74,173,.25);
-  box-shadow:0 6px 22px rgba(0,0,0,.08);
+  box-shadow:var(--shadow-soft);
 }
 
 .choiceCardTitle{
@@ -321,9 +329,9 @@
   padding-top:12px;
 }
 
-/* ==============
+/* =================
    Sections
-============== */
+================= */
 .section{
   max-width:1100px;
   margin:46px auto;
@@ -342,9 +350,9 @@
   line-height:1.55;
 }
 
-/* ==============
+/* =================
    Grids / Cards
-============== */
+================= */
 .gridCards{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
@@ -353,7 +361,7 @@
 
 .cardBox{
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:var(--radius-md);
   padding:16px;
   background:#fff;
   box-shadow:0 1px 0 rgba(15,23,42,.04);
@@ -372,9 +380,9 @@
   line-height:1.55;
 }
 
-/* ==============
+/* =================
    Steps section
-============== */
+================= */
 .stepsWrap{
   background:var(--soft);
   border-top:1px solid var(--border2);
@@ -387,7 +395,7 @@
   padding:38px 16px;
 }
 
-/* ✅ numéros 1-2-3-4 en bleu (au lieu de noir) */
+/* numéros 1-2-3-4 en bleu */
 .stepNum{
   width:34px;
   height:34px;
@@ -401,9 +409,9 @@
   box-shadow:0 8px 18px rgba(0,74,173,.18);
 }
 
-/* ==============
+/* =================
    Pricing
-============== */
+================= */
 .planPrice{
   color:var(--ink);
   font-weight:900;
@@ -426,9 +434,9 @@
   flex-wrap:wrap;
 }
 
-/* ==============
+/* =================
    FAQ
-============== */
+================= */
 .faqTitle{
   color:var(--ink);
   margin:0 0 12px;
@@ -439,7 +447,7 @@
 
 .faqItem{
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:var(--radius-md);
   overflow:hidden;
   background:#fff;
   box-shadow:0 1px 0 rgba(15,23,42,.04);
@@ -468,12 +476,12 @@
 
 .faqIcon{ font-size:18px; color:var(--muted); }
 
-/* ==============
+/* =================
    Contact
-============== */
+================= */
 .contactBox{
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:var(--radius-md);
   padding:16px;
   background:#fff;
   max-width:700px;
@@ -485,7 +493,7 @@
 .input{
   width:100%;
   border:1px solid var(--border);
-  border-radius:12px;
+  border-radius:var(--radius-sm);
   padding:12px 14px;
   outline:none;
   font-size:14px;
@@ -518,9 +526,9 @@
   text-decoration:underline;
 }
 
-/* ==============
+/* =================
    Footer
-============== */
+================= */
 .footer{
   background:#0f172a;
   color:#cbd5e1;
@@ -583,12 +591,85 @@
   line-height:1.5;
 }
 
-/* ==============
-   Responsive
-============== */
+/* =========================================
+   Responsive — Mobile (cell-first)
+   NOTE: on garde les mêmes classes → safe
+========================================= */
 @media (max-width: 900px){
-  .choiceGrid{ grid-template-columns:1fr; }
-  .hero{ min-height:480px; }
-  .heroCenter{ min-height:480px; }
-  .nav{ gap:10px; }
+
+  /* Navbar: éviter le “wrap” qui scrappe tout */
+  .headerInner{
+    flex-wrap:nowrap;
+    gap:10px;
+  }
+
+  .brand{
+    min-width:auto;
+  }
+
+  .nav{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:6px;
+    gap:10px;
+  }
+
+  .nav::-webkit-scrollbar{ height:6px; }
+  .nav::-webkit-scrollbar-thumb{
+    background:rgba(15,23,42,.18);
+    border-radius:999px;
+  }
+
+  /* Hero: un peu plus haut + card pleine largeur */
+  .hero{
+    min-height:540px;
+  }
+
+  .heroCenter{
+    min-height:540px;
+    padding:16px 12px;
+  }
+
+  .heroCard{
+    width:100%;
+    max-width:560px;
+    padding:16px 14px 14px;
+    border-radius:16px;
+  }
+
+  /* Choice cards: 1 colonne, plus compact */
+  .choiceBox{
+    padding:12px;
+  }
+
+  .choiceGrid{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+
+  .choiceCard{
+    min-height:auto;
+    padding:12px;
+  }
+
+  /* Sections: moins d'espace vertical */
+  .section{
+    margin:34px auto;
+    padding:0 12px;
+  }
+
+  .stepsInner{
+    padding:30px 12px;
+  }
+
+  /* Pricing: boutons en colonne */
+  .planActions{
+    flex-direction:column;
+  }
+
+  .planActions :global(.btn){
+    width:100%;
+    justify-content:center;
+  }
 }
