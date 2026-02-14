@@ -4,17 +4,15 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+type Lang = "fr" | "en" | "es";
 
 type Body = {
   message?: string;
-  lang?: "fr" | "en" | "es";
+  lang?: Lang;
 };
 
-function systemPrompt(lang: Body["lang"]) {
-  const L = lang ?? "fr";
-
-  if (L === "en") {
+function systemPrompt(lang: Lang) {
+  if (lang === "en") {
     return [
       "You are ComptaNet Québec's help chat.",
       "Provide general information only about Québec tax filing (individual, self-employed, incorporated).",
@@ -24,7 +22,7 @@ function systemPrompt(lang: Body["lang"]) {
     ].join("\n");
   }
 
-  if (L === "es") {
+  if (lang === "es") {
     return [
       "Eres el chat de ayuda de ComptaNet Québec.",
       "Solo información general sobre impuestos en Québec (particular, autónomo, corporación).",
@@ -43,27 +41,29 @@ function systemPrompt(lang: Body["lang"]) {
   ].join("\n");
 }
 
-function footer(lang: Body["lang"]) {
-  const L = lang ?? "fr";
-  if (L === "en")
+function footer(lang: Lang) {
+  if (lang === "en")
     return "Note: general information only. For a personalized answer, we must review your situation and documents.";
-  if (L === "es")
+  if (lang === "es")
     return "Nota: información general. Para una respuesta personalizada, debemos revisar tu situación y documentos.";
   return "Note : information générale seulement. Pour un avis personnalisé, il faut analyser votre situation et vos documents.";
 }
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
       return NextResponse.json(
         { ok: false, error: "OPENAI_API_KEY manquante côté serveur." },
         { status: 500 }
       );
     }
 
+    const client = new OpenAI({ apiKey });
+
     const body = (await req.json()) as Body;
     const message = (body.message ?? "").trim();
-    const lang = body.lang ?? "fr";
+    const lang: Lang = body.lang ?? "fr";
 
     if (!message) {
       return NextResponse.json({ ok: false, error: "Message vide." }, { status: 400 });
@@ -85,10 +85,12 @@ export async function POST(req: Request) {
       ok: true,
       content: content ? `${content}\n\n${footer(lang)}` : footer(lang),
     });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Erreur serveur assistant." },
-      { status: 500 }
-    );
+  } catch (e: unknown) {
+    // ✅ log complet dans Vercel Logs
+    console.error("Assistant API error:", e);
+
+    // ✅ renvoie un message lisible dans Network → Response
+    const msg = e instanceof Error ? e.message : "Erreur inconnue";
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
