@@ -1477,7 +1477,7 @@ getPrice: "Ver detalles",
 
       <p className={styles.contactHint}>
         {T.contactHint}{" "}
-        <a href="mailto:comptanetquebec@gmail.com">comptanetquebec@gmail.com</a>
+        <a href="mailto:info@comptanetquebec.com">info@comptanetquebec.com</a>
       </p>
     </div>
   </div>
