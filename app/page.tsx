@@ -508,12 +508,15 @@ export default function Home() {
         heroTitle: (
           <>
             Québec{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>tax return service</span>{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>
+              tax return service
+            </span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>online</span>
           </>
         ),
 
-        heroExperience: "Over 30 years of experience. Thousands of Québec returns prepared.",
+        heroExperience:
+          "Over 30 years of experience. Thousands of Québec returns prepared.",
 
         heroSubShort:
           "Québec-only online tax return service. Open your file, upload documents, and we prepare your return. We contact you if anything is missing.",
@@ -556,8 +559,14 @@ export default function Home() {
         servicesSub: "Québec-only tax returns — secure document portal.",
         services: [
           { t: "Tax return — Individual", d: "Prepared from your documents." },
-          { t: "Tax return — Self-employed", d: "Income and expenses from documents." },
-          { t: "Tax return — Incorporated business", d: "Corporate filing (T2 + CO-17) from documents." },
+          {
+            t: "Tax return — Self-employed",
+            d: "Income and expenses from documents.",
+          },
+          {
+            t: "Tax return — Incorporated business",
+            d: "Corporate filing (T2 + CO-17) from documents.",
+          },
           { t: "TED accreditation", d: "Electronic filing when applicable." },
           { t: "Secure portal", d: "Upload documents (photo or PDF)." },
         ],
@@ -566,35 +575,80 @@ export default function Home() {
         steps: [
           { n: "1", t: "Open your file", d: "Secure portal + deposit." },
           { n: "2", t: "Upload documents", d: "Photo or PDF." },
-          { n: "3", t: "Preparation", d: "We contact you if something is missing." },
-          { n: "4", t: "Review & file", d: "Pay balance before filing (TED when applicable)." },
+          {
+            n: "3",
+            t: "Preparation",
+            d: "We contact you if something is missing.",
+          },
+          {
+            n: "4",
+            t: "Review & file",
+            d: "Pay balance before filing (TED when applicable).",
+          },
         ],
 
         pricingTitle: "2026 Pricing",
-        pricingSub: "Base pricing. Final price depends on complexity and is confirmed before filing.",
+        pricingSub:
+          "Base pricing. Final price depends on complexity and is confirmed before filing.",
         plans: [
-          { t: "Tax return — Individual", p: "from $100", pts: ["Deposit: $100", "Secure portal", "Prepared from documents"], href: "/tarifs/t1" },
-          { t: "Self-employed", p: "from $150", pts: ["Deposit: $150", "Secure portal", "Income + expenses"], href: "/tarifs/travailleur-autonome" },
-          { t: "Incorporated business", p: "from $850", pts: ["Deposit: $450", "Secure portal", "T2 + CO-17", "No-revenue corp: from $450"], href: "/tarifs/t2" },
+          {
+            t: "Tax return — Individual",
+            p: "from $100",
+            pts: ["Deposit: $100", "Secure portal", "Prepared from documents"],
+            href: "/tarifs/t1",
+          },
+          {
+            t: "Self-employed",
+            p: "from $150",
+            pts: ["Deposit: $150", "Secure portal", "Income + expenses"],
+            href: "/tarifs/travailleur-autonome",
+          },
+          {
+            t: "Incorporated business",
+            p: "from $850",
+            pts: ["Deposit: $450", "Secure portal", "T2 + CO-17", "No-revenue corp: from $450"],
+            href: "/tarifs/t2",
+          },
         ],
         getPrice: "View details",
 
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
           { t: "30+ years experience", d: "Clear process, Québec only." },
-          { t: "TED accreditation", d: "Electronic filing when applicable." },
+          {
+            t: "TED accreditation",
+            d: "Electronic filing when applicable.",
+          },
           { t: "Confidentiality", d: "Strictly confidential." },
           { t: "Secure portal", d: "Upload photo/PDF, all in one place." },
         ],
 
         faqTitle: "FAQ",
         faq: [
-          { q: "Is it Québec only?", a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations." },
-          { q: "I’m not sure which option to choose.", a: "Pick the closest match. If unsure, contact us and we’ll guide you." },
-          { q: "How do I send documents?", a: "After creating your account, upload documents (photo or PDF) in the portal." },
-          { q: "How long does it take?", a: "Individual: 24–48 business hours if complete. Peak: 3–7 business days. Self-employed/corp varies; estimate after review." },
-          { q: "How do payments work?", a: "Deposit to open. Balance paid when ready, before filing." },
-          { q: "Which documents do I need?", a: "Depends on your situation. A simple checklist is provided after opening." },
+          {
+            q: "Is it Québec only?",
+            a: "Yes. ComptaNet Québec serves Québec residents and Québec corporations.",
+          },
+          {
+            q: "I’m not sure which option to choose.",
+            a: "Pick the closest match. If unsure, contact us and we’ll guide you.",
+          },
+          {
+            q: "How do I send documents?",
+            a: "After creating your account, upload documents (photo or PDF) in the portal.",
+          },
+          {
+            q: "How long does it take?",
+            a: "Individual: 24–48 business hours if complete. Peak: 3–7 business days. Self-employed/corp varies; estimate after review.",
+          },
+          {
+            q: "How do payments work?",
+            a: "Deposit to open. Balance paid when ready, before filing.",
+          },
+          {
+            q: "Which documents do I need?",
+            a: "Depends on your situation. A simple checklist is provided after opening.",
+          },
         ],
 
         contactTitle: "Contact",
@@ -639,12 +693,15 @@ export default function Home() {
         heroTitle: (
           <>
             Servicio de{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>impuestos en Québec</span>{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>
+              impuestos en Québec
+            </span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>en línea</span>
           </>
         ),
 
-        heroExperience: "Más de 30 años de experiencia. Miles de declaraciones preparadas en Québec.",
+        heroExperience:
+          "Más de 30 años de experiencia. Miles de declaraciones preparadas en Québec.",
 
         heroSubShort:
           "Servicio de impuestos en Québec 100% en línea. Abra su expediente, suba documentos y preparamos su declaración. Le contactamos si falta algo.",
@@ -759,7 +816,7 @@ export default function Home() {
 
   const T = COPY[lang];
 
-  // ✅ Liens
+  // ✅ Liens (inchangés)
   const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
   const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
 
@@ -785,6 +842,18 @@ export default function Home() {
       })),
     };
   }, [T.faq]);
+
+  // ✅ Organization schema (JSON-LD) — SEO boost
+  const orgJsonLd = useMemo(() => {
+    const base = "https://www.comptanetquebec.com";
+    return {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "ComptaNet Québec",
+      url: base,
+      email: "comptanetquebec@gmail.com",
+    };
+  }, []);
 
   const onContactSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -845,6 +914,14 @@ export default function Home() {
   const learnMoreLabel =
     lang === "fr" ? "En savoir plus" : lang === "en" ? "Learn more" : "Saber más";
 
+  // ✅ Nouveau CTA principal (3 langues)
+  const primaryCta =
+    lang === "fr"
+      ? "Choisir mon type d’impôt"
+      : lang === "en"
+      ? "Choose my tax type"
+      : "Elegir mi tipo de impuesto";
+
   return (
     <main className={styles.main}>
       {/* reCAPTCHA */}
@@ -860,6 +937,13 @@ export default function Home() {
         id="faq-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+
+      {/* ORG JSON-LD */}
+      <Script
+        id="org-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
       />
 
       {/* NAVBAR */}
@@ -980,15 +1064,28 @@ export default function Home() {
 
             <p className={styles.heroSub}>{T.heroSubShort}</p>
 
-           <div className={styles.heroMoreLinkRow}>
-  <Link
-    href={`/declaration-impot-quebec?lang=${encodeURIComponent(lang)}`}
-    className={styles.heroMoreBtn}
-    prefetch
-  >
-    {learnMoreLabel}
-  </Link>
-</div>
+            {/* ✅ CTA PRINCIPAL (nouveau, ne casse rien) */}
+            <div className={styles.heroPrimaryCtaRow}>
+              <a
+                href="#types-impot"
+                className="btn btn-primary"
+                style={{ width: "100%", borderRadius: 10 }}
+              >
+                {primaryCta}
+              </a>
+            </div>
+
+            {/* ✅ En savoir plus = secondaire (après le CTA) */}
+            <div className={styles.heroMoreLinkRow}>
+              <Link
+                href={`/declaration-impot-quebec?lang=${encodeURIComponent(lang)}`}
+                className={styles.heroMoreBtn}
+                prefetch
+              >
+                {learnMoreLabel}
+              </Link>
+            </div>
+
             <TrustBar items={T.trust} />
 
             <div className={styles.heroLinks}>
@@ -1009,7 +1106,8 @@ export default function Home() {
               )}
             </div>
 
-            <div className={styles.choiceBox}>
+            {/* ✅ Anchor target */}
+            <div id="types-impot" className={styles.choiceBox}>
               <div className={styles.choiceTitle}>{T.chooseType}</div>
 
               <div className={styles.choiceGrid}>
@@ -1274,3 +1372,4 @@ export default function Home() {
     </main>
   );
 }
+
