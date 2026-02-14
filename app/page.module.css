@@ -171,10 +171,7 @@
   color:#fff;
 }
 
-/* =========================
-   Hamburger (FIX PRO)
-   → traits pas trop longs + spacing constant
-========================= */
+/* ✅ Hamburger (fix pro) */
 .mobileNavBtn{
   display:none;
   width:44px;
@@ -184,7 +181,7 @@
   background:#fff;
   cursor:pointer;
 
-  /* ✅ important */
+  /* IMPORTANT: enlever padding qui étire les lignes */
   padding:0;
   align-items:center;
   justify-content:center;
@@ -192,14 +189,14 @@
 
 .mobileNavBtn span{
   display:block;
-  width:18px;        /* ✅ largeur fixe */
   height:2px;
+  width:18px; /* ✅ lignes courtes */
   background:#334155;
   border-radius:999px;
 }
 
 .mobileNavBtn span + span{
-  margin-top:4px;    /* ✅ spacing plus clean */
+  margin-top:4px; /* ✅ spacing clean */
 }
 
 .mobileNavBtn:active{
@@ -282,7 +279,7 @@
   line-height:1.55;
 }
 
-/* ✅ rangée CTA principal */
+/* ✅ NOUVEAU: rangée CTA principal */
 .heroPrimaryCtaRow{
   margin-top:12px;
   display:flex;
@@ -763,20 +760,29 @@
   .headerInner{
     flex-wrap:nowrap;
     gap:10px;
+    align-items:center;
   }
 
   .brand{
     min-width:auto;
   }
 
-  /* ✅ Langue: 1 ligne propre (FIX) */
+  /* ✅ le nom ne pousse plus tout */
+  .brandName{
+    font-size:16px;
+    max-width:150px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* ✅ Langues sur 1 ligne (pas de wrap) */
   .langInline{
     flex-wrap:nowrap;
     gap:6px;
   }
 
   .langLabel{
-    display:none; /* gain de place */
+    display:none;
   }
 
   .langBtn{
