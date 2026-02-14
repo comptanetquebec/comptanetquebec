@@ -980,11 +980,15 @@ export default function Home() {
 
             <p className={styles.heroSub}>{T.heroSubShort}</p>
 
-            <details className={styles.heroMore}>
-              <summary className={styles.heroMoreBtn}>{learnMoreLabel}</summary>
-              <p className={styles.heroMoreText}>{T.heroSubMore}</p>
-            </details>
-
+           <div className={styles.heroMoreLinkRow}>
+  <Link
+    href={`/declaration-impot-quebec?lang=${encodeURIComponent(lang)}`}
+    className={styles.heroMoreBtn}
+    prefetch
+  >
+    {learnMoreLabel}
+  </Link>
+</div>
             <TrustBar items={T.trust} />
 
             <div className={styles.heroLinks}>
