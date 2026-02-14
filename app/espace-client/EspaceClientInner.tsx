@@ -103,14 +103,14 @@ function normalizeLang(v?: string | null): Lang {
  */
 function safeNext(v?: string | null): string {
   const raw = (v || "").trim();
-  if (!raw) return "/dossiers/nouveau";
+  if (!raw) return "/dossiers";
 
   const lower = raw.toLowerCase();
-  if (lower.startsWith("http:") || lower.startsWith("https:")) return "/dossiers/nouveau";
-  if (lower.startsWith("javascript:")) return "/dossiers/nouveau";
+  if (lower.startsWith("http:") || lower.startsWith("https:")) return "/dossiers";
+  if (lower.startsWith("javascript:")) return "/dossiers";
 
-  if (!raw.startsWith("/")) return "/dossiers/nouveau";
-  if (raw.startsWith("//")) return "/dossiers/nouveau";
+  if (!raw.startsWith("/")) return "/dossiers";
+  if (raw.startsWith("//")) return "/dossiers";
 
   return raw;
 }
