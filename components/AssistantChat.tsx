@@ -13,7 +13,7 @@ type Msg = {
 };
 
 const MAX_CHARS = 1500;
-const BRAND_BLUE = "#004aad"; // couleur ComptaNet (ajuste si besoin)
+const BRAND_BLUE = "#004aad";
 
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
@@ -32,9 +32,10 @@ function welcomeFor(lang: Lang): Msg {
   };
 }
 
+/** Micro-sécurité (court, non anxiogène) */
 function microSafety(lang: Lang) {
   return lang === "fr"
-    ? "Astuce : évitez de partager des infos sensibles (NAS, carte, mots de passe)."
+    ? "Astuce : évitez d’écrire des infos sensibles (NAS, carte, mots de passe)."
     : lang === "en"
     ? "Tip: avoid sharing sensitive info (SIN, card numbers, passwords)."
     : "Consejo: evita compartir datos sensibles (NAS/SIN, tarjetas, contraseñas).";
@@ -182,45 +183,45 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
   }
 
   return (
-    <section className="rounded-2xl border bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
       {/* Header */}
       <div className="border-b px-4 py-3">
         <div className="flex items-start justify-between gap-3">
+          {/* Left: logo + titles */}
           <div className="flex items-center gap-3">
-            <div className="relative h-8 w-8 overflow-hidden rounded-lg border bg-white">
+            <div className="relative h-9 w-9 overflow-hidden rounded-xl border bg-white">
               <Image
                 src="/logo-cq.png"
                 alt="ComptaNet Québec"
                 fill
-                sizes="32px"
+                sizes="36px"
                 className="object-contain p-1"
-                priority={false}
               />
             </div>
 
-            <div>
-              <p className="text-sm font-semibold text-neutral-900">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-neutral-900">
                 Assistant ComptaNet
               </p>
-              <p className="text-xs text-neutral-600">
+              <p className="truncate text-xs text-neutral-600">
                 {lang === "fr"
-                  ? "Information générale seulement — aucun avis personnalisé."
+                  ? "Info générale — aucun avis personnalisé."
                   : lang === "en"
-                  ? "General information only — no personalized advice."
-                  : "Solo información general — sin asesoría personalizada."}
+                  ? "General info — no personalized advice."
+                  : "Info general — sin asesoría personalizada."}
               </p>
-
-              <p className="mt-1 text-[11px] text-neutral-500">
+              <p className="mt-1 line-clamp-1 text-[11px] text-neutral-500">
                 {microSafety(lang)}
               </p>
             </div>
           </div>
 
+          {/* Right: actions */}
           <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
-              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={copyLastAssistant}
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               title={lang === "fr" ? "Copier la dernière réponse" : "Copy last answer"}
             >
               {lang === "fr" ? "Copier" : lang === "en" ? "Copy" : "Copiar"}
@@ -228,8 +229,8 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
             <button
               type="button"
-              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={report}
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               title={lang === "fr" ? "Signaler" : "Report"}
             >
               {lang === "fr" ? "Signaler" : lang === "en" ? "Report" : "Reportar"}
@@ -237,15 +238,15 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
             <button
               type="button"
-              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
               onClick={onReset}
+              className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
             >
               {lang === "fr" ? "Nouvelle" : lang === "en" ? "New" : "Nueva"}
             </button>
           </div>
         </div>
 
-        {/* Quick prompts */}
+        {/* Quick prompts (discrets) */}
         <div className="mt-3 flex flex-wrap gap-2">
           {quickPrompts(lang).map((p) => (
             <button
@@ -261,8 +262,8 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="h-[420px] overflow-y-auto px-4 py-4">
+      {/* Messages (hauteur responsive pour éviter de scroller la page) */}
+      <div className="h-[320px] sm:h-[380px] lg:h-[420px] overflow-y-auto px-4 py-4">
         <div className="space-y-3">
           {messages.map((m) => (
             <Bubble key={m.id} role={m.role} content={m.content} />
@@ -284,7 +285,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
       <div className="border-t p-4">
         <div className="flex gap-2">
           <textarea
-            className="min-h-[44px] max-h-[140px] flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[rgba(0,74,173,0.20)]"
+            className="min-h-[44px] max-h-[140px] flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[rgba(0,74,173,0.18)]"
             placeholder={
               lang === "fr"
                 ? "Écrivez votre question… (Entrée pour envoyer)"
