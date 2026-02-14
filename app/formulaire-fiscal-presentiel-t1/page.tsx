@@ -658,8 +658,7 @@ if (fid) {
       hydrating.current = false;
       setLoading(false);
     }
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadByFid, userId]);
+     }, [loadByFid]);
 
   // init: si fid dans url -> load, sinon load last
   useEffect(() => {
