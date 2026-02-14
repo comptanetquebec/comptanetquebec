@@ -250,7 +250,6 @@ type FormRow = {
 
 export default function FormulaireFiscalPresentielT1Page() {
   const params = useSearchParams();
-  const router = useRouter();
 
   const lang = normalizeLang(params.get("lang") || "fr");
   const fidUrl = (params.get("fid") || "").trim();
@@ -282,7 +281,7 @@ export default function FormulaireFiscalPresentielT1Page() {
     );
   }
 
-  return <Inner userId={userId} lang={lang} fidUrl={fidUrl} router={router} />;
+  return <Inner userId={userId} lang={lang} fidUrl={fidUrl} />;
 }
 
 /* ===========================
@@ -293,13 +292,12 @@ function Inner({
   userId,
   lang,
   fidUrl,
-  router,
 }: {
   userId: string;
   lang: Lang;
   fidUrl: string;
-  router: ReturnType<typeof useRouter>;
 }) {
+  const router = useRouter();
   const params = useSearchParams();
 
   const [submitting, setSubmitting] = useState(false);
