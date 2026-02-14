@@ -171,7 +171,7 @@
   color:#fff;
 }
 
-/* ✅ Hamburger (fix pro) */
+/* ===== Hamburger SIMPLE et propre ===== */
 .mobileNavBtn{
   display:none;
   width:44px;
@@ -183,16 +183,16 @@
 
   padding:0;
 
-  display:flex;              /* ✅ important */
-  flex-direction:column;     /* ✅ 3 lignes une sous l’autre */
-  align-items:center;
+  display:flex;
+  flex-direction:column;     /* empile les lignes */
   justify-content:center;
+  align-items:center;
+  gap:5px;                   /* espace entre les lignes */
 }
 
 .mobileNavBtn span{
-  display:block;
-  height:2px;
-  width:18px;
+  width:20px;                /* largeur des lignes */
+  height:2px;                /* épaisseur */
   background:#334155;
   border-radius:999px;
 }
