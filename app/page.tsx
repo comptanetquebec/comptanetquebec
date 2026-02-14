@@ -864,16 +864,26 @@ getPrice: "Ver detalles",
   }, [T.faq]);
 
   // ✅ Organization schema (JSON-LD) — SEO boost
-  const orgJsonLd = useMemo(() => {
-    const base = "https://www.comptanetquebec.com";
-    return {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "ComptaNet Québec",
-      url: base,
-      email: "comptanetquebec@gmail.com",
-    };
-  }, []);
+  const localJsonLd = useMemo(() => {
+  const base = "https://www.comptanetquebec.com";
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "ComptaNet Québec",
+    url: base,
+    telephone: "+15819852599",
+    email: "comptanetquebec@gmail.com",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "849, boulevard Pie XII",
+      addressLocality: "Québec",
+      addressRegion: "QC",
+      postalCode: "G1X 3T2",
+      addressCountry: "CA",
+    },
+    areaServed: { "@type": "AdministrativeArea", name: "Québec" },
+  };
+}, []);
 
   const onContactSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -960,11 +970,11 @@ getPrice: "Ver detalles",
       />
 
       {/* Organization JSON-LD */}
-      <Script
-        id="org-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-      />
+       <Script
+  id="local-jsonld"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{ __html: JSON.stringify(localJsonLd) }}
+/>
 
       {/* NAVBAR */}
       <header className={styles.header}>
@@ -1286,57 +1296,156 @@ getPrice: "Ver detalles",
       <section id="contact" className={styles.section} style={{ marginBottom: 0 }}>
         <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
 
-        <div className={styles.contactBox}>
-          <form onSubmit={onContactSubmit} className={styles.contactForm}>
-            <input
-              name="name"
-              placeholder={T.contactPlaceholders.name}
-              required
-              className={styles.input}
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-            />
-            <input
-              name="email"
-              placeholder={T.contactPlaceholders.email}
-              type="email"
-              required
-              className={styles.input}
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-            />
-            <textarea
-              name="message"
-              placeholder={T.contactPlaceholders.msg}
-              rows={5}
-              className={styles.input}
-              value={contactMsg}
-              onChange={(e) => setContactMsg(e.target.value)}
-            />
+    <div className={styles.contactGrid}>
+  {/* Colonne gauche : infos */}
+  <div className={styles.contactCard}>
+    <h3 className={styles.contactCardTitle}>
+      {lang === "fr"
+        ? "Coordonnées"
+        : lang === "en"
+        ? "Contact details"
+        : "Datos de contacto"}
+    </h3>
 
-            <div
-              className="g-recaptcha"
-              data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7"
-            />
+    <div className={styles.contactLine}>
+      <span className={styles.contactLabel}>
+        {lang === "fr" ? "Adresse" : lang === "en" ? "Address" : "Dirección"}
+      </span>
+      <span className={styles.contactValue}>
+        849, boulevard Pie XII<br />
+        Québec (QC) G1X 3T2
+      </span>
+    </div>
 
-            {contactErr && <div className={styles.err}>{contactErr}</div>}
-            {contactOk && <div className={styles.ok}>{contactOk}</div>}
+    <div className={styles.contactLine}>
+      <span className={styles.contactLabel}>
+        {lang === "fr"
+          ? "Sur rendez-vous"
+          : lang === "en"
+          ? "By appointment"
+          : "Con cita"}
+      </span>
+      <span className={styles.contactValue}>
+        {lang === "fr"
+          ? "Sur rendez-vous seulement"
+          : lang === "en"
+          ? "Appointment only"
+          : "Solo con cita"}
+      </span>
+    </div>
 
-            <button
-              type="submit"
-              disabled={contactBusy}
-              className="btn btn-primary"
-              style={{ borderRadius: btnRadius }}
-            >
-              {contactBusy ? T.sending : T.send}
-            </button>
-          </form>
+    <div className={styles.contactLine}>
+      <span className={styles.contactLabel}>
+        {lang === "fr" ? "Téléphone" : lang === "en" ? "Phone" : "Teléfono"}
+      </span>
 
-          <p className={styles.contactHint}>
-            {T.contactHint}{" "}
-            <a href="mailto:comptanetquebec@gmail.com">comptanetquebec@gmail.com</a>
-          </p>
-        </div>
+      {/* ✅ Anti-appels: visible mais PAS cliquable */}
+      <span className={styles.contactValue}>581-985-2599</span>
+    </div>
+
+    <div className={styles.contactLine}>
+      <span className={styles.contactLabel}>
+        {lang === "fr" ? "Courriel" : lang === "en" ? "Email" : "Correo"}
+      </span>
+      <a className={styles.contactValueLink} href="mailto:comptanetquebec@gmail.com">
+        comptanetquebec@gmail.com
+      </a>
+    </div>
+
+    <div className={styles.contactNote}>
+      {lang === "fr"
+        ? "Service principalement en ligne partout au Québec. Rencontres en personne possibles sur rendez-vous à Québec."
+        : lang === "en"
+        ? "Service is mainly online across Québec. In-person meetings are available by appointment in Québec City."
+        : "Servicio principalmente en línea en todo Québec. Reuniones presenciales con cita previa en la ciudad de Québec."}
+    </div>
+
+    <div className={styles.contactPrefer}>
+      <div className={styles.contactPreferTitle}>
+        {lang === "fr"
+          ? "Canal prioritaire"
+          : lang === "en"
+          ? "Preferred channel"
+          : "Canal preferido"}
+      </div>
+      <div className={styles.contactPreferText}>
+        {lang === "fr"
+          ? "Pour un service rapide, utilisez l’espace client ou le formulaire. Aucune réception sans rendez-vous."
+          : lang === "en"
+          ? "For faster service, please use the client portal or the form. No walk-ins — appointment required."
+          : "Para un servicio más rápido, use el portal del cliente o el formulario. No atendemos sin cita previa."}
+      </div>
+    </div>
+
+    <div className={styles.contactCtas}>
+      <Link href={toClient} className="btn btn-primary" style={{ borderRadius: 10 }} prefetch>
+        {lang === "fr"
+          ? "Ouvrir l’espace client"
+          : lang === "en"
+          ? "Open client portal"
+          : "Abrir portal del cliente"}
+      </Link>
+
+      <Link href={toHelp} className="btn btn-outline" style={{ borderRadius: 10 }} prefetch>
+        {lang === "fr" ? "Besoin d’aide ?" : lang === "en" ? "Need help?" : "¿Necesitas ayuda?"}
+      </Link>
+    </div>
+  </div>
+
+  {/* Colonne droite : formulaire */}
+  <div className={styles.contactCard}>
+    <h3 className={styles.contactCardTitle}>
+      {lang === "fr" ? "Écrire un message" : lang === "en" ? "Send a message" : "Enviar un mensaje"}
+    </h3>
+
+    <form onSubmit={onContactSubmit} className={styles.contactForm}>
+      <input
+        name="name"
+        placeholder={T.contactPlaceholders.name}
+        required
+        className={styles.input}
+        value={contactName}
+        onChange={(e) => setContactName(e.target.value)}
+      />
+      <input
+        name="email"
+        placeholder={T.contactPlaceholders.email}
+        type="email"
+        required
+        className={styles.input}
+        value={contactEmail}
+        onChange={(e) => setContactEmail(e.target.value)}
+      />
+      <textarea
+        name="message"
+        placeholder={T.contactPlaceholders.msg}
+        rows={5}
+        className={styles.input}
+        value={contactMsg}
+        onChange={(e) => setContactMsg(e.target.value)}
+      />
+
+      <div className="g-recaptcha" data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7" />
+
+      {contactErr && <div className={styles.err}>{contactErr}</div>}
+      {contactOk && <div className={styles.ok}>{contactOk}</div>}
+
+      <button
+        type="submit"
+        disabled={contactBusy}
+        className="btn btn-primary"
+        style={{ borderRadius: btnRadius }}
+      >
+        {contactBusy ? T.sending : T.send}
+      </button>
+    </form>
+
+    <p className={styles.contactHint}>
+      {T.contactHint}{" "}
+      <a href="mailto:comptanetquebec@gmail.com">comptanetquebec@gmail.com</a>
+    </p>
+  </div>
+</div>
       </section>
 
       {/* FOOTER */}
