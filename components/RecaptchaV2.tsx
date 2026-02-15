@@ -1,6 +1,6 @@
 "use client";
 
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import Script from "next/script";
 
 type Grecaptcha = {
@@ -29,6 +29,8 @@ type Props = {
   className?: string;
 };
 
+const SCRIPT_SRC = "https://www.google.com/recaptcha/api.js?render=explicit";
+
 const RecaptchaV2 = forwardRef<RecaptchaV2Handle, Props>(function RecaptchaV2(
   { siteKey, theme = "light", className },
   ref
@@ -36,12 +38,12 @@ const RecaptchaV2 = forwardRef<RecaptchaV2Handle, Props>(function RecaptchaV2(
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<number | null>(null);
 
-  const onLoad = () => {
+  const tryRender = () => {
     if (!containerRef.current) return;
     const g = window.grecaptcha;
     if (!g) return;
 
-    // évite un double render
+    // évite double render
     if (widgetIdRef.current != null) return;
 
     widgetIdRef.current = g.render(containerRef.current, {
@@ -49,6 +51,24 @@ const RecaptchaV2 = forwardRef<RecaptchaV2Handle, Props>(function RecaptchaV2(
       theme,
     });
   };
+
+  // 1) Tentative au moment où le script se charge
+  const onScriptLoad = () => {
+    tryRender();
+  };
+
+  // 2) Tentative fallback (script déjà en cache / déjà injecté / onLoad pas déclenché)
+  useEffect(() => {
+    tryRender();
+
+    // petit retry si grecaptcha arrive un poil après
+    const t = window.setTimeout(() => {
+      tryRender();
+    }, 250);
+
+    return () => window.clearTimeout(t);
+    // on rerender si siteKey/theme changent
+  }, [siteKey, theme]);
 
   useImperativeHandle(
     ref,
@@ -66,17 +86,12 @@ const RecaptchaV2 = forwardRef<RecaptchaV2Handle, Props>(function RecaptchaV2(
         g.reset(id);
       },
     }),
-    []
-  );
-
-  const scriptSrc = useMemo(
-    () => "https://www.google.com/recaptcha/api.js?render=explicit",
-    []
+    [siteKey, theme] // important: éviter stale closure
   );
 
   return (
     <div className={className}>
-      <Script src={scriptSrc} strategy="afterInteractive" onLoad={onLoad} />
+      <Script src={SCRIPT_SRC} strategy="afterInteractive" onLoad={onScriptLoad} />
       <div ref={containerRef} />
     </div>
   );
