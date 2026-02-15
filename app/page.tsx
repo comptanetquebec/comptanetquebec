@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
+import RecaptchaV2, { type RecaptchaV2Handle } from "@/components/RecaptchaV2";
 import styles from "./page.module.css";
 
-/* ===== reCAPTCHA (sans any) ===== */
-type Grecaptcha = {
-  getResponse: () => string;
-  reset: () => void;
-};
-declare const grecaptcha: Grecaptcha | undefined;
+// reCAPTCHA géré par le component RecaptchaV2 (pas de grecaptcha global ici)
 
 /* ===== Types ===== */
 type Lang = "fr" | "en" | "es";
@@ -235,6 +231,9 @@ export default function Home() {
   const [contactBusy, setContactBusy] = useState(false);
   const [contactOk, setContactOk] = useState<string | null>(null);
   const [contactErr, setContactErr] = useState<string | null>(null);
+
+  // ✅ reCAPTCHA (component)
+  const recaptchaRef = useRef<RecaptchaV2Handle>(null);
 
   const setLangAndPersist = useCallback((next: Lang) => {
     setLang(next);
@@ -886,63 +885,58 @@ getPrice: "Ver detalles",
 }, []);
 
   const onContactSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-    setContactOk(null);
-    setContactErr(null);
+  e.preventDefault();
+  setContactOk(null);
+  setContactErr(null);
 
-    let token = "";
-    try {
-      token = grecaptcha ? grecaptcha.getResponse() : "";
-    } catch {
-      token = "";
+  const token = recaptchaRef.current?.getToken() || "";
+
+  if (!token) {
+    setContactErr(
+      lang === "fr"
+        ? "Merci de cocher « Je ne suis pas un robot »."
+        : lang === "en"
+        ? 'Please check "I’m not a robot".'
+        : 'Por favor marque "No soy un robot".'
+    );
+    return;
+  }
+
+  setContactBusy(true);
+  try {
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: contactName,
+        email: contactEmail,
+        message: contactMsg,
+        token,
+        company: "", // honeypot
+      }),
+    });
+
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || "bad_status");
     }
 
-    if (!token) {
-      setContactErr(
-        lang === "fr"
-          ? "Merci de cocher « Je ne suis pas un robot »."
-          : lang === "en"
-          ? 'Please check "I’m not a robot".'
-          : 'Por favor marque "No soy un robot".'
-      );
-      return;
-    }
+    setContactOk(T.sentOk);
+    setContactName("");
+    setContactEmail("");
+    setContactMsg("");
+    recaptchaRef.current?.reset();
+  } catch {
+    setContactErr(T.sentErr);
+  } finally {
+    setContactBusy(false);
+  }
+};
 
-    setContactBusy(true);
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: contactName,
-          email: contactEmail,
-          message: contactMsg,
-          token,
-        }),
-      });
-
-      if (!res.ok) throw new Error("bad_status");
-      const data = (await res.json()) as { ok?: boolean; error?: string };
-      if (!data?.ok) throw new Error(data?.error || "unknown");
-
-      setContactOk(T.sentOk);
-      setContactName("");
-      setContactEmail("");
-      setContactMsg("");
-      try {
-        if (grecaptcha) grecaptcha.reset();
-      } catch {
-        // ignore
-      }
-    } catch {
-      setContactErr(T.sentErr);
-    } finally {
-      setContactBusy(false);
-    }
-  };
-
-  const learnMoreLabel =
-    lang === "fr" ? "En savoir plus" : lang === "en" ? "Learn more" : "Saber más";
+// ✅ EN DEHORS de la fonction (juste après)
+const learnMoreLabel =
+  lang === "fr" ? "En savoir plus" : lang === "en" ? "Learn more" : "Saber más";
 
   // ✅ CTA principal (3 langues)
   const primaryCta =
@@ -1457,10 +1451,10 @@ getPrice: "Ver detalles",
           onChange={(e) => setContactMsg(e.target.value)}
         />
 
-        <div
-          className="g-recaptcha"
-          data-sitekey="6LcUqP4rAAAAAPu5Fzw1duIE22QtT_Pt7wN3nxF7"
-        />
+        <RecaptchaV2
+  ref={recaptchaRef}
+  siteKey="6Lc072ssAAAAABf_BKFEvaxaqX0lTK3klGU9Z39D"
+/>
 
         {contactErr && <div className={styles.err}>{contactErr}</div>}
         {contactOk && <div className={styles.ok}>{contactOk}</div>}
