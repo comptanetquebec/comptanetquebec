@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Script from "next/script";
 import RecaptchaV2, { type RecaptchaV2Handle } from "@/components/RecaptchaV2";
 import styles from "./page.module.css";
 
@@ -948,14 +947,7 @@ const learnMoreLabel =
 
   return (
     <main className={styles.main}>
-      {/* reCAPTCHA */}
-      <Script
-        src="https://www.google.com/recaptcha/api.js"
-        strategy="afterInteractive"
-        async
-        defer
-      />
-
+     
       {/* FAQ JSON-LD */}
       <Script
         id="faq-jsonld"
