@@ -1,3 +1,4 @@
+// app/formulaire-fiscal/page.tsx
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -77,10 +78,6 @@ function supaErr(e: unknown) {
   if (!e || typeof e !== "object") return "Erreur inconnue";
   const err = e as { message?: string; details?: string; hint?: string; code?: string };
   return [err.message, err.details, err.hint, err.code].filter(Boolean).join(" | ");
-}
-
-function updatePeriode(list: Periode[], idx: number, patch: Partial<Periode>) {
-  return list.map((p, i) => (i === idx ? { ...p, ...patch } : p));
 }
 
 /* =========================== Format LIVE =========================== */
@@ -477,7 +474,7 @@ function FormulaireFiscalInner({
     vDelais,
   ]);
 
-  // Helper traduction court (pour messages d’erreurs custom si tu veux)
+  // Helper traduction court
   const t = useCallback(
     (fr: string, en: string, es: string) => (lang === "fr" ? fr : lang === "en" ? en : es),
     [lang]
@@ -501,9 +498,7 @@ function FormulaireFiscalInner({
     if (!prenom.trim()) errors.push(t("Prénom : obligatoire.", "First name: required.", "Nombre: obligatorio."));
     if (!nom.trim()) errors.push(t("Nom : obligatoire.", "Last name: required.", "Apellido: obligatorio."));
     if (!isValidNAS(nas))
-      errors.push(
-        t("NAS : 9 chiffres obligatoires.", "SIN: 9 digits required.", "NAS/SIN: se requieren 9 dígitos.")
-      );
+      errors.push(t("NAS : 9 chiffres obligatoires.", "SIN: 9 digits required.", "NAS/SIN: se requieren 9 dígitos."));
     if (!isValidDateJJMMAAAA(dob))
       errors.push(
         t(
@@ -512,8 +507,7 @@ function FormulaireFiscalInner({
           "Fecha de nacimiento: se requiere un formato válido DD/MM/AAAA."
         )
       );
-    if (!etatCivil)
-      errors.push(t("État civil : obligatoire.", "Marital status: required.", "Estado civil: obligatorio."));
+    if (!etatCivil) errors.push(t("État civil : obligatoire.", "Marital status: required.", "Estado civil: obligatorio."));
     if (!isValidEmail(courriel))
       errors.push(
         t(
@@ -1228,6 +1222,7 @@ function FormulaireFiscalInner({
             setCodePostalConjoint={(v: string) => setCodePostalConjoint(formatPostalInput(v))}
           />
 
+          {/* ✅ FIX: on ne passe plus formatDateInput/updatePeriode (MedsSection les importe déjà) */}
           <MedsSection
             L={L}
             show={province === "QC"}
@@ -1235,8 +1230,9 @@ function FormulaireFiscalInner({
             assuranceMedsClient={assuranceMedsClient}
             setAssuranceMedsClient={setAssuranceMedsClient}
             assuranceMedsClientPeriodes={assuranceMedsClientPeriodes}
-            setAssuranceMedsClientPeriodes={(updater: any) => {
-              // support setState direct OR callback
+            setAssuranceMedsClientPeriodes={(
+              updater: Periode[] | ((p: Periode[]) => Periode[])
+            ) => {
               setAssuranceMedsClientPeriodes((prev) =>
                 typeof updater === "function" ? updater(prev) : updater
               );
@@ -1244,13 +1240,13 @@ function FormulaireFiscalInner({
             assuranceMedsConjoint={assuranceMedsConjoint}
             setAssuranceMedsConjoint={setAssuranceMedsConjoint}
             assuranceMedsConjointPeriodes={assuranceMedsConjointPeriodes}
-            setAssuranceMedsConjointPeriodes={(updater: any) => {
+            setAssuranceMedsConjointPeriodes={(
+              updater: Periode[] | ((p: Periode[]) => Periode[])
+            ) => {
               setAssuranceMedsConjointPeriodes((prev) =>
                 typeof updater === "function" ? updater(prev) : updater
               );
             }}
-            formatDateInput={formatDateInput}
-            updatePeriode={updatePeriode}
           />
 
           <DependantsSection
@@ -1259,7 +1255,6 @@ function FormulaireFiscalInner({
             enfants={enfants}
             ajouterEnfant={ajouterEnfant}
             updateEnfant={(i, field, value) => {
-              // garde tes format live
               if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
               if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
               return updateEnfant(i, field, value);
