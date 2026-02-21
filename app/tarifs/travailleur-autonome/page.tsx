@@ -38,7 +38,7 @@ const COPY: Record<Lang, Copy> = {
   fr: {
     pageTitle: "Travailleurs autonomes — Tarifs",
     subtitle:
-      "Prix avant taxes. Les prix finaux sont confirmés après revue de vos pièces et de la complexité.",
+      "Prix avec taxes incluses. Les prix finaux sont confirmés après revue de vos pièces et de la complexité.",
     disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
     disclaimerBottom:
       "Prix avant taxes. Les dossiers plus complexes (plusieurs activités, inventaire, volume élevé, etc.) peuvent nécessiter une évaluation.",
@@ -69,7 +69,7 @@ const COPY: Record<Lang, Copy> = {
   en: {
     pageTitle: "Self-Employed — Pricing",
     subtitle:
-      "Prices before taxes. Final pricing is confirmed after reviewing your documents and complexity.",
+      "Price including taxes. Final pricing is confirmed after reviewing your documents and complexity.",
     disclaimerTop: "Prices may change depending on your file.",
     disclaimerBottom:
       "Prices before taxes. More complex files (multiple activities, inventory, high volume, etc.) may require an assessment.",
@@ -100,7 +100,7 @@ const COPY: Record<Lang, Copy> = {
   es: {
     pageTitle: "Autónomos — Tarifas",
     subtitle:
-      "Precios antes de impuestos. El precio final se confirma tras revisar sus documentos y la complejidad.",
+      "Precio con impuestos incluidos. El precio final se confirma tras revisar sus documentos y la complejidad.",
     disclaimerTop: "Según su expediente, los precios pueden cambiar.",
     disclaimerBottom:
       "Precios antes de impuestos. Casos más complejos (varias actividades, inventario, gran volumen, etc.) pueden requerir evaluación.",
