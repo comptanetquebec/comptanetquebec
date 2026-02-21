@@ -94,7 +94,6 @@ export type YesNoFieldProps = {
 };
 
 export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
-  // ✅ nom unique pour éviter que 2 questions partagent la même “radio group”
   const groupName = `ff-yn-${name}`;
 
   return (
@@ -132,6 +131,7 @@ export function YesNoField({ label, value, onChange, name }: YesNoFieldProps) {
    SelectField
 =========================== */
 
+// ✅ Options: jamais "" dans la liste (le placeholder est rendu séparément)
 export type SelectOption<T extends string> = {
   value: Exclude<T, "">;
   label: string;
@@ -139,8 +139,8 @@ export type SelectOption<T extends string> = {
 
 export type SelectFieldProps<T extends string> = {
   label: string;
-  value: T;
-  onChange: (v: T) => void;
+  value: T | ""; // ✅ autorise vide (placeholder)
+  onChange: (v: T | "") => void; // ✅
   options: Array<SelectOption<T>>;
   required?: boolean;
   placeholderText?: string;
@@ -164,7 +164,7 @@ export function SelectField<T extends string>({
       <select
         className="ff-select"
         value={value}
-        onChange={(e) => onChange(e.currentTarget.value as T)}
+        onChange={(e) => onChange(e.currentTarget.value as T | "")}
         required={required}
       >
         <option value="">
@@ -180,4 +180,3 @@ export function SelectField<T extends string>({
     </label>
   );
 }
-
