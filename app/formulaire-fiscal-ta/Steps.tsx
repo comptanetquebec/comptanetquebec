@@ -3,52 +3,30 @@ import Link from "next/link";
 import { COPY, pickCopy, type CopyLang } from "./copy";
 
 type Lang = "fr" | "en" | "es";
-type Flow = "t1" | "ta" | "t2";
-
-function basePathFor(flow: Flow) {
-  switch (flow) {
-    case "ta":
-      return "/formulaire-fiscal-ta";
-    case "t1":
-      return "/formulaire-fiscal";
-    case "t2":
-      return "/formulaire-fiscal-t2";
-  }
-}
 
 export default function Steps({
   step,
   lang,
   fid,
-  flow,
 }: {
-  step: number;
+  step: 1 | 2 | 3 | 4;
   lang: Lang;
   fid?: string | null;
-  flow: Flow;
 }) {
   const L = COPY[pickCopy(lang) as CopyLang];
 
   const q = new URLSearchParams();
-  if (lang) q.set("lang", lang);
+  q.set("lang", lang);
   if (fid) q.set("fid", fid);
 
-  const base = basePathFor(flow);
+  const base = "/formulaire-fiscal-ta";
 
-  const items =
-    flow === "ta"
-      ? [
-          { n: 1, label: L.steps.s1, href: `${base}?${q}` },
-          { n: 2, label: L.steps.s2, href: `${base}/revenus-depenses?${q}` },
-          { n: 3, label: L.steps.s3, href: `${base}/depot-documents?${q}` },
-          { n: 4, label: L.steps.s4, href: `${base}/envoyer-dossier?${q}` },
-        ]
-      : [
-          // fallback simple si jamais tu réutilises ce composant ailleurs
-          { n: 1, label: "Form", href: `${base}?${q}` },
-          { n: 2, label: "Docs", href: `${base}/depot-documents?${q}` },
-          { n: 3, label: "Submit", href: `${base}/envoyer-dossier?${q}` },
-        ];
+  const items = [
+    { n: 1, label: L.steps.s1, href: `${base}?${q}` },
+    { n: 2, label: L.steps.s2, href: `${base}/revenus-depenses?${q}` },
+    { n: 3, label: L.steps.s3, href: `${base}/depot-documents?${q}` },
+    { n: 4, label: L.steps.s4, href: `${base}/envoyer-dossier?${q}` },
+  ] as const;
 
   const aria = lang === "fr" ? "Étapes" : lang === "en" ? "Steps" : "Pasos";
 
