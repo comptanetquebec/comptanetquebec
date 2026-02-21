@@ -91,15 +91,15 @@ export default function ClientSection(props: {
 
   const placeholderLabel = "—";
 
-  const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> =
-    [
-      { value: "celibataire", label: L.fields.maritalOpts.celibataire },
-      { value: "conjointDefait", label: L.fields.maritalOpts.conjointDefait },
-      { value: "marie", label: L.fields.maritalOpts.marie },
-      { value: "separe", label: L.fields.maritalOpts.separe },
-      { value: "divorce", label: L.fields.maritalOpts.divorce },
-      { value: "veuf", label: L.fields.maritalOpts.veuf },
-    ];
+  // Options état civil (valeurs NON vides seulement)
+  const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> = [
+    { value: "celibataire", label: L.fields.maritalOpts.celibataire },
+    { value: "conjointDefait", label: L.fields.maritalOpts.conjointDefait },
+    { value: "marie", label: L.fields.maritalOpts.marie },
+    { value: "separe", label: L.fields.maritalOpts.separe },
+    { value: "divorce", label: L.fields.maritalOpts.divorce },
+    { value: "veuf", label: L.fields.maritalOpts.veuf },
+  ];
 
   return (
     <section className="ff-card">
@@ -139,7 +139,7 @@ export default function ClientSection(props: {
         <SelectField<EtatCivil>
           label={L.fields.marital}
           value={etatCivil}
-          onChange={setEtatCivil}
+          onChange={(v) => setEtatCivil(v)}
           options={maritalOptions}
           required
           placeholderText={placeholderLabel}
@@ -231,9 +231,13 @@ export default function ClientSection(props: {
           <SelectField<ProvinceCode>
             label={L.fields.province}
             value={province}
-            onChange={setProvince}
+            onChange={(v) => {
+              if (v === "") return; // ignore le placeholder
+              setProvince(v as ProvinceCode);
+            }}
             options={PROVINCES}
             required
+            placeholderText={placeholderLabel}
           />
 
           <Field
