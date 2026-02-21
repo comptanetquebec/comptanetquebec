@@ -1,7 +1,7 @@
 // app/formulaire-fiscal-ta/sections/MedsSection.tsx
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Field, SelectField } from "../ui";
 import type { AssuranceMeds, Periode } from "../types";
 import type { CopyPack } from "../copy";
@@ -39,11 +39,33 @@ export default function MedsSection(props: {
 
   if (!show) return null;
 
+  // ✅ Titre/desc "safe" (ne dépend pas de sections.medsTitle/medsDesc)
+  const title = useMemo(() => {
+    // si jamais tu ajoutes plus tard L.meds.title, ça marchera aussi
+    // @ts-expect-error: clé optionnelle si ajoutée plus tard
+    return (L.meds?.title as string | undefined) ?? "Médicaments";
+  }, [L]);
+
+  const desc = useMemo(() => {
+    // @ts-expect-error: clé optionnelle si ajoutée plus tard
+    return (L.meds?.desc as string | undefined) ?? "Informations sur votre couverture de médicaments (si applicable).";
+  }, [L]);
+
+  // ✅ options typées sans "" (SelectField gère déjà le placeholder)
+  const coverageOptions = useMemo(
+    () => [
+      { value: "ramq" as const, label: L.meds.opts.ramq },
+      { value: "prive" as const, label: L.meds.opts.prive },
+      { value: "conjoint" as const, label: L.meds.opts.conjoint },
+    ],
+    [L]
+  );
+
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        <h2>{L.sections.medsTitle}</h2>
-        <p>{L.sections.medsDesc}</p>
+        <h2>{title}</h2>
+        <p>{desc}</p>
       </div>
 
       <div className="ff-subtitle">{L.meds.clientCoverage}</div>
@@ -51,13 +73,14 @@ export default function MedsSection(props: {
       <SelectField<AssuranceMeds>
         label={L.meds.yourCoverage}
         value={assuranceMedsClient}
-        onChange={setAssuranceMedsClient}
+        // ✅ protège si jamais le SelectField envoie "" (placeholder)
+        onChange={(v) => {
+          if (v === "") return;
+          setAssuranceMedsClient(v as AssuranceMeds);
+        }}
         required
-        options={[
-          { value: "ramq", label: L.meds.opts.ramq },
-          { value: "prive", label: L.meds.opts.prive },
-          { value: "conjoint", label: L.meds.opts.conjoint },
-        ]}
+        options={coverageOptions}
+        placeholderText="—"
       />
 
       <div className="ff-mt-sm ff-stack">
@@ -95,9 +118,7 @@ export default function MedsSection(props: {
         <button
           type="button"
           className="ff-btn ff-btn-soft"
-          onClick={() =>
-            setAssuranceMedsClientPeriodes((prev) => [...prev, { debut: "", fin: "" }])
-          }
+          onClick={() => setAssuranceMedsClientPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
         >
           {L.meds.addPeriod}
         </button>
@@ -110,13 +131,13 @@ export default function MedsSection(props: {
           <SelectField<AssuranceMeds>
             label={L.meds.spouseCoverageLabel}
             value={assuranceMedsConjoint}
-            onChange={setAssuranceMedsConjoint}
+            onChange={(v) => {
+              if (v === "") return;
+              setAssuranceMedsConjoint(v as AssuranceMeds);
+            }}
             required
-            options={[
-              { value: "ramq", label: L.meds.opts.ramq },
-              { value: "prive", label: L.meds.opts.prive },
-              { value: "conjoint", label: L.meds.opts.conjoint },
-            ]}
+            options={coverageOptions}
+            placeholderText="—"
           />
 
           <div className="ff-mt-sm ff-stack">
@@ -154,9 +175,7 @@ export default function MedsSection(props: {
             <button
               type="button"
               className="ff-btn ff-btn-soft"
-              onClick={() =>
-                setAssuranceMedsConjointPeriodes((prev) => [...prev, { debut: "", fin: "" }])
-              }
+              onClick={() => setAssuranceMedsConjointPeriodes((prev) => [...prev, { debut: "", fin: "" }])}
             >
               {L.meds.addPeriod}
             </button>
