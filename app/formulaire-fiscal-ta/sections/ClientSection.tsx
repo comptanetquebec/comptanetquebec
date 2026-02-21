@@ -41,13 +41,7 @@ function Mark({ status }: { status: FieldStatus }) {
   );
 }
 
-function LabelWithMark({
-  label,
-  status,
-}: {
-  label: string;
-  status: FieldStatus;
-}) {
+function LabelWithMark({ label, status }: { label: string; status: FieldStatus }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center" }}>
       <span>{label}</span>
@@ -56,7 +50,7 @@ function LabelWithMark({
   );
 }
 
-// ===== validations locales (sans dépendances externes) =====
+/* ====================== validations locales (sans dépendance) ====================== */
 function digitsOnly(v: string) {
   return (v || "").replace(/\D+/g, "");
 }
@@ -89,7 +83,7 @@ function isValidPhone10(v: string) {
   return digitsOnly(v).slice(0, 10).length === 10;
 }
 
-export default function ClientSection(props: {
+type Props = {
   L: CopyPack;
   PROVINCES: { value: ProvinceCode; label: string }[];
 
@@ -131,7 +125,9 @@ export default function ClientSection(props: {
   setProvince: (v: ProvinceCode) => void;
   codePostal: string;
   setCodePostal: (v: string) => void;
-}) {
+};
+
+export default function ClientSection(props: Props) {
   const {
     L,
     PROVINCES,
@@ -170,8 +166,6 @@ export default function ClientSection(props: {
     setCodePostal,
   } = props;
 
-  const placeholderLabel = "—";
-
   // Options état civil (valeurs NON vides seulement)
   const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> = [
     { value: "celibataire", label: L.fields.maritalOpts.celibataire },
@@ -182,7 +176,6 @@ export default function ClientSection(props: {
     { value: "veuf", label: L.fields.maritalOpts.veuf },
   ];
 
-  // ===== statut pro : rien tant que vide, sauf si showErrors =====
   const status = useMemo(() => {
     const requiredText = (v: string): FieldStatus => {
       const has = !!v.trim();
@@ -222,15 +215,21 @@ export default function ClientSection(props: {
 
     const prevMaritalStatus: FieldStatus = !etatCivilChange
       ? "idle"
-      : (!ancienEtatCivil.trim()
-          ? (showErrors ? "no" : "idle")
-          : "ok");
+      : !ancienEtatCivil.trim()
+      ? showErrors
+        ? "no"
+        : "idle"
+      : "ok";
 
     const changeDateStatus: FieldStatus = !etatCivilChange
       ? "idle"
-      : (!dateChangementEtatCivil.trim()
-          ? (showErrors ? "no" : "idle")
-          : (isValidDateJJMMAAAA(dateChangementEtatCivil) ? "ok" : "no"));
+      : !dateChangementEtatCivil.trim()
+      ? showErrors
+        ? "no"
+        : "idle"
+      : isValidDateJJMMAAAA(dateChangementEtatCivil)
+      ? "ok"
+      : "no";
 
     return {
       prenom: requiredText(prenom),
@@ -276,26 +275,20 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2">
         <Field
-          label={(
-            <LabelWithMark label={L.fields.firstName} status={status.prenom} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.firstName} status={status.prenom} /> as any}
           value={prenom}
           onChange={setPrenom}
           required
         />
         <Field
-          label={(
-            <LabelWithMark label={L.fields.lastName} status={status.nom} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.lastName} status={status.nom} /> as any}
           value={nom}
           onChange={setNom}
           required
         />
 
         <Field
-          label={(
-            <LabelWithMark label={L.fields.sin} status={status.nas} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.sin} status={status.nas} /> as any}
           value={nas}
           onChange={setNas}
           placeholder={L.fields.sinPh}
@@ -306,9 +299,7 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={(
-            <LabelWithMark label={L.fields.dob} status={status.dob} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.dob} status={status.dob} /> as any}
           value={dob}
           onChange={setDob}
           placeholder={L.fields.dobPh}
@@ -321,14 +312,12 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <SelectField<EtatCivil>
-          label={(
-            <LabelWithMark label={L.fields.marital} status={status.etatCivil} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.marital} status={status.etatCivil} /> as any}
           value={etatCivil}
           onChange={(v) => setEtatCivil(v)}
           options={maritalOptions}
           required
-          placeholderText={"—"}
+          placeholderText="—"
         />
 
         <CheckboxField
@@ -341,9 +330,7 @@ export default function ClientSection(props: {
       {etatCivilChange && (
         <div className="ff-grid2 ff-mt">
           <Field
-            label={(
-              <LabelWithMark label={L.fields.prevMarital} status={status.ancienEtatCivil} />
-            ) as any}
+            label={<LabelWithMark label={L.fields.prevMarital} status={status.ancienEtatCivil} /> as any}
             value={ancienEtatCivil}
             onChange={setAncienEtatCivil}
             placeholder={L.fields.prevMaritalPh}
@@ -351,9 +338,7 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={(
-              <LabelWithMark label={L.fields.changeDate} status={status.dateChangementEtatCivil} />
-            ) as any}
+            label={<LabelWithMark label={L.fields.changeDate} status={status.dateChangementEtatCivil} /> as any}
             value={dateChangementEtatCivil}
             onChange={setDateChangementEtatCivil}
             placeholder={L.fields.changeDatePh}
@@ -367,9 +352,7 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <Field
-          label={(
-            <LabelWithMark label={L.fields.phone} status={status.tel} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.phone} status={status.tel} /> as any}
           value={tel}
           onChange={setTel}
           placeholder="(418) 555-1234"
@@ -379,9 +362,7 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={(
-            <LabelWithMark label={L.fields.mobile} status={status.telCell} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.mobile} status={status.telCell} /> as any}
           value={telCell}
           onChange={setTelCell}
           placeholder="(418) 555-1234"
@@ -391,9 +372,7 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={(
-            <LabelWithMark label={L.fields.email} status={status.courriel} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.email} status={status.courriel} /> as any}
           value={courriel}
           onChange={setCourriel}
           type="email"
@@ -403,9 +382,7 @@ export default function ClientSection(props: {
 
       <div className="ff-mt">
         <Field
-          label={(
-            <LabelWithMark label={L.fields.address} status={status.adresse} />
-          ) as any}
+          label={<LabelWithMark label={L.fields.address} status={status.adresse} /> as any}
           value={adresse}
           onChange={setAdresse}
           required
@@ -420,32 +397,26 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={(
-              <LabelWithMark label={L.fields.city} status={status.ville} />
-            ) as any}
+            label={<LabelWithMark label={L.fields.city} status={status.ville} /> as any}
             value={ville}
             onChange={setVille}
             required
           />
 
           <SelectField<ProvinceCode>
-            label={(
-              <LabelWithMark label={L.fields.province} status={status.province} />
-            ) as any}
+            label={<LabelWithMark label={L.fields.province} status={status.province} /> as any}
             value={province}
             onChange={(v) => {
-              if (v === "") return;
+              if (!v) return;
               setProvince(v as ProvinceCode);
             }}
             options={PROVINCES}
             required
-            placeholderText={"—"}
+            placeholderText="—"
           />
 
           <Field
-            label={(
-              <LabelWithMark label={L.fields.postal} status={status.codePostal} />
-            ) as any}
+            label={<LabelWithMark label={L.fields.postal} status={status.codePostal} /> as any}
             value={codePostal}
             onChange={setCodePostal}
             placeholder={L.fields.postalPh}
