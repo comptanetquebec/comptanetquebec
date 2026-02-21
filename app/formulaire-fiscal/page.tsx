@@ -129,7 +129,7 @@ type FormQuestionsdata = {
   maisonAcheteeOuVendue?: YesNo;
   appelerTechnicien?: YesNo;
   copieImpots?: CopieImpots;
-  anneeImposition?: string; // ✅ ajouté
+  anneeImposition?: string;
 };
 
 type Formdata = {
@@ -139,6 +139,12 @@ type Formdata = {
   assuranceMedicamenteuse?: FormMedsdata | null;
   personnesACharge?: Child[];
   questionsGenerales?: FormQuestionsdata;
+  validations?: {
+    exactitudeInfo?: boolean;
+    dossierComplet?: boolean;
+    fraisVariables?: boolean;
+    delaisSiManquant?: boolean;
+  };
 };
 
 type FormRow = {
@@ -233,19 +239,60 @@ function normalizePhone(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
 
+/* =========================== Validation =========================== */
+function isValidYear(v: string) {
+  const y = (v || "").trim();
+  if (!/^\d{4}$/.test(y)) return false;
+  const n = Number(y);
+  return n >= 2000 && n <= 2100;
+}
+
+function isValidNAS(v: string) {
+  return normalizeNAS(v).length === 9;
+}
+
+function isValidPostal(v: string) {
+  return normalizePostal(v).length === 6;
+}
+
+function isValidDateJJMMAAAA(v: string) {
+  const s = (v || "").trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return false;
+  const [ddStr, mmStr, yyyyStr] = s.split("/");
+  const dd = Number(ddStr);
+  const mm = Number(mmStr);
+  const yyyy = Number(yyyyStr);
+  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return false;
+  if (yyyy < 1900 || yyyy > 2100) return false;
+  if (mm < 1 || mm > 12) return false;
+
+  const daysInMonth = new Date(yyyy, mm, 0).getDate(); // last day of month
+  return dd >= 1 && dd <= daysInMonth;
+}
+
+function isValidEmail(v: string) {
+  const s = (v || "").trim();
+  if (!s) return false;
+  // simple + safe check; you can replace by stricter regex if you want
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+function firstNonEmpty(...vals: string[]) {
+  for (const v of vals) {
+    if ((v || "").trim()) return v;
+  }
+  return "";
+}
+
 /* =========================== PAGE WRAPPER (RequireAuth) =========================== */
 export default function FormulaireFiscalPage() {
   const params = useSearchParams();
 
   // ⚠️ identique à ton code : ici c'est figé à T1
   const type: FormTypeDb = "T1";
-
   const lang = normalizeLang(params.get("lang") || "fr");
 
-  const nextPath = useMemo(
-    () => `/formulaire-fiscal?type=${type}&lang=${lang}`,
-    [type, lang]
-  );
+  const nextPath = useMemo(() => `/formulaire-fiscal?type=${type}&lang=${lang}`, [type, lang]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
@@ -361,7 +408,13 @@ function FormulaireFiscalInner({
   const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
   const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
-  const [anneeImposition, setAnneeImposition] = useState<string>(""); // ✅ maintenant sauvegardé
+  const [anneeImposition, setAnneeImposition] = useState<string>("");
+
+  /* =========================== Validations finales (obligatoires) =========================== */
+  const [vExactitude, setVExactitude] = useState(false);
+  const [vDossierComplet, setVDossierComplet] = useState(false);
+  const [vFraisVariables, setVFraisVariables] = useState(false);
+  const [vDelais, setVDelais] = useState(false);
 
   /* =========================== Docs helpers =========================== */
   const loadDocs = useCallback(async (fid: string) => {
@@ -369,9 +422,7 @@ function FormulaireFiscalInner({
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
-      .select(
-        "id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at"
-      )
+      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
       .eq("formulaire_id", fid)
       .order("created_at", { ascending: false });
 
@@ -430,9 +481,7 @@ function FormulaireFiscalInner({
       province === "QC"
         ? {
             client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
-            conjoint: aUnConjoint
-              ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes }
-              : null,
+            conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
           }
         : null;
 
@@ -474,7 +523,13 @@ function FormulaireFiscalInner({
         maisonAcheteeOuVendue,
         appelerTechnicien,
         copieImpots,
-        anneeImposition: anneeImposition.trim(), // ✅ ajouté
+        anneeImposition: anneeImposition.trim(),
+      },
+      validations: {
+        exactitudeInfo: vExactitude,
+        dossierComplet: vDossierComplet,
+        fraisVariables: vFraisVariables,
+        delaisSiManquant: vDelais,
       },
     };
   }, [
@@ -525,7 +580,153 @@ function FormulaireFiscalInner({
     appelerTechnicien,
     copieImpots,
     anneeImposition,
+    vExactitude,
+    vDossierComplet,
+    vFraisVariables,
+    vDelais,
   ]);
+
+  /* =========================== Step 1 validation (bloquant) =========================== */
+  const step1Errors = useMemo(() => {
+    const errors: string[] = [];
+
+    // Année
+    if (!isValidYear(anneeImposition)) errors.push("Année d’imposition : entrez une année valide (ex.: 2025).");
+
+    // Client obligatoire
+    if (!prenom.trim()) errors.push("Prénom : obligatoire.");
+    if (!nom.trim()) errors.push("Nom : obligatoire.");
+    if (!isValidNAS(nas)) errors.push("NAS : 9 chiffres obligatoires.");
+    if (!isValidDateJJMMAAAA(dob)) errors.push("Date de naissance : format JJ/MM/AAAA valide obligatoire.");
+    if (!etatCivil) errors.push("État civil : obligatoire.");
+    if (!isValidEmail(courriel)) errors.push("Courriel : adresse valide obligatoire.");
+    if (!adresse.trim()) errors.push("Adresse : obligatoire.");
+    if (!ville.trim()) errors.push("Ville : obligatoire.");
+    if (!province) errors.push("Province : obligatoire.");
+    if (!isValidPostal(codePostal)) errors.push("Code postal : 6 caractères obligatoires (ex.: G1V0A6).");
+
+    // Téléphone: au moins un des deux
+    const telAny = firstNonEmpty(normalizePhone(tel), normalizePhone(telCell));
+    if (!telAny) errors.push("Téléphone ou cellulaire : au moins un numéro est obligatoire.");
+
+    // Changement état civil
+    if (etatCivilChange) {
+      if (!ancienEtatCivil.trim()) errors.push("Ancien état civil : obligatoire si changement durant l’année.");
+      if (!isValidDateJJMMAAAA(dateChangementEtatCivil))
+        errors.push("Date du changement : format JJ/MM/AAAA valide obligatoire si changement durant l’année.");
+    }
+
+    // Conjoint : logique obligatoire
+    if (aUnConjoint) {
+      if (!traiterConjoint) {
+        if (!revenuNetConjoint.trim())
+          errors.push("Conjoint non traité : revenu net approximatif du conjoint obligatoire.");
+      } else {
+        if (!prenomConjoint.trim()) errors.push("Prénom (conjoint) : obligatoire.");
+        if (!nomConjoint.trim()) errors.push("Nom (conjoint) : obligatoire.");
+        if (!isValidNAS(nasConjoint)) errors.push("NAS (conjoint) : 9 chiffres obligatoires.");
+        if (!isValidDateJJMMAAAA(dobConjoint)) errors.push("Date de naissance (conjoint) : JJ/MM/AAAA valide obligatoire.");
+
+        // au moins un contact (conjoint)
+        const telCjAny = firstNonEmpty(normalizePhone(telConjoint), normalizePhone(telCellConjoint));
+        if (!telCjAny) errors.push("Téléphone ou cellulaire (conjoint) : au moins un numéro est obligatoire.");
+      }
+
+      if (!adresseConjointeIdentique) {
+        if (!adresseConjoint.trim()) errors.push("Adresse (conjoint) : obligatoire si adresse différente.");
+        if (!villeConjoint.trim()) errors.push("Ville (conjoint) : obligatoire si adresse différente.");
+        if (!provinceConjoint) errors.push("Province (conjoint) : obligatoire si adresse différente.");
+        if (!isValidPostal(codePostalConjoint)) errors.push("Code postal (conjoint) : obligatoire si adresse différente.");
+      }
+    }
+
+    // Québec: assurance médicaments (tu voulais “absolument remplir” → on bloque)
+    if (province === "QC") {
+      if (!assuranceMedsClient) errors.push("Assurance médicaments (client) : choisissez une option.");
+      // au moins une période complète
+      const okPeriodeClient = assuranceMedsClientPeriodes.some(
+        (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
+      );
+      if (!okPeriodeClient)
+        errors.push("Assurance médicaments (client) : au moins 1 période complète (de/à) est obligatoire.");
+
+      if (aUnConjoint) {
+        if (!assuranceMedsConjoint) errors.push("Assurance médicaments (conjoint) : choisissez une option.");
+        const okPeriodeCj = assuranceMedsConjointPeriodes.some(
+          (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
+        );
+        if (!okPeriodeCj)
+          errors.push("Assurance médicaments (conjoint) : au moins 1 période complète (de/à) est obligatoire.");
+      }
+    }
+
+    // Questions générales (oui/non obligatoires)
+    if (!habiteSeulTouteAnnee) errors.push("Question : Habitez-vous seul(e) toute l’année ? obligatoire.");
+    if (!nbPersonnesMaison3112.trim()) errors.push("Question : Nombre de personnes au 31/12 : obligatoire.");
+    if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000 $ : obligatoire.");
+    if (!citoyenCanadien) errors.push("Question : Citoyen(ne) canadien(ne) : obligatoire.");
+    if (!nonResident) errors.push("Question : Non-résident(e) : obligatoire.");
+    if (!maisonAcheteeOuVendue) errors.push("Question : Achat/vente résidence : obligatoire.");
+    if (!appelerTechnicien) errors.push("Question : Appel technicien : obligatoire.");
+    if (!copieImpots) errors.push("Copie d’impôts : choisissez une option.");
+
+    // Validations finales (bloquantes)
+    if (!vExactitude) errors.push("Confirmation : ‘Toutes les informations sont exactes’ obligatoire.");
+    if (!vDossierComplet) errors.push("Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.");
+    if (!vFraisVariables) errors.push("Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.");
+    if (!vDelais) errors.push("Confirmation : ‘Un dossier incomplet retarde le traitement’ obligatoire.");
+
+    return errors;
+  }, [
+    anneeImposition,
+    prenom,
+    nom,
+    nas,
+    dob,
+    etatCivil,
+    courriel,
+    adresse,
+    ville,
+    province,
+    codePostal,
+    tel,
+    telCell,
+    etatCivilChange,
+    ancienEtatCivil,
+    dateChangementEtatCivil,
+    aUnConjoint,
+    traiterConjoint,
+    prenomConjoint,
+    nomConjoint,
+    nasConjoint,
+    dobConjoint,
+    telConjoint,
+    telCellConjoint,
+    adresseConjointeIdentique,
+    adresseConjoint,
+    villeConjoint,
+    provinceConjoint,
+    codePostalConjoint,
+    revenuNetConjoint,
+    assuranceMedsClient,
+    assuranceMedsClientPeriodes,
+    assuranceMedsConjoint,
+    assuranceMedsConjointPeriodes,
+    habiteSeulTouteAnnee,
+    nbPersonnesMaison3112,
+    biensEtranger100k,
+    citoyenCanadien,
+    nonResident,
+    maisonAcheteeOuVendue,
+    appelerTechnicien,
+    copieImpots,
+    vExactitude,
+    vDossierComplet,
+    vFraisVariables,
+    vDelais,
+  ]);
+
+  const canContinue = step1Errors.length === 0;
 
   /* =========================== Save draft (insert/update) =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
@@ -576,7 +777,6 @@ function FormulaireFiscalInner({
       .select("id, data, created_at")
       .eq("user_id", userId)
       .eq("form_type", type)
-      .eq("annee", anneeImposition || null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<FormRow>();
@@ -653,7 +853,6 @@ function FormulaireFiscalInner({
     }
 
     const meds = form?.assuranceMedicamenteuse ?? null;
-
     if (meds?.client) {
       setAssuranceMedsClient(meds.client.regime ?? "");
       setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
@@ -681,12 +880,18 @@ function FormulaireFiscalInner({
     setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
     setAppelerTechnicien(q.appelerTechnicien ?? "");
     setCopieImpots(q.copieImpots ?? "");
-    setAnneeImposition(q.anneeImposition ?? ""); // ✅ preload
+    setAnneeImposition(q.anneeImposition ?? "");
+
+    const v = form?.validations ?? {};
+    setVExactitude(!!v.exactitudeInfo);
+    setVDossierComplet(!!v.dossierComplet);
+    setVFraisVariables(!!v.fraisVariables);
+    setVDelais(!!v.delaisSiManquant);
 
     await loadDocs(fid);
 
     hydrating.current = false;
-  }, [userId, type, anneeImposition, loadDocs]);
+  }, [userId, type, loadDocs]);
 
   useEffect(() => {
     void loadLastForm();
@@ -715,6 +920,14 @@ function FormulaireFiscalInner({
 
   const goToDepotDocuments = useCallback(async () => {
     try {
+      setMsg(null);
+
+      if (!canContinue) {
+        setMsg("❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.");
+        document.getElementById("ff-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
       setMsg("⏳ Préparation du dossier…");
 
       const fidFromSave = await saveDraft();
@@ -735,11 +948,9 @@ function FormulaireFiscalInner({
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
       setMsg("❌ " + message);
-      document
-        .getElementById("ff-upload-section")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("ff-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [saveDraft, fidDisplay, loadDocs, router, lang, type]);
+  }, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type]);
 
   // submit final sur cette page (optionnel)
   const handleSubmit = useCallback(
@@ -749,6 +960,12 @@ function FormulaireFiscalInner({
       setMsg(null);
 
       try {
+        if (!canContinue) {
+          setMsg("❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.");
+          document.getElementById("ff-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
+
         const fidFromSave = await saveDraft();
         const realFid = fidFromSave || fidDisplay;
 
@@ -780,7 +997,7 @@ function FormulaireFiscalInner({
         setSubmitting(false);
       }
     },
-    [saveDraft, fidDisplay, userId]
+    [canContinue, saveDraft, fidDisplay, userId]
   );
 
   /* =========================== Render =========================== */
@@ -811,8 +1028,8 @@ function FormulaireFiscalInner({
         <div className="ff-title">
           <h1>Formulaire – {formTitle}</h1>
           <p>
-            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations
-            pour préparer vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
+            Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour préparer
+            vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.
           </p>
         </div>
 
@@ -820,6 +1037,17 @@ function FormulaireFiscalInner({
           <div className="ff-card" style={{ padding: 14 }}>
             {msg}
           </div>
+        )}
+
+        {step1Errors.length > 0 && (
+          <section id="ff-errors" className="ff-card" style={{ padding: 14, border: "1px solid #ffd0d0" }}>
+            <strong>À corriger avant de continuer</strong>
+            <ul style={{ marginTop: 10, paddingLeft: 18 }}>
+              {step1Errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <Steps step={1} lang={lang} />
@@ -886,6 +1114,7 @@ function FormulaireFiscalInner({
                   value={ancienEtatCivil}
                   onChange={setAncienEtatCivil}
                   placeholder="ex.: Célibataire"
+                  required
                 />
                 <Field
                   label="Date du changement (JJ/MM/AAAA)"
@@ -895,6 +1124,7 @@ function FormulaireFiscalInner({
                   inputMode="numeric"
                   formatter={formatDateInput}
                   maxLength={10}
+                  required
                 />
               </div>
             )}
@@ -974,6 +1204,7 @@ function FormulaireFiscalInner({
                       onChange={setRevenuNetConjoint}
                       placeholder="ex.: 42 000"
                       inputMode="numeric"
+                      required
                     />
                   </div>
                 )}
@@ -999,6 +1230,7 @@ function FormulaireFiscalInner({
                     inputMode="numeric"
                     formatter={formatNASInput}
                     maxLength={11}
+                    required={traiterConjoint}
                   />
                   <Field
                     label="Date de naissance (JJ/MM/AAAA)"
@@ -1008,6 +1240,7 @@ function FormulaireFiscalInner({
                     inputMode="numeric"
                     formatter={formatDateInput}
                     maxLength={10}
+                    required={traiterConjoint}
                   />
                 </div>
 
@@ -1043,15 +1276,16 @@ function FormulaireFiscalInner({
 
                 {!adresseConjointeIdentique && (
                   <div className="ff-mt">
-                    <Field label="Adresse (rue) - conjoint" value={adresseConjoint} onChange={setAdresseConjoint} />
+                    <Field label="Adresse (rue) - conjoint" value={adresseConjoint} onChange={setAdresseConjoint} required />
                     <div className="ff-grid4 ff-mt-sm">
                       <Field label="App." value={appConjoint} onChange={setAppConjoint} />
-                      <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} />
+                      <Field label="Ville" value={villeConjoint} onChange={setVilleConjoint} required />
                       <SelectField<ProvinceCode>
                         label="Province"
                         value={provinceConjoint}
                         onChange={setProvinceConjoint}
                         options={PROVINCES}
+                        required
                       />
                       <Field
                         label="Code postal"
@@ -1061,6 +1295,7 @@ function FormulaireFiscalInner({
                         formatter={formatPostalInput}
                         maxLength={7}
                         autoComplete="postal-code"
+                        required
                       />
                     </div>
                   </div>
@@ -1083,6 +1318,7 @@ function FormulaireFiscalInner({
                 label="Votre couverture médicaments"
                 value={assuranceMedsClient}
                 onChange={setAssuranceMedsClient}
+                required
                 options={[
                   { value: "ramq", label: "Régime public (RAMQ)" },
                   { value: "prive", label: "Mon régime collectif privé" },
@@ -1097,25 +1333,23 @@ function FormulaireFiscalInner({
                       label="De (JJ/MM/AAAA)"
                       value={p.debut}
                       onChange={(val) =>
-                        setAssuranceMedsClientPeriodes((prev) =>
-                          updatePeriode(prev, idx, { debut: formatDateInput(val) })
-                        )
+                        setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { debut: formatDateInput(val) }))
                       }
                       placeholder="01/01/2024"
                       inputMode="numeric"
                       maxLength={10}
+                      required
                     />
                     <Field
                       label="À (JJ/MM/AAAA)"
                       value={p.fin}
                       onChange={(val) =>
-                        setAssuranceMedsClientPeriodes((prev) =>
-                          updatePeriode(prev, idx, { fin: formatDateInput(val) })
-                        )
+                        setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { fin: formatDateInput(val) }))
                       }
                       placeholder="31/12/2024"
                       inputMode="numeric"
                       maxLength={10}
+                      required
                     />
                   </div>
                 ))}
@@ -1137,6 +1371,7 @@ function FormulaireFiscalInner({
                     label="Couverture médicaments du conjoint"
                     value={assuranceMedsConjoint}
                     onChange={setAssuranceMedsConjoint}
+                    required
                     options={[
                       { value: "ramq", label: "Régime public (RAMQ)" },
                       { value: "prive", label: "Régime collectif privé" },
@@ -1158,18 +1393,18 @@ function FormulaireFiscalInner({
                           placeholder="01/01/2024"
                           inputMode="numeric"
                           maxLength={10}
+                          required
                         />
                         <Field
                           label="À (JJ/MM/AAAA)"
                           value={p.fin}
                           onChange={(val) =>
-                            setAssuranceMedsConjointPeriodes((prev) =>
-                              updatePeriode(prev, idx, { fin: formatDateInput(val) })
-                            )
+                            setAssuranceMedsConjointPeriodes((prev) => updatePeriode(prev, idx, { fin: formatDateInput(val) }))
                           }
                           placeholder="31/12/2024"
                           inputMode="numeric"
                           maxLength={10}
+                          required
                         />
                       </div>
                     ))}
@@ -1266,6 +1501,7 @@ function FormulaireFiscalInner({
                 onChange={setAnneeImposition}
                 placeholder="ex.: 2025"
                 inputMode="numeric"
+                required
               />
 
               <YesNoField
@@ -1281,6 +1517,7 @@ function FormulaireFiscalInner({
                 onChange={setNbPersonnesMaison3112}
                 placeholder="ex.: 1"
                 inputMode="numeric"
+                required
               />
 
               <YesNoField
@@ -1331,22 +1568,60 @@ function FormulaireFiscalInner({
             </div>
           </section>
 
+          {/* VALIDATIONS FINALES (bloquantes avant continuer) */}
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>Confirmations obligatoires</h2>
+              <p>Sans ces confirmations, le dossier ne peut pas continuer.</p>
+            </div>
+
+            <div className="ff-stack">
+              <CheckboxField
+                label="Je confirme que toutes les informations fournies sont exactes."
+                checked={vExactitude}
+                onChange={setVExactitude}
+              />
+              <CheckboxField
+                label="Je confirme avoir fourni toutes les informations requises pour le traitement."
+                checked={vDossierComplet}
+                onChange={setVDossierComplet}
+              />
+              <CheckboxField
+                label="Je comprends que les frais peuvent varier selon la complexité du dossier."
+                checked={vFraisVariables}
+                onChange={setVFraisVariables}
+              />
+              <CheckboxField
+                label="Je comprends qu’un dossier incomplet peut retarder le traitement."
+                checked={vDelais}
+                onChange={setVDelais}
+              />
+            </div>
+          </section>
+
           {/* ACTION — CONTINUER (étape 1) */}
           <div className="ff-submit">
             <button
               type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={submitting}
+              disabled={submitting || !canContinue}
               onClick={goToDepotDocuments}
+              title={!canContinue ? "Corrigez les champs obligatoires avant de continuer." : ""}
             >
               {lang === "fr" ? "Continuer →" : lang === "en" ? "Continue →" : "Continuar →"}
             </button>
 
             <div className="ff-muted" style={{ marginTop: 10 }}>
-              {docsLoading ? "Chargement des documents…" : docsCount > 0 ? `${docsCount} document(s) déjà au dossier.` : ""}
+              {docsLoading
+                ? "Chargement des documents…"
+                : docsCount > 0
+                ? `${docsCount} document(s) déjà au dossier.`
+                : canContinue
+                ? "Étape suivante : dépôt des documents."
+                : "Complétez les champs obligatoires pour continuer."}
             </div>
 
-            {/* Optionnel: liste de docs (si tu veux) */}
+            {/* Optionnel: liste de docs */}
             {docsCount > 0 && (
               <div className="ff-mt">
                 <div className="ff-subtitle">Documents au dossier</div>
