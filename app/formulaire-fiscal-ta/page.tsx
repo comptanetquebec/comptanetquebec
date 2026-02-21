@@ -300,6 +300,7 @@ function FormulaireFiscalTAInner({
   const [vDossierComplet, setVDossierComplet] = useState(false);
   const [vFraisVariables, setVFraisVariables] = useState(false);
   const [vDelais, setVDelais] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   // Helper traduction court
   const t = useCallback(
@@ -1102,6 +1103,8 @@ function FormulaireFiscalTAInner({
       setMsg(null);
 
       if (!canContinue) {
+        setShowErrors(true);
+        
         setMsg(
           t(
             "❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.",
@@ -1265,7 +1268,7 @@ function FormulaireFiscalTAInner({
         )}
 
         {/* Erreurs (si tu veux réduire le bruit, on pourra rendre ce bloc "collapsible") */}
-        <ErrorsPanel L={L} errors={step1Errors} />
+        {showErrors && <ErrorsPanel L={L} errors={step1Errors} />}
 
         <Steps step={1} lang={lang} />
         
@@ -1286,6 +1289,7 @@ function FormulaireFiscalTAInner({
           <ClientSection
             L={L}
             PROVINCES={PROVINCES}
+            showErrors={showErrors}
             prenom={prenom}
             setPrenom={setPrenom}
             nom={nom}
@@ -1323,6 +1327,7 @@ function FormulaireFiscalTAInner({
           <SpouseSection
             L={L}
             PROVINCES={PROVINCES}
+            showErrors={showErrors}
             aUnConjoint={aUnConjoint}
             setAUnConjoint={setAUnConjoint}
             traiterConjoint={traiterConjoint}
@@ -1360,6 +1365,7 @@ function FormulaireFiscalTAInner({
           <MedsSection
             L={L}
             show={province === "QC"}
+            showErrors={showErrors}
             aUnConjoint={aUnConjoint}
             assuranceMedsClient={assuranceMedsClient}
             setAssuranceMedsClient={setAssuranceMedsClient}
@@ -1378,6 +1384,7 @@ function FormulaireFiscalTAInner({
           <DependantsSection
             L={L}
             show={showEnfantsSection}
+            showErrors={showErrors}
             enfants={enfants}
             ajouterEnfant={ajouterEnfant}
             updateEnfant={(i, field, value) => {
@@ -1390,6 +1397,7 @@ function FormulaireFiscalTAInner({
 
           <QuestionsSection
             L={L}
+            showErrors={showErrors}
             anneeImposition={anneeImposition}
             setAnneeImposition={setAnneeImposition}
             habiteSeulTouteAnnee={habiteSeulTouteAnnee as any}
@@ -1412,6 +1420,7 @@ function FormulaireFiscalTAInner({
 
           <ConfirmationsSection
             L={L}
+            showErrors={showErrors}
             vExactitude={vExactitude}
             setVExactitude={setVExactitude}
             vDossierComplet={vDossierComplet}
