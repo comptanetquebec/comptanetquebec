@@ -166,6 +166,9 @@ export const COPY = {
       spouseCoverage: "Couverture — Conjoint",
       spouseCoverageLabel: "Couverture du conjoint",
 
+      // ✅ AJOUT
+      periodsLabel: "Périodes",
+
       from: "Du (JJ/MM/AAAA)",
       fromPh: "01/01/2025",
       to: "Au (JJ/MM/AAAA)",
@@ -239,7 +242,8 @@ export const COPY = {
         "Indicate your coverage (RAMQ, private or via spouse) and the applicable periods.",
 
       supportingDocsTitle: "Supporting documents",
-      supportingDocsDesc: "Upload your documents (T4A, statements, receipts, etc.).",
+      supportingDocsDesc:
+        "Upload your documents (T4A, statements, receipts, etc.).",
 
       confirmsTitle: "Required confirmations",
       confirmsDesc: "Without these confirmations, you cannot continue.",
@@ -347,6 +351,9 @@ export const COPY = {
       spouseCoverage: "Coverage — Spouse",
       spouseCoverageLabel: "Spouse coverage",
 
+      // ✅ AJOUT
+      periodsLabel: "Periods",
+
       from: "From (DD/MM/YYYY)",
       fromPh: "01/01/2025",
       to: "To (DD/MM/YYYY)",
@@ -408,7 +415,8 @@ export const COPY = {
       dependantsDesc: "Agregue sus hijos / dependientes.",
 
       questionsTitle: "Información fiscal adicional",
-      questionsDesc: "Preguntas generales para completar correctamente el expediente.",
+      questionsDesc:
+        "Preguntas generales para completar correctamente el expediente.",
 
       taTitle: "Autónomo (TA)",
       taDesc: "Información sobre sus actividades, ingresos y gastos.",
@@ -526,6 +534,9 @@ export const COPY = {
       spouseCoverage: "Cobertura — Cónyuge",
       spouseCoverageLabel: "Cobertura del cónyuge",
 
+      // ✅ AJOUT
+      periodsLabel: "Períodos",
+
       from: "Desde (DD/MM/AAAA)",
       fromPh: "01/01/2025",
       to: "Hasta (DD/MM/AAAA)",
@@ -557,4 +568,4 @@ export type CopyPack = (typeof COPY)[CopyLang];
 export function pickCopy(lang: string | null | undefined): CopyLang {
   const x = (lang || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? (x as CopyLang) : "fr";
-      }
+}
