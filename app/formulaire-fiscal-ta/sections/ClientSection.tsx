@@ -89,13 +89,9 @@ export default function ClientSection(props: {
     setCodePostal,
   } = props;
 
-  // Placeholder (pas dans COPY pour l’instant, donc simple et neutre)
   const placeholderLabel = "—";
 
-  // ✅ Options état civil traduites via COPY
-  // Important : EtatCivil inclut "" (vide) donc on ajoute une option "" pour satisfaire le typage
   const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> = [
-    { value: "", label: placeholderLabel },
     { value: "celibataire", label: L.fields.maritalOpts.celibataire },
     { value: "conjointDefait", label: L.fields.maritalOpts.conjointDefait },
     { value: "marie", label: L.fields.maritalOpts.marie },
@@ -155,6 +151,7 @@ export default function ClientSection(props: {
           onChange={setEtatCivil}
           options={maritalOptions}
           required
+          placeholderText={placeholderLabel}
         />
 
         <CheckboxField
