@@ -10,7 +10,8 @@ export const COPY = {
 
     // messages / CTA
     fixBeforeContinue: "À corriger avant de continuer",
-    missingRequired: "❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.",
+    missingRequired:
+      "❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.",
     preparing: "⏳ Préparation du dossier…",
     redirecting: "✅ Redirection…",
     continue: "Continuer →",
@@ -47,6 +48,11 @@ export const COPY = {
       // TA (étape 2)
       taTitle: "Travailleur autonome (TA)",
       taDesc: "Informations sur vos activités, revenus et dépenses.",
+
+      // Meds (si utilisé)
+      medsTitle: "Assurance médicaments",
+      medsDesc:
+        "Indiquez votre couverture (RAMQ, privée ou via conjoint) et les périodes applicables.",
 
       // Docs (étape 3)
       supportingDocsTitle: "Pièces justificatives",
@@ -123,13 +129,15 @@ export const COPY = {
     questions: {
       taxYear: "Année d’imposition (ex.: 2025)",
       taxYearPh: "ex.: 2025",
-      livedAlone: "Avez-vous habité seul(e) toute l'année (sans personne à charge) ?",
+      livedAlone:
+        "Avez-vous habité seul(e) toute l'année (sans personne à charge) ?",
       peopleCount: "Au 31/12, combien de personnes vivaient avec vous ?",
       peopleCountPh: "ex.: 1",
       foreignAssets: "Avez-vous plus de 100 000 $ de biens à l'étranger ?",
       citizen: "Êtes-vous citoyen(ne) canadien(ne) ?",
       nonResident: "Êtes-vous non-résident(e) du Canada aux fins fiscales ?",
-      homeTx: "Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?",
+      homeTx:
+        "Avez-vous acheté une première habitation ou vendu votre résidence principale cette année ?",
       techCall: "Souhaitez-vous qu'un technicien vous appelle ?",
       copy: "Comment voulez-vous recevoir votre copie d'impôt ?",
       copyPortal: "Espace client",
@@ -152,10 +160,32 @@ export const COPY = {
       expensesTotalPh: "ex.: 18 500",
     },
 
+    meds: {
+      clientCoverage: "Couverture — Client",
+      yourCoverage: "Votre couverture",
+      spouseCoverage: "Couverture — Conjoint",
+      spouseCoverageLabel: "Couverture du conjoint",
+
+      from: "Du (JJ/MM/AAAA)",
+      fromPh: "01/01/2025",
+      to: "Au (JJ/MM/AAAA)",
+      toPh: "31/12/2025",
+
+      addPeriod: "+ Ajouter une période",
+
+      opts: {
+        ramq: "RAMQ",
+        prive: "Assurance privée",
+        conjoint: "Couvert(e) par le conjoint",
+      },
+    },
+
     confirms: {
       exact: "Je confirme que toutes les informations fournies sont exactes.",
-      complete: "Je confirme avoir fourni toutes les informations requises pour le traitement.",
-      fees: "Je comprends que les frais peuvent varier selon la complexité du dossier.",
+      complete:
+        "Je confirme avoir fourni toutes les informations requises pour le traitement.",
+      fees:
+        "Je comprends que les frais peuvent varier selon la complexité du dossier.",
       delays: "Je comprends qu’un dossier incomplet peut retarder le traitement.",
     },
   },
@@ -168,7 +198,8 @@ export const COPY = {
       "Please complete this form after creating your account. We use this information to prepare your Canadian (federal) tax return and, if applicable, your Québec return.",
 
     fixBeforeContinue: "Fix before continuing",
-    missingRequired: "❌ Some required information is missing. Please fix the list below.",
+    missingRequired:
+      "❌ Some required information is missing. Please fix the list below.",
     preparing: "⏳ Preparing your file…",
     redirecting: "✅ Redirecting…",
     continue: "Continue →",
@@ -202,6 +233,10 @@ export const COPY = {
 
       taTitle: "Self-employed (TA)",
       taDesc: "Information about your activities, income and expenses.",
+
+      medsTitle: "Prescription drug insurance",
+      medsDesc:
+        "Indicate your coverage (RAMQ, private or via spouse) and the applicable periods.",
 
       supportingDocsTitle: "Supporting documents",
       supportingDocsDesc: "Upload your documents (T4A, statements, receipts, etc.).",
@@ -282,7 +317,8 @@ export const COPY = {
       foreignAssets: "Do you have more than $100,000 in foreign assets?",
       citizen: "Are you a Canadian citizen?",
       nonResident: "Are you a non-resident of Canada for tax purposes?",
-      homeTx: "Did you buy a first home or sell your principal residence this year?",
+      homeTx:
+        "Did you buy a first home or sell your principal residence this year?",
       techCall: "Do you want a technician to call you?",
       copy: "How would you like to receive your tax copy?",
       copyPortal: "Client portal",
@@ -305,6 +341,26 @@ export const COPY = {
       expensesTotalPh: "e.g., 18,500",
     },
 
+    meds: {
+      clientCoverage: "Coverage — Client",
+      yourCoverage: "Your coverage",
+      spouseCoverage: "Coverage — Spouse",
+      spouseCoverageLabel: "Spouse coverage",
+
+      from: "From (DD/MM/YYYY)",
+      fromPh: "01/01/2025",
+      to: "To (DD/MM/YYYY)",
+      toPh: "31/12/2025",
+
+      addPeriod: "+ Add a period",
+
+      opts: {
+        ramq: "RAMQ",
+        prive: "Private insurance",
+        conjoint: "Covered through spouse",
+      },
+    },
+
     confirms: {
       exact: "I confirm that all information provided is accurate.",
       complete: "I confirm that I provided all required information.",
@@ -321,7 +377,8 @@ export const COPY = {
       "Complete este formulario después de crear su cuenta. Usamos esta información para preparar su declaración de impuestos de Canadá (federal) y, si corresponde, la de Québec.",
 
     fixBeforeContinue: "Corrija antes de continuar",
-    missingRequired: "❌ Faltan datos obligatorios. Corrija la lista a continuación.",
+    missingRequired:
+      "❌ Faltan datos obligatorios. Corrija la lista a continuación.",
     preparing: "⏳ Preparando su expediente…",
     redirecting: "✅ Redirigiendo…",
     continue: "Continuar →",
@@ -355,6 +412,10 @@ export const COPY = {
 
       taTitle: "Autónomo (TA)",
       taDesc: "Información sobre sus actividades, ingresos y gastos.",
+
+      medsTitle: "Seguro de medicamentos",
+      medsDesc:
+        "Indique su cobertura (RAMQ, privada o por cónyuge) y los períodos aplicables.",
 
       supportingDocsTitle: "Documentos",
       supportingDocsDesc: "Suba sus documentos (T4A, extractos, recibos, etc.).",
@@ -435,7 +496,8 @@ export const COPY = {
       foreignAssets: "¿Tiene más de $100,000 en bienes en el extranjero?",
       citizen: "¿Es ciudadano(a) canadiense?",
       nonResident: "¿Es no residente de Canadá para fines fiscales?",
-      homeTx: "¿Compró una primera vivienda o vendió su residencia principal este año?",
+      homeTx:
+        "¿Compró una primera vivienda o vendió su residencia principal este año?",
       techCall: "¿Desea que un técnico le llame?",
       copy: "¿Cómo desea recibir su copia de impuestos?",
       copyPortal: "Portal del cliente",
@@ -458,11 +520,33 @@ export const COPY = {
       expensesTotalPh: "p. ej., 18 500",
     },
 
+    meds: {
+      clientCoverage: "Cobertura — Cliente",
+      yourCoverage: "Su cobertura",
+      spouseCoverage: "Cobertura — Cónyuge",
+      spouseCoverageLabel: "Cobertura del cónyuge",
+
+      from: "Desde (DD/MM/AAAA)",
+      fromPh: "01/01/2025",
+      to: "Hasta (DD/MM/AAAA)",
+      toPh: "31/12/2025",
+
+      addPeriod: "+ Agregar un período",
+
+      opts: {
+        ramq: "RAMQ",
+        prive: "Seguro privado",
+        conjoint: "Cubierto(a) por el cónyuge",
+      },
+    },
+
     confirms: {
       exact: "Confirmo que toda la información proporcionada es exacta.",
       complete: "Confirmo que proporcioné toda la información requerida.",
-      fees: "Entiendo que pueden aplicarse cargos adicionales según la complejidad.",
-      delays: "Entiendo que un expediente incompleto puede retrasar el procesamiento.",
+      fees:
+        "Entiendo que pueden aplicarse cargos adicionales según la complejidad.",
+      delays:
+        "Entiendo que un expediente incompleto puede retrasar el procesamiento.",
     },
   },
 } as const;
@@ -473,4 +557,4 @@ export type CopyPack = (typeof COPY)[CopyLang];
 export function pickCopy(lang: string | null | undefined): CopyLang {
   const x = (lang || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? (x as CopyLang) : "fr";
-}
+      }
