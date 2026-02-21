@@ -1261,11 +1261,11 @@ function FormulaireFiscalTAInner({
           <p>{L.intro}</p>
         </div>
 
-        {msg && (
-          <div className="ff-card" style={{ padding: 14 }}>
-            {msg}
-          </div>
-        )}
+        {msg && !showErrors && (
+  <div className="ff-card" style={{ padding: 14 }}>
+    {msg}
+  </div>
+)}
 
         {/* Erreurs (si tu veux réduire le bruit, on pourra rendre ce bloc "collapsible") */}
         <ErrorsPanel L={L} errors={step1Errors} showErrors={showErrors} />
