@@ -1433,15 +1433,16 @@ function FormulaireFiscalTAInner({
 
           {/* DocsSummary: on remplace goToDepotDocuments par goToRevenusDepenses */}
           <DocsSummary
-            L={L}
-            docsLoading={docsLoading}
-            docsCount={docsCount}
-            docs={docs}
-            openDoc={openDoc}
-            canContinue={canContinue}
-            submitting={submitting}
-            goToDepotDocuments={goToRevenusDepenses}
-          />
+  L={L}
+  docsLoading={docsLoading}
+  docsCount={docsCount}
+  docs={docs}
+  openDoc={openDoc}
+  canContinue={canContinue}
+  showErrors={showErrors}
+  submitting={submitting}
+  goToDepotDocuments={goToRevenusDepenses}
+/>
         </form>
       </div>
     </main>
