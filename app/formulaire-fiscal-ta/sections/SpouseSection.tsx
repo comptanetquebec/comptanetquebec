@@ -5,7 +5,12 @@ import React from "react";
 import { Field, CheckboxField, SelectField } from "../ui";
 import type { ProvinceCode } from "../types";
 import type { CopyPack } from "../copy";
-import { formatNASInput, formatDateInput, formatPhoneInput, formatPostalInput } from "../formatters";
+import {
+  formatNASInput,
+  formatDateInput,
+  formatPhoneInput,
+  formatPostalInput,
+} from "../formatters";
 
 /**
  * Flow TA (travailleur autonome)
@@ -106,6 +111,8 @@ export default function SpouseSection(props: {
     setCodePostalConjoint,
   } = props;
 
+  const placeholderLabel = "—";
+
   return (
     <section className="ff-card">
       <div className="ff-card-head">
@@ -113,7 +120,11 @@ export default function SpouseSection(props: {
         <p>{L.sections.spouseDesc}</p>
       </div>
 
-      <CheckboxField label={L.spouse.hasSpouse} checked={aUnConjoint} onChange={setAUnConjoint} />
+      <CheckboxField
+        label={L.spouse.hasSpouse}
+        checked={aUnConjoint}
+        onChange={setAUnConjoint}
+      />
 
       {aUnConjoint && (
         <>
@@ -226,14 +237,24 @@ export default function SpouseSection(props: {
                   onChange={setAppConjoint}
                   placeholder={L.fields.aptPh}
                 />
-                <Field label={L.fields.city} value={villeConjoint} onChange={setVilleConjoint} required />
+
+                <Field
+                  label={L.fields.city}
+                  value={villeConjoint}
+                  onChange={setVilleConjoint}
+                  required
+                />
 
                 <SelectField<ProvinceCode>
                   label={L.fields.province}
                   value={provinceConjoint}
-                  onChange={setProvinceConjoint}
+                  onChange={(v) => {
+                    if (v === "") return; // ignore le placeholder
+                    setProvinceConjoint(v as ProvinceCode);
+                  }}
                   options={PROVINCES}
                   required
+                  placeholderText={placeholderLabel}
                 />
 
                 <Field
@@ -253,4 +274,4 @@ export default function SpouseSection(props: {
       )}
     </section>
   );
-}
+                }
