@@ -5,13 +5,46 @@ import React from "react";
 import type { CopyPack } from "../copy";
 import type { DocRow } from "../types";
 
+type FieldStatus = "ok" | "no" | "idle";
+
+function Mark({ status }: { status: FieldStatus }) {
+  if (status === "idle") return null;
+  const ok = status === "ok";
+  return (
+    <span
+      aria-hidden
+      style={{
+        marginLeft: 10,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 18,
+        height: 18,
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 900,
+        border: "1px solid rgba(0,0,0,.12)",
+        background: ok ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.10)",
+        color: ok ? "#16a34a" : "#dc2626",
+      }}
+      title={ok ? "OK" : "À compléter"}
+    >
+      {ok ? "✓" : "✕"}
+    </span>
+  );
+}
+
 export default function DocsSummary(props: {
   L: CopyPack;
+
   docsLoading: boolean;
   docsCount: number;
   canContinue: boolean;
   docs: DocRow[];
   openDoc: (d: DocRow) => void;
+
+  // ✅ déclenche les ✕ (ex: après clic "Continuer")
+  showErrors: boolean;
 
   submitting: boolean;
   goToDepotDocuments: () => void;
@@ -23,21 +56,29 @@ export default function DocsSummary(props: {
     canContinue,
     docs,
     openDoc,
+    showErrors,
     submitting,
     goToDepotDocuments,
   } = props;
 
+  const status: FieldStatus = canContinue ? "ok" : showErrors ? "no" : "idle";
+
   return (
     <div className="ff-submit">
-      <button
-        type="button"
-        className="ff-btn ff-btn-primary ff-btn-big"
-        disabled={submitting || !canContinue}
-        onClick={goToDepotDocuments}
-        title={!canContinue ? L.completeToContinue : ""}
-      >
-        {L.continue}
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          type="button"
+          className="ff-btn ff-btn-primary ff-btn-big"
+          disabled={submitting || !canContinue}
+          onClick={goToDepotDocuments}
+          title={!canContinue ? L.completeToContinue : ""}
+        >
+          {L.continue}
+        </button>
+
+        {/* ✓ / ✕ basé sur canContinue */}
+        <Mark status={status} />
+      </div>
 
       <div className="ff-muted" style={{ marginTop: 10 }}>
         {docsLoading
