@@ -94,7 +94,7 @@ export default function ClientSection(props: {
 
   // ✅ Options état civil traduites via COPY
   // Important : EtatCivil inclut "" (vide) donc on ajoute une option "" pour satisfaire le typage
-  const maritalOptions: { value: EtatCivil; label: string }[] = [
+  const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> = [
     { value: "", label: placeholderLabel },
     { value: "celibataire", label: L.fields.maritalOpts.celibataire },
     { value: "conjointDefait", label: L.fields.maritalOpts.conjointDefait },
