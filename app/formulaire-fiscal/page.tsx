@@ -174,10 +174,10 @@ export default function FormulaireFiscalPage() {
   const params = useSearchParams();
 
   // figé à T1 ici (comme ton code)
-  const type: FormTypeDb = "T1";
+  const type = "T1" as const;
   const lang = normalizeLang(params.get("lang") || "fr");
 
-  const nextPath = useMemo(() => `/formulaire-fiscal?type=${type}&lang=${lang}`, [type, lang]);
+  const nextPath = useMemo(() => `/formulaire-fiscal?lang=${lang}`, [lang]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
@@ -194,7 +194,7 @@ function FormulaireFiscalInner({
 }: {
   userId: string;
   lang: Lang;
-  type: FormTypeDb;
+  type: "T1";
 }) {
   const router = useRouter();
   const formTitle = titleFromType();
