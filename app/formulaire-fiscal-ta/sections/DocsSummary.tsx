@@ -27,13 +27,6 @@ export default function DocsSummary(props: {
     goToDepotDocuments,
   } = props;
 
-  // ✅ Tes clés TA sont dans L.docs.*
-  // - loading
-  // - already(n)
-  // - title
-  // - open(name)
-  const nextText = L.nextStepDocs; // ✅ clé existante dans ton copy.ts
-
   return (
     <div className="ff-submit">
       <button
@@ -52,7 +45,7 @@ export default function DocsSummary(props: {
           : docsCount > 0
           ? L.docs.already(docsCount)
           : canContinue
-          ? nextText
+          ? L.nextStepDocs
           : L.completeToContinue}
       </div>
 
