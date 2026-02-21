@@ -5,7 +5,12 @@ import React, { useMemo } from "react";
 import { Field, CheckboxField, SelectField } from "../ui";
 import type { ProvinceCode } from "../types";
 import type { CopyPack } from "../copy";
-import { formatNASInput, formatDateInput, formatPhoneInput, formatPostalInput } from "../formatters";
+import {
+  formatNASInput,
+  formatDateInput,
+  formatPhoneInput,
+  formatPostalInput,
+} from "../formatters";
 
 type FieldStatus = "ok" | "no" | "idle";
 
@@ -36,7 +41,13 @@ function Mark({ status }: { status: FieldStatus }) {
   );
 }
 
-function LabelWithMark({ label, status }: { label: string; status: FieldStatus }) {
+function LabelWithMark({
+  label,
+  status,
+}: {
+  label: string;
+  status: FieldStatus;
+}) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center" }}>
       <span>{label}</span>
@@ -68,7 +79,8 @@ function isValidDateJJMMAAAA(v: string) {
   const dd = Number(ddStr);
   const mm = Number(mmStr);
   const yyyy = Number(yyyyStr);
-  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return false;
+  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy))
+    return false;
   if (yyyy < 1900 || yyyy > 2100) return false;
   if (mm < 1 || mm > 12) return false;
   const daysInMonth = new Date(yyyy, mm, 0).getDate();
@@ -236,7 +248,8 @@ export default function SpouseSection(props: {
     })();
 
     // Téléphone: au moins 1 des deux valide (si conjoint traité)
-    const anyPhoneOk = isValidPhone10(telConjoint) || isValidPhone10(telCellConjoint);
+    const anyPhoneOk =
+      isValidPhone10(telConjoint) || isValidPhone10(telCellConjoint);
     const telAnyStatus: FieldStatus = (() => {
       if (!traiterConjoint) return "idle";
       const anyTyped = !!telConjoint.trim() || !!telCellConjoint.trim();
@@ -244,9 +257,10 @@ export default function SpouseSection(props: {
       return anyPhoneOk ? "ok" : "no";
     })();
 
+    // ✅ EMAIL CONJOINT OBLIGATOIRE si traiterConjoint === true
     const emailStatus: FieldStatus = (() => {
-      // email conjoint: optionnel, mais si rempli, doit être valide
-      if (!courrielConjoint.trim()) return "idle";
+      if (!traiterConjoint) return "idle";
+      if (!courrielConjoint.trim()) return showErrors ? "no" : "idle";
       return isValidEmail(courrielConjoint) ? "ok" : "no";
     })();
 
@@ -309,20 +323,33 @@ export default function SpouseSection(props: {
         <p>{L.sections.spouseDesc}</p>
       </div>
 
-      <CheckboxField label={L.spouse.hasSpouse} checked={aUnConjoint} onChange={setAUnConjoint} />
+      <CheckboxField
+        label={L.spouse.hasSpouse}
+        checked={aUnConjoint}
+        onChange={setAUnConjoint}
+      />
 
       {aUnConjoint && (
         <>
           <div className="ff-mt">
-            <CheckboxField label={L.spouse.includeSpouse} checked={traiterConjoint} onChange={setTraiterConjoint} />
+            <CheckboxField
+              label={L.spouse.includeSpouse}
+              checked={traiterConjoint}
+              onChange={setTraiterConjoint}
+            />
           </div>
 
           {!traiterConjoint && (
             <div className="ff-mt">
               <Field
-                label={(
-                  <LabelWithMark label={L.spouse.spouseNetIncome} status={status.revenuNetConjoint} />
-                ) as any}
+                label={
+                  (
+                    <LabelWithMark
+                      label={L.spouse.spouseNetIncome}
+                      status={status.revenuNetConjoint}
+                    />
+                  ) as any
+                }
                 value={revenuNetConjoint}
                 onChange={setRevenuNetConjoint}
                 placeholder={L.spouse.spouseNetIncomePh}
@@ -334,26 +361,41 @@ export default function SpouseSection(props: {
 
           <div className="ff-grid2 ff-mt">
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spouseFirstName} status={status.prenomConjoint} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spouseFirstName}
+                    status={status.prenomConjoint}
+                  />
+                ) as any
+              }
               value={prenomConjoint}
               onChange={setPrenomConjoint}
               required={traiterConjoint}
             />
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spouseLastName} status={status.nomConjoint} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spouseLastName}
+                    status={status.nomConjoint}
+                  />
+                ) as any
+              }
               value={nomConjoint}
               onChange={setNomConjoint}
               required={traiterConjoint}
             />
 
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spouseSin} status={status.nasConjoint} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spouseSin}
+                    status={status.nasConjoint}
+                  />
+                ) as any
+              }
               value={nasConjoint}
               onChange={setNasConjoint}
               placeholder={L.fields.sinPh}
@@ -364,9 +406,14 @@ export default function SpouseSection(props: {
             />
 
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spouseDob} status={status.dobConjoint} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spouseDob}
+                    status={status.dobConjoint}
+                  />
+                ) as any
+              }
               value={dobConjoint}
               onChange={setDobConjoint}
               placeholder={L.fields.dobPh}
@@ -379,9 +426,14 @@ export default function SpouseSection(props: {
 
           <div className="ff-grid2 ff-mt">
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spousePhone} status={status.telAny} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spousePhone}
+                    status={status.telAny}
+                  />
+                ) as any
+              }
               value={telConjoint}
               onChange={setTelConjoint}
               placeholder="(418) 555-1234"
@@ -390,9 +442,14 @@ export default function SpouseSection(props: {
               maxLength={14}
             />
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spouseMobile} status={status.telAny} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spouseMobile}
+                    status={status.telAny}
+                  />
+                ) as any
+              }
               value={telCellConjoint}
               onChange={setTelCellConjoint}
               placeholder="(418) 555-1234"
@@ -402,46 +459,76 @@ export default function SpouseSection(props: {
             />
 
             <Field
-              label={(
-                <LabelWithMark label={L.spouse.spouseEmail} status={status.courrielConjoint} />
-              ) as any}
+              label={
+                (
+                  <LabelWithMark
+                    label={L.spouse.spouseEmail}
+                    status={status.courrielConjoint}
+                  />
+                ) as any
+              }
               value={courrielConjoint}
               onChange={setCourrielConjoint}
               type="email"
+              required={traiterConjoint}
             />
           </div>
 
           <div className="ff-mt">
-            <CheckboxField label={L.spouse.sameAddress} checked={adresseConjointeIdentique} onChange={setAdresseConjointeIdentique} />
+            <CheckboxField
+              label={L.spouse.sameAddress}
+              checked={adresseConjointeIdentique}
+              onChange={setAdresseConjointeIdentique}
+            />
           </div>
 
           {!adresseConjointeIdentique && (
             <div className="ff-mt">
               <Field
-                label={(
-                  <LabelWithMark label={L.spouse.spouseAddress} status={status.adresseConjoint} />
-                ) as any}
+                label={
+                  (
+                    <LabelWithMark
+                      label={L.spouse.spouseAddress}
+                      status={status.adresseConjoint}
+                    />
+                  ) as any
+                }
                 value={adresseConjoint}
                 onChange={setAdresseConjoint}
                 required
               />
 
               <div className="ff-grid4 ff-mt-sm">
-                <Field label={L.fields.apt} value={appConjoint} onChange={setAppConjoint} placeholder={L.fields.aptPh} />
+                <Field
+                  label={L.fields.apt}
+                  value={appConjoint}
+                  onChange={setAppConjoint}
+                  placeholder={L.fields.aptPh}
+                />
 
                 <Field
-                  label={(
-                    <LabelWithMark label={L.fields.city} status={status.villeConjoint} />
-                  ) as any}
+                  label={
+                    (
+                      <LabelWithMark
+                        label={L.fields.city}
+                        status={status.villeConjoint}
+                      />
+                    ) as any
+                  }
                   value={villeConjoint}
                   onChange={setVilleConjoint}
                   required
                 />
 
                 <SelectField<ProvinceCode>
-                  label={(
-                    <LabelWithMark label={L.fields.province} status={status.provinceConjoint} />
-                  ) as any}
+                  label={
+                    (
+                      <LabelWithMark
+                        label={L.fields.province}
+                        status={status.provinceConjoint}
+                      />
+                    ) as any
+                  }
                   value={provinceConjoint}
                   onChange={(v) => {
                     if (v === "") return; // ignore le placeholder
@@ -453,9 +540,14 @@ export default function SpouseSection(props: {
                 />
 
                 <Field
-                  label={(
-                    <LabelWithMark label={L.fields.postal} status={status.codePostalConjoint} />
-                  ) as any}
+                  label={
+                    (
+                      <LabelWithMark
+                        label={L.fields.postal}
+                        status={status.codePostalConjoint}
+                      />
+                    ) as any
+                  }
                   value={codePostalConjoint}
                   onChange={setCodePostalConjoint}
                   placeholder={L.fields.postalPh}
