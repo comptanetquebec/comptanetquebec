@@ -14,6 +14,23 @@ import {
 
 type FieldStatus = "ok" | "no" | "idle";
 
+type StatusMap = {
+  prenom: FieldStatus;
+  nom: FieldStatus;
+  nas: FieldStatus;
+  dob: FieldStatus;
+  etatCivil: FieldStatus;
+  ancienEtatCivil: FieldStatus;
+  dateChangementEtatCivil: FieldStatus;
+  tel: FieldStatus;
+  telCell: FieldStatus;
+  courriel: FieldStatus;
+  adresse: FieldStatus;
+  ville: FieldStatus;
+  province: FieldStatus;
+  codePostal: FieldStatus;
+};
+
 function Mark({ status }: { status: FieldStatus }) {
   if (status === "idle") return null;
   const ok = status === "ok";
@@ -176,40 +193,49 @@ export default function ClientSection(props: Props) {
     { value: "veuf", label: L.fields.maritalOpts.veuf },
   ];
 
-  const status = useMemo(() => {
+  const status: StatusMap = useMemo(() => {
     const requiredText = (v: string): FieldStatus => {
       const has = !!v.trim();
       if (!has) return showErrors ? "no" : "idle";
       return "ok";
     };
 
-    const nasStatus: FieldStatus = (() => {
-      if (!nas.trim()) return showErrors ? "no" : "idle";
-      return isValidNAS(nas) ? "ok" : "no";
-    })();
+    const nasStatus: FieldStatus = !nas.trim()
+      ? showErrors
+        ? "no"
+        : "idle"
+      : isValidNAS(nas)
+      ? "ok"
+      : "no";
 
-    const dobStatus: FieldStatus = (() => {
-      if (!dob.trim()) return showErrors ? "no" : "idle";
-      return isValidDateJJMMAAAA(dob) ? "ok" : "no";
-    })();
+    const dobStatus: FieldStatus = !dob.trim()
+      ? showErrors
+        ? "no"
+        : "idle"
+      : isValidDateJJMMAAAA(dob)
+      ? "ok"
+      : "no";
 
-    const emailStatus: FieldStatus = (() => {
-      if (!courriel.trim()) return showErrors ? "no" : "idle";
-      return isValidEmail(courriel) ? "ok" : "no";
-    })();
+    const emailStatus: FieldStatus = !courriel.trim()
+      ? showErrors
+        ? "no"
+        : "idle"
+      : isValidEmail(courriel)
+      ? "ok"
+      : "no";
 
-    const postalStatus: FieldStatus = (() => {
-      if (!codePostal.trim()) return showErrors ? "no" : "idle";
-      return isValidPostal(codePostal) ? "ok" : "no";
-    })();
+    const postalStatus: FieldStatus = !codePostal.trim()
+      ? showErrors
+        ? "no"
+        : "idle"
+      : isValidPostal(codePostal)
+      ? "ok"
+      : "no";
 
     // Téléphone: au moins 1 des deux valide
+    const anyTyped = !!tel.trim() || !!telCell.trim();
     const anyPhoneOk = isValidPhone10(tel) || isValidPhone10(telCell);
-    const phoneStatus: FieldStatus = (() => {
-      const anyTyped = !!tel.trim() || !!telCell.trim();
-      if (!anyTyped) return showErrors ? "no" : "idle";
-      return anyPhoneOk ? "ok" : "no";
-    })();
+    const phoneStatus: FieldStatus = !anyTyped ? (showErrors ? "no" : "idle") : anyPhoneOk ? "ok" : "no";
 
     const etatCivilStatus: FieldStatus = etatCivil ? "ok" : showErrors ? "no" : "idle";
 
@@ -231,6 +257,8 @@ export default function ClientSection(props: Props) {
       ? "ok"
       : "no";
 
+    const provinceStatus: FieldStatus = province ? "ok" : showErrors ? "no" : "idle";
+
     return {
       prenom: requiredText(prenom),
       nom: requiredText(nom),
@@ -244,7 +272,7 @@ export default function ClientSection(props: Props) {
       courriel: emailStatus,
       adresse: requiredText(adresse),
       ville: requiredText(ville),
-      province: province ? "ok" : showErrors ? "no" : "idle",
+      province: provinceStatus,
       codePostal: postalStatus,
     };
   }, [
@@ -320,11 +348,7 @@ export default function ClientSection(props: Props) {
           placeholderText="—"
         />
 
-        <CheckboxField
-          label={L.fields.maritalChanged}
-          checked={etatCivilChange}
-          onChange={setEtatCivilChange}
-        />
+        <CheckboxField label={L.fields.maritalChanged} checked={etatCivilChange} onChange={setEtatCivilChange} />
       </div>
 
       {etatCivilChange && (
@@ -389,12 +413,7 @@ export default function ClientSection(props: Props) {
         />
 
         <div className="ff-grid4 ff-mt-sm">
-          <Field
-            label={L.fields.apt}
-            value={app}
-            onChange={setApp}
-            placeholder={L.fields.aptPh}
-          />
+          <Field label={L.fields.apt} value={app} onChange={setApp} placeholder={L.fields.aptPh} />
 
           <Field
             label={<LabelWithMark label={L.fields.city} status={status.ville} /> as any}
@@ -429,4 +448,4 @@ export default function ClientSection(props: Props) {
       </div>
     </section>
   );
-}
+      }
