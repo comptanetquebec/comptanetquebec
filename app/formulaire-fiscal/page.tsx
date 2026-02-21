@@ -69,8 +69,7 @@ const PROVINCES: { value: ProvinceCode; label: string }[] = [
   { value: "NU", label: "NU" },
 ];
 
-function titleFromType(type: FormTypeDb) {
-  if (type === "T2") return "Société (T2)";
+function titleFromType() {
   return "Particulier (T1)";
 }
 
@@ -198,7 +197,7 @@ function FormulaireFiscalInner({
   type: FormTypeDb;
 }) {
   const router = useRouter();
-  const formTitle = titleFromType(type);
+  const formTitle = titleFromType();
 
   const L = COPY[pickCopy(lang) as CopyLang];
 
