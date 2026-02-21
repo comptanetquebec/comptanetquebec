@@ -1131,7 +1131,7 @@ function FormulaireFiscalInner({
           </div>
 
           <button className="ff-btn ff-btn-outline" type="button" onClick={logout}>
-            {L.logout}
+            {L.disconnect}
           </button>
         </header>
 
