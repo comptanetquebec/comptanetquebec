@@ -585,153 +585,424 @@ function FormulaireFiscalInner({
     vDelais,
   ]);
 
-  /* =========================== Step 1 validation (bloquant) =========================== */
-  const step1Errors = useMemo(() => {
-    const errors: string[] = [];
+ // Helper traduction (à mettre dans FormulaireFiscalInner, avant step1Errors)
+const t = useCallback(
+  (fr: string, en: string, es: string) => (lang === "fr" ? fr : lang === "en" ? en : es),
+  [lang]
+);
 
-    // Année
-    if (!isValidYear(anneeImposition)) errors.push("Année d’imposition : entrez une année valide (ex.: 2025).");
+// ===================== Step 1 validation (bloquant) =====================
+const step1Errors = useMemo(() => {
+  const errors: string[] = [];
 
-    // Client obligatoire
-    if (!prenom.trim()) errors.push("Prénom : obligatoire.");
-    if (!nom.trim()) errors.push("Nom : obligatoire.");
-    if (!isValidNAS(nas)) errors.push("NAS : 9 chiffres obligatoires.");
-    if (!isValidDateJJMMAAAA(dob)) errors.push("Date de naissance : format JJ/MM/AAAA valide obligatoire.");
-    if (!etatCivil) errors.push("État civil : obligatoire.");
-    if (!isValidEmail(courriel)) errors.push("Courriel : adresse valide obligatoire.");
-    if (!adresse.trim()) errors.push("Adresse : obligatoire.");
-    if (!ville.trim()) errors.push("Ville : obligatoire.");
-    if (!province) errors.push("Province : obligatoire.");
-    if (!isValidPostal(codePostal)) errors.push("Code postal : 6 caractères obligatoires (ex.: G1V0A6).");
+  // Année
+  if (!isValidYear(anneeImposition))
+    errors.push(
+      t(
+        "Année d’imposition : entrez une année valide (ex.: 2025).",
+        "Tax year: enter a valid year (e.g., 2025).",
+        "Año fiscal: ingrese un año válido (p. ej., 2025)."
+      )
+    );
 
-    // Téléphone: au moins un des deux
-    const telAny = firstNonEmpty(normalizePhone(tel), normalizePhone(telCell));
-    if (!telAny) errors.push("Téléphone ou cellulaire : au moins un numéro est obligatoire.");
+  // Client obligatoire
+  if (!prenom.trim()) errors.push(t("Prénom : obligatoire.", "First name: required.", "Nombre: obligatorio."));
+  if (!nom.trim()) errors.push(t("Nom : obligatoire.", "Last name: required.", "Apellido: obligatorio."));
+  if (!isValidNAS(nas))
+    errors.push(
+      t(
+        "NAS : 9 chiffres obligatoires.",
+        "SIN: 9 digits required.",
+        "NAS/SIN: se requieren 9 dígitos."
+      )
+    );
+  if (!isValidDateJJMMAAAA(dob))
+    errors.push(
+      t(
+        "Date de naissance : format JJ/MM/AAAA valide obligatoire.",
+        "Date of birth: a valid DD/MM/YYYY format is required.",
+        "Fecha de nacimiento: se requiere un formato válido DD/MM/AAAA."
+      )
+    );
+  if (!etatCivil)
+    errors.push(
+      t(
+        "État civil : obligatoire.",
+        "Marital status: required.",
+        "Estado civil: obligatorio."
+      )
+    );
+  if (!isValidEmail(courriel))
+    errors.push(
+      t(
+        "Courriel : adresse valide obligatoire.",
+        "Email: a valid address is required.",
+        "Correo electrónico: se requiere una dirección válida."
+      )
+    );
+  if (!adresse.trim()) errors.push(t("Adresse : obligatoire.", "Address: required.", "Dirección: obligatorio."));
+  if (!ville.trim()) errors.push(t("Ville : obligatoire.", "City: required.", "Ciudad: obligatorio."));
+  if (!province)
+    errors.push(
+      t(
+        "Province : obligatoire.",
+        "Province: required.",
+        "Provincia: obligatorio."
+      )
+    );
+  if (!isValidPostal(codePostal))
+    errors.push(
+      t(
+        "Code postal : 6 caractères obligatoires (ex.: G1V0A6).",
+        "Postal code: 6 characters required (e.g., G1V0A6).",
+        "Código postal: se requieren 6 caracteres (p. ej., G1V0A6)."
+      )
+    );
 
-    // Changement état civil
-    if (etatCivilChange) {
-      if (!ancienEtatCivil.trim()) errors.push("Ancien état civil : obligatoire si changement durant l’année.");
-      if (!isValidDateJJMMAAAA(dateChangementEtatCivil))
-        errors.push("Date du changement : format JJ/MM/AAAA valide obligatoire si changement durant l’année.");
+  // Téléphone: au moins un des deux
+  const telAny = firstNonEmpty(normalizePhone(tel), normalizePhone(telCell));
+  if (!telAny)
+    errors.push(
+      t(
+        "Téléphone ou cellulaire : au moins un numéro est obligatoire.",
+        "Phone or mobile: at least one number is required.",
+        "Teléfono o móvil: se requiere al menos un número."
+      )
+    );
+
+  // Changement état civil
+  if (etatCivilChange) {
+    if (!ancienEtatCivil.trim())
+      errors.push(
+        t(
+          "Ancien état civil : obligatoire si changement durant l’année.",
+          "Previous marital status: required if it changed during the year.",
+          "Estado civil anterior: obligatorio si cambió durante el año."
+        )
+      );
+
+    if (!isValidDateJJMMAAAA(dateChangementEtatCivil))
+      errors.push(
+        t(
+          "Date du changement : format JJ/MM/AAAA valide obligatoire si changement durant l’année.",
+          "Change date: a valid DD/MM/YYYY format is required if it changed during the year.",
+          "Fecha del cambio: se requiere un formato válido DD/MM/AAAA si cambió durante el año."
+        )
+      );
+  }
+
+  // Conjoint : logique obligatoire
+  if (aUnConjoint) {
+    if (!traiterConjoint) {
+      if (!revenuNetConjoint.trim())
+        errors.push(
+          t(
+            "Conjoint non traité : revenu net approximatif du conjoint obligatoire.",
+            "Spouse not included: spouse's approximate net income is required.",
+            "Cónyuge no incluido: se requiere el ingreso neto aproximado del cónyuge."
+          )
+        );
+    } else {
+      if (!prenomConjoint.trim())
+        errors.push(
+          t(
+            "Prénom (conjoint) : obligatoire.",
+            "Spouse first name: required.",
+            "Nombre (cónyuge): obligatorio."
+          )
+        );
+      if (!nomConjoint.trim())
+        errors.push(
+          t(
+            "Nom (conjoint) : obligatoire.",
+            "Spouse last name: required.",
+            "Apellido (cónyuge): obligatorio."
+          )
+        );
+      if (!isValidNAS(nasConjoint))
+        errors.push(
+          t(
+            "NAS (conjoint) : 9 chiffres obligatoires.",
+            "Spouse SIN: 9 digits required.",
+            "NAS/SIN (cónyuge): se requieren 9 dígitos."
+          )
+        );
+      if (!isValidDateJJMMAAAA(dobConjoint))
+        errors.push(
+          t(
+            "Date de naissance (conjoint) : JJ/MM/AAAA valide obligatoire.",
+            "Spouse date of birth: valid DD/MM/YYYY required.",
+            "Fecha de nacimiento (cónyuge): se requiere DD/MM/AAAA válido."
+          )
+        );
+
+      // au moins un contact (conjoint)
+      const telCjAny = firstNonEmpty(normalizePhone(telConjoint), normalizePhone(telCellConjoint));
+      if (!telCjAny)
+        errors.push(
+          t(
+            "Téléphone ou cellulaire (conjoint) : au moins un numéro est obligatoire.",
+            "Spouse phone or mobile: at least one number is required.",
+            "Teléfono o móvil (cónyuge): se requiere al menos un número."
+          )
+        );
     }
 
-    // Conjoint : logique obligatoire
+    if (!adresseConjointeIdentique) {
+      if (!adresseConjoint.trim())
+        errors.push(
+          t(
+            "Adresse (conjoint) : obligatoire si adresse différente.",
+            "Spouse address: required if different.",
+            "Dirección (cónyuge): obligatorio si es diferente."
+          )
+        );
+      if (!villeConjoint.trim())
+        errors.push(
+          t(
+            "Ville (conjoint) : obligatoire si adresse différente.",
+            "Spouse city: required if different.",
+            "Ciudad (cónyuge): obligatorio si es diferente."
+          )
+        );
+      if (!provinceConjoint)
+        errors.push(
+          t(
+            "Province (conjoint) : obligatoire si adresse différente.",
+            "Spouse province: required if different.",
+            "Provincia (cónyuge): obligatorio si es diferente."
+          )
+        );
+      if (!isValidPostal(codePostalConjoint))
+        errors.push(
+          t(
+            "Code postal (conjoint) : obligatoire si adresse différente.",
+            "Spouse postal code: required if different.",
+            "Código postal (cónyuge): obligatorio si es diferente."
+          )
+        );
+    }
+  }
+
+  // Québec: assurance médicaments
+  if (province === "QC") {
+    if (!assuranceMedsClient)
+      errors.push(
+        t(
+          "Assurance médicaments (client) : choisissez une option.",
+          "Prescription drug insurance (client): choose an option.",
+          "Seguro de medicamentos (cliente): elija una opción."
+        )
+      );
+
+    const okPeriodeClient = assuranceMedsClientPeriodes.some(
+      (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
+    );
+    if (!okPeriodeClient)
+      errors.push(
+        t(
+          "Assurance médicaments (client) : au moins 1 période complète (de/à) est obligatoire.",
+          "Prescription drug insurance (client): at least 1 complete period (from/to) is required.",
+          "Seguro de medicamentos (cliente): se requiere al menos 1 período completo (desde/hasta)."
+        )
+      );
+
     if (aUnConjoint) {
-      if (!traiterConjoint) {
-        if (!revenuNetConjoint.trim())
-          errors.push("Conjoint non traité : revenu net approximatif du conjoint obligatoire.");
-      } else {
-        if (!prenomConjoint.trim()) errors.push("Prénom (conjoint) : obligatoire.");
-        if (!nomConjoint.trim()) errors.push("Nom (conjoint) : obligatoire.");
-        if (!isValidNAS(nasConjoint)) errors.push("NAS (conjoint) : 9 chiffres obligatoires.");
-        if (!isValidDateJJMMAAAA(dobConjoint))
-          errors.push("Date de naissance (conjoint) : JJ/MM/AAAA valide obligatoire.");
+      if (!assuranceMedsConjoint)
+        errors.push(
+          t(
+            "Assurance médicaments (conjoint) : choisissez une option.",
+            "Prescription drug insurance (spouse): choose an option.",
+            "Seguro de medicamentos (cónyuge): elija una opción."
+          )
+        );
 
-        // au moins un contact (conjoint)
-        const telCjAny = firstNonEmpty(normalizePhone(telConjoint), normalizePhone(telCellConjoint));
-        if (!telCjAny) errors.push("Téléphone ou cellulaire (conjoint) : au moins un numéro est obligatoire.");
-      }
-
-      if (!adresseConjointeIdentique) {
-        if (!adresseConjoint.trim()) errors.push("Adresse (conjoint) : obligatoire si adresse différente.");
-        if (!villeConjoint.trim()) errors.push("Ville (conjoint) : obligatoire si adresse différente.");
-        if (!provinceConjoint) errors.push("Province (conjoint) : obligatoire si adresse différente.");
-        if (!isValidPostal(codePostalConjoint)) errors.push("Code postal (conjoint) : obligatoire si adresse différente.");
-      }
-    }
-
-    // Québec: assurance médicaments
-    if (province === "QC") {
-      if (!assuranceMedsClient) errors.push("Assurance médicaments (client) : choisissez une option.");
-
-      const okPeriodeClient = assuranceMedsClientPeriodes.some(
+      const okPeriodeCj = assuranceMedsConjointPeriodes.some(
         (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
       );
-      if (!okPeriodeClient)
-        errors.push("Assurance médicaments (client) : au moins 1 période complète (de/à) est obligatoire.");
-
-      if (aUnConjoint) {
-        if (!assuranceMedsConjoint) errors.push("Assurance médicaments (conjoint) : choisissez une option.");
-        const okPeriodeCj = assuranceMedsConjointPeriodes.some(
-          (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
+      if (!okPeriodeCj)
+        errors.push(
+          t(
+            "Assurance médicaments (conjoint) : au moins 1 période complète (de/à) est obligatoire.",
+            "Prescription drug insurance (spouse): at least 1 complete period (from/to) is required.",
+            "Seguro de medicamentos (cónyuge): se requiere al menos 1 período completo (desde/hasta)."
+          )
         );
-        if (!okPeriodeCj)
-          errors.push("Assurance médicaments (conjoint) : au moins 1 période complète (de/à) est obligatoire.");
-      }
     }
+  }
 
-    // Questions générales
-    if (!habiteSeulTouteAnnee) errors.push("Question : Habitez-vous seul(e) toute l’année ? obligatoire.");
-    if (!nbPersonnesMaison3112.trim()) errors.push("Question : Nombre de personnes au 31/12 : obligatoire.");
+  // Questions générales
+  if (!habiteSeulTouteAnnee)
+    errors.push(
+      t(
+        "Question : Habitez-vous seul(e) toute l’année ? obligatoire.",
+        "Question: Did you live alone all year? required.",
+        "Pregunta: ¿Vivió solo(a) todo el año? obligatorio."
+      )
+    );
 
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    if (nb > 0 && enfants.length === 0) {
-      errors.push("Personnes à charge : ajoutez au moins 1 personne.");
-    }
+  if (!nbPersonnesMaison3112.trim())
+    errors.push(
+      t(
+        "Question : Nombre de personnes au 31/12 : obligatoire.",
+        "Question: Number of people living with you on 12/31: required.",
+        "Pregunta: Número de personas que vivían con usted el 31/12: obligatorio."
+      )
+    );
 
-    if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000 $ : obligatoire.");
-    if (!citoyenCanadien) errors.push("Question : Citoyen(ne) canadien(ne) : obligatoire.");
-    if (!nonResident) errors.push("Question : Non-résident(e) : obligatoire.");
-    if (!maisonAcheteeOuVendue) errors.push("Question : Achat/vente résidence : obligatoire.");
-    if (!appelerTechnicien) errors.push("Question : Appel technicien : obligatoire.");
-    if (!copieImpots) errors.push("Copie d’impôts : choisissez une option.");
+  const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+  if (nb > 0 && enfants.length === 0) {
+    errors.push(
+      t(
+        "Personnes à charge : ajoutez au moins 1 personne.",
+        "Dependants: add at least 1 dependant.",
+        "Dependientes: agregue al menos 1 dependiente."
+      )
+    );
+  }
 
-    // Validations finales
-    if (!vExactitude) errors.push("Confirmation : ‘Toutes les informations sont exactes’ obligatoire.");
-    if (!vDossierComplet) errors.push("Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.");
-    if (!vFraisVariables) errors.push("Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.");
-    if (!vDelais) errors.push("Confirmation : ‘Un dossier incomplet retarde le traitement’ obligatoire.");
+  if (!biensEtranger100k)
+    errors.push(
+      t(
+        "Question : Biens à l’étranger > 100 000 $ : obligatoire.",
+        "Question: Foreign assets over $100,000: required.",
+        "Pregunta: Bienes en el extranjero > $100,000: obligatorio."
+      )
+    );
 
-    return errors;
-  }, [
-    anneeImposition,
-    prenom,
-    nom,
-    nas,
-    dob,
-    etatCivil,
-    courriel,
-    adresse,
-    ville,
-    province,
-    codePostal,
-    tel,
-    telCell,
-    etatCivilChange,
-    ancienEtatCivil,
-    dateChangementEtatCivil,
-    aUnConjoint,
-    traiterConjoint,
-    prenomConjoint,
-    nomConjoint,
-    nasConjoint,
-    dobConjoint,
-    telConjoint,
-    telCellConjoint,
-    adresseConjointeIdentique,
-    adresseConjoint,
-    villeConjoint,
-    provinceConjoint,
-    codePostalConjoint,
-    revenuNetConjoint,
-    assuranceMedsClient,
-    assuranceMedsClientPeriodes,
-    assuranceMedsConjoint,
-    assuranceMedsConjointPeriodes,
-    enfants, // ✅ correction: utilisé via enfants.length
-    habiteSeulTouteAnnee,
-    nbPersonnesMaison3112,
-    biensEtranger100k,
-    citoyenCanadien,
-    nonResident,
-    maisonAcheteeOuVendue,
-    appelerTechnicien,
-    copieImpots,
-    vExactitude,
-    vDossierComplet,
-    vFraisVariables,
-    vDelais,
-  ]);
+  if (!citoyenCanadien)
+    errors.push(
+      t(
+        "Question : Citoyen(ne) canadien(ne) : obligatoire.",
+        "Question: Canadian citizen: required.",
+        "Pregunta: Ciudadano(a) canadiense: obligatorio."
+      )
+    );
+
+  if (!nonResident)
+    errors.push(
+      t(
+        "Question : Non-résident(e) : obligatoire.",
+        "Question: Non-resident for tax purposes: required.",
+        "Pregunta: No residente a efectos fiscales: obligatorio."
+      )
+    );
+
+  if (!maisonAcheteeOuVendue)
+    errors.push(
+      t(
+        "Question : Achat/vente résidence : obligatoire.",
+        "Question: Bought/sold a residence this year: required.",
+        "Pregunta: Compra/venta de residencia este año: obligatorio."
+      )
+    );
+
+  if (!appelerTechnicien)
+    errors.push(
+      t(
+        "Question : Appel technicien : obligatoire.",
+        "Question: Do you want a technician to call you: required.",
+        "Pregunta: ¿Desea que un técnico le llame?: obligatorio."
+      )
+    );
+
+  if (!copieImpots)
+    errors.push(
+      t(
+        "Copie d’impôts : choisissez une option.",
+        "Tax copy: choose an option.",
+        "Copia de impuestos: elija una opción."
+      )
+    );
+
+  // Validations finales
+  if (!vExactitude)
+    errors.push(
+      t(
+        "Confirmation : ‘Toutes les informations sont exactes’ obligatoire.",
+        "Confirmation: ‘All information is accurate’ is required.",
+        "Confirmación: ‘Toda la información es exacta’ es obligatorio."
+      )
+    );
+
+  if (!vDossierComplet)
+    errors.push(
+      t(
+        "Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.",
+        "Confirmation: ‘I provided all required information’ is required.",
+        "Confirmación: ‘He proporcionado toda la información requerida’ es obligatorio."
+      )
+    );
+
+  if (!vFraisVariables)
+    errors.push(
+      t(
+        "Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.",
+        "Confirmation: ‘Additional fees may apply’ is required.",
+        "Confirmación: ‘Pueden aplicarse cargos adicionales’ es obligatorio."
+      )
+    );
+
+  if (!vDelais)
+    errors.push(
+      t(
+        "Confirmation : ‘Un dossier incomplet retarde le traitement’ obligatoire.",
+        "Confirmation: ‘An incomplete file delays processing’ is required.",
+        "Confirmación: ‘Un expediente incompleto retrasa el procesamiento’ es obligatorio."
+      )
+    );
+
+  return errors;
+}, [
+  t,
+  anneeImposition,
+  prenom,
+  nom,
+  nas,
+  dob,
+  etatCivil,
+  courriel,
+  adresse,
+  ville,
+  province,
+  codePostal,
+  tel,
+  telCell,
+  etatCivilChange,
+  ancienEtatCivil,
+  dateChangementEtatCivil,
+  aUnConjoint,
+  traiterConjoint,
+  prenomConjoint,
+  nomConjoint,
+  nasConjoint,
+  dobConjoint,
+  telConjoint,
+  telCellConjoint,
+  adresseConjointeIdentique,
+  adresseConjoint,
+  villeConjoint,
+  provinceConjoint,
+  codePostalConjoint,
+  revenuNetConjoint,
+  assuranceMedsClient,
+  assuranceMedsClientPeriodes,
+  assuranceMedsConjoint,
+  assuranceMedsConjointPeriodes,
+  habiteSeulTouteAnnee,
+  nbPersonnesMaison3112,
+  enfants.length,
+  biensEtranger100k,
+  citoyenCanadien,
+  nonResident,
+  maisonAcheteeOuVendue,
+  appelerTechnicien,
+  copieImpots,
+  vExactitude,
+  vDossierComplet,
+  vFraisVariables,
+  vDelais,
+]);
 
   const canContinue = step1Errors.length === 0;
 
