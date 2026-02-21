@@ -661,9 +661,15 @@ function FormulaireFiscalInner({
     }
 
     // Questions générales (oui/non obligatoires)
-    if (!habiteSeulTouteAnnee) errors.push("Question : Habitez-vous seul(e) toute l’année ? obligatoire.");
-    if (!nbPersonnesMaison3112.trim()) errors.push("Question : Nombre de personnes au 31/12 : obligatoire.");
-    if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000 $ : obligatoire.");
+if (!habiteSeulTouteAnnee) errors.push("Question : Habitez-vous seul(e) toute l’année ? obligatoire.");
+if (!nbPersonnesMaison3112.trim()) errors.push("Question : Nombre de personnes au 31/12 : obligatoire.");
+
+const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+if (nb > 0 && enfants.length === 0) {
+  errors.push("Personnes à charge : ajoutez au moins 1 personne.");
+}
+
+if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000 $ : obligatoire.");
     if (!citoyenCanadien) errors.push("Question : Citoyen(ne) canadien(ne) : obligatoire.");
     if (!nonResident) errors.push("Question : Non-résident(e) : obligatoire.");
     if (!maisonAcheteeOuVendue) errors.push("Question : Achat/vente résidence : obligatoire.");
@@ -1423,70 +1429,93 @@ function FormulaireFiscalInner({
           )}
 
           {/* PERSONNES A CHARGE */}
-          <section className="ff-card">
-            <div className="ff-card-head">
-              <h2>Personnes à charge</h2>
-              <p>Ajoutez vos enfants / personnes à charge (si applicable).</p>
-            </div>
+{showEnfantsSection && (
+  <section className="ff-card">
+    <div className="ff-card-head">
+      <h2>Personnes à charge</h2>
+      <p>Ajoutez vos enfants / personnes à charge.</p>
+    </div>
 
-            {enfants.length === 0 ? (
-              <div className="ff-empty">Aucune personne à charge ajoutée.</div>
-            ) : (
-              <div className="ff-stack">
-                {enfants.map((enf, i) => (
-                  <div key={`enf-${i}`} className="ff-childbox">
-                    <div className="ff-childhead">
-                      <div className="ff-childtitle">Personne à charge #{i + 1}</div>
-                      <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
-                        Supprimer
-                      </button>
-                    </div>
-
-                    <div className="ff-grid2">
-                      <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} />
-                      <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} />
-                      <Field
-                        label="Date de naissance (JJ/MM/AAAA)"
-                        value={enf.dob}
-                        onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
-                        placeholder="01/01/2020"
-                        inputMode="numeric"
-                        maxLength={10}
-                      />
-                      <Field
-                        label="NAS (si attribué)"
-                        value={enf.nas}
-                        onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
-                        placeholder="123-456-789"
-                        inputMode="numeric"
-                        maxLength={11}
-                      />
-                    </div>
-
-                    <div className="ff-mt-sm">
-                      <SelectField<Sexe>
-                        label="Sexe"
-                        value={enf.sexe}
-                        onChange={(v) => updateEnfant(i, "sexe", v)}
-                        options={[
-                          { value: "M", label: "M" },
-                          { value: "F", label: "F" },
-                          { value: "X", label: "Autre / préfère ne pas dire" },
-                        ]}
-                      />
-                    </div>
-                  </div>
-                ))}
+    {enfants.length === 0 ? (
+      <div className="ff-empty">Aucune personne à charge ajoutée.</div>
+    ) : (
+      <div className="ff-stack">
+        {enfants.map((enf, i) => (
+          <div key={`enf-${i}`} className="ff-childbox">
+            <div className="ff-childhead">
+              <div className="ff-childtitle">
+                Personne à charge #{i + 1}
               </div>
-            )}
-
-            <div className="ff-mt">
-              <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
-                + Ajouter une personne à charge
+              <button
+                type="button"
+                className="ff-btn ff-btn-link"
+                onClick={() => removeEnfant(i)}
+              >
+                Supprimer
               </button>
             </div>
-          </section>
 
+            <div className="ff-grid2">
+              <Field
+                label="Prénom"
+                value={enf.prenom}
+                onChange={(v) => updateEnfant(i, "prenom", v)}
+                required
+              />
+              <Field
+                label="Nom"
+                value={enf.nom}
+                onChange={(v) => updateEnfant(i, "nom", v)}
+                required
+              />
+              <Field
+                label="Date de naissance (JJ/MM/AAAA)"
+                value={enf.dob}
+                onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
+                placeholder="01/01/2020"
+                inputMode="numeric"
+                maxLength={10}
+                required
+              />
+              <Field
+                label="NAS (si attribué)"
+                value={enf.nas}
+                onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
+                placeholder="123-456-789"
+                inputMode="numeric"
+                maxLength={11}
+              />
+            </div>
+
+            <div className="ff-mt-sm">
+              <SelectField<Sexe>
+                label="Sexe"
+                value={enf.sexe}
+                onChange={(v) => updateEnfant(i, "sexe", v)}
+                options={[
+                  { value: "M", label: "M" },
+                  { value: "F", label: "F" },
+                  { value: "X", label: "Autre / préfère ne pas dire" },
+                ]}
+                required
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <div className="ff-mt">
+      <button
+        type="button"
+        className="ff-btn ff-btn-primary"
+        onClick={ajouterEnfant}
+      >
+        + Ajouter une personne à charge
+      </button>
+    </div>
+  </section>
+)}
           {/* QUESTIONS */}
           <section className="ff-card">
             <div className="ff-card-head">
