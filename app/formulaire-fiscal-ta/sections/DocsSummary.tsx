@@ -27,6 +27,13 @@ export default function DocsSummary(props: {
     goToDepotDocuments,
   } = props;
 
+  // ✅ Tes clés TA sont dans L.docs.*
+  // - loading
+  // - already(n)
+  // - title
+  // - open(name)
+  const nextText = L.nextStepDocs; // ✅ clé existante dans ton copy.ts
+
   return (
     <div className="ff-submit">
       <button
@@ -41,17 +48,18 @@ export default function DocsSummary(props: {
 
       <div className="ff-muted" style={{ marginTop: 10 }}>
         {docsLoading
-          ? L.docsLoading
+          ? L.docs.loading
           : docsCount > 0
-          ? L.docsAlready(docsCount)
+          ? L.docs.already(docsCount)
           : canContinue
-          ? L.docsNext
+          ? nextText
           : L.completeToContinue}
       </div>
 
       {docsCount > 0 && (
         <div className="ff-mt">
-          <div className="ff-subtitle">{L.docsTitle}</div>
+          <div className="ff-subtitle">{L.docs.title}</div>
+
           <div className="ff-stack">
             {docs.map((d) => (
               <button
@@ -61,7 +69,7 @@ export default function DocsSummary(props: {
                 onClick={() => openDoc(d)}
                 title={d.original_name}
               >
-                {L.openDoc(d.original_name)}
+                {L.docs.open(d.original_name)}
               </button>
             ))}
           </div>
