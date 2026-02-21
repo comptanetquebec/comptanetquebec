@@ -7,23 +7,29 @@ export const COPY = {
     disconnect: "Se déconnecter",
     intro:
       "Merci de remplir ce formulaire après avoir créé votre compte. Nous utilisons ces informations pour préparer vos déclarations d’impôt au Canada (fédéral) et, si applicable, au Québec.",
+
+    // messages / CTA
     fixBeforeContinue: "À corriger avant de continuer",
     missingRequired:
       "❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.",
     preparing: "⏳ Préparation du dossier…",
     redirecting: "✅ Redirection…",
     continue: "Continuer →",
-    docsNext: "Étape suivante : dépôt des documents.",
+    nextStepDocs: "Étape suivante : dépôt des documents.",
     completeToContinue: "Complétez les champs obligatoires pour continuer.",
-    docsLoading: "Chargement des documents…",
-    docsAlready: (n: number) => `${n} document(s) déjà au dossier.`,
-    docsTitle: "Documents au dossier",
-    openDoc: (name: string) => `Ouvrir — ${name}`,
+
+    // documents (état)
+    docs: {
+      loading: "Chargement des documents…",
+      already: (n: number) => `${n} document(s) déjà au dossier.`,
+      title: "Documents au dossier",
+      open: (name: string) => `Ouvrir — ${name}`,
+    },
 
     // ✅ TA = 4 étapes
     steps: {
       s1: "Informations",
-      s2: "Revenus & dépenses (TA)",
+      s2: "Revenus & dépenses",
       s3: "Pièces justificatives",
       s4: "Validation",
     },
@@ -36,18 +42,20 @@ export const COPY = {
       dependantsTitle: "Personnes à charge",
       dependantsDesc: "Ajoutez vos enfants / personnes à charge.",
 
-      // TA-specific
+      questionsTitle: "Informations fiscales additionnelles",
+      questionsDesc: "Questions générales pour compléter correctement le dossier.",
+
+      // TA (étape 2)
       taTitle: "Travailleur autonome (TA)",
       taDesc: "Informations sur vos activités, revenus et dépenses.",
 
-      // PIÈCES / DOCS
-      docsTitle: "Pièces justificatives",
-      docsDesc: "Déposez vos documents (T4A, relevés, reçus, etc.).",
+      // Docs (étape 3)
+      supportingDocsTitle: "Pièces justificatives",
+      supportingDocsDesc: "Déposez vos documents (T4A, relevés, reçus, etc.).",
 
+      // Confirms (étape 4)
       confirmsTitle: "Confirmations obligatoires",
       confirmsDesc: "Sans ces confirmations, le dossier ne peut pas continuer.",
-      questionsTitle: "Informations fiscales additionnelles",
-      questionsDesc: "Questions générales pour compléter correctement le dossier.",
     },
 
     fields: {
@@ -119,7 +127,6 @@ export const COPY = {
       copyEmail: "Courriel",
     },
 
-    // ✅ TA specific strings (tu peux compléter/étendre selon ton TA step 2)
     ta: {
       activityTitle: "Activité principale",
       activityDesc: "Décrivez brièvement votre travail autonome.",
@@ -150,23 +157,26 @@ export const COPY = {
     disconnect: "Sign out",
     intro:
       "Please complete this form after creating your account. We use this information to prepare your Canadian (federal) tax return and, if applicable, your Québec return.",
+
     fixBeforeContinue: "Fix before continuing",
     missingRequired:
       "❌ Some required information is missing. Please fix the list below.",
     preparing: "⏳ Preparing your file…",
     redirecting: "✅ Redirecting…",
     continue: "Continue →",
-    docsNext: "Next step: document upload.",
+    nextStepDocs: "Next step: document upload.",
     completeToContinue: "Complete required fields to continue.",
-    docsLoading: "Loading documents…",
-    docsAlready: (n: number) => `${n} document(s) already on file.`,
-    docsTitle: "Documents on file",
-    openDoc: (name: string) => `Open — ${name}`,
 
-    // ✅ TA = 4 steps
+    docs: {
+      loading: "Loading documents…",
+      already: (n: number) => `${n} document(s) already on file.`,
+      title: "Documents on file",
+      open: (name: string) => `Open — ${name}`,
+    },
+
     steps: {
-      s1: "Information",
-      s2: "Income & expenses (TA)",
+      s1: "Info",
+      s2: "Income & expenses",
       s3: "Supporting documents",
       s4: "Review",
     },
@@ -179,17 +189,17 @@ export const COPY = {
       dependantsTitle: "Dependants",
       dependantsDesc: "Add your children / dependants.",
 
-      // TA-specific
+      questionsTitle: "Additional tax info",
+      questionsDesc: "General questions to complete your file correctly.",
+
       taTitle: "Self-employed (TA)",
       taDesc: "Information about your activities, income and expenses.",
 
-      docsTitle: "Supporting documents",
-      docsDesc: "Upload your documents (T4A, statements, receipts, etc.).",
+      supportingDocsTitle: "Supporting documents",
+      supportingDocsDesc: "Upload your documents (T4A, statements, receipts, etc.).",
 
       confirmsTitle: "Required confirmations",
       confirmsDesc: "Without these confirmations, you cannot continue.",
-      questionsTitle: "Additional tax info",
-      questionsDesc: "General questions to complete your file correctly.",
     },
 
     fields: {
@@ -291,23 +301,26 @@ export const COPY = {
     disconnect: "Cerrar sesión",
     intro:
       "Complete este formulario después de crear su cuenta. Usamos esta información para preparar su declaración de impuestos de Canadá (federal) y, si corresponde, la de Québec.",
+
     fixBeforeContinue: "Corrija antes de continuar",
     missingRequired:
       "❌ Faltan datos obligatorios. Corrija la lista a continuación.",
     preparing: "⏳ Preparando su expediente…",
     redirecting: "✅ Redirigiendo…",
     continue: "Continuar →",
-    docsNext: "Siguiente paso: carga de documentos.",
+    nextStepDocs: "Siguiente paso: carga de documentos.",
     completeToContinue: "Complete los campos obligatorios para continuar.",
-    docsLoading: "Cargando documentos…",
-    docsAlready: (n: number) => `${n} documento(s) ya en el expediente.`,
-    docsTitle: "Documentos en el expediente",
-    openDoc: (name: string) => `Abrir — ${name}`,
 
-    // ✅ TA = 4 steps
+    docs: {
+      loading: "Cargando documentos…",
+      already: (n: number) => `${n} documento(s) ya en el expediente.`,
+      title: "Documentos en el expediente",
+      open: (name: string) => `Abrir — ${name}`,
+    },
+
     steps: {
       s1: "Información",
-      s2: "Ingresos y gastos (TA)",
+      s2: "Ingresos y gastos",
       s3: "Documentos",
       s4: "Revisión",
     },
@@ -320,16 +333,17 @@ export const COPY = {
       dependantsTitle: "Dependientes",
       dependantsDesc: "Agregue sus hijos / dependientes.",
 
+      questionsTitle: "Información fiscal adicional",
+      questionsDesc: "Preguntas generales para completar correctamente el expediente.",
+
       taTitle: "Autónomo (TA)",
       taDesc: "Información sobre sus actividades, ingresos y gastos.",
 
-      docsTitle: "Documentos",
-      docsDesc: "Suba sus documentos (T4A, extractos, recibos, etc.).",
+      supportingDocsTitle: "Documentos",
+      supportingDocsDesc: "Suba sus documentos (T4A, extractos, recibos, etc.).",
 
       confirmsTitle: "Confirmaciones obligatorias",
       confirmsDesc: "Sin estas confirmaciones, no puede continuar.",
-      questionsTitle: "Información fiscal adicional",
-      questionsDesc: "Preguntas generales para completar correctamente el expediente.",
     },
 
     fields: {
