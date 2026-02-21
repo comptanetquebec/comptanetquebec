@@ -10,8 +10,7 @@ export const COPY = {
 
     // messages / CTA
     fixBeforeContinue: "À corriger avant de continuer",
-    missingRequired:
-      "❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.",
+    missingRequired: "❌ Certaines informations obligatoires manquent. Corrigez la liste ci-dessous.",
     preparing: "⏳ Préparation du dossier…",
     redirecting: "✅ Redirection…",
     continue: "Continuer →",
@@ -65,7 +64,17 @@ export const COPY = {
       sinPh: "123-456-789",
       dob: "Date de naissance (JJ/MM/AAAA)",
       dobPh: "01/01/1990",
+
       marital: "État civil",
+      maritalOpts: {
+        celibataire: "Célibataire",
+        conjointDefait: "Conjoint de fait",
+        marie: "Marié(e)",
+        separe: "Séparé(e)",
+        divorce: "Divorcé(e)",
+        veuf: "Veuf / Veuve",
+      },
+
       maritalChanged: "Mon état civil a changé durant l'année",
       prevMarital: "Ancien état civil",
       prevMaritalPh: "ex.: Célibataire",
@@ -159,8 +168,7 @@ export const COPY = {
       "Please complete this form after creating your account. We use this information to prepare your Canadian (federal) tax return and, if applicable, your Québec return.",
 
     fixBeforeContinue: "Fix before continuing",
-    missingRequired:
-      "❌ Some required information is missing. Please fix the list below.",
+    missingRequired: "❌ Some required information is missing. Please fix the list below.",
     preparing: "⏳ Preparing your file…",
     redirecting: "✅ Redirecting…",
     continue: "Continue →",
@@ -209,7 +217,17 @@ export const COPY = {
       sinPh: "123-456-789",
       dob: "Date of birth (DD/MM/YYYY)",
       dobPh: "01/01/1990",
+
       marital: "Marital status",
+      maritalOpts: {
+        celibataire: "Single",
+        conjointDefait: "Common-law",
+        marie: "Married",
+        separe: "Separated",
+        divorce: "Divorced",
+        veuf: "Widowed",
+      },
+
       maritalChanged: "My marital status changed during the year",
       prevMarital: "Previous marital status",
       prevMaritalPh: "e.g., Single",
@@ -303,8 +321,7 @@ export const COPY = {
       "Complete este formulario después de crear su cuenta. Usamos esta información para preparar su declaración de impuestos de Canadá (federal) y, si corresponde, la de Québec.",
 
     fixBeforeContinue: "Corrija antes de continuar",
-    missingRequired:
-      "❌ Faltan datos obligatorios. Corrija la lista a continuación.",
+    missingRequired: "❌ Faltan datos obligatorios. Corrija la lista a continuación.",
     preparing: "⏳ Preparando su expediente…",
     redirecting: "✅ Redirigiendo…",
     continue: "Continuar →",
@@ -353,7 +370,17 @@ export const COPY = {
       sinPh: "123-456-789",
       dob: "Fecha de nacimiento (DD/MM/AAAA)",
       dobPh: "01/01/1990",
+
       marital: "Estado civil",
+      maritalOpts: {
+        celibataire: "Soltero/a",
+        conjointDefait: "Unión libre",
+        marie: "Casado/a",
+        separe: "Separado/a",
+        divorce: "Divorciado/a",
+        veuf: "Viudo/a",
+      },
+
       maritalChanged: "Mi estado civil cambió durante el año",
       prevMarital: "Estado civil anterior",
       prevMaritalPh: "p. ej., Soltero(a)",
