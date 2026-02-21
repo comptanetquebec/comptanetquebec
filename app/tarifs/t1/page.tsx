@@ -45,7 +45,7 @@ const COPY: Record<Lang, Copy> = {
   fr: {
     pageTitle: "Impôt des particuliers (T1) — Tarifs",
     subtitle:
-      "Prix avant taxes. Les prix finaux peuvent varier selon votre dossier et les documents fournis.",
+      "Prix avec taxes incluses. Les prix finaux peuvent varier selon votre dossier et les documents fournis.",
     disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
     disclaimerBottom:
       "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
@@ -119,7 +119,7 @@ const COPY: Record<Lang, Copy> = {
   en: {
     pageTitle: "Personal Income Tax (T1) — Pricing",
     subtitle:
-      "Prices before taxes. Final pricing may vary based on your situation and documents provided.",
+      "Price including taxes. Final pricing may vary based on your situation and documents provided.",
     disclaimerTop: "Prices may change depending on your file.",
     disclaimerBottom: "Prices before taxes. Complex cases may require an assessment.",
     back: "Back to Home",
@@ -185,7 +185,7 @@ const COPY: Record<Lang, Copy> = {
   es: {
     pageTitle: "Impuesto personal (T1) — Tarifas",
     subtitle:
-      "Precios antes de impuestos. El precio final puede variar según su situación y documentos.",
+      "Precio con impuestos incluidos. El precio final puede variar según su situación y documentos.",
     disclaimerTop: "Según su expediente, los precios pueden cambiar.",
     disclaimerBottom: "Precios antes de impuestos. Los casos complejos pueden requerir evaluación.",
     back: "Volver al inicio",
