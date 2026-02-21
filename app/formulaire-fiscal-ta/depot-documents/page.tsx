@@ -540,7 +540,7 @@ function DepotDocumentsInner({
   >
     {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
   </button>
-</div>
+
             {docsCount === 0 && (
               <p className="ff-footnote">
                 {t(
