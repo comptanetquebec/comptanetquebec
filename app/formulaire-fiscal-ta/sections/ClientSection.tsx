@@ -91,14 +91,15 @@ export default function ClientSection(props: {
 
   const placeholderLabel = "—";
 
-  const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> = [
-    { value: "celibataire", label: L.fields.maritalOpts.celibataire },
-    { value: "conjointDefait", label: L.fields.maritalOpts.conjointDefait },
-    { value: "marie", label: L.fields.maritalOpts.marie },
-    { value: "separe", label: L.fields.maritalOpts.separe },
-    { value: "divorce", label: L.fields.maritalOpts.divorce },
-    { value: "veuf", label: L.fields.maritalOpts.veuf },
-  ];
+  const maritalOptions: Array<{ value: Exclude<EtatCivil, "">; label: string }> =
+    [
+      { value: "celibataire", label: L.fields.maritalOpts.celibataire },
+      { value: "conjointDefait", label: L.fields.maritalOpts.conjointDefait },
+      { value: "marie", label: L.fields.maritalOpts.marie },
+      { value: "separe", label: L.fields.maritalOpts.separe },
+      { value: "divorce", label: L.fields.maritalOpts.divorce },
+      { value: "veuf", label: L.fields.maritalOpts.veuf },
+    ];
 
   return (
     <section className="ff-card">
@@ -108,18 +109,8 @@ export default function ClientSection(props: {
       </div>
 
       <div className="ff-grid2">
-        <Field
-          label={L.fields.firstName}
-          value={prenom}
-          onChange={setPrenom}
-          required
-        />
-        <Field
-          label={L.fields.lastName}
-          value={nom}
-          onChange={setNom}
-          required
-        />
+        <Field label={L.fields.firstName} value={prenom} onChange={setPrenom} required />
+        <Field label={L.fields.lastName} value={nom} onChange={setNom} required />
 
         <Field
           label={L.fields.sin}
@@ -189,7 +180,7 @@ export default function ClientSection(props: {
           label={L.fields.phone}
           value={tel}
           onChange={setTel}
-          placeholder={L.fields.phonePh ?? "(418) 555-1234"}
+          placeholder="(418) 555-1234"
           inputMode="tel"
           formatter={formatPhoneInput}
           maxLength={14}
@@ -199,7 +190,7 @@ export default function ClientSection(props: {
           label={L.fields.mobile}
           value={telCell}
           onChange={setTelCell}
-          placeholder={L.fields.mobilePh ?? "(418) 555-1234"}
+          placeholder="(418) 555-1234"
           inputMode="tel"
           formatter={formatPhoneInput}
           maxLength={14}
