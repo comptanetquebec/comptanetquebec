@@ -8,10 +8,12 @@ export default function Steps({
   step,
   lang,
   fid,
+  flow,
 }: {
   step: 1 | 2 | 3 | 4;
   lang: Lang;
   fid?: string | null;
+  flow?: string;
 }) {
   const L = COPY[pickCopy(lang) as CopyLang];
 
