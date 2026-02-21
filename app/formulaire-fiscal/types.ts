@@ -1,19 +1,12 @@
-// =============================
-// LANG
-// =============================
+// app/formulaire-fiscal/types.ts
+
 export type Lang = "fr" | "en" | "es";
 
-// =============================
-// BASE
-// =============================
 export type ProvinceCode =
-  | "QC" | "ON" | "NB" | "NS" | "PE" | "NL"
-  | "MB" | "SK" | "AB" | "BC" | "YT" | "NT" | "NU";
+  | "QC" | "ON" | "NB" | "NS" | "PE" | "NL" | "MB" | "SK" | "AB" | "BC" | "YT" | "NT" | "NU";
 
 export type Sexe = "M" | "F" | "X" | "";
-
 export type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
-
 export type CopieImpots = "espaceClient" | "courriel" | "";
 
 export type EtatCivil =
@@ -25,16 +18,7 @@ export type EtatCivil =
   | "veuf"
   | "";
 
-// YES / NO
-export type YesNo = "yes" | "no" | "";
-
-// =============================
-// STRUCTURES
-// =============================
-export type Periode = {
-  debut: string;
-  fin: string;
-};
+export type Periode = { debut: string; fin: string };
 
 export type Child = {
   prenom: string;
@@ -55,129 +39,88 @@ export type DocRow = {
   created_at: string;
 };
 
-// =============================
-// DATABASE TYPES
-// =============================
-export type FormTypeDb = "T1" | "T2";
+/* ===================== AJOUTS MANQUANTS ===================== */
 
-export type InsertIdRow = {
-  id: string;
-};
-
-// =============================
-// FORM DATA (STRUCTURÉ)
-// =============================
 export type FormClientdata = {
   prenom?: string;
   nom?: string;
   nas?: string;
   dob?: string;
-
   etatCivil?: EtatCivil;
   etatCivilChange?: boolean;
   ancienEtatCivil?: string;
   dateChangementEtatCivil?: string;
-
   tel?: string;
   telCell?: string;
-  courriel?: string;
-
   adresse?: string;
   app?: string;
   ville?: string;
   province?: ProvinceCode;
   codePostal?: string;
+  courriel?: string;
 };
 
 export type FormConjointdata = {
   traiterConjoint?: boolean;
-
   prenomConjoint?: string;
   nomConjoint?: string;
   nasConjoint?: string;
   dobConjoint?: string;
-
   telConjoint?: string;
   telCellConjoint?: string;
   courrielConjoint?: string;
-
   adresseConjointeIdentique?: boolean;
   adresseConjoint?: string;
   appConjoint?: string;
   villeConjoint?: string;
   provinceConjoint?: ProvinceCode;
   codePostalConjoint?: string;
-
   revenuNetConjoint?: string;
 };
 
 export type FormMedsdata = {
-  client?: {
-    regime?: AssuranceMeds;
-    periodes?: Periode[];
-  };
-  conjoint?: {
-    regime?: AssuranceMeds;
-    periodes?: Periode[];
-  } | null;
+  client?: { regime?: AssuranceMeds; periodes?: Periode[] };
+  conjoint?: { regime?: AssuranceMeds; periodes?: Periode[] } | null;
 };
 
 export type FormQuestionsdata = {
-  anneeImposition?: string;
-
-  habiteSeulTouteAnnee?: YesNo;
+  habiteSeulTouteAnnee?: string;
   nbPersonnesMaison3112?: string;
-
-  biensEtranger100k?: YesNo;
-  citoyenCanadien?: YesNo;
-  nonResident?: YesNo;
-  maisonAcheteeOuVendue?: YesNo;
-  appelerTechnicien?: YesNo;
-
+  biensEtranger100k?: string;
+  citoyenCanadien?: string;
+  nonResident?: string;
+  maisonAcheteeOuVendue?: string;
+  appelerTechnicien?: string;
   copieImpots?: CopieImpots;
+  anneeImposition?: string;
 };
 
-export type FormValidations = {
-  exactitudeInfo?: boolean;
-  dossierComplet?: boolean;
-  fraisVariables?: boolean;
-  delaisSiManquant?: boolean;
-};
-
-// =============================
-// GLOBAL FORM
-// =============================
 export type Formdata = {
   dossierType?: string;
-
   client?: FormClientdata;
-
   conjoint?: FormConjointdata | null;
-
   assuranceMedicamenteuse?: FormMedsdata | null;
-
   personnesACharge?: Child[];
-
   questionsGenerales?: FormQuestionsdata;
-
-  validations?: FormValidations;
+  validations?: {
+    exactitudeInfo?: boolean;
+    dossierComplet?: boolean;
+    fraisVariables?: boolean;
+    delaisSiManquant?: boolean;
+  };
 };
 
-// =============================
-// TABLE ROW
-// =============================
 export type FormRow = {
   id: string;
   user_id?: string;
-
-  form_type?: FormTypeDb;
-
+  form_type?: string;
   lang?: string;
   status?: string;
-
   annee?: string | null;
-
   data: Formdata | null;
-
   created_at: string;
+};
+
+export type InsertIdRow = {
+  id: string;
 };
