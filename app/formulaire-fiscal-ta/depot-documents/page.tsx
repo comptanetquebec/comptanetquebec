@@ -380,7 +380,7 @@ function DepotDocumentsInner({
         </header>
 
         {/* ✅ TA : Documents = étape 3 */}
-        <Steps step={3} lang={lang} flow="ta" />
+        <Steps step={3} lang={lang} fid={fid} />
 
         <div className="ff-title">
           <h1>{t(lang, "Dépôt de documents", "Document upload", "Subida de documentos")}</h1>
@@ -525,15 +525,22 @@ function DepotDocumentsInner({
           </div>
 
           <div className="ff-submit">
-            <button
-              type="button"
-              className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={!fid || !valid || docsCount === 0}
-              onClick={() => router.push(withLang(nextSubmitRoute(realType), lang, { fid, type: realType }))}
-            >
-              {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
-            </button>
-
+  <button
+    type="button"
+    className="ff-btn ff-btn-primary ff-btn-big"
+    disabled={!fid || !valid || docsCount === 0}
+    onClick={() =>
+      router.push(
+        withLang(nextSubmitRoute(realType), lang, {
+          fid,
+          type: String(realType),
+        })
+      )
+    }
+  >
+    {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
+  </button>
+</div>
             {docsCount === 0 && (
               <p className="ff-footnote">
                 {t(
