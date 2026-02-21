@@ -266,14 +266,13 @@ function isValidDateJJMMAAAA(v: string) {
   if (yyyy < 1900 || yyyy > 2100) return false;
   if (mm < 1 || mm > 12) return false;
 
-  const daysInMonth = new Date(yyyy, mm, 0).getDate(); // last day of month
+  const daysInMonth = new Date(yyyy, mm, 0).getDate();
   return dd >= 1 && dd <= daysInMonth;
 }
 
 function isValidEmail(v: string) {
   const s = (v || "").trim();
   if (!s) return false;
-  // simple + safe check; you can replace by stricter regex if you want
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
@@ -288,7 +287,7 @@ function firstNonEmpty(...vals: string[]) {
 export default function FormulaireFiscalPage() {
   const params = useSearchParams();
 
-  // ⚠️ identique à ton code : ici c'est figé à T1
+  // figé à T1 ici
   const type: FormTypeDb = "T1";
   const lang = normalizeLang(params.get("lang") || "fr");
 
@@ -410,7 +409,7 @@ function FormulaireFiscalInner({
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
   const [anneeImposition, setAnneeImposition] = useState<string>("");
 
-  /* =========================== Validations finales (obligatoires) =========================== */
+  /* =========================== Validations finales =========================== */
   const [vExactitude, setVExactitude] = useState(false);
   const [vDossierComplet, setVDossierComplet] = useState(false);
   const [vFraisVariables, setVFraisVariables] = useState(false);
@@ -625,7 +624,8 @@ function FormulaireFiscalInner({
         if (!prenomConjoint.trim()) errors.push("Prénom (conjoint) : obligatoire.");
         if (!nomConjoint.trim()) errors.push("Nom (conjoint) : obligatoire.");
         if (!isValidNAS(nasConjoint)) errors.push("NAS (conjoint) : 9 chiffres obligatoires.");
-        if (!isValidDateJJMMAAAA(dobConjoint)) errors.push("Date de naissance (conjoint) : JJ/MM/AAAA valide obligatoire.");
+        if (!isValidDateJJMMAAAA(dobConjoint))
+          errors.push("Date de naissance (conjoint) : JJ/MM/AAAA valide obligatoire.");
 
         // au moins un contact (conjoint)
         const telCjAny = firstNonEmpty(normalizePhone(telConjoint), normalizePhone(telCellConjoint));
@@ -640,10 +640,10 @@ function FormulaireFiscalInner({
       }
     }
 
-    // Québec: assurance médicaments (tu voulais “absolument remplir” → on bloque)
+    // Québec: assurance médicaments
     if (province === "QC") {
       if (!assuranceMedsClient) errors.push("Assurance médicaments (client) : choisissez une option.");
-      // au moins une période complète
+
       const okPeriodeClient = assuranceMedsClientPeriodes.some(
         (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
       );
@@ -660,23 +660,23 @@ function FormulaireFiscalInner({
       }
     }
 
-    // Questions générales (oui/non obligatoires)
-if (!habiteSeulTouteAnnee) errors.push("Question : Habitez-vous seul(e) toute l’année ? obligatoire.");
-if (!nbPersonnesMaison3112.trim()) errors.push("Question : Nombre de personnes au 31/12 : obligatoire.");
+    // Questions générales
+    if (!habiteSeulTouteAnnee) errors.push("Question : Habitez-vous seul(e) toute l’année ? obligatoire.");
+    if (!nbPersonnesMaison3112.trim()) errors.push("Question : Nombre de personnes au 31/12 : obligatoire.");
 
-const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-if (nb > 0 && enfants.length === 0) {
-  errors.push("Personnes à charge : ajoutez au moins 1 personne.");
-}
+    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+    if (nb > 0 && enfants.length === 0) {
+      errors.push("Personnes à charge : ajoutez au moins 1 personne.");
+    }
 
-if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000 $ : obligatoire.");
+    if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000 $ : obligatoire.");
     if (!citoyenCanadien) errors.push("Question : Citoyen(ne) canadien(ne) : obligatoire.");
     if (!nonResident) errors.push("Question : Non-résident(e) : obligatoire.");
     if (!maisonAcheteeOuVendue) errors.push("Question : Achat/vente résidence : obligatoire.");
     if (!appelerTechnicien) errors.push("Question : Appel technicien : obligatoire.");
     if (!copieImpots) errors.push("Copie d’impôts : choisissez une option.");
 
-    // Validations finales (bloquantes)
+    // Validations finales
     if (!vExactitude) errors.push("Confirmation : ‘Toutes les informations sont exactes’ obligatoire.");
     if (!vDossierComplet) errors.push("Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.");
     if (!vFraisVariables) errors.push("Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.");
@@ -718,6 +718,7 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
     assuranceMedsClientPeriodes,
     assuranceMedsConjoint,
     assuranceMedsConjointPeriodes,
+    enfants, // ✅ correction: utilisé via enfants.length
     habiteSeulTouteAnnee,
     nbPersonnesMaison3112,
     biensEtranger100k,
@@ -733,6 +734,18 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
   ]);
 
   const canContinue = step1Errors.length === 0;
+
+  // ✅ correction: showEnfantsSection (utilisé dans le rendu)
+  const showEnfantsSection = useMemo(() => {
+    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+    return nb > 0;
+  }, [nbPersonnesMaison3112]);
+
+  // ✅ optionnel mais utile: si nb = 0, on vide la liste enfants
+  useEffect(() => {
+    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+    if (nb === 0 && enfants.length > 0) setEnfants([]);
+  }, [nbPersonnesMaison3112, enfants.length]);
 
   /* =========================== Save draft (insert/update) =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
@@ -958,7 +971,6 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
     }
   }, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type]);
 
-  // submit final sur cette page (optionnel)
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -984,8 +996,7 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
           .limit(1);
 
         if (docsErr) throw new Error(supaErr(docsErr));
-        if (!docsData || docsData.length === 0)
-          throw new Error("Ajoutez au moins 1 document avant de soumettre.");
+        if (!docsData || docsData.length === 0) throw new Error("Ajoutez au moins 1 document avant de soumettre.");
 
         const { error } = await supabase
           .from(FORMS_TABLE)
@@ -1216,18 +1227,8 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
                 )}
 
                 <div className="ff-grid2 ff-mt">
-                  <Field
-                    label="Prénom (conjoint)"
-                    value={prenomConjoint}
-                    onChange={setPrenomConjoint}
-                    required={traiterConjoint}
-                  />
-                  <Field
-                    label="Nom (conjoint)"
-                    value={nomConjoint}
-                    onChange={setNomConjoint}
-                    required={traiterConjoint}
-                  />
+                  <Field label="Prénom (conjoint)" value={prenomConjoint} onChange={setPrenomConjoint} required={traiterConjoint} />
+                  <Field label="Nom (conjoint)" value={nomConjoint} onChange={setNomConjoint} required={traiterConjoint} />
                   <Field
                     label="NAS (conjoint)"
                     value={nasConjoint}
@@ -1269,7 +1270,12 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
                     formatter={formatPhoneInput}
                     maxLength={14}
                   />
-                  <Field label="Courriel (conjoint)" value={courrielConjoint} onChange={setCourrielConjoint} type="email" />
+                  <Field
+                    label="Courriel (conjoint)"
+                    value={courrielConjoint}
+                    onChange={setCourrielConjoint}
+                    type="email"
+                  />
                 </div>
 
                 <div className="ff-mt">
@@ -1339,7 +1345,9 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
                       label="De (JJ/MM/AAAA)"
                       value={p.debut}
                       onChange={(val) =>
-                        setAssuranceMedsClientPeriodes((prev) => updatePeriode(prev, idx, { debut: formatDateInput(val) }))
+                        setAssuranceMedsClientPeriodes((prev) =>
+                          updatePeriode(prev, idx, { debut: formatDateInput(val) })
+                        )
                       }
                       placeholder="01/01/2024"
                       inputMode="numeric"
@@ -1429,93 +1437,74 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
           )}
 
           {/* PERSONNES A CHARGE */}
-{showEnfantsSection && (
-  <section className="ff-card">
-    <div className="ff-card-head">
-      <h2>Personnes à charge</h2>
-      <p>Ajoutez vos enfants / personnes à charge.</p>
-    </div>
-
-    {enfants.length === 0 ? (
-      <div className="ff-empty">Aucune personne à charge ajoutée.</div>
-    ) : (
-      <div className="ff-stack">
-        {enfants.map((enf, i) => (
-          <div key={`enf-${i}`} className="ff-childbox">
-            <div className="ff-childhead">
-              <div className="ff-childtitle">
-                Personne à charge #{i + 1}
+          {showEnfantsSection && (
+            <section className="ff-card">
+              <div className="ff-card-head">
+                <h2>Personnes à charge</h2>
+                <p>Ajoutez vos enfants / personnes à charge.</p>
               </div>
-              <button
-                type="button"
-                className="ff-btn ff-btn-link"
-                onClick={() => removeEnfant(i)}
-              >
-                Supprimer
-              </button>
-            </div>
 
-            <div className="ff-grid2">
-              <Field
-                label="Prénom"
-                value={enf.prenom}
-                onChange={(v) => updateEnfant(i, "prenom", v)}
-                required
-              />
-              <Field
-                label="Nom"
-                value={enf.nom}
-                onChange={(v) => updateEnfant(i, "nom", v)}
-                required
-              />
-              <Field
-                label="Date de naissance (JJ/MM/AAAA)"
-                value={enf.dob}
-                onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
-                placeholder="01/01/2020"
-                inputMode="numeric"
-                maxLength={10}
-                required
-              />
-              <Field
-                label="NAS (si attribué)"
-                value={enf.nas}
-                onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
-                placeholder="123-456-789"
-                inputMode="numeric"
-                maxLength={11}
-              />
-            </div>
+              {enfants.length === 0 ? (
+                <div className="ff-empty">Aucune personne à charge ajoutée.</div>
+              ) : (
+                <div className="ff-stack">
+                  {enfants.map((enf, i) => (
+                    <div key={`enf-${i}`} className="ff-childbox">
+                      <div className="ff-childhead">
+                        <div className="ff-childtitle">Personne à charge #{i + 1}</div>
+                        <button type="button" className="ff-btn ff-btn-link" onClick={() => removeEnfant(i)}>
+                          Supprimer
+                        </button>
+                      </div>
 
-            <div className="ff-mt-sm">
-              <SelectField<Sexe>
-                label="Sexe"
-                value={enf.sexe}
-                onChange={(v) => updateEnfant(i, "sexe", v)}
-                options={[
-                  { value: "M", label: "M" },
-                  { value: "F", label: "F" },
-                  { value: "X", label: "Autre / préfère ne pas dire" },
-                ]}
-                required
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
+                      <div className="ff-grid2">
+                        <Field label="Prénom" value={enf.prenom} onChange={(v) => updateEnfant(i, "prenom", v)} required />
+                        <Field label="Nom" value={enf.nom} onChange={(v) => updateEnfant(i, "nom", v)} required />
+                        <Field
+                          label="Date de naissance (JJ/MM/AAAA)"
+                          value={enf.dob}
+                          onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
+                          placeholder="01/01/2020"
+                          inputMode="numeric"
+                          maxLength={10}
+                          required
+                        />
+                        <Field
+                          label="NAS (si attribué)"
+                          value={enf.nas}
+                          onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
+                          placeholder="123-456-789"
+                          inputMode="numeric"
+                          maxLength={11}
+                        />
+                      </div>
 
-    <div className="ff-mt">
-      <button
-        type="button"
-        className="ff-btn ff-btn-primary"
-        onClick={ajouterEnfant}
-      >
-        + Ajouter une personne à charge
-      </button>
-    </div>
-  </section>
-)}
+                      <div className="ff-mt-sm">
+                        <SelectField<Sexe>
+                          label="Sexe"
+                          value={enf.sexe}
+                          onChange={(v) => updateEnfant(i, "sexe", v)}
+                          options={[
+                            { value: "M", label: "M" },
+                            { value: "F", label: "F" },
+                            { value: "X", label: "Autre / préfère ne pas dire" },
+                          ]}
+                          required
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="ff-mt">
+                <button type="button" className="ff-btn ff-btn-primary" onClick={ajouterEnfant}>
+                  + Ajouter une personne à charge
+                </button>
+              </div>
+            </section>
+          )}
+
           {/* QUESTIONS */}
           <section className="ff-card">
             <div className="ff-card-head">
@@ -1543,7 +1532,8 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
               <Field
                 label="Au 31/12, combien de personnes vivaient avec vous ?"
                 value={nbPersonnesMaison3112}
-                onChange={setNbPersonnesMaison3112}
+                // ✅ optionnel: évite les caractères non numériques
+                onChange={(v) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
                 placeholder="ex.: 1"
                 inputMode="numeric"
                 required
@@ -1597,7 +1587,7 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
             </div>
           </section>
 
-          {/* VALIDATIONS FINALES (bloquantes avant continuer) */}
+          {/* VALIDATIONS FINALES */}
           <section className="ff-card">
             <div className="ff-card-head">
               <h2>Confirmations obligatoires</h2>
@@ -1628,7 +1618,7 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
             </div>
           </section>
 
-          {/* ACTION — CONTINUER (étape 1) */}
+          {/* ACTION — CONTINUER */}
           <div className="ff-submit">
             <button
               type="button"
@@ -1650,7 +1640,6 @@ if (!biensEtranger100k) errors.push("Question : Biens à l’étranger > 100 000
                 : "Complétez les champs obligatoires pour continuer."}
             </div>
 
-            {/* Optionnel: liste de docs */}
             {docsCount > 0 && (
               <div className="ff-mt">
                 <div className="ff-subtitle">Documents au dossier</div>
