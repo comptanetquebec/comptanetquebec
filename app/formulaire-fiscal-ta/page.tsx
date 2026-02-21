@@ -1267,7 +1267,7 @@ function FormulaireFiscalTAInner({
         {/* Erreurs (si tu veux réduire le bruit, on pourra rendre ce bloc "collapsible") */}
         <ErrorsPanel L={L} errors={step1Errors} />
 
-        <Steps step={1} lang={lang} flow="ta" />
+        <Steps step={1} lang={lang} fid={fid} />
 
         {/* Résumé visuel des sections (✓/✕) */}
         <div className="ff-card" style={{ padding: 14, marginTop: 10 }}>
