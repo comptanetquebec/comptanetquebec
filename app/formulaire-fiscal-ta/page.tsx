@@ -1268,7 +1268,7 @@ function FormulaireFiscalTAInner({
         )}
 
         {/* Erreurs (si tu veux réduire le bruit, on pourra rendre ce bloc "collapsible") */}
-        {showErrors && <ErrorsPanel L={L} errors={step1Errors} />}
+        <ErrorsPanel L={L} errors={step1Errors} showErrors={showErrors} />
 
         <Steps step={1} lang={lang} />
         
