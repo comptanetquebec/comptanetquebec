@@ -9,7 +9,9 @@ type FieldStatus = "ok" | "no" | "idle";
 
 function Mark({ status }: { status: FieldStatus }) {
   if (status === "idle") return null;
+
   const ok = status === "ok";
+
   return (
     <span
       aria-hidden
@@ -43,7 +45,7 @@ export default function DocsSummary(props: {
   docs: DocRow[];
   openDoc: (d: DocRow) => void;
 
-  // ✅ déclenche les ✕ (ex: après clic "Continuer")
+  // déclenche l'affichage du ✕ et du message rouge après clic
   showErrors: boolean;
 
   submitting: boolean;
@@ -62,6 +64,7 @@ export default function DocsSummary(props: {
   } = props;
 
   const status: FieldStatus = canContinue ? "ok" : showErrors ? "no" : "idle";
+  const showRed = showErrors && !canContinue;
 
   return (
     <div className="ff-submit">
@@ -69,18 +72,24 @@ export default function DocsSummary(props: {
         <button
           type="button"
           className="ff-btn ff-btn-primary ff-btn-big"
-          disabled={submitting || !canContinue}
+          disabled={submitting} // ✅ important: PAS de !canContinue ici
           onClick={goToDepotDocuments}
           title={!canContinue ? L.completeToContinue : ""}
         >
           {L.continue}
         </button>
 
-        {/* ✓ / ✕ basé sur canContinue */}
         <Mark status={status} />
       </div>
 
-      <div className="ff-muted" style={{ marginTop: 10 }}>
+      <div
+        className="ff-muted"
+        style={{
+          marginTop: 10,
+          color: showRed ? "#dc2626" : undefined,
+          fontWeight: showRed ? 700 : undefined,
+        }}
+      >
         {docsLoading
           ? L.docs.loading
           : docsCount > 0
@@ -111,4 +120,4 @@ export default function DocsSummary(props: {
       )}
     </div>
   );
-}
+            }
