@@ -16,6 +16,7 @@ export default function ErrorsPanel(props: {
 
   return (
     <div
+      id="ff-errors"
       style={{
         marginBottom: 16,
         padding: "10px 14px",
