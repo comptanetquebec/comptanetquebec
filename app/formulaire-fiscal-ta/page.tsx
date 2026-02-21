@@ -21,7 +21,7 @@ import type {
   Periode,
   Child,
   DocRow,
-  Formdata,
+  FormDataTA,
   FormRow,
   InsertIdRow,
 } from "./types";
@@ -347,7 +347,7 @@ function FormulaireFiscalTAInner({
   );
 
   /* =========================== Build data (memo) =========================== */
-  const draftData: Formdata = useMemo(() => {
+  const draftData: FormDataTA = useMemo(() => {
     const conjointData = aUnConjoint
       ? {
           traiterConjoint,
