@@ -7,28 +7,30 @@ import type { CopyPack } from "../copy";
 export default function ErrorsPanel(props: {
   L: CopyPack;
   errors: string[];
+  showErrors: boolean;
 }) {
-  const { L, errors } = props;
+  const { L, errors, showErrors } = props;
 
-  if (!errors || errors.length === 0) return null;
+  // ❌ rien tant que l'utilisateur n'a pas cliqué continuer
+  if (!showErrors || !errors || errors.length === 0) return null;
 
   return (
-    <section
-      id="ff-errors"
-      className="ff-card"
+    <div
       style={{
-        padding: 14,
-        border: "1px solid #ffd0d0",
-        background: "#fff5f5",
+        marginBottom: 16,
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: "rgba(239,68,68,.08)",
+        border: "1px solid rgba(239,68,68,.2)",
+        fontSize: 13,
+        color: "#dc2626",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
       }}
     >
-      <strong>{L.fixBeforeContinue}</strong>
-
-      <ul style={{ marginTop: 10, paddingLeft: 18 }}>
-        {errors.map((e, i) => (
-          <li key={`err-${i}`}>{e}</li>
-        ))}
-      </ul>
-    </section>
+      <span style={{ fontWeight: 700 }}>✕</span>
+      <span>{L.completeToContinue}</span>
+    </div>
   );
 }
