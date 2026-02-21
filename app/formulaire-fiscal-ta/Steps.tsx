@@ -1,6 +1,6 @@
 // app/formulaire-fiscal-ta/Steps.tsx
 import Link from "next/link";
-import { COPY, pickCopy, type CopyLang } from "../formulaire-fiscal/copy"; // ajuste le chemin si besoin
+import { COPY, pickCopy, type CopyLang } from "./copy";
 
 type Lang = "fr" | "en" | "es";
 type Flow = "t1" | "ta" | "t2";
@@ -30,29 +30,27 @@ export default function Steps({
   const L = COPY[pickCopy(lang) as CopyLang];
 
   const q = new URLSearchParams();
-  q.set("lang", lang);
+  if (lang) q.set("lang", lang);
   if (fid) q.set("fid", fid);
 
   const base = basePathFor(flow);
 
-  // ✅ Labels localisés via copy.ts
   const items =
     flow === "ta"
       ? [
-          { n: 1, label: L.steps.ta.s1, href: `${base}?${q}` },
-          { n: 2, label: L.steps.ta.s2, href: `${base}/revenus-depenses?${q}` },
-          { n: 3, label: L.steps.ta.s3, href: `${base}/depot-documents?${q}` },
-          { n: 4, label: L.steps.ta.s4, href: `${base}/envoyer-dossier?${q}` },
+          { n: 1, label: L.steps.s1, href: `${base}?${q}` },
+          { n: 2, label: L.steps.s2, href: `${base}/revenus-depenses?${q}` },
+          { n: 3, label: L.steps.s3, href: `${base}/depot-documents?${q}` },
+          { n: 4, label: L.steps.s4, href: `${base}/envoyer-dossier?${q}` },
         ]
       : [
-          // optionnel: si tu veux réutiliser Steps ailleurs
-          { n: 1, label: L.steps.t1t2.s1, href: `${base}?${q}` },
-          { n: 2, label: L.steps.t1t2.s2, href: `${base}/depot-documents?${q}` },
-          { n: 3, label: L.steps.t1t2.s3, href: `${base}/envoyer-dossier?${q}` },
+          // fallback simple si jamais tu réutilises ce composant ailleurs
+          { n: 1, label: "Form", href: `${base}?${q}` },
+          { n: 2, label: "Docs", href: `${base}/depot-documents?${q}` },
+          { n: 3, label: "Submit", href: `${base}/envoyer-dossier?${q}` },
         ];
 
-  const aria =
-    lang === "fr" ? "Étapes" : lang === "en" ? "Steps" : "Pasos";
+  const aria = lang === "fr" ? "Étapes" : lang === "en" ? "Steps" : "Pasos";
 
   return (
     <div className="ff-stepsbar" role="navigation" aria-label={aria}>
