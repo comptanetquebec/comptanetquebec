@@ -1,7 +1,7 @@
 // app/formulaire-fiscal-ta/sections/ClientSection.tsx
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Field, CheckboxField, SelectField } from "../ui";
 import type { ProvinceCode, EtatCivil } from "../types";
 import type { CopyPack } from "../copy";
@@ -12,9 +12,89 @@ import {
   formatPostalInput,
 } from "../formatters";
 
+type FieldStatus = "ok" | "no" | "idle";
+
+function Mark({ status }: { status: FieldStatus }) {
+  if (status === "idle") return null;
+  const ok = status === "ok";
+  return (
+    <span
+      aria-hidden
+      style={{
+        marginLeft: 8,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 18,
+        height: 18,
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 900,
+        border: "1px solid rgba(0,0,0,.12)",
+        background: ok ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.10)",
+        color: ok ? "#16a34a" : "#dc2626",
+      }}
+      title={ok ? "OK" : "À compléter"}
+    >
+      {ok ? "✓" : "✕"}
+    </span>
+  );
+}
+
+function LabelWithMark({
+  label,
+  status,
+}: {
+  label: string;
+  status: FieldStatus;
+}) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center" }}>
+      <span>{label}</span>
+      <Mark status={status} />
+    </span>
+  );
+}
+
+// ===== validations locales (sans dépendances externes) =====
+function digitsOnly(v: string) {
+  return (v || "").replace(/\D+/g, "");
+}
+function isValidNAS(v: string) {
+  return digitsOnly(v).slice(0, 9).length === 9;
+}
+function isValidPostal(v: string) {
+  const s = (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  return s.length === 6;
+}
+function isValidEmail(v: string) {
+  const s = (v || "").trim();
+  if (!s) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+function isValidDateJJMMAAAA(v: string) {
+  const s = (v || "").trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return false;
+  const [ddStr, mmStr, yyyyStr] = s.split("/");
+  const dd = Number(ddStr);
+  const mm = Number(mmStr);
+  const yyyy = Number(yyyyStr);
+  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return false;
+  if (yyyy < 1900 || yyyy > 2100) return false;
+  if (mm < 1 || mm > 12) return false;
+  const daysInMonth = new Date(yyyy, mm, 0).getDate();
+  return dd >= 1 && dd <= daysInMonth;
+}
+function isValidPhone10(v: string) {
+  return digitsOnly(v).slice(0, 10).length === 10;
+}
+
 export default function ClientSection(props: {
   L: CopyPack;
   PROVINCES: { value: ProvinceCode; label: string }[];
+
+  // ✅ déclenche les ✕ (ex: après clic "Continuer")
+  showErrors: boolean;
 
   prenom: string;
   setPrenom: (v: string) => void;
@@ -55,6 +135,7 @@ export default function ClientSection(props: {
   const {
     L,
     PROVINCES,
+    showErrors,
     prenom,
     setPrenom,
     nom,
@@ -101,6 +182,91 @@ export default function ClientSection(props: {
     { value: "veuf", label: L.fields.maritalOpts.veuf },
   ];
 
+  // ===== statut pro : rien tant que vide, sauf si showErrors =====
+  const status = useMemo(() => {
+    const requiredText = (v: string): FieldStatus => {
+      const has = !!v.trim();
+      if (!has) return showErrors ? "no" : "idle";
+      return "ok";
+    };
+
+    const nasStatus: FieldStatus = (() => {
+      if (!nas.trim()) return showErrors ? "no" : "idle";
+      return isValidNAS(nas) ? "ok" : "no";
+    })();
+
+    const dobStatus: FieldStatus = (() => {
+      if (!dob.trim()) return showErrors ? "no" : "idle";
+      return isValidDateJJMMAAAA(dob) ? "ok" : "no";
+    })();
+
+    const emailStatus: FieldStatus = (() => {
+      if (!courriel.trim()) return showErrors ? "no" : "idle";
+      return isValidEmail(courriel) ? "ok" : "no";
+    })();
+
+    const postalStatus: FieldStatus = (() => {
+      if (!codePostal.trim()) return showErrors ? "no" : "idle";
+      return isValidPostal(codePostal) ? "ok" : "no";
+    })();
+
+    // Téléphone: au moins 1 des deux valide
+    const anyPhoneOk = isValidPhone10(tel) || isValidPhone10(telCell);
+    const phoneStatus: FieldStatus = (() => {
+      const anyTyped = !!tel.trim() || !!telCell.trim();
+      if (!anyTyped) return showErrors ? "no" : "idle";
+      return anyPhoneOk ? "ok" : "no";
+    })();
+
+    const etatCivilStatus: FieldStatus = etatCivil ? "ok" : showErrors ? "no" : "idle";
+
+    const prevMaritalStatus: FieldStatus = !etatCivilChange
+      ? "idle"
+      : (!ancienEtatCivil.trim()
+          ? (showErrors ? "no" : "idle")
+          : "ok");
+
+    const changeDateStatus: FieldStatus = !etatCivilChange
+      ? "idle"
+      : (!dateChangementEtatCivil.trim()
+          ? (showErrors ? "no" : "idle")
+          : (isValidDateJJMMAAAA(dateChangementEtatCivil) ? "ok" : "no"));
+
+    return {
+      prenom: requiredText(prenom),
+      nom: requiredText(nom),
+      nas: nasStatus,
+      dob: dobStatus,
+      etatCivil: etatCivilStatus,
+      ancienEtatCivil: prevMaritalStatus,
+      dateChangementEtatCivil: changeDateStatus,
+      tel: phoneStatus,
+      telCell: phoneStatus,
+      courriel: emailStatus,
+      adresse: requiredText(adresse),
+      ville: requiredText(ville),
+      province: province ? "ok" : showErrors ? "no" : "idle",
+      codePostal: postalStatus,
+    };
+  }, [
+    showErrors,
+    prenom,
+    nom,
+    nas,
+    dob,
+    etatCivil,
+    etatCivilChange,
+    ancienEtatCivil,
+    dateChangementEtatCivil,
+    tel,
+    telCell,
+    courriel,
+    adresse,
+    ville,
+    province,
+    codePostal,
+  ]);
+
   return (
     <section className="ff-card">
       <div className="ff-card-head">
@@ -109,11 +275,27 @@ export default function ClientSection(props: {
       </div>
 
       <div className="ff-grid2">
-        <Field label={L.fields.firstName} value={prenom} onChange={setPrenom} required />
-        <Field label={L.fields.lastName} value={nom} onChange={setNom} required />
+        <Field
+          label={(
+            <LabelWithMark label={L.fields.firstName} status={status.prenom} />
+          ) as any}
+          value={prenom}
+          onChange={setPrenom}
+          required
+        />
+        <Field
+          label={(
+            <LabelWithMark label={L.fields.lastName} status={status.nom} />
+          ) as any}
+          value={nom}
+          onChange={setNom}
+          required
+        />
 
         <Field
-          label={L.fields.sin}
+          label={(
+            <LabelWithMark label={L.fields.sin} status={status.nas} />
+          ) as any}
           value={nas}
           onChange={setNas}
           placeholder={L.fields.sinPh}
@@ -124,7 +306,9 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={L.fields.dob}
+          label={(
+            <LabelWithMark label={L.fields.dob} status={status.dob} />
+          ) as any}
           value={dob}
           onChange={setDob}
           placeholder={L.fields.dobPh}
@@ -137,12 +321,14 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <SelectField<EtatCivil>
-          label={L.fields.marital}
+          label={(
+            <LabelWithMark label={L.fields.marital} status={status.etatCivil} />
+          ) as any}
           value={etatCivil}
           onChange={(v) => setEtatCivil(v)}
           options={maritalOptions}
           required
-          placeholderText={placeholderLabel}
+          placeholderText={"—"}
         />
 
         <CheckboxField
@@ -155,7 +341,9 @@ export default function ClientSection(props: {
       {etatCivilChange && (
         <div className="ff-grid2 ff-mt">
           <Field
-            label={L.fields.prevMarital}
+            label={(
+              <LabelWithMark label={L.fields.prevMarital} status={status.ancienEtatCivil} />
+            ) as any}
             value={ancienEtatCivil}
             onChange={setAncienEtatCivil}
             placeholder={L.fields.prevMaritalPh}
@@ -163,7 +351,9 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={L.fields.changeDate}
+            label={(
+              <LabelWithMark label={L.fields.changeDate} status={status.dateChangementEtatCivil} />
+            ) as any}
             value={dateChangementEtatCivil}
             onChange={setDateChangementEtatCivil}
             placeholder={L.fields.changeDatePh}
@@ -177,7 +367,9 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <Field
-          label={L.fields.phone}
+          label={(
+            <LabelWithMark label={L.fields.phone} status={status.tel} />
+          ) as any}
           value={tel}
           onChange={setTel}
           placeholder="(418) 555-1234"
@@ -187,7 +379,9 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={L.fields.mobile}
+          label={(
+            <LabelWithMark label={L.fields.mobile} status={status.telCell} />
+          ) as any}
           value={telCell}
           onChange={setTelCell}
           placeholder="(418) 555-1234"
@@ -197,7 +391,9 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={L.fields.email}
+          label={(
+            <LabelWithMark label={L.fields.email} status={status.courriel} />
+          ) as any}
           value={courriel}
           onChange={setCourriel}
           type="email"
@@ -207,7 +403,9 @@ export default function ClientSection(props: {
 
       <div className="ff-mt">
         <Field
-          label={L.fields.address}
+          label={(
+            <LabelWithMark label={L.fields.address} status={status.adresse} />
+          ) as any}
           value={adresse}
           onChange={setAdresse}
           required
@@ -222,26 +420,32 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={L.fields.city}
+            label={(
+              <LabelWithMark label={L.fields.city} status={status.ville} />
+            ) as any}
             value={ville}
             onChange={setVille}
             required
           />
 
           <SelectField<ProvinceCode>
-            label={L.fields.province}
+            label={(
+              <LabelWithMark label={L.fields.province} status={status.province} />
+            ) as any}
             value={province}
             onChange={(v) => {
-              if (v === "") return; // ignore le placeholder
+              if (v === "") return;
               setProvince(v as ProvinceCode);
             }}
             options={PROVINCES}
             required
-            placeholderText={placeholderLabel}
+            placeholderText={"—"}
           />
 
           <Field
-            label={L.fields.postal}
+            label={(
+              <LabelWithMark label={L.fields.postal} status={status.codePostal} />
+            ) as any}
             value={codePostal}
             onChange={setCodePostal}
             placeholder={L.fields.postalPh}
