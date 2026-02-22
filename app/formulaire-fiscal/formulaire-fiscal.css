@@ -744,3 +744,8 @@
   font-weight:700;
   color: var(--cq-text);
 }
+.ff-header-right{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
