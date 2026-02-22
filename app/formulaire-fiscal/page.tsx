@@ -1135,26 +1135,29 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
 return (
   <main className="ff-bg">
     <div className="ff-container">
-      <header className="ff-header">
-        <div className="ff-brand">
-          <Image
-            src="/logo-cq.png"
-            alt="ComptaNet Québec"
-            width={120}
-            height={40}
-            priority
-            style={{ height: 40, width: "auto" }}
-          />
-          <div className="ff-brand-text">
-            <strong>ComptaNet Québec</strong>
-            <span>{L.formName}</span>
-          </div>
-        </div>
+     <header className="ff-header">
+  <div className="ff-brand">
+    <Image
+      src="/logo-cq.png"
+      alt="ComptaNet Québec"
+      width={120}
+      height={40}
+      priority
+      style={{ height: 40, width: "auto" }}
+    />
+    <div className="ff-brand-text">
+      <strong>ComptaNet Québec</strong>
+      <span>{L.formName}</span>
+    </div>
+  </div>
 
-        <button className="ff-btn ff-btn-outline" type="button" onClick={logout}>
-          {L.disconnect}
-        </button>
-      </header>
+  <div className="ff-header-right">
+    <Steps />
+    <button className="ff-btn ff-btn-outline" type="button" onClick={logout}>
+      {L.disconnect}
+    </button>
+  </div>
+</header>
 
       <div className="ff-title">
         <h1>
