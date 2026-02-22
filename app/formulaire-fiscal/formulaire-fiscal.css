@@ -749,3 +749,17 @@
   align-items:center;
   gap: 12px;
 }
+/* Désactive toute animation/transitions dans la zone Steps */
+.ff-header .steps,
+.ff-header .steps *{
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Si ton Steps utilise un "slider"/pill (souvent absolute + transform), on le neutralise */
+.ff-header .steps .steps-active,
+.ff-header .steps .steps-pill,
+.ff-header .steps .steps-indicator,
+.ff-header .steps .active-bg{
+  transform: none !important;
+}
