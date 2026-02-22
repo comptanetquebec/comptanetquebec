@@ -722,3 +722,145 @@
   color: #dc2626;
   font-weight: 900;
 }
+/* =========================================================
+   ✅ Fix final : Labels + MarkIcon + Steps horizontaux
+   À coller à la fin du CSS (override propre)
+========================================================= */
+
+/* ---- LABELS (1 seule version) ---- */
+.ff-field .ff-label{
+  /* texte */
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--cq-text);
+
+  /* layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+}
+
+.ff-label__left{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ff-required{
+  color: #dc2626;
+  font-weight: 900;
+}
+
+/* petite aide */
+.ff-hint{
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cq-muted);
+}
+
+/* ---- MARK ICON (1 seule version) ---- */
+.mark-icon{
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  border: 1px solid var(--cq-border);
+  background: #fff;
+  color: var(--cq-muted);
+  flex: 0 0 auto;
+}
+
+.mark-icon--ok{
+  background: #ecfdf5;
+  border-color: rgba(22,163,74,.25);
+  color: #16a34a;
+}
+
+.mark-icon--bad{
+  background: #fef2f2;
+  border-color: rgba(220,38,38,.25);
+  color: #dc2626;
+}
+
+.mark-icon--todo{
+  background: #f8fafc;
+  border-color: rgba(100,116,139,.25);
+  color: #64748b;
+}
+
+/* ---- STEPS : version TA (horizontal + scroll) ---- */
+.ff-steps{
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+  /* IMPORTANT: pas de wrap */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding: 10px;
+  margin: 12px 0 14px;
+
+  border-radius: 14px;
+  background: var(--cq-soft);
+  border: 1px solid var(--cq-border);
+}
+
+.ff-steps::-webkit-scrollbar{ height: 8px; }
+.ff-steps::-webkit-scrollbar-thumb{
+  background: rgba(15,23,42,.12);
+  border-radius: 999px;
+}
+
+.ff-step{
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+  padding:10px 14px;
+  border:1px solid #e6e8ee;
+  background:#fff;
+  border-radius:14px;
+
+  font-weight:800;
+  font-size:13px;
+
+  opacity:.65;
+  white-space: nowrap;
+}
+
+.ff-step-num{
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #d7dbe6;
+  font-weight:900;
+  font-size:12px;
+  opacity:.85;
+}
+
+.ff-step-active{
+  opacity:1;
+  border-color: rgba(0,74,173,.25);
+  background: #eef4ff;
+}
+
+.ff-step-active .ff-step-num{
+  border-color: var(--cq-blue);
+  color: var(--cq-blue);
+  opacity:1;
+}
