@@ -14,10 +14,14 @@ function statusClass(status?: FieldStatus) {
   return "";
 }
 
+function RequiredStar({ required }: { required?: boolean }) {
+  if (!required) return null;
+  return <span className="ff-required" aria-hidden> *</span>;
+}
+
 /* ===========================
    Field
 =========================== */
-
 export type FieldProps = {
   label: React.ReactNode;
   value: string;
@@ -67,8 +71,10 @@ export function Field({
   return (
     <div className={`ff-field ${cls}`}>
       <label className="ff-label" htmlFor={id}>
-        {label}
-        {required ? " *" : ""}
+        <span className="ff-label__left">
+          {label}
+          <RequiredStar required={required} />
+        </span>
       </label>
 
       <input
@@ -102,14 +108,13 @@ export function Field({
 /* ===========================
    CheckboxField
 =========================== */
-
 export type CheckboxFieldProps = {
   label: React.ReactNode;
   checked: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
 
-  // ✅ vert/rouge (souvent utilisé pour confirmations obligatoires)
+  // ✅ vert/rouge
   status?: FieldStatus;
   hint?: React.ReactNode;
 };
@@ -136,17 +141,20 @@ export function CheckboxField({
         disabled={disabled}
         aria-invalid={status === "invalid" ? true : undefined}
       />
-      <label htmlFor={id}>{label}</label>
 
-      {hint ? <div className="ff-hint">{hint}</div> : null}
+      <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
+        <label htmlFor={id} style={{ fontWeight: 800 }}>
+          {label}
+        </label>
+        {hint ? <div className="ff-hint">{hint}</div> : null}
+      </div>
     </div>
   );
 }
 
 /* ===========================
-   YesNoField (SANS “EFFACER”)
+   YesNoField
 =========================== */
-
 export type YesNoFieldProps = {
   label: React.ReactNode;
   value: YesNo;
@@ -177,8 +185,10 @@ export function YesNoField({
   return (
     <div className={`ff-yn ${cls}`}>
       <div className="ff-label">
-        {label}
-        {required ? " *" : ""}
+        <span className="ff-label__left">
+          {label}
+          <RequiredStar required={required} />
+        </span>
       </div>
 
       <div
@@ -220,7 +230,6 @@ export function YesNoField({
 /* ===========================
    SelectField
 =========================== */
-
 export type SelectOption<T extends string> = {
   value: Exclude<T, "">;
   label: string;
@@ -261,8 +270,10 @@ export function SelectField<T extends string>({
   return (
     <div className={`ff-field ${cls}`}>
       <label className="ff-label" htmlFor={id}>
-        {label}
-        {required ? " *" : ""}
+        <span className="ff-label__left">
+          {label}
+          <RequiredStar required={required} />
+        </span>
       </label>
 
       <select
@@ -277,7 +288,9 @@ export function SelectField<T extends string>({
         disabled={disabled}
         autoComplete={autoComplete}
       >
-        <option value="">{placeholderText ?? (required ? "Choisir…" : "—")}</option>
+        <option value="">
+          {placeholderText ?? (required ? "Choisir…" : "—")}
+        </option>
 
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
