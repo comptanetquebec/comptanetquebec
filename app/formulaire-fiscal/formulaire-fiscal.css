@@ -619,3 +619,24 @@
   font-weight: 700;
   color: var(--cq-muted);
 }
+/* ✅ MarkIcon inline (évite qu'il "tombe" ailleurs) */
+.mark-icon{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.mark-icon svg{
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  display: block;
+}
+
+/* ✅ Le label doit pouvoir contenir une icône inline */
+.ff-label{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
