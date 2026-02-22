@@ -19,7 +19,7 @@ function statusClass(status?: FieldStatus) {
 =========================== */
 
 export type FieldProps = {
-  label: string;
+  label: React.ReactNode;
   value: string;
   onChange: (v: string) => void;
 
@@ -39,7 +39,7 @@ export type FieldProps = {
 
   // ✅ vert/rouge
   status?: FieldStatus;
-  hint?: string;
+  hint?: React.ReactNode;
 };
 
 export function Field({
@@ -104,14 +104,14 @@ export function Field({
 =========================== */
 
 export type CheckboxFieldProps = {
-  label: string;
+  label: React.ReactNode;
   checked: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
 
   // ✅ vert/rouge (souvent utilisé pour confirmations obligatoires)
   status?: FieldStatus;
-  hint?: string;
+  hint?: React.ReactNode;
 };
 
 export function CheckboxField({
@@ -148,7 +148,7 @@ export function CheckboxField({
 =========================== */
 
 export type YesNoFieldProps = {
-  label: string;
+  label: React.ReactNode;
   value: YesNo;
   onChange: (v: YesNo) => void;
   name: string; // stable
@@ -158,7 +158,7 @@ export type YesNoFieldProps = {
 
   // ✅ vert/rouge
   status?: FieldStatus;
-  hint?: string;
+  hint?: React.ReactNode;
 };
 
 export function YesNoField({
@@ -181,7 +181,10 @@ export function YesNoField({
         {required ? " *" : ""}
       </div>
 
-      <div className="ff-yn-row" aria-invalid={status === "invalid" ? true : undefined}>
+      <div
+        className="ff-yn-row"
+        aria-invalid={status === "invalid" ? true : undefined}
+      >
         <label className="ff-radio">
           <input
             type="radio"
@@ -224,7 +227,7 @@ export type SelectOption<T extends string> = {
 };
 
 export type SelectFieldProps<T extends string> = {
-  label: string;
+  label: React.ReactNode;
   value: T;
   onChange: (v: T) => void;
   options: Array<SelectOption<T>>;
@@ -236,7 +239,7 @@ export type SelectFieldProps<T extends string> = {
 
   // ✅ vert/rouge
   status?: FieldStatus;
-  hint?: string;
+  hint?: React.ReactNode;
 };
 
 export function SelectField<T extends string>({
