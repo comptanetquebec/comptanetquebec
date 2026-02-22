@@ -17,69 +17,40 @@ import { firstNonEmpty } from "../helpers";
 type Mark = "ok" | "bad" | "todo";
 
 function MarkIcon({ mark }: { mark: Mark }) {
-  const base: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 900,
-    lineHeight: 1,
-    border: "1px solid rgba(0,0,0,.18)",
-    flex: "0 0 auto",
-  };
+  const cls =
+    mark === "ok"
+      ? "mark-icon mark-icon--ok"
+      : mark === "bad"
+      ? "mark-icon mark-icon--bad"
+      : "mark-icon mark-icon--todo";
 
-  if (mark === "ok") {
-    return (
-      <span
-        aria-label="ok"
-        title="OK"
-        style={{
-          ...base,
-          color: "#14532d",
-          background: "#dcfce7",
-          borderColor: "#16a34a",
-        }}
-      >
-        ✓
-      </span>
-    );
-  }
-
-  if (mark === "bad") {
-    return (
-      <span
-        aria-label="à corriger"
-        title="À corriger"
-        style={{
-          ...base,
-          color: "#7f1d1d",
-          background: "#fee2e2",
-          borderColor: "#dc2626",
-        }}
-      >
-        ✕
-      </span>
-    );
-  }
+  const title = mark === "ok" ? "OK" : mark === "bad" ? "À corriger" : "À faire";
+  const symbol = mark === "ok" ? "✓" : mark === "bad" ? "✕" : "→";
 
   return (
-    <span
-      aria-label="à faire"
-      title="À faire"
-      style={{
-        ...base,
-        color: "#1f2937",
-        background: "#f3f4f6",
-        borderColor: "rgba(0,0,0,.18)",
-      }}
-    >
-      →
+    <span className={cls} aria-hidden title={title}>
+      {symbol}
     </span>
   );
 }
+
+function LabelWithMark({
+  text,
+  mark,
+}: {
+  text: React.ReactNode;
+  mark: Mark;
+}) {
+  return (
+    <>
+      {text} <MarkIcon mark={mark} />
+    </>
+  );
+}
+
+/* ===========================
+   Normalizers & validators
+=========================== */
 
 function normalizeNAS(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 9);
@@ -115,6 +86,10 @@ function isValidDateJJMMAAAA(v: string) {
   const daysInMonth = new Date(yyyy, mm, 0).getDate();
   return dd >= 1 && dd <= daysInMonth;
 }
+
+/* ===========================
+   Mark helpers
+=========================== */
 
 function markTextRequired(v: string): Mark {
   return v.trim() ? "ok" : "bad";
@@ -283,7 +258,14 @@ export default function ClientSection(props: {
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
           <h2 style={{ margin: 0 }}>{L.sections.clientTitle}</h2>
           <MarkIcon mark={marks.block} />
         </div>
@@ -292,31 +274,19 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2">
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.firstName} <MarkIcon mark={marks.prenom} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.firstName} mark={marks.prenom} />}
           value={prenom}
           onChange={setPrenom}
           required
         />
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.lastName} <MarkIcon mark={marks.nom} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.lastName} mark={marks.nom} />}
           value={nom}
           onChange={setNom}
           required
         />
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.sin} <MarkIcon mark={marks.nas} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.sin} mark={marks.nas} />}
           value={nas}
           onChange={setNas}
           placeholder={L.fields.sinPh}
@@ -326,11 +296,7 @@ export default function ClientSection(props: {
           maxLength={11}
         />
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.dob} <MarkIcon mark={marks.dob} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.dob} mark={marks.dob} />}
           value={dob}
           onChange={setDob}
           placeholder={L.fields.dobPh}
@@ -343,11 +309,7 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <SelectField<EtatCivil>
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.marital} <MarkIcon mark={marks.etatCivil} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.marital} mark={marks.etatCivil} />}
           value={etatCivil}
           onChange={setEtatCivil}
           options={[
@@ -360,28 +322,24 @@ export default function ClientSection(props: {
           ]}
           required
         />
-        <CheckboxField label={L.fields.maritalChanged} checked={etatCivilChange} onChange={setEtatCivilChange} />
+        <CheckboxField
+          label={L.fields.maritalChanged}
+          checked={etatCivilChange}
+          onChange={setEtatCivilChange}
+        />
       </div>
 
       {etatCivilChange && (
         <div className="ff-grid2 ff-mt">
           <Field
-            label={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {L.fields.prevMarital} <MarkIcon mark={marks.etatCivilPrev} />
-              </span>
-            }
+            label={<LabelWithMark text={L.fields.prevMarital} mark={marks.etatCivilPrev} />}
             value={ancienEtatCivil}
             onChange={setAncienEtatCivil}
             placeholder={L.fields.prevMaritalPh}
             required
           />
           <Field
-            label={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {L.fields.changeDate} <MarkIcon mark={marks.etatCivilDate} />
-              </span>
-            }
+            label={<LabelWithMark text={L.fields.changeDate} mark={marks.etatCivilDate} />}
             value={dateChangementEtatCivil}
             onChange={setDateChangementEtatCivil}
             placeholder={L.fields.changeDatePh}
@@ -395,11 +353,7 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.phone} <MarkIcon mark={marks.phoneAny} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.phone} mark={marks.phoneAny} />}
           value={tel}
           onChange={setTel}
           placeholder="(418) 555-1234"
@@ -408,11 +362,7 @@ export default function ClientSection(props: {
           maxLength={14}
         />
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.mobile} <MarkIcon mark={marks.phoneAny} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.mobile} mark={marks.phoneAny} />}
           value={telCell}
           onChange={setTelCell}
           placeholder="(418) 555-1234"
@@ -421,11 +371,7 @@ export default function ClientSection(props: {
           maxLength={14}
         />
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.email} <MarkIcon mark={marks.email} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.email} mark={marks.email} />}
           value={courriel}
           onChange={setCourriel}
           type="email"
@@ -435,36 +381,29 @@ export default function ClientSection(props: {
 
       <div className="ff-mt">
         <Field
-          label={
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              {L.fields.address} <MarkIcon mark={marks.adresse} />
-            </span>
-          }
+          label={<LabelWithMark text={L.fields.address} mark={marks.adresse} />}
           value={adresse}
           onChange={setAdresse}
           required
         />
 
         <div className="ff-grid4 ff-mt-sm">
-          <Field label={L.fields.apt} value={app} onChange={setApp} placeholder={L.fields.aptPh} />
+          <Field
+            label={L.fields.apt}
+            value={app}
+            onChange={setApp}
+            placeholder={L.fields.aptPh}
+          />
 
           <Field
-            label={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {L.fields.city} <MarkIcon mark={marks.ville} />
-              </span>
-            }
+            label={<LabelWithMark text={L.fields.city} mark={marks.ville} />}
             value={ville}
             onChange={setVille}
             required
           />
 
           <SelectField<ProvinceCode>
-            label={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {L.fields.province} <MarkIcon mark={marks.province} />
-              </span>
-            }
+            label={<LabelWithMark text={L.fields.province} mark={marks.province} />}
             value={province}
             onChange={setProvince}
             options={PROVINCES}
@@ -472,11 +411,7 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {L.fields.postal} <MarkIcon mark={marks.postal} />
-              </span>
-            }
+            label={<LabelWithMark text={L.fields.postal} mark={marks.postal} />}
             value={codePostal}
             onChange={setCodePostal}
             placeholder={L.fields.postalPh}
