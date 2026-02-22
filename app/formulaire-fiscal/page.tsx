@@ -1163,7 +1163,6 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
           <p>{L.intro}</p>
         </div>
 
-        {msg && (
          <div className="ff-progressbar">
   <div className="ff-progressbar-title">{t("Progression", "Progress", "Progreso")}</div>
 
@@ -1199,7 +1198,6 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     </div>
   </div>
 </div>
-
           <ClientSection
             L={L}
             PROVINCES={PROVINCES}
