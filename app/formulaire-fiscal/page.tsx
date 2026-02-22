@@ -24,12 +24,13 @@ import type {
   Formdata,
   FormRow,
   InsertIdRow,
+  Mark, // ✅ vient de types.ts (ok | bad | warn)
 } from "./types";
 
+import type { YesNo } from "./ui"; // ✅ oui | non | ""
 import { firstNonEmpty } from "./helpers";
 
-// Sections (dossier divisé)
-// ✅ Enlevé: ErrorsPanel (plus de gros bloc en haut)
+// Sections
 import ClientSection from "./sections/ClientSection";
 import SpouseSection from "./sections/SpouseSection";
 import MedsSection from "./sections/MedsSection";
@@ -102,6 +103,7 @@ function formatDateInput(v: string) {
 }
 
 function formatPhoneInput(v: string) {
+  // ✅ accepte n’importe quel indicatif (581, 418, 514, 438, 450, 819, 873, 367, etc.)
   const d = (v || "").replace(/\D+/g, "").slice(0, 10);
   const a = d.slice(0, 3);
   const b = d.slice(3, 6);
@@ -136,15 +138,12 @@ function isValidYear(v: string) {
   const n = Number(y);
   return n >= 2000 && n <= 2100;
 }
-
 function isValidNAS(v: string) {
   return normalizeNAS(v).length === 9;
 }
-
 function isValidPostal(v: string) {
   return normalizePostal(v).length === 6;
 }
-
 function isValidDateJJMMAAAA(v: string) {
   const s = (v || "").trim();
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return false;
@@ -155,20 +154,16 @@ function isValidDateJJMMAAAA(v: string) {
   if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return false;
   if (yyyy < 1900 || yyyy > 2100) return false;
   if (mm < 1 || mm > 12) return false;
-
   const daysInMonth = new Date(yyyy, mm, 0).getDate();
   return dd >= 1 && dd <= daysInMonth;
 }
-
 function isValidEmail(v: string) {
   const s = (v || "").trim();
   if (!s) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
-/* =========================== Mark (✓ / ✕ / →) =========================== */
-type Mark = "ok" | "bad" | "todo";
-
+/* =========================== Mark (ok / bad / warn) =========================== */
 function MarkIcon({ mark }: { mark: Mark }) {
   const base: React.CSSProperties = {
     display: "inline-flex",
@@ -190,12 +185,7 @@ function MarkIcon({ mark }: { mark: Mark }) {
       <span
         aria-label="ok"
         title="OK"
-        style={{
-          ...base,
-          color: "#14532d",
-          background: "#dcfce7",
-          borderColor: "#16a34a",
-        }}
+        style={{ ...base, color: "#14532d", background: "#dcfce7", borderColor: "#16a34a" }}
       >
         ✓
       </span>
@@ -207,28 +197,19 @@ function MarkIcon({ mark }: { mark: Mark }) {
       <span
         aria-label="à corriger"
         title="À corriger"
-        style={{
-          ...base,
-          color: "#7f1d1d",
-          background: "#fee2e2",
-          borderColor: "#dc2626",
-        }}
+        style={{ ...base, color: "#7f1d1d", background: "#fee2e2", borderColor: "#dc2626" }}
       >
         ✕
       </span>
     );
   }
 
+  // warn
   return (
     <span
       aria-label="à faire"
       title="À faire"
-      style={{
-        ...base,
-        color: "#1f2937",
-        background: "#f3f4f6",
-        borderColor: "rgba(0,0,0,.18)",
-      }}
+      style={{ ...base, color: "#1f2937", background: "#f3f4f6", borderColor: "rgba(0,0,0,.18)" }}
     >
       →
     </span>
@@ -238,30 +219,20 @@ function MarkIcon({ mark }: { mark: Mark }) {
 function markText(v: string): Mark {
   return v.trim() ? "ok" : "bad";
 }
-function markYesNo(v: "" | "yes" | "no"): Mark {
+function markYesNo(v: YesNo): Mark {
   return v ? "ok" : "bad";
 }
 
-/* =========================== Small inline error list (remplace gros bloc) =========================== */
-function InlineErrors({
-  id,
-  title,
-  errors,
-}: {
-  id: string;
-  title: string;
-  errors: string[];
-}) {
+/* =========================== Small inline error list =========================== */
+function InlineErrors(props: { id: string; title: string; errors: string[] }) {
+  const { id, title, errors } = props;
   if (!errors.length) return null;
+
   return (
     <div
       id={id}
       className="ff-card"
-      style={{
-        padding: 14,
-        border: "1px solid #fecaca",
-        background: "#fff1f2",
-      }}
+      style={{ padding: 14, border: "1px solid #fecaca", background: "#fff1f2" }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontWeight: 800, color: "#7f1d1d" }}>{title}</div>
@@ -297,15 +268,18 @@ export default function FormulaireFiscalPage() {
 }
 
 /* =========================== INNER =========================== */
-function FormulaireFiscalInner({
-  userId,
-  lang,
-  type,
-}: {
-  userId: string;
-  lang: Lang;
-  type: "T1";
-}) {
+type BlocksStatus = {
+  client: { block: Mark };
+  spouse: { block: Mark };
+  meds: { block: Mark };
+  dependants: { block: Mark };
+  questions: { block: Mark };
+  confirms: { block: Mark };
+};
+
+function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }) {
+  const { userId, lang, type } = props;
+
   const router = useRouter();
   const formTitle = titleFromType();
 
@@ -397,13 +371,13 @@ function FormulaireFiscalInner({
   }, []);
 
   /* =========================== Questions =========================== */
-  const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<"" | "yes" | "no">("");
+  const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<YesNo>("");
   const [nbPersonnesMaison3112, setNbPersonnesMaison3112] = useState("");
-  const [biensEtranger100k, setBiensEtranger100k] = useState<"" | "yes" | "no">("");
-  const [citoyenCanadien, setCitoyenCanadien] = useState<"" | "yes" | "no">("");
-  const [nonResident, setNonResident] = useState<"" | "yes" | "no">("");
-  const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<"" | "yes" | "no">("");
-  const [appelerTechnicien, setAppelerTechnicien] = useState<"" | "yes" | "no">("");
+  const [biensEtranger100k, setBiensEtranger100k] = useState<YesNo>("");
+  const [citoyenCanadien, setCitoyenCanadien] = useState<YesNo>("");
+  const [nonResident, setNonResident] = useState<YesNo>("");
+  const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
+  const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
   const [anneeImposition, setAnneeImposition] = useState<string>("");
 
@@ -419,9 +393,7 @@ function FormulaireFiscalInner({
 
     const { data, error } = await supabase
       .from(DOCS_TABLE)
-      .select(
-        "id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at"
-      )
+      .select("id, formulaire_id, user_id, original_name, storage_path, mime_type, size_bytes, created_at")
       .eq("formulaire_id", fid)
       .order("created_at", { ascending: false });
 
@@ -480,9 +452,7 @@ function FormulaireFiscalInner({
       province === "QC"
         ? {
             client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
-            conjoint: aUnConjoint
-              ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes }
-              : null,
+            conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
           }
         : null;
 
@@ -587,7 +557,6 @@ function FormulaireFiscalInner({
     vDelais,
   ]);
 
-  // Helper traduction court
   const t = useCallback(
     (fr: string, en: string, es: string) => (lang === "fr" ? fr : lang === "en" ? en : es),
     [lang]
@@ -681,13 +650,7 @@ function FormulaireFiscalInner({
           );
       } else {
         if (!prenomConjoint.trim())
-          errors.push(
-            t(
-              "Prénom (conjoint) : obligatoire.",
-              "Spouse first name: required.",
-              "Nombre (cónyuge): obligatorio."
-            )
-          );
+          errors.push(t("Prénom (conjoint) : obligatoire.", "Spouse first name: required.", "Nombre (cónyuge): obligatorio."));
         if (!nomConjoint.trim())
           errors.push(t("Nom (conjoint) : obligatoire.", "Spouse last name: required.", "Apellido (cónyuge): obligatorio."));
         if (!isValidNAS(nasConjoint))
@@ -720,204 +683,53 @@ function FormulaireFiscalInner({
 
       if (!adresseConjointeIdentique) {
         if (!adresseConjoint.trim())
-          errors.push(
-            t(
-              "Adresse (conjoint) : obligatoire si adresse différente.",
-              "Spouse address: required if different.",
-              "Dirección (cónyuge): obligatorio si es diferente."
-            )
-          );
+          errors.push(t("Adresse (conjoint) : obligatoire si adresse différente.", "Spouse address: required if different.", "Dirección (cónyuge): obligatorio si es diferente."));
         if (!villeConjoint.trim())
-          errors.push(
-            t(
-              "Ville (conjoint) : obligatoire si adresse différente.",
-              "Spouse city: required if different.",
-              "Ciudad (cónyuge): obligatorio si es diferente."
-            )
-          );
+          errors.push(t("Ville (conjoint) : obligatoire si adresse différente.", "Spouse city: required if different.", "Ciudad (cónyuge): obligatorio si es diferente."));
         if (!provinceConjoint)
-          errors.push(
-            t(
-              "Province (conjoint) : obligatoire si adresse différente.",
-              "Spouse province: required if different.",
-              "Provincia (cónyuge): obligatorio si es diferente."
-            )
-          );
+          errors.push(t("Province (conjoint) : obligatoire si adresse différente.", "Spouse province: required if different.", "Provincia (cónyuge): obligatorio si es diferente."));
         if (!isValidPostal(codePostalConjoint))
-          errors.push(
-            t(
-              "Code postal (conjoint) : obligatoire si adresse différente.",
-              "Spouse postal code: required if different.",
-              "Código postal (cónyuge): obligatorio si es diferente."
-            )
-          );
+          errors.push(t("Code postal (conjoint) : obligatoire si adresse différente.", "Spouse postal code: required if different.", "Código postal (cónyuge): obligatorio si es diferente."));
       }
     }
 
     if (province === "QC") {
       if (!assuranceMedsClient)
-        errors.push(
-          t(
-            "Assurance médicaments (client) : choisissez une option.",
-            "Prescription drug insurance (client): choose an option.",
-            "Seguro de medicamentos (cliente): elija una opción."
-          )
-        );
+        errors.push(t("Assurance médicaments (client) : choisissez une option.", "Prescription drug insurance (client): choose an option.", "Seguro de medicamentos (cliente): elija una opción."));
 
-      const okPeriodeClient = assuranceMedsClientPeriodes.some(
-        (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
-      );
+      const okPeriodeClient = assuranceMedsClientPeriodes.some((p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin));
       if (!okPeriodeClient)
-        errors.push(
-          t(
-            "Assurance médicaments (client) : au moins 1 période complète (de/à) est obligatoire.",
-            "Prescription drug insurance (client): at least 1 complete period (from/to) is required.",
-            "Seguro de medicamentos (cliente): se requiere al menos 1 período completo (desde/hasta)."
-          )
-        );
+        errors.push(t("Assurance médicaments (client) : au moins 1 période complète (de/à) est obligatoire.", "Prescription drug insurance (client): at least 1 complete period (from/to) is required.", "Seguro de medicamentos (cliente): se requiere al menos 1 período completo (desde/hasta)."));
 
       if (aUnConjoint) {
         if (!assuranceMedsConjoint)
-          errors.push(
-            t(
-              "Assurance médicaments (conjoint) : choisissez une option.",
-              "Prescription drug insurance (spouse): choose an option.",
-              "Seguro de medicamentos (cónyuge): elija una opción."
-            )
-          );
+          errors.push(t("Assurance médicaments (conjoint) : choisissez une option.", "Prescription drug insurance (spouse): choose an option.", "Seguro de medicamentos (cónyuge): elija una opción."));
 
-        const okPeriodeCj = assuranceMedsConjointPeriodes.some(
-          (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
-        );
+        const okPeriodeCj = assuranceMedsConjointPeriodes.some((p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin));
         if (!okPeriodeCj)
-          errors.push(
-            t(
-              "Assurance médicaments (conjoint) : au moins 1 période complète (de/à) est obligatoire.",
-              "Prescription drug insurance (spouse): at least 1 complete period (from/to) is required.",
-              "Seguro de medicamentos (cónyuge): se requiere al menos 1 período completo (desde/hasta)."
-            )
-          );
+          errors.push(t("Assurance médicaments (conjoint) : au moins 1 période complète (de/à) est obligatoire.", "Prescription drug insurance (spouse): at least 1 complete period (from/to) is required.", "Seguro de medicamentos (cónyuge): se requiere al menos 1 período completo (desde/hasta)."));
       }
     }
 
-    if (!habiteSeulTouteAnnee)
-      errors.push(
-        t(
-          "Question : Habitez-vous seul(e) toute l’année ? obligatoire.",
-          "Question: Did you live alone all year? required.",
-          "Pregunta: ¿Vivió solo(a) todo el año? obligatorio."
-        )
-      );
-
-    if (!nbPersonnesMaison3112.trim())
-      errors.push(
-        t(
-          "Question : Nombre de personnes au 31/12 : obligatoire.",
-          "Question: Number of people living with you on 12/31: required.",
-          "Pregunta: Número de personas que vivían con usted el 31/12: obligatorio."
-        )
-      );
+    if (!habiteSeulTouteAnnee) errors.push(t("Question : Habitez-vous seul(e) toute l’année ? obligatoire.", "Question: Did you live alone all year? required.", "Pregunta: ¿Vivió solo(a) todo el año? obligatorio."));
+    if (!nbPersonnesMaison3112.trim()) errors.push(t("Question : Nombre de personnes au 31/12 : obligatoire.", "Question: Number of people living with you on 12/31: required.", "Pregunta: Número de personas que vivían con usted el 31/12: obligatorio."));
 
     const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
     if (nb > 0 && enfants.length === 0) {
-      errors.push(
-        t(
-          "Personnes à charge : ajoutez au moins 1 personne.",
-          "Dependants: add at least 1 dependant.",
-          "Dependientes: agregue al menos 1 dependiente."
-        )
-      );
+      errors.push(t("Personnes à charge : ajoutez au moins 1 personne.", "Dependants: add at least 1 dependant.", "Dependientes: agregue al menos 1 dependiente."));
     }
 
-    if (!biensEtranger100k)
-      errors.push(
-        t(
-          "Question : Biens à l’étranger > 100 000 $ : obligatoire.",
-          "Question: Foreign assets over $100,000: required.",
-          "Pregunta: Bienes en el extranjero > $100,000: obligatorio."
-        )
-      );
+    if (!biensEtranger100k) errors.push(t("Question : Biens à l’étranger > 100 000 $ : obligatoire.", "Question: Foreign assets over $100,000: required.", "Pregunta: Bienes en el extranjero > $100,000: obligatorio."));
+    if (!citoyenCanadien) errors.push(t("Question : Citoyen(ne) canadien(ne) : obligatoire.", "Question: Canadian citizen: required.", "Pregunta: Ciudadano(a) canadiense: obligatorio."));
+    if (!nonResident) errors.push(t("Question : Non-résident(e) : obligatoire.", "Question: Non-resident for tax purposes: required.", "Pregunta: No residente a efectos fiscales: obligatorio."));
+    if (!maisonAcheteeOuVendue) errors.push(t("Question : Achat/vente résidence : obligatoire.", "Question: Bought/sold a residence this year: required.", "Pregunta: Compra/venta de residencia este año: obligatorio."));
+    if (!appelerTechnicien) errors.push(t("Question : Appel technicien : obligatoire.", "Question: Do you want a technician to call you: required.", "Pregunta: ¿Desea que un técnico le llame?: obligatorio."));
+    if (!copieImpots) errors.push(t("Copie d’impôts : choisissez une option.", "Tax copy: choose an option.", "Copia de impuestos: elija una opción."));
 
-    if (!citoyenCanadien)
-      errors.push(
-        t(
-          "Question : Citoyen(ne) canadien(ne) : obligatoire.",
-          "Question: Canadian citizen: required.",
-          "Pregunta: Ciudadano(a) canadiense: obligatorio."
-        )
-      );
-
-    if (!nonResident)
-      errors.push(
-        t(
-          "Question : Non-résident(e) : obligatoire.",
-          "Question: Non-resident for tax purposes: required.",
-          "Pregunta: No residente a efectos fiscales: obligatorio."
-        )
-      );
-
-    if (!maisonAcheteeOuVendue)
-      errors.push(
-        t(
-          "Question : Achat/vente résidence : obligatoire.",
-          "Question: Bought/sold a residence this year: required.",
-          "Pregunta: Compra/venta de residencia este año: obligatorio."
-        )
-      );
-
-    if (!appelerTechnicien)
-      errors.push(
-        t(
-          "Question : Appel technicien : obligatoire.",
-          "Question: Do you want a technician to call you: required.",
-          "Pregunta: ¿Desea que un técnico le llame?: obligatorio."
-        )
-      );
-
-    if (!copieImpots)
-      errors.push(
-        t(
-          "Copie d’impôts : choisissez une option.",
-          "Tax copy: choose an option.",
-          "Copia de impuestos: elija una opción."
-        )
-      );
-
-    if (!vExactitude)
-      errors.push(
-        t(
-          "Confirmation : ‘Toutes les informations sont exactes’ obligatoire.",
-          "Confirmation: ‘All information is accurate’ is required.",
-          "Confirmación: ‘Toda la información es exacta’ es obligatorio."
-        )
-      );
-
-    if (!vDossierComplet)
-      errors.push(
-        t(
-          "Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.",
-          "Confirmation: ‘I provided all required information’ is required.",
-          "Confirmación: ‘He proporcionado toda la información requerida’ es obligatorio."
-        )
-      );
-
-    if (!vFraisVariables)
-      errors.push(
-        t(
-          "Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.",
-          "Confirmation: ‘Additional fees may apply’ is required.",
-          "Confirmación: ‘Pueden aplicarse cargos adicionales’ es obligatorio."
-        )
-      );
-
-    if (!vDelais)
-      errors.push(
-        t(
-          "Confirmation : ‘Un dossier incomplet retarde le traitement’ obligatoire.",
-          "Confirmation: ‘An incomplete file delays processing’ is required.",
-          "Confirmación: ‘Un expediente incompleto retrasa el procesamiento’ es obligatorio."
-        )
-      );
+    if (!vExactitude) errors.push(t("Confirmation : ‘Toutes les informations sont exactes’ obligatoire.", "Confirmation: ‘All information is accurate’ is required.", "Confirmación: ‘Toda la información es exacta’ es obligatorio."));
+    if (!vDossierComplet) errors.push(t("Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.", "Confirmation: ‘I provided all required information’ is required.", "Confirmación: ‘He proporcionado toda la información requerida’ es obligatorio."));
+    if (!vFraisVariables) errors.push(t("Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.", "Confirmation: ‘Additional fees may apply’ is required.", "Confirmación: ‘Pueden aplicarse cargos adicionales’ es obligatorio."));
+    if (!vDelais) errors.push(t("Confirmation : ‘Un dossier incomplet retarde le traitement’ obligatoire.", "Confirmation: ‘An incomplete file delays processing’ is required.", "Confirmación: ‘Un expediente incompleto retrasa el procesamiento’ es obligatorio."));
 
     return errors;
   }, [
@@ -973,29 +785,25 @@ function FormulaireFiscalInner({
 
   const canContinue = step1Errors.length === 0;
 
-  // showEnfantsSection (utilisé dans le rendu)
   const showEnfantsSection = useMemo(() => {
     const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
     return nb > 0;
   }, [nbPersonnesMaison3112]);
 
-  // si nb = 0, vide la liste enfants
   useEffect(() => {
     const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
     if (nb === 0 && enfants.length > 0) setEnfants([]);
   }, [nbPersonnesMaison3112, enfants.length]);
 
-  /* =========================== Status (✓/✕) pour titres de sections =========================== */
-  const status = useMemo(() => {
-    const telAny = firstNonEmpty(normalizePhone(tel), normalizePhone(telCell)) ? "ok" : "bad";
+  /* =========================== Status (✅ corrige l’erreur Vercel) =========================== */
+  const status = useMemo<BlocksStatus>(() => {
+    const telAnyMark: Mark = firstNonEmpty(normalizePhone(tel), normalizePhone(telCell)) ? "ok" : "bad";
 
     const medsClientOk: Mark =
       province !== "QC"
         ? "ok"
         : assuranceMedsClient &&
-          assuranceMedsClientPeriodes.some(
-            (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
-          )
+          assuranceMedsClientPeriodes.some((p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin))
         ? "ok"
         : "bad";
 
@@ -1005,9 +813,7 @@ function FormulaireFiscalInner({
         : !aUnConjoint
         ? "ok"
         : assuranceMedsConjoint &&
-          assuranceMedsConjointPeriodes.some(
-            (p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)
-          )
+          assuranceMedsConjointPeriodes.some((p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin))
         ? "ok"
         : "bad";
 
@@ -1028,63 +834,43 @@ function FormulaireFiscalInner({
 
     const questionsBlock: Mark =
       isValidYear(anneeImposition) &&
-      !!habiteSeulTouteAnnee &&
+      markYesNo(habiteSeulTouteAnnee) === "ok" &&
       !!nbPersonnesMaison3112.trim() &&
-      !!biensEtranger100k &&
-      !!citoyenCanadien &&
-      !!nonResident &&
-      !!maisonAcheteeOuVendue &&
-      !!appelerTechnicien &&
+      markYesNo(biensEtranger100k) === "ok" &&
+      markYesNo(citoyenCanadien) === "ok" &&
+      markYesNo(nonResident) === "ok" &&
+      markYesNo(maisonAcheteeOuVendue) === "ok" &&
+      markYesNo(appelerTechnicien) === "ok" &&
       !!copieImpots
         ? "ok"
         : "bad";
 
-    const confirmsBlock: Mark =
-      vExactitude && vDossierComplet && vFraisVariables && vDelais ? "ok" : "bad";
+    const confirmsBlock: Mark = vExactitude && vDossierComplet && vFraisVariables && vDelais ? "ok" : "bad";
+
+    const clientBlock: Mark =
+      markText(prenom) === "ok" &&
+      markText(nom) === "ok" &&
+      isValidNAS(nas) &&
+      isValidDateJJMMAAAA(dob) &&
+      !!etatCivil &&
+      isValidEmail(courriel) &&
+      markText(adresse) === "ok" &&
+      markText(ville) === "ok" &&
+      isValidPostal(codePostal) &&
+      telAnyMark === "ok"
+        ? "ok"
+        : "bad";
+
+    const medsBlock: Mark = medsClientOk === "ok" && medsSpouseOk === "ok" ? "ok" : "bad";
+    const dependantsBlock: Mark = !showEnfantsSection ? "ok" : enfants.length > 0 ? "ok" : "bad";
 
     return {
-      client: {
-        prenom: markText(prenom),
-        nom: markText(nom),
-        nas: isValidNAS(nas) ? "ok" : "bad",
-        dob: isValidDateJJMMAAAA(dob) ? "ok" : "bad",
-        etatCivil: etatCivil ? "ok" : "bad",
-        courriel: isValidEmail(courriel) ? "ok" : "bad",
-        adresse: markText(adresse),
-        ville: markText(ville),
-        codePostal: isValidPostal(codePostal) ? "ok" : "bad",
-        telAny,
-        block:
-          markText(prenom) === "ok" &&
-          markText(nom) === "ok" &&
-          isValidNAS(nas) &&
-          isValidDateJJMMAAAA(dob) &&
-          !!etatCivil &&
-          isValidEmail(courriel) &&
-          markText(adresse) === "ok" &&
-          markText(ville) === "ok" &&
-          isValidPostal(codePostal) &&
-          telAny === "ok"
-            ? "ok"
-            : "bad",
-      },
-      spouse: {
-        block: spouseBlock,
-      },
-      meds: {
-        client: medsClientOk,
-        spouse: medsSpouseOk,
-        block: medsClientOk === "ok" && medsSpouseOk === "ok" ? "ok" : "bad",
-      },
-      dependants: {
-        block: !showEnfantsSection ? "ok" : enfants.length > 0 ? "ok" : "bad",
-      },
-      questions: {
-        block: questionsBlock,
-      },
-      confirms: {
-        block: confirmsBlock,
-      },
+      client: { block: clientBlock },
+      spouse: { block: spouseBlock },
+      meds: { block: medsBlock },
+      dependants: { block: dependantsBlock },
+      questions: { block: questionsBlock },
+      confirms: { block: confirmsBlock },
     };
   }, [
     prenom,
@@ -1137,11 +923,7 @@ function FormulaireFiscalInner({
     if (formulaireId) {
       const { error } = await supabase
         .from(FORMS_TABLE)
-        .update({
-          lang,
-          annee: anneeImposition || null,
-          data: draftData,
-        })
+        .update({ lang, annee: anneeImposition || null, data: draftData })
         .eq("id", formulaireId)
         .eq("user_id", userId);
 
@@ -1151,14 +933,7 @@ function FormulaireFiscalInner({
 
     const { data: dataInsert, error: errorInsert } = await supabase
       .from(FORMS_TABLE)
-      .insert({
-        user_id: userId,
-        form_type: type,
-        lang,
-        status: "draft",
-        annee: anneeImposition || null,
-        data: draftData,
-      })
+      .insert({ user_id: userId, form_type: type, lang, status: "draft", annee: anneeImposition || null, data: draftData })
       .select("id")
       .single<InsertIdRow>();
 
@@ -1273,13 +1048,13 @@ function FormulaireFiscalInner({
     setEnfants(form?.personnesACharge ?? []);
 
     const q = form?.questionsGenerales ?? {};
-    setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as any) ?? "");
+    setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as YesNo) ?? "");
     setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
-    setBiensEtranger100k((q.biensEtranger100k as any) ?? "");
-    setCitoyenCanadien((q.citoyenCanadien as any) ?? "");
-    setNonResident((q.nonResident as any) ?? "");
-    setMaisonAcheteeOuVendue((q.maisonAcheteeOuVendue as any) ?? "");
-    setAppelerTechnicien((q.appelerTechnicien as any) ?? "");
+    setBiensEtranger100k((q.biensEtranger100k as YesNo) ?? "");
+    setCitoyenCanadien((q.citoyenCanadien as YesNo) ?? "");
+    setNonResident((q.nonResident as YesNo) ?? "");
+    setMaisonAcheteeOuVendue((q.maisonAcheteeOuVendue as YesNo) ?? "");
+    setAppelerTechnicien((q.appelerTechnicien as YesNo) ?? "");
     setCopieImpots(q.copieImpots ?? "");
     setAnneeImposition(q.anneeImposition ?? "");
 
@@ -1290,7 +1065,6 @@ function FormulaireFiscalInner({
     setVDelais(!!v.delaisSiManquant);
 
     await loadDocs(fid);
-
     hydrating.current = false;
   }, [userId, type, loadDocs]);
 
@@ -1348,9 +1122,7 @@ function FormulaireFiscalInner({
       setMsg(t("✅ Redirection vers le dépôt…", "✅ Redirecting to upload…", "✅ Redirigiendo a la carga…"));
 
       router.push(
-        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(
-          type
-        )}&lang=${encodeURIComponent(lang)}`
+        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
       );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
@@ -1397,7 +1169,6 @@ function FormulaireFiscalInner({
           </div>
         )}
 
-        {/* ✅ Petit résumé d'erreurs (plus discret que le gros bloc) */}
         <InlineErrors
           id="ff-inline-errors"
           title={t("À corriger avant de continuer", "Fix before continuing", "Corrija antes de continuar")}
@@ -1407,12 +1178,9 @@ function FormulaireFiscalInner({
         <Steps step={1} lang={lang} />
 
         <form className="ff-form" onSubmit={(e) => e.preventDefault()}>
-          {/* ✅ Ajout: mark dans le titre des sections (si tu veux l’utiliser) */}
           <div className="ff-card" style={{ padding: 14, marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <div style={{ fontWeight: 800 }}>
-                {t("Statut du dossier", "File status", "Estado del expediente")}
-              </div>
+              <div style={{ fontWeight: 800 }}>{t("Statut du dossier", "File status", "Estado del expediente")}</div>
               <MarkIcon mark={canContinue ? "ok" : "bad"} />
             </div>
 
@@ -1558,20 +1326,20 @@ function FormulaireFiscalInner({
             L={L}
             anneeImposition={anneeImposition}
             setAnneeImposition={setAnneeImposition}
-            habiteSeulTouteAnnee={habiteSeulTouteAnnee as any}
-            setHabiteSeulTouteAnnee={setHabiteSeulTouteAnnee as any}
+            habiteSeulTouteAnnee={habiteSeulTouteAnnee}
+            setHabiteSeulTouteAnnee={setHabiteSeulTouteAnnee}
             nbPersonnesMaison3112={nbPersonnesMaison3112}
             setNbPersonnesMaison3112={(v: string) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
-            biensEtranger100k={biensEtranger100k as any}
-            setBiensEtranger100k={setBiensEtranger100k as any}
-            citoyenCanadien={citoyenCanadien as any}
-            setCitoyenCanadien={setCitoyenCanadien as any}
-            nonResident={nonResident as any}
-            setNonResident={setNonResident as any}
-            maisonAcheteeOuVendue={maisonAcheteeOuVendue as any}
-            setMaisonAcheteeOuVendue={setMaisonAcheteeOuVendue as any}
-            appelerTechnicien={appelerTechnicien as any}
-            setAppelerTechnicien={setAppelerTechnicien as any}
+            biensEtranger100k={biensEtranger100k}
+            setBiensEtranger100k={setBiensEtranger100k}
+            citoyenCanadien={citoyenCanadien}
+            setCitoyenCanadien={setCitoyenCanadien}
+            nonResident={nonResident}
+            setNonResident={setNonResident}
+            maisonAcheteeOuVendue={maisonAcheteeOuVendue}
+            setMaisonAcheteeOuVendue={setMaisonAcheteeOuVendue}
+            appelerTechnicien={appelerTechnicien}
+            setAppelerTechnicien={setAppelerTechnicien}
             copieImpots={copieImpots}
             setCopieImpots={setCopieImpots}
           />
@@ -1599,12 +1367,7 @@ function FormulaireFiscalInner({
             goToDepotDocuments={goToDepotDocuments}
           />
         </form>
-
-        {/* NOTE IMPORTANT:
-            Les ✓/✕ À CÔTÉ DES CARRÉS DE RÉPONSE (comme l'autre) ne peuvent pas être faits ici.
-            Ça se fait dans QuestionsSection / YesNoField / SelectField (là où les carrés sont dessinés).
-        */}
       </div>
     </main>
   );
-}
+    }
