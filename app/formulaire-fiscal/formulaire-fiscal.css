@@ -780,3 +780,7 @@
   font-weight: 600;       /* moins bold */
   line-height: 1;
 }
+/* Enlève les checkmarks à droite des sections */
+.ff-card > div:last-child{
+  display: none !important;
+}
