@@ -640,31 +640,3 @@
   align-items: center;
   gap: 8px;
 }
-"use client";
-import React from "react";
-
-export default function MarkIcon({ mark }: { mark?: boolean }) {
-  if (!mark) return null;
-
-  return (
-    <span
-      className="mark-icon"
-      aria-hidden
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 18,
-        height: 18,
-        borderRadius: 999,
-        border: "2px solid #16a34a",
-        color: "#16a34a",
-        fontSize: 12,
-        fontWeight: 900,
-        lineHeight: 1,
-      }}
-    >
-      ✓
-    </span>
-  );
-}
