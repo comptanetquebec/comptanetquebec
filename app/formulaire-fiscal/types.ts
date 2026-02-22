@@ -3,7 +3,19 @@
 export type Lang = "fr" | "en" | "es";
 
 export type ProvinceCode =
-  | "QC" | "ON" | "NB" | "NS" | "PE" | "NL" | "MB" | "SK" | "AB" | "BC" | "YT" | "NT" | "NU";
+  | "QC"
+  | "ON"
+  | "NB"
+  | "NS"
+  | "PE"
+  | "NL"
+  | "MB"
+  | "SK"
+  | "AB"
+  | "BC"
+  | "YT"
+  | "NT"
+  | "NU";
 
 export type Sexe = "M" | "F" | "X" | "";
 export type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
@@ -39,7 +51,7 @@ export type DocRow = {
   created_at: string;
 };
 
-/* ===================== AJOUTS MANQUANTS ===================== */
+/* ===================== FORM DATA (DB JSON) ===================== */
 
 export type FormClientdata = {
   prenom?: string;
@@ -69,12 +81,14 @@ export type FormConjointdata = {
   telConjoint?: string;
   telCellConjoint?: string;
   courrielConjoint?: string;
+
   adresseConjointeIdentique?: boolean;
   adresseConjoint?: string;
   appConjoint?: string;
   villeConjoint?: string;
   provinceConjoint?: ProvinceCode;
   codePostalConjoint?: string;
+
   revenuNetConjoint?: string;
 };
 
@@ -123,4 +137,27 @@ export type FormRow = {
 
 export type InsertIdRow = {
   id: string;
+};
+
+/* ===================== UI STATUS (VERT / ROUGE / ORANGE) ===================== */
+/**
+ * Utilisé par MarkIcon (page.tsx) pour afficher des pastilles :
+ * - ok = vert
+ * - bad = rouge
+ * - warn = orange
+ */
+export type Mark = "ok" | "bad" | "warn";
+
+export type BlockMark = {
+  mark: Mark;
+  reason?: string; // optionnel (ex: "NAS manquant")
+};
+
+export type FormBlocksStatus = {
+  client: BlockMark;
+  spouse: BlockMark;
+  meds: BlockMark;
+  dependants: BlockMark;
+  questions: BlockMark;
+  confirms: BlockMark;
 };
