@@ -555,3 +555,67 @@
   border-color:#004aad;
   opacity:1;
 }
+/* ===============================
+   ✅ Validation (VERT / ROUGE)
+   classes ajoutées par ui.tsx:
+   .ff-valid / .ff-invalid
+================================ */
+
+.ff-valid .ff-input,
+.ff-valid .ff-select{
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.ff-invalid .ff-input,
+.ff-invalid .ff-select{
+  border: 2px solid #dc2626;
+  background: #fef2f2;
+}
+
+/* Focus (on garde ton bleu, mais on respecte la couleur si invalid/valid) */
+.ff-valid .ff-input:focus,
+.ff-valid .ff-select:focus{
+  border-color: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22,163,74,.15);
+}
+
+.ff-invalid .ff-input:focus,
+.ff-invalid .ff-select:focus{
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220,38,38,.15);
+}
+
+/* ✅ Checkbox */
+.ff-valid.ff-check .ff-checkbox{
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
+}
+
+.ff-invalid.ff-check .ff-checkbox{
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* ✅ Yes/No */
+.ff-valid .ff-yn-row{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.ff-invalid .ff-yn-row{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid #dc2626;
+  background: #fef2f2;
+}
+
+/* ✅ Texte d’aide */
+.ff-hint{
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cq-muted);
+}
