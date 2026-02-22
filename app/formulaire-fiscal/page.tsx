@@ -1152,7 +1152,7 @@ return (
   </div>
 
   <div className="ff-header-right">
-    <Steps />
+    <Steps step={1} lang={lang} />
     <button className="ff-btn ff-btn-outline" type="button" onClick={logout}>
       {L.disconnect}
     </button>
