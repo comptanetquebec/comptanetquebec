@@ -763,3 +763,20 @@
 .ff-header .steps .active-bg{
   transform: none !important;
 }
+/* ❌ Enlève la barre qui bouge sous les 3 étapes */
+.ff-header .steps > div:last-child{
+  display: none !important;
+}
+
+/* Sécurité si c’est un pseudo élément */
+.ff-header .steps::before{
+  display: none !important;
+}
+/* Bouton "Se déconnecter" plus petit et léger */
+.ff-header .ff-btn.ff-btn-outline{
+  padding: 6px 10px;      /* moins épais */
+  font-size: 12px;        /* texte plus petit */
+  border-radius: 10px;    /* moins arrondi */
+  font-weight: 600;       /* moins bold */
+  line-height: 1;
+}
