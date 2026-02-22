@@ -14,7 +14,9 @@
   --cq-soft:#f8fafc;
 }
 
-/* Base */
+/* =========================
+   Base
+========================= */
 .ff-bg{
   min-height: 100vh;
   background: var(--cq-bg);
@@ -87,7 +89,9 @@
   gap: 14px;
 }
 
-/* Cards */
+/* =========================
+   Cards
+========================= */
 .ff-card{
   background: var(--cq-card);
   border: 1px solid var(--cq-border);
@@ -119,7 +123,12 @@
   font-size: 13px;
 }
 
-/* Layout */
+.ff-mt{ margin-top: 12px; }
+.ff-mt-sm{ margin-top: 8px; }
+
+/* =========================
+   Layout
+========================= */
 .ff-grid2{
   display:grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -177,19 +186,45 @@
   font-size: 13px;
 }
 
-.ff-mt{ margin-top: 12px; }
-.ff-mt-sm{ margin-top: 8px; }
-
-/* Fields */
+/* =========================
+   Fields
+========================= */
 .ff-field{
   display:grid;
   gap: 6px;
 }
 
-.ff-label{
+/* ✅ label aligné pro (texte gauche / icône droite) */
+.ff-field .ff-label{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+
   font-size: 13px;
   font-weight: 800;
   color: var(--cq-text);
+}
+
+.ff-label__left{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ff-required{
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.ff-hint{
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cq-muted);
 }
 
 .ff-input, .ff-select{
@@ -208,7 +243,9 @@
   box-shadow: 0 0 0 4px rgba(0,74,173,.12);
 }
 
-/* Checkbox */
+/* =========================
+   Checkbox / Radio
+========================= */
 .ff-check{
   display:flex;
   align-items:flex-start;
@@ -221,7 +258,6 @@
 
 .ff-checkbox{ margin-top: 2px; }
 
-/* Yes/No */
 .ff-yn{
   display:grid;
   gap: 6px;
@@ -242,7 +278,9 @@
   font-weight: 700;
 }
 
-/* Buttons */
+/* =========================
+   Buttons
+========================= */
 .ff-btn{
   border: none;
   cursor:pointer;
@@ -309,16 +347,14 @@
   line-height: 1.4;
 }
 
-/* ===============================
-   Documents / Upload (Dropzone + liste)
-================================ */
-
+/* =========================
+   Docs / Upload
+========================= */
 .ff-docs{
   display:grid;
   gap: 12px;
 }
 
-/* Dropzone "simple" (si tu l’utilises) */
 .ff-drop{
   border: 2px dashed #cbd5e1;
   border-radius: 16px;
@@ -373,7 +409,6 @@
   margin: 0;
 }
 
-/* Liste des fichiers */
 .ff-files{
   display:grid;
   gap: 10px;
@@ -437,7 +472,7 @@
   font-weight: 800;
 }
 
-/* Dropzone "grand" (classe utilisée dans ton code: ff-dropzone) */
+/* Dropzone grand */
 .ff-dropzone{
   border: 2px dashed rgba(0, 0, 0, 0.18);
   border-radius: 16px;
@@ -475,7 +510,162 @@
   color: var(--cq-muted);
 }
 
-/* Responsive */
+/* =========================
+   Steps (horizontal + scroll)
+========================= */
+.ff-steps{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding: 10px;
+  margin: 12px 0 14px;
+
+  border-radius: 14px;
+  background: var(--cq-soft);
+  border: 1px solid var(--cq-border);
+}
+
+.ff-steps::-webkit-scrollbar{ height: 8px; }
+.ff-steps::-webkit-scrollbar-thumb{
+  background: rgba(15,23,42,.12);
+  border-radius: 999px;
+}
+
+.ff-step{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border:1px solid #e6e8ee;
+  background:#fff;
+  border-radius:14px;
+  font-weight:800;
+  font-size:13px;
+  opacity:.65;
+  white-space: nowrap;
+}
+
+.ff-step-num{
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #d7dbe6;
+  font-weight:900;
+  font-size:12px;
+  opacity:.85;
+}
+
+.ff-step-active{
+  opacity:1;
+  border-color: rgba(0,74,173,.25);
+  background: #eef4ff;
+}
+
+.ff-step-active .ff-step-num{
+  border-color: var(--cq-blue);
+  color: var(--cq-blue);
+  opacity:1;
+}
+
+/* =========================
+   Mark Icon (CSS version)
+   (Si tu utilises .mark-icon dans d’autres composants)
+========================= */
+.mark-icon{
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  border: 1px solid var(--cq-border);
+  background: #fff;
+  color: var(--cq-muted);
+  flex: 0 0 auto;
+}
+
+.mark-icon--ok{
+  background: #ecfdf5;
+  border-color: rgba(22,163,74,.25);
+  color: #16a34a;
+}
+
+.mark-icon--bad{
+  background: #fef2f2;
+  border-color: rgba(220,38,38,.25);
+  color: #dc2626;
+}
+
+.mark-icon--todo{
+  background: #f8fafc;
+  border-color: rgba(100,116,139,.25);
+  color: #64748b;
+}
+
+/* =========================
+   Validation (VERT / ROUGE)
+========================= */
+.ff-valid .ff-input,
+.ff-valid .ff-select{
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.ff-invalid .ff-input,
+.ff-invalid .ff-select{
+  border: 2px solid #dc2626;
+  background: #fef2f2;
+}
+
+.ff-valid .ff-input:focus,
+.ff-valid .ff-select:focus{
+  border-color: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22,163,74,.15);
+}
+
+.ff-invalid .ff-input:focus,
+.ff-invalid .ff-select:focus{
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220,38,38,.15);
+}
+
+.ff-valid.ff-check .ff-checkbox{
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
+}
+
+.ff-invalid.ff-check .ff-checkbox{
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+.ff-valid .ff-yn-row{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.ff-invalid .ff-yn-row{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid #dc2626;
+  background: #fef2f2;
+}
+
+/* =========================
+   Responsive
+========================= */
 @media (max-width: 860px){
   .ff-grid4{
     grid-template-columns: repeat(2, minmax(0,1fr));
@@ -514,353 +704,43 @@
   }
 }
 
-.ff-steps{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin: 12px 0 18px;
-}
-
-.ff-step{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 12px;
-  border:1px solid #e5e7eb;
-  background:#fff;
-  border-radius:14px;
-  font-weight:700;
-  font-size:14px;
-  opacity:.65;
-}
-
-.ff-step-num{
-  width:26px;
-  height:26px;
-  border-radius:999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:1px solid #e5e7eb;
-  font-weight:900;
-  opacity:.8;
-}
-
-.ff-step-active{
-  opacity:1;
-  border-color:#004aad;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-}
-
-.ff-step-active .ff-step-num{
-  border-color:#004aad;
-  opacity:1;
-}
-
-/* ===============================
-   ✅ Validation (VERT / ROUGE)
-   classes ajoutées par ui.tsx:
-   .ff-valid / .ff-invalid
-================================ */
-
-.ff-valid .ff-input,
-.ff-valid .ff-select{
-  border: 2px solid #16a34a;
-  background: #f0fdf4;
-}
-
-.ff-invalid .ff-input,
-.ff-invalid .ff-select{
-  border: 2px solid #dc2626;
-  background: #fef2f2;
-}
-
-/* Focus */
-.ff-valid .ff-input:focus,
-.ff-valid .ff-select:focus{
-  border-color: #16a34a;
-  box-shadow: 0 0 0 4px rgba(22,163,74,.15);
-}
-
-.ff-invalid .ff-input:focus,
-.ff-invalid .ff-select:focus{
-  border-color: #dc2626;
-  box-shadow: 0 0 0 4px rgba(220,38,38,.15);
-}
-
-/* ✅ Checkbox */
-.ff-valid.ff-check .ff-checkbox{
-  outline: 2px solid #16a34a;
-  outline-offset: 2px;
-}
-
-.ff-invalid.ff-check .ff-checkbox{
-  outline: 2px solid #dc2626;
-  outline-offset: 2px;
-}
-
-/* ✅ Yes/No */
-.ff-valid .ff-yn-row{
+/* =========================
+   Progression horizontale (T1)
+========================= */
+.ff-progressbar{
   padding: 10px 12px;
-  border-radius: 14px;
-  border: 2px solid #16a34a;
-  background: #f0fdf4;
-}
-
-.ff-invalid .ff-yn-row{
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 2px solid #dc2626;
-  background: #fef2f2;
-}
-
-/* ✅ Texte d’aide */
-.ff-hint{
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--cq-muted);
-}
-
-/* ✅ wrapper texte + MarkIcon inline (à utiliser dans TSX) */
-.ff-label-inline{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-}
-
-/* ✅ MarkIcon (span) */
-.mark-icon{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:18px;
-  height:18px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:900;
-  line-height:1;
-  flex: 0 0 auto;
-  vertical-align: middle;
-}
-
-/* états */
-.mark-icon--ok{
-  color:#14532d;
-  background:#dcfce7;
-  border:1px solid #16a34a;
-}
-
-.mark-icon--bad{
-  color:#7f1d1d;
-  background:#fee2e2;
-  border:1px solid #dc2626;
-}
-
-.mark-icon--todo{
-  color:#1f2937;
-  background:#f3f4f6;
-  border:1px solid rgba(0,0,0,.18);
-}
-/* ===============================
-   ✅ MarkIcon (pro)
-================================ */
-.mark-icon{
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
-  border: 1px solid var(--cq-border);
-  background: #fff;
-  color: var(--cq-muted);
-  flex: 0 0 auto;
-}
-
-/* états */
-.mark-icon--ok{
-  background: #ecfdf5;
-  border-color: rgba(22,163,74,.25);
-  color: #16a34a;
-}
-
-.mark-icon--bad{
-  background: #fef2f2;
-  border-color: rgba(220,38,38,.25);
-  color: #dc2626;
-}
-
-.mark-icon--todo{
-  background: #f8fafc;
-  border-color: rgba(100,116,139,.25);
-  color: #64748b;
-}
-
-/* ===============================
-   ✅ Label row (alignement pro)
-================================ */
-.ff-label{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-}
-
-.ff-label__left{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.ff-required{
-  color: #dc2626;
-  font-weight: 900;
-}
-/* =========================================================
-   ✅ Fix final : Labels + MarkIcon + Steps horizontaux
-   À coller à la fin du CSS (override propre)
-========================================================= */
-
-/* ---- LABELS (1 seule version) ---- */
-.ff-field .ff-label{
-  /* texte */
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--cq-text);
-
-  /* layout */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  margin: 0;
-}
-
-.ff-label__left{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.ff-required{
-  color: #dc2626;
-  font-weight: 900;
-}
-
-/* petite aide */
-.ff-hint{
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--cq-muted);
-}
-
-/* ---- MARK ICON (1 seule version) ---- */
-.mark-icon{
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
-  border: 1px solid var(--cq-border);
-  background: #fff;
-  color: var(--cq-muted);
-  flex: 0 0 auto;
-}
-
-.mark-icon--ok{
-  background: #ecfdf5;
-  border-color: rgba(22,163,74,.25);
-  color: #16a34a;
-}
-
-.mark-icon--bad{
-  background: #fef2f2;
-  border-color: rgba(220,38,38,.25);
-  color: #dc2626;
-}
-
-.mark-icon--todo{
-  background: #f8fafc;
-  border-color: rgba(100,116,139,.25);
-  color: #64748b;
-}
-
-/* ---- STEPS : version TA (horizontal + scroll) ---- */
-.ff-steps{
-  display:flex;
-  align-items:center;
-  gap:10px;
-
-  /* IMPORTANT: pas de wrap */
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-
-  padding: 10px;
-  margin: 12px 0 14px;
-
+  margin: 0 0 12px;
   border-radius: 14px;
   background: var(--cq-soft);
   border: 1px solid var(--cq-border);
-}
-
-.ff-steps::-webkit-scrollbar{ height: 8px; }
-.ff-steps::-webkit-scrollbar-thumb{
-  background: rgba(15,23,42,.12);
-  border-radius: 999px;
-}
-
-.ff-step{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
+}
 
-  padding:10px 14px;
-  border:1px solid #e6e8ee;
-  background:#fff;
-  border-radius:14px;
-
-  font-weight:800;
+.ff-progressbar-title{
   font-size:13px;
-
-  opacity:.65;
-  white-space: nowrap;
+  font-weight:900;
+  color: var(--cq-text);
+  white-space:nowrap;
 }
 
-.ff-step-num{
-  width:22px;
-  height:22px;
-  border-radius:999px;
+.ff-progress-items{
   display:flex;
   align-items:center;
-  justify-content:center;
-  border:1px solid #d7dbe6;
-  font-weight:900;
-  font-size:12px;
-  opacity:.85;
+  gap:14px;
+  overflow-x:auto;
+  flex-wrap:nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
 }
 
-.ff-step-active{
-  opacity:1;
-  border-color: rgba(0,74,173,.25);
-  background: #eef4ff;
-}
-
-.ff-step-active .ff-step-num{
-  border-color: var(--cq-blue);
-  color: var(--cq-blue);
-  opacity:1;
+.ff-progress-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:700;
+  color: var(--cq-text);
 }
