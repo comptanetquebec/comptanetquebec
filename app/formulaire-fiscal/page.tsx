@@ -1131,224 +1131,226 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     }
   }, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type, t]);
 
-  /* =========================== RENDER =========================== */
-  return (
-    <main className="ff-bg">
-      <div className="ff-container">
-        <header className="ff-header">
-          <div className="ff-brand">
-            <Image
-              src="/logo-cq.png"
-              alt="ComptaNet Québec"
-              width={120}
-              height={40}
-              priority
-              style={{ height: 40, width: "auto" }}
-            />
-            <div className="ff-brand-text">
-              <strong>ComptaNet Québec</strong>
-              <span>{L.formName}</span>
-            </div>
+ /* =========================== RENDER =========================== */
+return (
+  <main className="ff-bg">
+    <div className="ff-container">
+      <header className="ff-header">
+        <div className="ff-brand">
+          <Image
+            src="/logo-cq.png"
+            alt="ComptaNet Québec"
+            width={120}
+            height={40}
+            priority
+            style={{ height: 40, width: "auto" }}
+          />
+          <div className="ff-brand-text">
+            <strong>ComptaNet Québec</strong>
+            <span>{L.formName}</span>
           </div>
-
-          <button className="ff-btn ff-btn-outline" type="button" onClick={logout}>
-            {L.disconnect}
-          </button>
-        </header>
-
-        <div className="ff-title">
-          <h1>
-            {L.formName} – {formTitle}
-          </h1>
-          <p>{L.intro}</p>
         </div>
 
-         <div className="ff-progressbar">
-  <div className="ff-progressbar-title">{t("Progression", "Progress", "Progreso")}</div>
+        <button className="ff-btn ff-btn-outline" type="button" onClick={logout}>
+          {L.disconnect}
+        </button>
+      </header>
 
-  <div className="ff-progress-items">
-    <div className="ff-progress-item">
-      <MarkIcon mark={status.client.block} />
-      <span>{t("Client", "Client", "Cliente")}</span>
-    </div>
-
-    <div className="ff-progress-item">
-      <MarkIcon mark={status.spouse.block} />
-      <span>{t("Conjoint", "Spouse", "Cónyuge")}</span>
-    </div>
-
-    <div className="ff-progress-item">
-      <MarkIcon mark={status.meds.block} />
-      <span>{t("Assurance médicaments", "Drug insurance", "Seguro de medicamentos")}</span>
-    </div>
-
-    <div className="ff-progress-item">
-      <MarkIcon mark={status.dependants.block} />
-      <span>{t("Personnes à charge", "Dependants", "Dependientes")}</span>
-    </div>
-
-    <div className="ff-progress-item">
-      <MarkIcon mark={status.questions.block} />
-      <span>{t("Questions", "Questions", "Preguntas")}</span>
-    </div>
-
-    <div className="ff-progress-item">
-      <MarkIcon mark={status.confirms.block} />
-      <span>{t("Confirmations", "Confirmations", "Confirmaciones")}</span>
-    </div>
-  </div>
-</div>
-          <ClientSection
-            L={L}
-            PROVINCES={PROVINCES}
-            prenom={prenom}
-            setPrenom={setPrenom}
-            nom={nom}
-            setNom={setNom}
-            nas={nas}
-            setNas={(v: string) => setNas(formatNASInput(v))}
-            dob={dob}
-            setDob={(v: string) => setDob(formatDateInput(v))}
-            etatCivil={etatCivil}
-            setEtatCivil={setEtatCivil}
-            etatCivilChange={etatCivilChange}
-            setEtatCivilChange={setEtatCivilChange}
-            ancienEtatCivil={ancienEtatCivil}
-            setAncienEtatCivil={setAncienEtatCivil}
-            dateChangementEtatCivil={dateChangementEtatCivil}
-            setDateChangementEtatCivil={(v: string) => setDateChangementEtatCivil(formatDateInput(v))}
-            tel={tel}
-            setTel={(v: string) => setTel(formatPhoneInput(v))}
-            telCell={telCell}
-            setTelCell={(v: string) => setTelCell(formatPhoneInput(v))}
-            courriel={courriel}
-            setCourriel={setCourriel}
-            adresse={adresse}
-            setAdresse={setAdresse}
-            app={app}
-            setApp={setApp}
-            ville={ville}
-            setVille={setVille}
-            province={province}
-            setProvince={setProvince}
-            codePostal={codePostal}
-            setCodePostal={(v: string) => setCodePostal(formatPostalInput(v))}
-          />
-
-          <SpouseSection
-            L={L}
-            PROVINCES={PROVINCES}
-            aUnConjoint={aUnConjoint}
-            setAUnConjoint={setAUnConjoint}
-            traiterConjoint={traiterConjoint}
-            setTraiterConjoint={setTraiterConjoint}
-            revenuNetConjoint={revenuNetConjoint}
-            setRevenuNetConjoint={setRevenuNetConjoint}
-            prenomConjoint={prenomConjoint}
-            setPrenomConjoint={setPrenomConjoint}
-            nomConjoint={nomConjoint}
-            setNomConjoint={setNomConjoint}
-            nasConjoint={nasConjoint}
-            setNasConjoint={(v: string) => setNasConjoint(formatNASInput(v))}
-            dobConjoint={dobConjoint}
-            setDobConjoint={(v: string) => setDobConjoint(formatDateInput(v))}
-            telConjoint={telConjoint}
-            setTelConjoint={(v: string) => setTelConjoint(formatPhoneInput(v))}
-            telCellConjoint={telCellConjoint}
-            setTelCellConjoint={(v: string) => setTelCellConjoint(formatPhoneInput(v))}
-            courrielConjoint={courrielConjoint}
-            setCourrielConjoint={setCourrielConjoint}
-            adresseConjointeIdentique={adresseConjointeIdentique}
-            setAdresseConjointeIdentique={setAdresseConjointeIdentique}
-            adresseConjoint={adresseConjoint}
-            setAdresseConjoint={setAdresseConjoint}
-            appConjoint={appConjoint}
-            setAppConjoint={setAppConjoint}
-            villeConjoint={villeConjoint}
-            setVilleConjoint={setVilleConjoint}
-            provinceConjoint={provinceConjoint}
-            setProvinceConjoint={setProvinceConjoint}
-            codePostalConjoint={codePostalConjoint}
-            setCodePostalConjoint={(v: string) => setCodePostalConjoint(formatPostalInput(v))}
-          />
-
-          <MedsSection
-            L={L}
-            show={province === "QC"}
-            aUnConjoint={aUnConjoint}
-            assuranceMedsClient={assuranceMedsClient}
-            setAssuranceMedsClient={setAssuranceMedsClient}
-            assuranceMedsClientPeriodes={assuranceMedsClientPeriodes}
-            setAssuranceMedsClientPeriodes={(updater: Periode[] | ((p: Periode[]) => Periode[])) => {
-              setAssuranceMedsClientPeriodes((prev) => (typeof updater === "function" ? updater(prev) : updater));
-            }}
-            assuranceMedsConjoint={assuranceMedsConjoint}
-            setAssuranceMedsConjoint={setAssuranceMedsConjoint}
-            assuranceMedsConjointPeriodes={assuranceMedsConjointPeriodes}
-            setAssuranceMedsConjointPeriodes={(updater: Periode[] | ((p: Periode[]) => Periode[])) => {
-              setAssuranceMedsConjointPeriodes((prev) => (typeof updater === "function" ? updater(prev) : updater));
-            }}
-          />
-
-          <DependantsSection
-            L={L}
-            show={showEnfantsSection}
-            enfants={enfants}
-            ajouterEnfant={ajouterEnfant}
-            updateEnfant={(i, field, value) => {
-              if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
-              if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
-              return updateEnfant(i, field, value);
-            }}
-            removeEnfant={removeEnfant}
-          />
-
-          <QuestionsSection
-            L={L}
-            anneeImposition={anneeImposition}
-            setAnneeImposition={setAnneeImposition}
-            habiteSeulTouteAnnee={habiteSeulTouteAnnee}
-            setHabiteSeulTouteAnnee={setHabiteSeulTouteAnnee}
-            nbPersonnesMaison3112={nbPersonnesMaison3112}
-            setNbPersonnesMaison3112={(v: string) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
-            biensEtranger100k={biensEtranger100k}
-            setBiensEtranger100k={setBiensEtranger100k}
-            citoyenCanadien={citoyenCanadien}
-            setCitoyenCanadien={setCitoyenCanadien}
-            nonResident={nonResident}
-            setNonResident={setNonResident}
-            maisonAcheteeOuVendue={maisonAcheteeOuVendue}
-            setMaisonAcheteeOuVendue={setMaisonAcheteeOuVendue}
-            appelerTechnicien={appelerTechnicien}
-            setAppelerTechnicien={setAppelerTechnicien}
-            copieImpots={copieImpots}
-            setCopieImpots={setCopieImpots}
-          />
-
-          <ConfirmationsSection
-            L={L}
-            vExactitude={vExactitude}
-            setVExactitude={setVExactitude}
-            vDossierComplet={vDossierComplet}
-            setVDossierComplet={setVDossierComplet}
-            vFraisVariables={vFraisVariables}
-            setVFraisVariables={setVFraisVariables}
-            vDelais={vDelais}
-            setVDelais={setVDelais}
-          />
-
-          <DocsSummary
-            L={L}
-            docsLoading={docsLoading}
-            docsCount={docsCount}
-            docs={docs}
-            openDoc={openDoc}
-            canContinue={canContinue}
-            submitting={submitting}
-            goToDepotDocuments={goToDepotDocuments}
-          />
-        </form>
+      <div className="ff-title">
+        <h1>
+          {L.formName} – {formTitle}
+        </h1>
+        <p>{L.intro}</p>
       </div>
-    </main>
-  );
-    }
+
+      <div className="ff-progressbar">
+        <div className="ff-progressbar-title">{t("Progression", "Progress", "Progreso")}</div>
+
+        <div className="ff-progress-items">
+          <div className="ff-progress-item">
+            <MarkIcon mark={status.client.block} />
+            <span>{t("Client", "Client", "Cliente")}</span>
+          </div>
+
+          <div className="ff-progress-item">
+            <MarkIcon mark={status.spouse.block} />
+            <span>{t("Conjoint", "Spouse", "Cónyuge")}</span>
+          </div>
+
+          <div className="ff-progress-item">
+            <MarkIcon mark={status.meds.block} />
+            <span>{t("Assurance médicaments", "Drug insurance", "Seguro de medicamentos")}</span>
+          </div>
+
+          <div className="ff-progress-item">
+            <MarkIcon mark={status.dependants.block} />
+            <span>{t("Personnes à charge", "Dependants", "Dependientes")}</span>
+          </div>
+
+          <div className="ff-progress-item">
+            <MarkIcon mark={status.questions.block} />
+            <span>{t("Questions", "Questions", "Preguntas")}</span>
+          </div>
+
+          <div className="ff-progress-item">
+            <MarkIcon mark={status.confirms.block} />
+            <span>{t("Confirmations", "Confirmations", "Confirmaciones")}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ IMPORTANT: tu avais </form> mais pas de <form> */}
+      <form className="ff-form" onSubmit={(e) => e.preventDefault()}>
+        <ClientSection
+          L={L}
+          PROVINCES={PROVINCES}
+          prenom={prenom}
+          setPrenom={setPrenom}
+          nom={nom}
+          setNom={setNom}
+          nas={nas}
+          setNas={(v: string) => setNas(formatNASInput(v))}
+          dob={dob}
+          setDob={(v: string) => setDob(formatDateInput(v))}
+          etatCivil={etatCivil}
+          setEtatCivil={setEtatCivil}
+          etatCivilChange={etatCivilChange}
+          setEtatCivilChange={setEtatCivilChange}
+          ancienEtatCivil={ancienEtatCivil}
+          setAncienEtatCivil={setAncienEtatCivil}
+          dateChangementEtatCivil={dateChangementEtatCivil}
+          setDateChangementEtatCivil={(v: string) => setDateChangementEtatCivil(formatDateInput(v))}
+          tel={tel}
+          setTel={(v: string) => setTel(formatPhoneInput(v))}
+          telCell={telCell}
+          setTelCell={(v: string) => setTelCell(formatPhoneInput(v))}
+          courriel={courriel}
+          setCourriel={setCourriel}
+          adresse={adresse}
+          setAdresse={setAdresse}
+          app={app}
+          setApp={setApp}
+          ville={ville}
+          setVille={setVille}
+          province={province}
+          setProvince={setProvince}
+          codePostal={codePostal}
+          setCodePostal={(v: string) => setCodePostal(formatPostalInput(v))}
+        />
+
+        <SpouseSection
+          L={L}
+          PROVINCES={PROVINCES}
+          aUnConjoint={aUnConjoint}
+          setAUnConjoint={setAUnConjoint}
+          traiterConjoint={traiterConjoint}
+          setTraiterConjoint={setTraiterConjoint}
+          revenuNetConjoint={revenuNetConjoint}
+          setRevenuNetConjoint={setRevenuNetConjoint}
+          prenomConjoint={prenomConjoint}
+          setPrenomConjoint={setPrenomConjoint}
+          nomConjoint={nomConjoint}
+          setNomConjoint={setNomConjoint}
+          nasConjoint={nasConjoint}
+          setNasConjoint={(v: string) => setNasConjoint(formatNASInput(v))}
+          dobConjoint={dobConjoint}
+          setDobConjoint={(v: string) => setDobConjoint(formatDateInput(v))}
+          telConjoint={telConjoint}
+          setTelConjoint={(v: string) => setTelConjoint(formatPhoneInput(v))}
+          telCellConjoint={telCellConjoint}
+          setTelCellConjoint={(v: string) => setTelCellConjoint(formatPhoneInput(v))}
+          courrielConjoint={courrielConjoint}
+          setCourrielConjoint={setCourrielConjoint}
+          adresseConjointeIdentique={adresseConjointeIdentique}
+          setAdresseConjointeIdentique={setAdresseConjointeIdentique}
+          adresseConjoint={adresseConjoint}
+          setAdresseConjoint={setAdresseConjoint}
+          appConjoint={appConjoint}
+          setAppConjoint={setAppConjoint}
+          villeConjoint={villeConjoint}
+          setVilleConjoint={setVilleConjoint}
+          provinceConjoint={provinceConjoint}
+          setProvinceConjoint={setProvinceConjoint}
+          codePostalConjoint={codePostalConjoint}
+          setCodePostalConjoint={(v: string) => setCodePostalConjoint(formatPostalInput(v))}
+        />
+
+        <MedsSection
+          L={L}
+          show={province === "QC"}
+          aUnConjoint={aUnConjoint}
+          assuranceMedsClient={assuranceMedsClient}
+          setAssuranceMedsClient={setAssuranceMedsClient}
+          assuranceMedsClientPeriodes={assuranceMedsClientPeriodes}
+          setAssuranceMedsClientPeriodes={(updater: Periode[] | ((p: Periode[]) => Periode[])) => {
+            setAssuranceMedsClientPeriodes((prev) => (typeof updater === "function" ? updater(prev) : updater));
+          }}
+          assuranceMedsConjoint={assuranceMedsConjoint}
+          setAssuranceMedsConjoint={setAssuranceMedsConjoint}
+          assuranceMedsConjointPeriodes={assuranceMedsConjointPeriodes}
+          setAssuranceMedsConjointPeriodes={(updater: Periode[] | ((p: Periode[]) => Periode[])) => {
+            setAssuranceMedsConjointPeriodes((prev) => (typeof updater === "function" ? updater(prev) : updater));
+          }}
+        />
+
+        <DependantsSection
+          L={L}
+          show={showEnfantsSection}
+          enfants={enfants}
+          ajouterEnfant={ajouterEnfant}
+          updateEnfant={(i, field, value) => {
+            if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
+            if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
+            return updateEnfant(i, field, value);
+          }}
+          removeEnfant={removeEnfant}
+        />
+
+        <QuestionsSection
+          L={L}
+          anneeImposition={anneeImposition}
+          setAnneeImposition={setAnneeImposition}
+          habiteSeulTouteAnnee={habiteSeulTouteAnnee}
+          setHabiteSeulTouteAnnee={setHabiteSeulTouteAnnee}
+          nbPersonnesMaison3112={nbPersonnesMaison3112}
+          setNbPersonnesMaison3112={(v: string) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
+          biensEtranger100k={biensEtranger100k}
+          setBiensEtranger100k={setBiensEtranger100k}
+          citoyenCanadien={citoyenCanadien}
+          setCitoyenCanadien={setCitoyenCanadien}
+          nonResident={nonResident}
+          setNonResident={setNonResident}
+          maisonAcheteeOuVendue={maisonAcheteeOuVendue}
+          setMaisonAcheteeOuVendue={setMaisonAcheteeOuVendue}
+          appelerTechnicien={appelerTechnicien}
+          setAppelerTechnicien={setAppelerTechnicien}
+          copieImpots={copieImpots}
+          setCopieImpots={setCopieImpots}
+        />
+
+        <ConfirmationsSection
+          L={L}
+          vExactitude={vExactitude}
+          setVExactitude={setVExactitude}
+          vDossierComplet={vDossierComplet}
+          setVDossierComplet={setVDossierComplet}
+          vFraisVariables={vFraisVariables}
+          setVFraisVariables={setVFraisVariables}
+          vDelais={vDelais}
+          setVDelais={setVDelais}
+        />
+
+        <DocsSummary
+          L={L}
+          docsLoading={docsLoading}
+          docsCount={docsCount}
+          docs={docs}
+          openDoc={openDoc}
+          canContinue={canContinue}
+          submitting={submitting}
+          goToDepotDocuments={goToDepotDocuments}
+        />
+      </form>
+    </div>
+  </main>
+);
