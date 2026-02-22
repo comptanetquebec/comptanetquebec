@@ -1164,58 +1164,41 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
         </div>
 
         {msg && (
-          <div className="ff-card" style={{ padding: 14 }}>
-            {msg}
-          </div>
-        )}
+         <div className="ff-progressbar">
+  <div className="ff-progressbar-title">{t("Progression", "Progress", "Progreso")}</div>
 
-        <InlineErrors
-          id="ff-inline-errors"
-          title={t("À corriger avant de continuer", "Fix before continuing", "Corrija antes de continuar")}
-          errors={step1Errors}
-        />
+  <div className="ff-progress-items">
+    <div className="ff-progress-item">
+      <MarkIcon mark={status.client.block} />
+      <span>{t("Client", "Client", "Cliente")}</span>
+    </div>
 
-        <Steps step={1} lang={lang} />
+    <div className="ff-progress-item">
+      <MarkIcon mark={status.spouse.block} />
+      <span>{t("Conjoint", "Spouse", "Cónyuge")}</span>
+    </div>
 
-        <form className="ff-form" onSubmit={(e) => e.preventDefault()}>
-          <div className="ff-card" style={{ padding: 14, marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <div style={{ fontWeight: 800 }}>{t("Statut du dossier", "File status", "Estado del expediente")}</div>
-              <MarkIcon mark={canContinue ? "ok" : "bad"} />
-            </div>
+    <div className="ff-progress-item">
+      <MarkIcon mark={status.meds.block} />
+      <span>{t("Assurance médicaments", "Drug insurance", "Seguro de medicamentos")}</span>
+    </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginTop: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{t("Client", "Client", "Cliente")}</span>
-                <MarkIcon mark={status.client.block} />
-              </div>
+    <div className="ff-progress-item">
+      <MarkIcon mark={status.dependants.block} />
+      <span>{t("Personnes à charge", "Dependants", "Dependientes")}</span>
+    </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{t("Conjoint", "Spouse", "Cónyuge")}</span>
-                <MarkIcon mark={status.spouse.block} />
-              </div>
+    <div className="ff-progress-item">
+      <MarkIcon mark={status.questions.block} />
+      <span>{t("Questions", "Questions", "Preguntas")}</span>
+    </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{t("Assurance médicaments", "Drug insurance", "Seguro de medicamentos")}</span>
-                <MarkIcon mark={status.meds.block} />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{t("Personnes à charge", "Dependants", "Dependientes")}</span>
-                <MarkIcon mark={status.dependants.block} />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{t("Questions", "Questions", "Preguntas")}</span>
-                <MarkIcon mark={status.questions.block} />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>{t("Confirmations", "Confirmations", "Confirmaciones")}</span>
-                <MarkIcon mark={status.confirms.block} />
-              </div>
-            </div>
-          </div>
+    <div className="ff-progress-item">
+      <MarkIcon mark={status.confirms.block} />
+      <span>{t("Confirmations", "Confirmations", "Confirmaciones")}</span>
+    </div>
+  </div>
+</div>
 
           <ClientSection
             L={L}
