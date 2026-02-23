@@ -34,20 +34,14 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
-function LabelWithMark({
-  text,
-  mark,
-}: {
-  text: React.ReactNode;
-  mark: Mark;
-}) {
+function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   return (
-    <>
-      {text} <MarkIcon mark={mark} />
-    </>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ minWidth: 0 }}>{text}</span>
+      <MarkIcon mark={mark} />
+    </span>
   );
 }
-
 /* ===========================
    Normalizers & validators
 =========================== */
