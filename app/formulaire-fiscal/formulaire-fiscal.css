@@ -831,3 +831,43 @@
 .ff-field .ff-label::before{
   content: none !important;
 }
+/* =========================================================
+   FIX BÉTON — ✓/✕ collés au libellé (comme ta 1ère image)
+   (à coller tout en bas du fichier CSS)
+========================================================= */
+
+/* 1) Reset complet du label (sinon une règle grid/absolute gagne) */
+.ff-field > label.ff-label{
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: var(--cq-text) !important;
+  margin: 0 !important;
+}
+
+/* 2) Le texte du label (et étoile) en inline-flex */
+.ff-field > label.ff-label .ff-label__left{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+/* 3) Si ton ✓/✕ est un vrai élément (span/div) dans le label,
+      on empêche “margin-left:auto” ou “position:absolute” */
+.ff-field > label.ff-label > *{
+  position: static !important;
+  margin-left: 0 !important;
+}
+
+/* 4) Si ton ✓/✕ est injecté via pseudo-élément à droite, on le tue */
+.ff-field::after,
+.ff-field::before,
+.ff-field > label.ff-label::after,
+.ff-field > label.ff-label::before{
+  content: none !important;
+}
