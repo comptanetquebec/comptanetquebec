@@ -15,17 +15,26 @@ export type GoogleReviewText = {
 export type GoogleReviewItem = {
   name: string;
   rating: 5 | 4 | 3 | 2 | 1;
-  text?: GoogleReviewText; // ✅ maintenant multilingue
+  text?: GoogleReviewText;
 };
 
+// ✅ ÉTOILES PRO : jaunes (★) + grises (★)
 function Stars({ rating }: { rating: number }) {
   const r = Math.max(0, Math.min(5, Math.round(rating)));
-  const full = "★".repeat(r);
-  const empty = "☆".repeat(5 - r);
+
   return (
     <span className={styles.stars} aria-label={`${r} / 5`}>
-      {full}
-      {empty}
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span
+          key={i}
+          style={{
+            color: i < r ? "#fbbf24" : "#e5e7eb",
+          }}
+          aria-hidden="true"
+        >
+          ★
+        </span>
+      ))}
     </span>
   );
 }
@@ -86,7 +95,6 @@ export default function GoogleReviews(props: {
   }, [lang, title]);
 
   const summary = T.summary(rating, count);
-
   const displayItems = items.slice(0, Math.max(0, maxItems));
 
   return (
