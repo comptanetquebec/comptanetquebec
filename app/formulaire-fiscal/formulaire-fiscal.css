@@ -798,3 +798,36 @@
   font-weight: 600;       /* moins bold */
   line-height: 1;
 }
+/* ==========================================
+   OVERRIDE FORCE — ✓/✕ collés au libellé
+   (à coller tout en bas du CSS)
+========================================== */
+
+/* 1) Tue le layout en 2 colonnes (grid) */
+.ff-field .ff-label{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  width: auto !important;              /* empêche l’étirement pleine largeur */
+  grid-template-columns: unset !important;
+}
+
+/* 2) Force la zone texte + icône à rester collée */
+.ff-field .ff-label__left{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* 3) Si l’icône a un “push à droite” (margin-left:auto), on l’annule */
+.ff-field .ff-label *{
+  margin-left: initial !important;
+}
+
+/* 4) Si l’icône est injectée par pseudo-élément à droite, on l’annule */
+.ff-field::after,
+.ff-field .ff-label::after,
+.ff-field .ff-label::before{
+  content: none !important;
+}
