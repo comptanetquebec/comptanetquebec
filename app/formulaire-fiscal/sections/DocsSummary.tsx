@@ -55,6 +55,16 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
+/** ✅ Texte + icône collée (comme image #1) */
+function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ minWidth: 0 }}>{text}</span>
+      <MarkIcon mark={mark} />
+    </span>
+  );
+}
+
 export default function DocsSummary(props: {
   L: CopyPack;
   docsLoading: boolean;
@@ -66,15 +76,27 @@ export default function DocsSummary(props: {
   submitting: boolean;
   goToDepotDocuments: () => void;
 }) {
-  const { L, docsLoading, docsCount, canContinue, docs, openDoc, submitting, goToDepotDocuments } =
-    props;
+  const {
+    L,
+    docsLoading,
+    docsCount,
+    canContinue,
+    docs,
+    openDoc,
+    submitting,
+    goToDepotDocuments,
+  } = props;
 
-  // Ici, le "vert/rouge" est basé sur la capacité de continuer (tes validations Step 1).
-  const mark: Mark = useMemo(() => (canContinue ? "ok" : "bad"), [canContinue]);
+  // ✅ vert/rouge basé sur "peut continuer"
+  const markContinue: Mark = useMemo(() => (canContinue ? "ok" : "bad"), [canContinue]);
+
+  // ✅ indicateur docs (optionnel) : vert si docs > 0
+  const markDocs: Mark = useMemo(() => (docsCount > 0 ? "ok" : "bad"), [docsCount]);
 
   return (
     <div className="ff-submit">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      {/* ✅ bouton + icône collée, pas “à droite loin” */}
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
         <button
           type="button"
           className="ff-btn ff-btn-primary ff-btn-big"
@@ -85,28 +107,32 @@ export default function DocsSummary(props: {
           {L.continue}
         </button>
 
-        <MarkIcon mark={mark} />
+        <MarkIcon mark={markContinue} />
       </div>
 
-      <div className="ff-muted" style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <span>
-          {docsLoading
-            ? L.docsLoading
-            : docsCount > 0
-            ? L.docsAlready(docsCount)
-            : canContinue
-            ? L.docsNext
-            : L.completeToContinue}
-        </span>
-
-        {/* Si tu veux aussi un indicateur docs (optionnel): vert si docs>0 sinon rouge,
-            MAIS ça ne doit pas bloquer (tu bloques déjà avec canContinue). */}
-        <MarkIcon mark={docsCount > 0 ? "ok" : "bad"} />
+      {/* ✅ phrase + icône collée */}
+      <div
+        className="ff-muted"
+        style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 12 }}
+      >
+        <LabelWithMark
+          text={
+            docsLoading
+              ? L.docsLoading
+              : docsCount > 0
+              ? L.docsAlready(docsCount)
+              : canContinue
+              ? L.docsNext
+              : L.completeToContinue
+          }
+          mark={markDocs}
+        />
       </div>
 
       {docsCount > 0 && (
         <div className="ff-mt">
-          <div className="ff-subtitle" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          {/* ✅ titre + icône collée */}
+          <div className="ff-subtitle" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
             <span>{L.docsTitle}</span>
             <MarkIcon mark="ok" />
           </div>
@@ -119,26 +145,32 @@ export default function DocsSummary(props: {
                 className="ff-btn ff-btn-outline"
                 onClick={() => openDoc(d)}
                 title={d.original_name}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                }}
               >
-                <span>{L.openDoc(d.original_name)}</span>
-                <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      fontWeight: 900,
-                      opacity: 0.6,
-                      border: "1px solid rgba(0,0,0,.18)",
-                      borderRadius: 999,
-                      width: 18,
-                      height: 18,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    ↗
-                  </span>
+                <span style={{ minWidth: 0 }}>{L.openDoc(d.original_name)}</span>
+
+                {/* (flèche ↗ à droite) */}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    fontWeight: 900,
+                    opacity: 0.6,
+                    border: "1px solid rgba(0,0,0,.18)",
+                    borderRadius: 999,
+                    width: 18,
+                    height: 18,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flex: "0 0 auto",
+                  }}
+                >
+                  ↗
                 </span>
               </button>
             ))}
