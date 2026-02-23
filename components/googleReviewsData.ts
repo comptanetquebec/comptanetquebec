@@ -8,13 +8,56 @@ export type GoogleReviewItem = {
 
 export const GOOGLE_REVIEWS: Record<Lang, GoogleReviewItem[]> = {
   fr: [
-    // Exemple (mets tes vrais avis)
-    { name: "Client", rating: 5, text: "Service rapide et professionnel." },
+    {
+      name: "Rebecca Huot",
+      rating: 5,
+      text: "",
+    },
+    {
+      name: "Charles Moreau",
+      rating: 5,
+      text: "Un excellent service, je recommande sans hésiter!",
+    },
+    {
+      name: "Kevin Mandeville",
+      rating: 5,
+      text: "Site internet très intuitif et facile à comprendre. C'est un réel avantage de pouvoir effectuer toutes les démarches entièrement à distance. Je recommande !",
+    },
   ],
+
   en: [
-    { name: "Client", rating: 5, text: "Fast and professional service." },
+    {
+      name: "Rebecca Huot",
+      rating: 5,
+      text: "",
+    },
+    {
+      name: "Charles Moreau",
+      rating: 5,
+      text: "Excellent service, I highly recommend it!",
+    },
+    {
+      name: "Kevin Mandeville",
+      rating: 5,
+      text: "Very intuitive and easy-to-understand website. Being able to complete everything entirely online is a real advantage. I recommend it!",
+    },
   ],
+
   es: [
-    { name: "Cliente", rating: 5, text: "Servicio rápido y profesional." },
+    {
+      name: "Rebecca Huot",
+      rating: 5,
+      text: "",
+    },
+    {
+      name: "Charles Moreau",
+      rating: 5,
+      text: "Excelente servicio, lo recomiendo sin dudarlo!",
+    },
+    {
+      name: "Kevin Mandeville",
+      rating: 5,
+      text: "Sitio web muy intuitivo y fácil de entender. Poder realizar todos los trámites completamente en línea es una gran ventaja. ¡Lo recomiendo!",
+    },
   ],
 };
