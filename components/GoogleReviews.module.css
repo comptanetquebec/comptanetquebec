@@ -177,3 +177,9 @@
   border-radius:10px !important;
   padding:8px 12px !important;
 }
+.stars{
+  font-size:16px;
+  letter-spacing:0.5px;
+  white-space:nowrap;
+  color: #fbbf24; /* ⭐ jaune (style Google) */
+}
