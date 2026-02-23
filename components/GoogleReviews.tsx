@@ -7,12 +7,13 @@ type Lang = "fr" | "en" | "es";
 
 export type GoogleReviewItem = {
   name: string;
-  rating: 5 | 4 | 3 | 2 | 1;
+  rating: 1 | 2 | 3 | 4 | 5;
   text?: string; // optionnel
 };
 
 function Stars({ rating }: { rating: number }) {
-  const r = Math.max(0, Math.min(5, Math.round(rating)));
+  // rating 1..5 attendu (mais on sécurise)
+  const r = Math.max(1, Math.min(5, Math.round(rating || 5)));
   const full = "★".repeat(r);
   const empty = "☆".repeat(5 - r);
   return (
@@ -27,9 +28,9 @@ export default function GoogleReviews(props: {
   lang?: Lang;
   googleUrl: string;
 
-  // si tu veux afficher un badge "5.0 • 3 avis"
-  rating?: number; // ex 5.0
-  count?: number; // ex 3
+  // badge "4.9 • 12 avis"
+  rating?: number; // ex 4.9
+  count?: number; // ex 12
 
   // avis à afficher (0 à 3 recommandé)
   items?: GoogleReviewItem[];
@@ -49,42 +50,57 @@ export default function GoogleReviews(props: {
   } = props;
 
   const T = useMemo(() => {
-    if (lang === "en") {
-      return {
-        title: title ?? "Reviews",
-        viewAll: "View on Google",
-        noText: "★★★★★",
-        summary: (rt?: number, ct?: number) =>
-          rt && ct ? `${rt.toFixed(1)} • ${ct} reviews` : "",
-      };
-    }
-    if (lang === "es") {
-      return {
-        title: title ?? "Reseñas",
-        viewAll: "Ver en Google",
-        noText: "★★★★★",
-        summary: (rt?: number, ct?: number) =>
-          rt && ct ? `${rt.toFixed(1)} • ${ct} reseñas` : "",
-      };
-    }
-    return {
+    const fr = {
       title: title ?? "Avis clients",
       viewAll: "Voir sur Google",
       noText: "★★★★★",
-      summary: (rt?: number, ct?: number) =>
-        rt && ct ? `${rt.toFixed(1)} • ${ct} avis` : "",
+      summary: (rt?: number, ct?: number) => {
+        const hasRt = typeof rt === "number" && Number.isFinite(rt);
+        const hasCt = typeof ct === "number" && Number.isFinite(ct);
+        if (!hasRt && !hasCt) return "";
+        if (hasRt && hasCt) return `${rt!.toFixed(1)} • ${ct} avis`;
+        if (hasRt) return `${rt!.toFixed(1)} / 5`;
+        return `${ct} avis`;
+      },
     };
+
+    const en = {
+      title: title ?? "Reviews",
+      viewAll: "View on Google",
+      noText: "★★★★★",
+      summary: (rt?: number, ct?: number) => {
+        const hasRt = typeof rt === "number" && Number.isFinite(rt);
+        const hasCt = typeof ct === "number" && Number.isFinite(ct);
+        if (!hasRt && !hasCt) return "";
+        if (hasRt && hasCt) return `${rt!.toFixed(1)} • ${ct} reviews`;
+        if (hasRt) return `${rt!.toFixed(1)} / 5`;
+        return `${ct} reviews`;
+      },
+    };
+
+    const es = {
+      title: title ?? "Reseñas",
+      viewAll: "Ver en Google",
+      noText: "★★★★★",
+      summary: (rt?: number, ct?: number) => {
+        const hasRt = typeof rt === "number" && Number.isFinite(rt);
+        const hasCt = typeof ct === "number" && Number.isFinite(ct);
+        if (!hasRt && !hasCt) return "";
+        if (hasRt && hasCt) return `${rt!.toFixed(1)} • ${ct} reseñas`;
+        if (hasRt) return `${rt!.toFixed(1)} / 5`;
+        return `${ct} reseñas`;
+      },
+    };
+
+    if (lang === "en") return en;
+    if (lang === "es") return es;
+    return fr;
   }, [lang, title]);
 
   const summary = T.summary(rating, count);
 
   return (
-    <section
-      aria-label={T.title}
-      style={{
-        marginTop: compact ? 10 : 14,
-      }}
-    >
+    <section aria-label={T.title} style={{ marginTop: compact ? 10 : 14 }}>
       {/* Header */}
       <div
         style={{
@@ -197,6 +213,7 @@ export default function GoogleReviews(props: {
           <span aria-hidden="true" style={{ fontSize: compact ? 14 : 16 }}>
             ★★★★★
           </span>
+
           {summary ? (
             <strong style={{ fontSize: compact ? 13 : 14 }}>{summary}</strong>
           ) : (
@@ -208,6 +225,7 @@ export default function GoogleReviews(props: {
                 : "Reseñas de Google"}
             </strong>
           )}
+
           <Link
             href={googleUrl}
             target="_blank"
