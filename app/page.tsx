@@ -6,6 +6,8 @@ import Image from "next/image";
 import Script from "next/script";
 import RecaptchaV2, { type RecaptchaV2Handle } from "@/components/RecaptchaV2";
 import styles from "./page.module.css";
+import GoogleReviews from "@/components/GoogleReviews";
+import { GOOGLE_REVIEWS } from "@/components/googleReviewsData";
 
 // reCAPTCHA géré par le component RecaptchaV2 (pas de grecaptcha global ici)
 
@@ -833,21 +835,31 @@ getPrice: "Ver detalles",
     return dict;
   }, [bleu]);
 
-  const T = COPY[lang];
+ const T = COPY[lang];
 
-  // ✅ Liens (inchangés)
-  const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
-  const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
+// 👉 AJOUTE ICI
+const reviews = GOOGLE_REVIEWS[lang] ?? GOOGLE_REVIEWS.fr;
 
-  const toT1 = `/espace-client?lang=${encodeURIComponent(
-    lang
-  )}&next=${encodeURIComponent("/formulaire-fiscal")}`;
-  const toT1Auto = `/espace-client?lang=${encodeURIComponent(
-    lang
-  )}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
-  const toT2 = `/espace-client?lang=${encodeURIComponent(
-    lang
-  )}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
+const reviewsCount = reviews.length;
+
+const reviewsRating =
+  reviewsCount > 0
+    ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewsCount
+    : 0;
+
+// ✅ Liens (inchangés)
+const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
+const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
+
+const toT1 = `/espace-client?lang=${encodeURIComponent(
+  lang
+)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
+const toT1Auto = `/espace-client?lang=${encodeURIComponent(
+  lang
+)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
+const toT2 = `/espace-client?lang=${encodeURIComponent(
+  lang
+)}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
   // ✅ FAQ schema (JSON-LD)
   const faqJsonLd = useMemo(() => {
@@ -1105,24 +1117,31 @@ const learnMoreLabel =
 
             <TrustBar items={T.trust} />
 
-            <div className={styles.heroLinks}>
-              <Link href={toClient} className={styles.heroLink} prefetch>
-                {T.nav.client}
-              </Link>
-              <span className={styles.heroSep}>•</span>
-              <Link href={toHelp} className={styles.heroLink} prefetch>
-                {T.nav.help}
-              </Link>
-              {isAdmin && (
-                <>
-                  <span className={styles.heroSep}>•</span>
-                  <Link href="/admin/dossiers" className={styles.heroLinkAdmin}>
-                    Admin
-                  </Link>
-                </>
-              )}
-            </div>
-
+<GoogleReviews
+  lang={lang}
+  rating={reviewsRating || 5.0}
+  count={reviewsCount || GOOGLE_REVIEWS.fr.length}
+  items={reviewsCount ? reviews : GOOGLE_REVIEWS.fr}
+  googleUrl="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
+  compact
+/>
+<div className={styles.heroLinks}>
+  <Link href={toClient} className={styles.heroLink} prefetch>
+    {T.nav.client}
+  </Link>
+  <span className={styles.heroSep}>•</span>
+  <Link href={toHelp} className={styles.heroLink} prefetch>
+    {T.nav.help}
+  </Link>
+  {isAdmin && (
+    <>
+      <span className={styles.heroSep}>•</span>
+      <Link href="/admin/dossiers" className={styles.heroLinkAdmin}>
+        Admin
+      </Link>
+    </>
+  )}
+</div>
             {/* ✅ Anchor target */}
             <div id="types-impot" className={styles.choiceBox}>
               <div className={styles.choiceTitle}>{T.chooseType}</div>
