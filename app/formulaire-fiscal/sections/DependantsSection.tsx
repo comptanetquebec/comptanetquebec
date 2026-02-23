@@ -57,6 +57,16 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
+/** Label + ✓ collé au texte (comme ton image #1) */
+function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ minWidth: 0 }}>{text}</span>
+      <MarkIcon mark={mark} />
+    </span>
+  );
+}
+
 // Validation légère: on ne fait pas de date “parfaite”, juste non vide + longueur attendue.
 // (Ton page.tsx fait déjà la validation bloquante globale.)
 function isFilled(v: string) {
@@ -98,7 +108,8 @@ export default function DependantsSection(props: {
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        {/* ✅ icône collée au titre (pas à droite) */}
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <h2 style={{ margin: 0 }}>{L.sections.dependantsTitle}</h2>
           <MarkIcon mark={blockMark} />
         </div>
@@ -106,7 +117,8 @@ export default function DependantsSection(props: {
       </div>
 
       {enfants.length === 0 ? (
-        <div className="ff-empty" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        /* ✅ icône collée au texte (pas à droite) */
+        <div className="ff-empty" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <span>{L.dependants.none}</span>
           <MarkIcon mark="bad" />
         </div>
@@ -122,15 +134,18 @@ export default function DependantsSection(props: {
             const childOk = okPrenom && okNom && okDob && okSexe && okNas;
             const childMark: Mark = childOk ? "ok" : "bad";
 
-            const labelWithMark = (text: string, ok: boolean) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {text} <MarkIcon mark={ok ? "ok" : "bad"} />
-              </span>
-            );
-
             return (
               <div key={`enf-${i}`} className="ff-childbox">
-                <div className="ff-childhead" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div
+                  className="ff-childhead"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  {/* ✅ à gauche: titre + icône collée */}
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                     <div className="ff-childtitle">{L.dependants.titleN(i + 1)}</div>
                     <MarkIcon mark={childMark} />
@@ -149,19 +164,19 @@ export default function DependantsSection(props: {
 
                 <div className="ff-grid2">
                   <Field
-                    label={labelWithMark(L.fields.firstName, okPrenom)}
+                    label={<LabelWithMark text={L.fields.firstName} mark={okPrenom ? "ok" : "bad"} />}
                     value={enf.prenom}
                     onChange={(v) => updateEnfant(i, "prenom", v)}
                     required
                   />
                   <Field
-                    label={labelWithMark(L.fields.lastName, okNom)}
+                    label={<LabelWithMark text={L.fields.lastName} mark={okNom ? "ok" : "bad"} />}
                     value={enf.nom}
                     onChange={(v) => updateEnfant(i, "nom", v)}
                     required
                   />
                   <Field
-                    label={labelWithMark(L.fields.dob, okDob)}
+                    label={<LabelWithMark text={L.fields.dob} mark={okDob ? "ok" : "bad"} />}
                     value={enf.dob}
                     onChange={(v) => updateEnfant(i, "dob", formatDateInput(v))}
                     placeholder="01/01/2020"
@@ -170,7 +185,7 @@ export default function DependantsSection(props: {
                     required
                   />
                   <Field
-                    label={labelWithMark(L.dependants.sinIfAny, okNas)}
+                    label={<LabelWithMark text={L.dependants.sinIfAny} mark={okNas ? "ok" : "bad"} />}
                     value={enf.nas}
                     onChange={(v) => updateEnfant(i, "nas", formatNASInput(v))}
                     placeholder={L.fields.sinPh}
@@ -181,7 +196,7 @@ export default function DependantsSection(props: {
 
                 <div className="ff-mt-sm">
                   <SelectField<Sexe>
-                    label={labelWithMark(L.dependants.sex, okSexe)}
+                    label={<LabelWithMark text={L.dependants.sex} mark={okSexe ? "ok" : "bad"} />}
                     value={enf.sexe}
                     onChange={(v) => updateEnfant(i, "sexe", v)}
                     options={[
