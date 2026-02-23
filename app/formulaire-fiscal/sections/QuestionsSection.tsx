@@ -15,41 +15,59 @@ function isValidYear(v: string) {
   return n >= 2000 && n <= 2100;
 }
 
-function StatusIcon({ ok, show }: { ok: boolean; show: boolean }) {
-  if (!show) return null;
+type Mark = "ok" | "bad" | "todo";
+
+function MarkIcon({ mark }: { mark: Mark }) {
+  const cls =
+    mark === "ok"
+      ? "mark-icon mark-icon--ok"
+      : mark === "bad"
+      ? "mark-icon mark-icon--bad"
+      : "mark-icon mark-icon--todo";
+
+  const title = mark === "ok" ? "OK" : mark === "bad" ? "À corriger" : "À faire";
+  const symbol = mark === "ok" ? "✓" : mark === "bad" ? "✕" : "→";
+
   return (
-    <span
-      aria-hidden
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 20,
-        height: 20,
-        borderRadius: 999,
-        fontSize: 13,
-        fontWeight: 900,
-        marginLeft: 8,
-        background: ok ? "#dcfce7" : "#fee2e2",
-        color: ok ? "#065f46" : "#7f1d1d",
-        border: `1px solid ${ok ? "#16a34a" : "#dc2626"}`,
-        flex: "0 0 auto",
-      }}
-      title={ok ? "OK" : "À corriger"}
-    >
-      {ok ? "✓" : "✕"}
+    <span className={cls} aria-hidden title={title}>
+      {symbol}
     </span>
   );
 }
 
-function RowWithIcon(props: { children: React.ReactNode; ok: boolean; show: boolean }) {
-  const { children, ok, show } = props;
+function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start" }}>
-      <div style={{ flex: "1 1 auto", minWidth: 0 }}>{children}</div>
-      <StatusIcon ok={ok} show={show} />
-    </div>
+    <>
+      {text} <MarkIcon mark={mark} />
+    </>
   );
+}
+
+function markYesNo(v: YesNo): Mark {
+  return v ? "ok" : "bad";
+}
+
+function markRequiredText(v: string): Mark {
+  const t = (v || "").trim();
+  return t ? "ok" : "bad";
+}
+
+function markYear(v: string): Mark {
+  const t = (v || "").trim();
+  if (!t) return "todo";
+  return isValidYear(t) ? "ok" : "bad";
+}
+
+function markPeopleCount(v: string): Mark {
+  const t = (v || "").trim();
+  if (!t) return "todo";
+  const n = Number(t);
+  if (!Number.isFinite(n)) return "bad";
+  return n >= 0 ? "ok" : "bad";
+}
+
+function markSelect<T extends string>(v: T): Mark {
+  return v ? "ok" : "bad";
 }
 
 export default function QuestionsSection(props: {
@@ -104,134 +122,143 @@ export default function QuestionsSection(props: {
     setCopieImpots,
   } = props;
 
-  // ---- états "ok / show" pour vert/rouge ----
-  const yearShow = (anneeImposition || "").trim().length > 0;
-  const yearOk = isValidYear(anneeImposition);
+  const marks = useMemo(() => {
+    const mYear = markYear(anneeImposition);
 
-  const peopleShow = (nbPersonnesMaison3112 || "").trim().length > 0;
-  const peopleOk = (() => {
-    if (!peopleShow) return false;
-    const n = Number((nbPersonnesMaison3112 || "").trim());
-    return Number.isFinite(n) && n >= 0;
-  })();
+    const mLived = markYesNo(habiteSeulTouteAnnee);
 
-  const livedShow = habiteSeulTouteAnnee !== "";
-  const livedOk = livedShow; // yes/no choisi
+    const mPeople = markPeopleCount(nbPersonnesMaison3112);
 
-  const foreignShow = biensEtranger100k !== "";
-  const foreignOk = foreignShow;
+    const mForeign = markYesNo(biensEtranger100k);
+    const mCitizen = markYesNo(citoyenCanadien);
+    const mNonRes = markYesNo(nonResident);
+    const mHomeTx = markYesNo(maisonAcheteeOuVendue);
+    const mTech = markYesNo(appelerTechnicien);
 
-  const citizenShow = citoyenCanadien !== "";
-  const citizenOk = citizenShow;
+    const mCopy = markSelect(copieImpots);
 
-  const nonResShow = nonResident !== "";
-  const nonResOk = nonResShow;
+    const blockOk =
+      mYear === "ok" &&
+      mLived === "ok" &&
+      mPeople === "ok" &&
+      mForeign === "ok" &&
+      mCitizen === "ok" &&
+      mNonRes === "ok" &&
+      mHomeTx === "ok" &&
+      mTech === "ok" &&
+      mCopy === "ok";
 
-  const homeTxShow = maisonAcheteeOuVendue !== "";
-  const homeTxOk = homeTxShow;
-
-  const techShow = appelerTechnicien !== "";
-  const techOk = techShow;
-
-  const copyShow = copieImpots !== "";
-  const copyOk = copyShow;
+    return {
+      year: mYear,
+      lived: mLived,
+      people: mPeople,
+      foreign: mForeign,
+      citizen: mCitizen,
+      nonRes: mNonRes,
+      homeTx: mHomeTx,
+      tech: mTech,
+      copy: mCopy,
+      block: blockOk ? ("ok" as Mark) : ("bad" as Mark),
+    };
+  }, [
+    anneeImposition,
+    habiteSeulTouteAnnee,
+    nbPersonnesMaison3112,
+    biensEtranger100k,
+    citoyenCanadien,
+    nonResident,
+    maisonAcheteeOuVendue,
+    appelerTechnicien,
+    copieImpots,
+  ]);
 
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        <h2>{L.sections.questionsTitle}</h2>
-        <p>{L.sections.questionsDesc}</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <h2 style={{ margin: 0 }}>{L.sections.questionsTitle}</h2>
+          <MarkIcon mark={marks.block} />
+        </div>
+        <p style={{ marginTop: 8 }}>{L.sections.questionsDesc}</p>
       </div>
 
       <div className="ff-stack">
-        <RowWithIcon ok={yearOk} show={yearShow}>
-          <Field
-            label={L.questions.taxYear}
-            value={anneeImposition}
-            onChange={setAnneeImposition}
-            placeholder={L.questions.taxYearPh}
-            inputMode="numeric"
-            required
-          />
-        </RowWithIcon>
+        <Field
+          label={<LabelWithMark text={L.questions.taxYear} mark={marks.year} />}
+          value={anneeImposition}
+          onChange={(v) => setAnneeImposition(v.replace(/[^\d]/g, "").slice(0, 4))}
+          placeholder={L.questions.taxYearPh}
+          inputMode="numeric"
+          required
+        />
 
-        <RowWithIcon ok={livedOk} show={livedShow}>
-          <YesNoField
-            name="habiteSeulTouteAnnee"
-            label={L.questions.livedAlone}
-            value={habiteSeulTouteAnnee}
-            onChange={setHabiteSeulTouteAnnee}
-          />
-        </RowWithIcon>
+        <YesNoField
+          name="habiteSeulTouteAnnee"
+          label={<LabelWithMark text={L.questions.livedAlone} mark={marks.lived} />}
+          value={habiteSeulTouteAnnee}
+          onChange={setHabiteSeulTouteAnnee}
+          required
+        />
 
-        <RowWithIcon ok={peopleOk} show={peopleShow}>
-          <Field
-            label={L.questions.peopleCount}
-            value={nbPersonnesMaison3112}
-            onChange={(v) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
-            placeholder={L.questions.peopleCountPh}
-            inputMode="numeric"
-            required
-          />
-        </RowWithIcon>
+        <Field
+          label={<LabelWithMark text={L.questions.peopleCount} mark={marks.people} />}
+          value={nbPersonnesMaison3112}
+          onChange={(v) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
+          placeholder={L.questions.peopleCountPh}
+          inputMode="numeric"
+          required
+        />
 
-        <RowWithIcon ok={foreignOk} show={foreignShow}>
-          <YesNoField
-            name="biensEtranger100k"
-            label={L.questions.foreignAssets}
-            value={biensEtranger100k}
-            onChange={setBiensEtranger100k}
-          />
-        </RowWithIcon>
+        <YesNoField
+          name="biensEtranger100k"
+          label={<LabelWithMark text={L.questions.foreignAssets} mark={marks.foreign} />}
+          value={biensEtranger100k}
+          onChange={setBiensEtranger100k}
+          required
+        />
 
-        <RowWithIcon ok={citizenOk} show={citizenShow}>
-          <YesNoField
-            name="citoyenCanadien"
-            label={L.questions.citizen}
-            value={citoyenCanadien}
-            onChange={setCitoyenCanadien}
-          />
-        </RowWithIcon>
+        <YesNoField
+          name="citoyenCanadien"
+          label={<LabelWithMark text={L.questions.citizen} mark={marks.citizen} />}
+          value={citoyenCanadien}
+          onChange={setCitoyenCanadien}
+          required
+        />
 
-        <RowWithIcon ok={nonResOk} show={nonResShow}>
-          <YesNoField
-            name="nonResident"
-            label={L.questions.nonResident}
-            value={nonResident}
-            onChange={setNonResident}
-          />
-        </RowWithIcon>
+        <YesNoField
+          name="nonResident"
+          label={<LabelWithMark text={L.questions.nonResident} mark={marks.nonRes} />}
+          value={nonResident}
+          onChange={setNonResident}
+          required
+        />
 
-        <RowWithIcon ok={homeTxOk} show={homeTxShow}>
-          <YesNoField
-            name="maisonAcheteeOuVendue"
-            label={L.questions.homeTx}
-            value={maisonAcheteeOuVendue}
-            onChange={setMaisonAcheteeOuVendue}
-          />
-        </RowWithIcon>
+        <YesNoField
+          name="maisonAcheteeOuVendue"
+          label={<LabelWithMark text={L.questions.homeTx} mark={marks.homeTx} />}
+          value={maisonAcheteeOuVendue}
+          onChange={setMaisonAcheteeOuVendue}
+          required
+        />
 
-        <RowWithIcon ok={techOk} show={techShow}>
-          <YesNoField
-            name="appelerTechnicien"
-            label={L.questions.techCall}
-            value={appelerTechnicien}
-            onChange={setAppelerTechnicien}
-          />
-        </RowWithIcon>
+        <YesNoField
+          name="appelerTechnicien"
+          label={<LabelWithMark text={L.questions.techCall} mark={marks.tech} />}
+          value={appelerTechnicien}
+          onChange={setAppelerTechnicien}
+          required
+        />
 
-        <RowWithIcon ok={copyOk} show={copyShow}>
-          <SelectField<CopieImpots>
-            label={L.questions.copy}
-            value={copieImpots}
-            onChange={setCopieImpots}
-            required
-            options={[
-              { value: "espaceClient", label: L.questions.copyPortal },
-              { value: "courriel", label: L.questions.copyEmail },
-            ]}
-          />
-        </RowWithIcon>
+        <SelectField<CopieImpots>
+          label={<LabelWithMark text={L.questions.copy} mark={marks.copy} />}
+          value={copieImpots}
+          onChange={setCopieImpots}
+          required
+          options={[
+            { value: "espaceClient", label: L.questions.copyPortal },
+            { value: "courriel", label: L.questions.copyEmail },
+          ]}
+        />
       </div>
     </section>
   );
