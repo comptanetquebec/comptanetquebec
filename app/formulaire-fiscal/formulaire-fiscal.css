@@ -194,12 +194,20 @@
   gap: 6px;
 }
 
-/* ✅ label aligné pro (texte gauche / icône droite) */
+/* =========================
+   Fields
+========================= */
+.ff-field{
+  display:grid;
+  gap: 6px;
+}
+
+/* ✅ label collé au texte (comme image 1) */
 .ff-field .ff-label{
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 6px;          /* espace texte ↔ ✓ */
   width: 100%;
   margin: 0;
 
@@ -208,6 +216,7 @@
   color: var(--cq-text);
 }
 
+/* texte + étoile + ✓ */
 .ff-label__left{
   display: inline-flex;
   align-items: center;
@@ -215,11 +224,13 @@
   min-width: 0;
 }
 
+/* étoile obligatoire */
 .ff-required{
   color: #dc2626;
   font-weight: 900;
 }
 
+/* hint */
 .ff-hint{
   margin-top: 6px;
   font-size: 12px;
@@ -227,6 +238,7 @@
   color: var(--cq-muted);
 }
 
+/* inputs */
 .ff-input, .ff-select{
   width:100%;
   padding: 12px;
@@ -241,6 +253,12 @@
 .ff-input:focus, .ff-select:focus{
   border-color: var(--cq-blue);
   box-shadow: 0 0 0 4px rgba(0,74,173,.12);
+}
+
+/* 🔥 IMPORTANT: enlève tout ✓ à droite (ancien système) */
+.ff-field::after,
+.ff-field .ff-label::after{
+  content: none !important;
 }
 
 /* =========================
