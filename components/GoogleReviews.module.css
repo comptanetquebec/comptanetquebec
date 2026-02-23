@@ -116,10 +116,12 @@
   font-size:13px;
 }
 
+/* ✅ une seule définition .stars (PAS de color ici si tu utilises l'option PRO en TSX) */
 .stars{
   font-size:16px;
   letter-spacing:0.5px;
   white-space:nowrap;
+  line-height: 1;
 }
 
 .text{
@@ -176,10 +178,4 @@
 .badgeBtn{
   border-radius:10px !important;
   padding:8px 12px !important;
-}
-.stars{
-  font-size:16px;
-  letter-spacing:0.5px;
-  white-space:nowrap;
-  color: #fbbf24; /* ⭐ jaune (style Google) */
 }
