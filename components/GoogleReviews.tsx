@@ -6,10 +6,16 @@ import styles from "./GoogleReviews.module.css";
 
 type Lang = "fr" | "en" | "es";
 
+export type GoogleReviewText = {
+  fr?: string;
+  en?: string;
+  es?: string;
+};
+
 export type GoogleReviewItem = {
   name: string;
   rating: 5 | 4 | 3 | 2 | 1;
-  text?: string;
+  text?: GoogleReviewText; // ✅ maintenant multilingue
 };
 
 function Stars({ rating }: { rating: number }) {
@@ -35,7 +41,7 @@ export default function GoogleReviews(props: {
   title?: string;
   compact?: boolean;
 
-  maxItems?: number; // ✅ au lieu d’être bloqué à 3
+  maxItems?: number; // combien afficher
 }) {
   const {
     lang = "fr",
@@ -84,7 +90,11 @@ export default function GoogleReviews(props: {
   const displayItems = items.slice(0, Math.max(0, maxItems));
 
   return (
-    <section className={styles.wrap} data-compact={compact ? "true" : "false"} aria-label={T.title}>
+    <section
+      className={styles.wrap}
+      data-compact={compact ? "true" : "false"}
+      aria-label={T.title}
+    >
       <div className={styles.header}>
         <div className={styles.left}>
           <h3 className={styles.title}>{T.title}</h3>
@@ -103,20 +113,25 @@ export default function GoogleReviews(props: {
 
       {displayItems.length ? (
         <div className={styles.grid}>
-          {displayItems.map((r, i) => (
-            <div key={`${r.name}-${i}`} className={styles.card}>
-              <div className={styles.cardTop}>
-                <strong className={styles.name} title={r.name}>
-                  {r.name}
-                </strong>
-                <Stars rating={r.rating} />
-              </div>
+          {displayItems.map((r, i) => {
+            const text = r.text?.[lang] ?? "";
+            const hasText = text.trim().length > 0;
 
-              <p className={`${styles.text} ${!r.text?.trim() ? styles.muted : ""}`}>
-                {r.text && r.text.trim().length > 0 ? r.text : T.noText}
-              </p>
-            </div>
-          ))}
+            return (
+              <div key={`${r.name}-${i}`} className={styles.card}>
+                <div className={styles.cardTop}>
+                  <strong className={styles.name} title={r.name}>
+                    {r.name}
+                  </strong>
+                  <Stars rating={r.rating} />
+                </div>
+
+                <p className={`${styles.text} ${!hasText ? styles.muted : ""}`}>
+                  {hasText ? text : T.noText}
+                </p>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className={styles.badge}>
