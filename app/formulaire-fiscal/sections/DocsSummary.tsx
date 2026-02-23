@@ -55,10 +55,10 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
-/** ✅ Texte + icône collée (comme image #1) */
+/** Texte + icône collée (comme ton rendu souhaité) */
 function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
       <span style={{ minWidth: 0 }}>{text}</span>
       <MarkIcon mark={mark} />
     </span>
@@ -76,65 +76,45 @@ export default function DocsSummary(props: {
   submitting: boolean;
   goToDepotDocuments: () => void;
 }) {
-  const {
-    L,
-    docsLoading,
-    docsCount,
-    canContinue,
-    docs,
-    openDoc,
-    submitting,
-    goToDepotDocuments,
-  } = props;
+  const { L, docsLoading, docsCount, canContinue, docs, openDoc, submitting, goToDepotDocuments } =
+    props;
 
-  // ✅ vert/rouge basé sur "peut continuer"
+  // ✅ Vert/rouge basé sur “peut continuer”
   const markContinue: Mark = useMemo(() => (canContinue ? "ok" : "bad"), [canContinue]);
 
-  // ✅ indicateur docs (optionnel) : vert si docs > 0
+  // ✅ Indicateur docs (optionnel): vert si docs > 0
   const markDocs: Mark = useMemo(() => (docsCount > 0 ? "ok" : "bad"), [docsCount]);
+
+  const infoText = useMemo(() => {
+    if (docsLoading) return L.docsLoading;
+    if (docsCount > 0) return L.docsAlready(docsCount);
+    return canContinue ? L.docsNext : L.completeToContinue;
+  }, [L, docsLoading, docsCount, canContinue]);
 
   return (
     <div className="ff-submit">
-      {/* ✅ bouton + icône collée, pas “à droite loin” */}
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-        <button
-          type="button"
-          className="ff-btn ff-btn-primary ff-btn-big"
-          disabled={submitting || !canContinue}
-          onClick={goToDepotDocuments}
-          title={!canContinue ? L.completeToContinue : ""}
-        >
-          {L.continue}
-        </button>
-
-        <MarkIcon mark={markContinue} />
-      </div>
-
-      {/* ✅ phrase + icône collée */}
-      <div
-        className="ff-muted"
-        style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 12 }}
+      {/* ✅ Bouton 100% largeur (comme ta photo #2) */}
+      <button
+        type="button"
+        className="ff-btn ff-btn-primary ff-btn-big"
+        disabled={submitting || !canContinue}
+        onClick={goToDepotDocuments}
+        title={!canContinue ? L.completeToContinue : ""}
       >
-        <LabelWithMark
-          text={
-            docsLoading
-              ? L.docsLoading
-              : docsCount > 0
-              ? L.docsAlready(docsCount)
-              : canContinue
-              ? L.docsNext
-              : L.completeToContinue
-          }
-          mark={markDocs}
-        />
+        {L.continue}
+      </button>
+
+      {/* ✅ Ligne texte + icône collée (Continue status) */}
+      <div style={{ marginTop: 10 }}>
+        <LabelWithMark text={infoText} mark={markContinue} />
       </div>
 
+      {/* ✅ Si tu veux AUSSI afficher l’état “docs” (comme dans ton screenshot) */}
       {docsCount > 0 && (
         <div className="ff-mt">
-          {/* ✅ titre + icône collée */}
-          <div className="ff-subtitle" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          <div className="ff-subtitle" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <span>{L.docsTitle}</span>
-            <MarkIcon mark="ok" />
+            <MarkIcon mark={markDocs} />
           </div>
 
           <div className="ff-stack">
@@ -152,9 +132,10 @@ export default function DocsSummary(props: {
                   gap: 10,
                 }}
               >
-                <span style={{ minWidth: 0 }}>{L.openDoc(d.original_name)}</span>
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {L.openDoc(d.original_name)}
+                </span>
 
-                {/* (flèche ↗ à droite) */}
                 <span
                   aria-hidden="true"
                   style={{
@@ -177,6 +158,8 @@ export default function DocsSummary(props: {
           </div>
         </div>
       )}
+
+      {/* ✅ Si tu veux afficher “Documents au dossier” même quand docsCount = 0, dis-le moi et je te le mets */}
     </div>
   );
 }
