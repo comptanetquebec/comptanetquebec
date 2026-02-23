@@ -55,6 +55,16 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
+/** ✅ label + icône collée (comme ton image #1) */
+function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ minWidth: 0 }}>{text}</span>
+      <MarkIcon mark={mark} />
+    </span>
+  );
+}
+
 export default function ConfirmationsSection(props: {
   L: CopyPack;
   vExactitude: boolean;
@@ -87,16 +97,11 @@ export default function ConfirmationsSection(props: {
     return { m1, m2, m3, m4, block: blockOk ? ("ok" as Mark) : ("bad" as Mark) };
   }, [vExactitude, vDossierComplet, vFraisVariables, vDelais]);
 
-  const wrapLabel = (text: string, mark: Mark) => (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      {text} <MarkIcon mark={mark} />
-    </span>
-  );
-
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        {/* ✅ icône collée au titre (pas à droite) */}
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <h2 style={{ margin: 0 }}>{L.sections.confirmsTitle}</h2>
           <MarkIcon mark={marks.block} />
         </div>
@@ -105,22 +110,22 @@ export default function ConfirmationsSection(props: {
 
       <div className="ff-stack">
         <CheckboxField
-          label={wrapLabel(L.confirms.exact, marks.m1)}
+          label={<LabelWithMark text={L.confirms.exact} mark={marks.m1} />}
           checked={vExactitude}
           onChange={setVExactitude}
         />
         <CheckboxField
-          label={wrapLabel(L.confirms.complete, marks.m2)}
+          label={<LabelWithMark text={L.confirms.complete} mark={marks.m2} />}
           checked={vDossierComplet}
           onChange={setVDossierComplet}
         />
         <CheckboxField
-          label={wrapLabel(L.confirms.fees, marks.m3)}
+          label={<LabelWithMark text={L.confirms.fees} mark={marks.m3} />}
           checked={vFraisVariables}
           onChange={setVFraisVariables}
         />
         <CheckboxField
-          label={wrapLabel(L.confirms.delays, marks.m4)}
+          label={<LabelWithMark text={L.confirms.delays} mark={marks.m4} />}
           checked={vDelais}
           onChange={setVDelais}
         />
