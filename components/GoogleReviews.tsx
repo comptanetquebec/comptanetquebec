@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import Link from "next/link";
 import styles from "./GoogleReviews.module.css";
 
 type Lang = "fr" | "en" | "es";
@@ -27,9 +26,7 @@ function Stars({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
-          style={{
-            color: i < r ? "#fbbf24" : "#e5e7eb",
-          }}
+          style={{ color: i < r ? "#fbbf24" : "#e5e7eb" }}
           aria-hidden="true"
         >
           ★
@@ -41,84 +38,33 @@ function Stars({ rating }: { rating: number }) {
 
 export default function GoogleReviews(props: {
   lang?: Lang;
-  googleUrl: string;
+  googleUrl: string; // gardé pour compat (mais non affiché)
 
-  rating?: number; // ex 5.0
-  count?: number; // ex 12
+  rating?: number; // gardé pour compat (mais non affiché)
+  count?: number; // gardé pour compat (mais non affiché)
   items?: GoogleReviewItem[];
 
-  title?: string;
+  title?: string; // gardé pour compat (mais non affiché)
   compact?: boolean;
 
-  maxItems?: number; // combien afficher
+  maxItems?: number;
 }) {
-  const {
-    lang = "fr",
-    googleUrl,
-    rating,
-    count,
-    items = [],
-    title,
-    compact = false,
-    maxItems = 3,
-  } = props;
+  const { lang = "fr", items = [], compact = false, maxItems = 3 } = props;
 
   const T = useMemo(() => {
-    if (lang === "en") {
-      return {
-        title: title ?? "Reviews",
-        viewAll: "View on Google",
-        noText: "★★★★★",
-        summary: (rt?: number, ct?: number) =>
-          rt && ct ? `${rt.toFixed(1)} • ${ct} reviews` : "",
-        badge: "Google reviews",
-      };
-    }
-    if (lang === "es") {
-      return {
-        title: title ?? "Reseñas",
-        viewAll: "Ver en Google",
-        noText: "★★★★★",
-        summary: (rt?: number, ct?: number) =>
-          rt && ct ? `${rt.toFixed(1)} • ${ct} reseñas` : "",
-        badge: "Reseñas de Google",
-      };
-    }
-    return {
-      title: title ?? "Avis clients",
-      viewAll: "Voir sur Google",
-      noText: "★★★★★",
-      summary: (rt?: number, ct?: number) =>
-        rt && ct ? `${rt.toFixed(1)} • ${ct} avis` : "",
-      badge: "Avis Google",
-    };
-  }, [lang, title]);
+    if (lang === "en") return { noText: "★★★★★" };
+    if (lang === "es") return { noText: "★★★★★" };
+    return { noText: "★★★★★" };
+  }, [lang]);
 
-  const summary = T.summary(rating, count);
   const displayItems = items.slice(0, Math.max(0, maxItems));
 
   return (
     <section
       className={styles.wrap}
       data-compact={compact ? "true" : "false"}
-      aria-label={T.title}
+      aria-label="Google reviews"
     >
-      <div className={styles.header}>
-        <div className={styles.left}>
-          <h3 className={styles.title}>{T.title}</h3>
-          {summary ? <span className={styles.summary}>{summary}</span> : null}
-        </div>
-
-        <Link
-          href={googleUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.viewAll}
-        >
-          {T.viewAll}
-        </Link>
-      </div>
-
       {displayItems.length ? (
         <div className={styles.grid}>
           {displayItems.map((r, i) => {
@@ -141,26 +87,7 @@ export default function GoogleReviews(props: {
             );
           })}
         </div>
-      ) : (
-        <div className={styles.badge}>
-          <span className={styles.badgeStars} aria-hidden="true">
-            ★★★★★
-          </span>
-
-          <strong className={styles.badgeText}>
-            {summary ? summary : T.badge}
-          </strong>
-
-          <Link
-            href={googleUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`btn btn-outline ${styles.badgeBtn}`}
-          >
-            {T.viewAll}
-          </Link>
-        </div>
-      )}
+      ) : null}
     </section>
   );
 }
