@@ -1,3 +1,7 @@
+/* =========================
+   Google Reviews (pro / clean)
+   ========================= */
+
 .wrap{
   margin-top: 14px;
 }
@@ -35,7 +39,7 @@
   font-size:15px;
 }
 
-/* (si jamais tu réactives le summary) */
+/* (optionnel, si tu réactives un résumé) */
 .summary{
   font-size:13px;
   padding:4px 10px;
@@ -106,17 +110,19 @@
   box-shadow: 0 8px 24px rgba(0,0,0,.06);
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 
-  /* ✅ uniformise la hauteur */
+  /* uniformise la hauteur sans pousser le texte en bas */
   min-height: 132px;
+
   display:flex;
   flex-direction:column;
-  justify-content:space-between;
+  gap:10px;            /* ✅ le texte remonte naturellement */
 }
 
 .wrap[data-compact="true"] .card{
   padding:10px;
   border-radius:14px;
   min-height: 120px;
+  gap:8px;
 }
 
 .card:hover{
@@ -125,14 +131,15 @@
   border-color: rgba(0,0,0,.14);
 }
 
+/* top row = nom + étoiles */
 .cardTop{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:10px;
-  margin-bottom:10px;
 }
 
+/* nom */
 .name{
   font-weight:900;
   font-size:14px;
@@ -156,7 +163,7 @@
   line-height: 1;
 }
 
-/* texte avis (clamp pour éviter les cartes inégales) */
+/* texte avis */
 .text{
   margin:0;
   font-size:14px;
@@ -174,6 +181,7 @@
   -webkit-line-clamp: 3;
 }
 
+/* si tu ajoutes une mini mention (date, etc.) */
 .muted{
   opacity:.85;
 }
