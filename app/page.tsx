@@ -1121,7 +1121,6 @@ export default function Home() {
 
       {/* ✅ SECTION AVIS (déplacée hors hero) */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>{reviewsTitle}</h2>
 
         <GoogleReviews
           lang={lang}
