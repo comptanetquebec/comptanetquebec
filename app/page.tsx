@@ -1050,29 +1050,6 @@ export default function Home() {
             {/* ✅ Trust: seulement 3 pills dans le hero */}
             <TrustBar items={T.trust.slice(0, 3)} />
 
-            {/* ✅ Mini preuve avis (compact) */}
-            <div className={styles.heroMiniProof}>
-              <div className={styles.heroMiniProofLeft}>
-                <span className={styles.star} aria-hidden="true">
-                  ★
-                </span>
-                <strong>{(reviewsRating || 5.0).toFixed(1)}</strong>
-                <span className={styles.muted}>
-                  ({reviewsCount || GOOGLE_REVIEWS.fr.length}{" "}
-                  {lang === "fr" ? "avis" : lang === "en" ? "reviews" : "reseñas"})
-                </span>
-              </div>
-
-              <a
-                className={styles.heroMiniProofLink}
-                href="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {viewOnGoogle}
-              </a>
-            </div>
-
             <div className={styles.heroLinks}>
               <Link href={toClient} className={styles.heroLink} prefetch>
                 {T.nav.client}
