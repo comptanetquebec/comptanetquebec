@@ -9,8 +9,6 @@ import styles from "./page.module.css";
 import GoogleReviews from "@/components/GoogleReviews";
 import { GOOGLE_REVIEWS } from "@/components/googleReviewsData";
 
-// reCAPTCHA géré par le component RecaptchaV2 (pas de grecaptcha global ici)
-
 /* ===== Types ===== */
 type Lang = "fr" | "en" | "es";
 
@@ -302,22 +300,16 @@ export default function Home() {
           close: "Fermer",
         },
 
+        // ✅ PLUS COURT / PLUS FRIENDLY
         heroTitle: (
           <>
-            Service de{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              déclaration d’impôt au Québec
-            </span>{" "}
+            Déclaration d’impôt{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>au Québec</span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>en ligne</span>
           </>
         ),
-
-        heroExperience:
-          "Plus de 30 ans d’expérience. Des milliers de déclarations produites au Québec.",
-
-        heroSubShort:
-          "Déclaration d’impôt au Québec, 100% en ligne. Ouvrez votre dossier, téléversez vos documents, et je vous contacte s’il manque quelque chose.",
-
+        heroExperience: "30+ ans d’expérience au Québec",
+        heroSubShort: "Simple. Rapide. 100% en ligne. Déposez vos documents et on s’occupe du reste.",
         heroSubMore:
           "Service indépendant de préparation de déclarations de revenus au Québec. Portail sécurisé (photo/PDF). Acompte à l’ouverture, solde avant l’envoi. Transmission électronique (TED) lorsque applicable.",
 
@@ -333,16 +325,15 @@ export default function Home() {
         chooseType: "Choisissez votre situation",
         t1Title: "👤 Salarié(e), étudiant(e) ou retraité(e)",
         t1Desc: "T4, Relevé 1, pension, études, etc.",
-        t1Btn: "Commencer ma déclaration maintenant",
+        t1Btn: "Commencer maintenant",
 
         autoTitle: "💼 Travailleur autonome / à mon compte",
         autoDesc: "Revenus + dépenses d’entreprise (factures, relevés, etc.).",
-        autoBtn: "Commencer ma déclaration maintenant",
+        autoBtn: "Commencer maintenant",
 
         t2Title: "🏢 Compagnie incorporée",
-        t2Desc:
-          "Déclaration de société (T2 + CO-17) selon les documents fournis.",
-        t2Btn: "Créer mon dossier corporatif",
+        t2Desc: "Déclaration de société (T2 + CO-17) selon les documents fournis.",
+        t2Btn: "Créer mon dossier",
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
         seoP1:
@@ -388,43 +379,43 @@ export default function Home() {
           { n: "4", t: "Validation et envoi", d: "Paiement du solde avant l’envoi (TED si applicable)." },
         ],
 
-       pricingTitle: "Tarifs 2026",
-pricingSub:
-  "Tarifs de base (taxes incluses). Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
-plans: [
-  {
-    t: "Déclaration d’impôt — Particulier",
-    p: "à partir de 100 $ (taxes incluses)",
-    pts: [
-      "Acompte requis : 100 $ (taxes incluses)",
-      "Portail sécurisé",
-      "Préparation selon documents fournis",
-    ],
-    href: "/tarifs/t1",
-  },
-  {
-    t: "Travailleur autonome",
-    p: "à partir de 150 $ (taxes incluses)",
-    pts: [
-      "Acompte requis : 150 $ (taxes incluses)",
-      "Portail sécurisé",
-      "Revenus + dépenses selon pièces",
-    ],
-    href: "/tarifs/travailleur-autonome",
-  },
-  {
-    t: "Compagnie incorporée",
-    p: "à partir de 850 $ (taxes incluses)",
-    pts: [
-      "Acompte requis : 450 $ (taxes incluses)",
-      "Portail sécurisé",
-      "T2 + CO-17",
-      "Société sans revenus : à partir de 450 $ (taxes incluses)",
-    ],
-    href: "/tarifs/t2",
-  },
-],
-getPrice: "Voir les détails",
+        pricingTitle: "Tarifs 2026",
+        pricingSub:
+          "Tarifs de base (taxes incluses). Le prix final dépend de la complexité (revenus multiples, immeubles locatifs, tenue de livres manquante, etc.). Le montant est confirmé avant l’envoi.",
+        plans: [
+          {
+            t: "Déclaration d’impôt — Particulier",
+            p: "à partir de 100 $ (taxes incluses)",
+            pts: [
+              "Acompte requis : 100 $ (taxes incluses)",
+              "Portail sécurisé",
+              "Préparation selon documents fournis",
+            ],
+            href: "/tarifs/t1",
+          },
+          {
+            t: "Travailleur autonome",
+            p: "à partir de 150 $ (taxes incluses)",
+            pts: [
+              "Acompte requis : 150 $ (taxes incluses)",
+              "Portail sécurisé",
+              "Revenus + dépenses selon pièces",
+            ],
+            href: "/tarifs/travailleur-autonome",
+          },
+          {
+            t: "Compagnie incorporée",
+            p: "à partir de 850 $ (taxes incluses)",
+            pts: [
+              "Acompte requis : 450 $ (taxes incluses)",
+              "Portail sécurisé",
+              "T2 + CO-17",
+              "Société sans revenus : à partir de 450 $ (taxes incluses)",
+            ],
+            href: "/tarifs/t2",
+          },
+        ],
+        getPrice: "Voir les détails",
 
         whyTitle: "Pourquoi choisir ComptaNet Québec",
         whyPoints: [
@@ -436,30 +427,12 @@ getPrice: "Voir les détails",
 
         faqTitle: "FAQ",
         faq: [
-          {
-            q: "Est-ce seulement pour le Québec ?",
-            a: "Oui. ComptaNet Québec sert les résidents et entreprises du Québec.",
-          },
-          {
-            q: "Je ne sais pas quel type choisir.",
-            a: "Choisissez la description la plus proche. Si vous hésitez, écrivez-nous et on vous guide.",
-          },
-          {
-            q: "Comment j’envoie mes documents ?",
-            a: "Après création du compte, vous téléversez vos documents (photo ou PDF) dans le portail.",
-          },
-          {
-            q: "Combien de temps ça prend ?",
-            a: "Particulier : 24 à 48 h ouvrables si dossier complet. Période de pointe : 3 à 7 jours ouvrables selon le volume. Travailleur autonome et compagnie : variable selon documents; estimation après analyse.",
-          },
-          {
-            q: "Comment se fait le paiement ?",
-            a: "Acompte à l’ouverture. Solde payable quand la déclaration est prête, avant l’envoi.",
-          },
-          {
-            q: "Quels documents dois-je fournir ?",
-            a: "Ça dépend de votre situation. Une checklist simple est fournie après ouverture du dossier.",
-          },
+          { q: "Est-ce seulement pour le Québec ?", a: "Oui. ComptaNet Québec sert les résidents et entreprises du Québec." },
+          { q: "Je ne sais pas quel type choisir.", a: "Choisissez la description la plus proche. Si vous hésitez, écrivez-nous et on vous guide." },
+          { q: "Comment j’envoie mes documents ?", a: "Après création du compte, vous téléversez vos documents (photo ou PDF) dans le portail." },
+          { q: "Combien de temps ça prend ?", a: "Particulier : 24 à 48 h ouvrables si dossier complet. Période de pointe : 3 à 7 jours ouvrables selon le volume. Travailleur autonome et compagnie : variable selon documents; estimation après analyse." },
+          { q: "Comment se fait le paiement ?", a: "Acompte à l’ouverture. Solde payable quand la déclaration est prête, avant l’envoi." },
+          { q: "Quels documents dois-je fournir ?", a: "Ça dépend de votre situation. Une checklist simple est fournie après ouverture du dossier." },
         ],
 
         contactTitle: "Contact",
@@ -468,11 +441,7 @@ getPrice: "Voir les détails",
         sending: "Envoi...",
         sentOk: "Message envoyé. Merci!",
         sentErr: "Impossible d’envoyer. Réessayez ou écrivez-nous par courriel.",
-        contactPlaceholders: {
-          name: "Votre nom",
-          email: "Votre courriel",
-          msg: "Votre message",
-        },
+        contactPlaceholders: { name: "Votre nom", email: "Votre courriel", msg: "Votre message" },
 
         langLabel: "Langue",
         langNames: { fr: "FR", en: "EN", es: "ES" },
@@ -483,12 +452,12 @@ getPrice: "Voir les détails",
           contact: "Contact",
           help: "Besoin d’aide ?",
           legal: {
-  privacy: "Politique de confidentialité",
-  terms: "Conditions d’utilisation",
-  disclaimer: "Avis légal",
-  note:
-    "ComptaNet Québec est une marque exploitée par Les Entreprises Kema Inc. (NEQ : 1175912972). Service indépendant — nous ne sommes pas l’ARC ni Revenu Québec. Les déclarations sont préparées et transmises à partir des informations fournies par le client. Tous les prix sont en dollars canadiens (CAD) et incluent les taxes applicables (TPS/TVQ).",
-},
+            privacy: "Politique de confidentialité",
+            terms: "Conditions d’utilisation",
+            disclaimer: "Avis légal",
+            note:
+              "ComptaNet Québec est une marque exploitée par Les Entreprises Kema Inc. (NEQ : 1175912972). Service indépendant — nous ne sommes pas l’ARC ni Revenu Québec. Les déclarations sont préparées et transmises à partir des informations fournies par le client. Tous les prix sont en dollars canadiens (CAD) et incluent les taxes applicables (TPS/TVQ).",
+          },
         },
       },
 
@@ -506,22 +475,16 @@ getPrice: "Voir les détails",
           close: "Close",
         },
 
+        // ✅ SHORTER
         heroTitle: (
           <>
             Québec{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              tax return service
-            </span>{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>tax returns</span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>online</span>
           </>
         ),
-
-        heroExperience:
-          "Over 30 years of experience. Thousands of Québec returns prepared.",
-
-        heroSubShort:
-          "Québec-only online tax return service. Open your file, upload documents, and we prepare your return. We contact you if anything is missing.",
-
+        heroExperience: "30+ years of Québec experience",
+        heroSubShort: "Simple. Fast. 100% online. Upload your documents and we handle the rest.",
         heroSubMore:
           "Independent Québec tax preparation. Secure portal (photo/PDF). Deposit to open your file, balance before filing. TED e-filing when applicable.",
 
@@ -537,15 +500,15 @@ getPrice: "Voir les détails",
         chooseType: "Choose your situation",
         t1Title: "👤 Employee, student or retiree",
         t1Desc: "T4, RL-1, pension, studies, etc.",
-        t1Btn: "Start my tax return now",
+        t1Btn: "Start now",
 
         autoTitle: "💼 Self-employed / business income",
         autoDesc: "Income + expenses based on supporting documents.",
-        autoBtn: "Start my tax return now",
+        autoBtn: "Start now",
 
         t2Title: "🏢 Incorporated business",
         t2Desc: "Corporate filing (T2 + CO-17) based on your documents.",
-        t2Btn: "Open my corporate file",
+        t2Btn: "Open my file",
 
         seoTitle: "Québec tax return service, simple and guided",
         seoP1:
@@ -560,14 +523,8 @@ getPrice: "Voir les détails",
         servicesSub: "Québec-only tax returns — secure document portal.",
         services: [
           { t: "Tax return — Individual", d: "Prepared from your documents." },
-          {
-            t: "Tax return — Self-employed",
-            d: "Income and expenses from documents.",
-          },
-          {
-            t: "Tax return — Incorporated business",
-            d: "Corporate filing (T2 + CO-17) from documents.",
-          },
+          { t: "Tax return — Self-employed", d: "Income and expenses from documents." },
+          { t: "Tax return — Incorporated business", d: "Corporate filing (T2 + CO-17) from documents." },
           { t: "TED accreditation", d: "Electronic filing when applicable." },
           { t: "Secure portal", d: "Upload documents (photo or PDF)." },
         ],
@@ -583,43 +540,27 @@ getPrice: "Voir les détails",
         pricingTitle: "2026 Pricing",
         pricingSub:
           "Base pricing. Final price depends on complexity (multiple income sources, rental properties, missing bookkeeping, etc.) and is confirmed before filing. All prices are in Canadian dollars (CAD) and include applicable taxes (GST/QST).",
-plans: [
-  {
-    t: "Tax return — Individual",
-    p: "from $100",
-    pts: [
-      "Deposit: $100",
-      "Secure client portal",
-      "Prepared from documents provided",
-      "Taxes included (CAD)"
-    ],
-    href: "/tarifs/t1",
-  },
-  {
-    t: "Self-employed",
-    p: "from $150",
-    pts: [
-      "Deposit: $150",
-      "Secure client portal",
-      "Income and expenses based on documents",
-      "Taxes included (CAD)"
-    ],
-    href: "/tarifs/travailleur-autonome",
-  },
-  {
-    t: "Incorporated business",
-    p: "from $450",
-    pts: [
-      "Deposit: $450",
-      "Secure client portal",
-      "T2 + CO-17 corporate filing",
-      "No-revenue corporation: from $450",
-      "Taxes included (CAD)"
-    ],
-    href: "/tarifs/t2",
-  },
-],
-getPrice: "View details",
+        plans: [
+          {
+            t: "Tax return — Individual",
+            p: "from $100",
+            pts: ["Deposit: $100", "Secure client portal", "Prepared from documents provided", "Taxes included (CAD)"],
+            href: "/tarifs/t1",
+          },
+          {
+            t: "Self-employed",
+            p: "from $150",
+            pts: ["Deposit: $150", "Secure client portal", "Income and expenses based on documents", "Taxes included (CAD)"],
+            href: "/tarifs/travailleur-autonome",
+          },
+          {
+            t: "Incorporated business",
+            p: "from $450",
+            pts: ["Deposit: $450", "Secure client portal", "T2 + CO-17 corporate filing", "No-revenue corporation: from $450", "Taxes included (CAD)"],
+            href: "/tarifs/t2",
+          },
+        ],
+        getPrice: "View details",
 
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
@@ -656,12 +597,12 @@ getPrice: "View details",
           contact: "Contact",
           help: "Need help?",
           legal: {
-  privacy: "Privacy policy",
-  terms: "Terms of use",
-  disclaimer: "Legal notice",
-  note:
-    "ComptaNet Québec is a brand operated by Les Entreprises Kema Inc. (NEQ: 1175912972). Independent service — we are not the CRA nor Revenu Québec. Returns are prepared and filed based solely on client-provided information. All prices are in Canadian dollars (CAD) and include applicable taxes (GST/QST).",
-},
+            privacy: "Privacy policy",
+            terms: "Terms of use",
+            disclaimer: "Legal notice",
+            note:
+              "ComptaNet Québec is a brand operated by Les Entreprises Kema Inc. (NEQ: 1175912972). Independent service — we are not the CRA nor Revenu Québec. Returns are prepared and filed based solely on client-provided information. All prices are in Canadian dollars (CAD) and include applicable taxes (GST/QST).",
+          },
         },
       },
 
@@ -679,22 +620,16 @@ getPrice: "View details",
           close: "Cerrar",
         },
 
+        // ✅ SHORTER
         heroTitle: (
           <>
-            Servicio de{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>
-              impuestos en Québec
-            </span>{" "}
-            — <span style={{ color: bleu, fontWeight: 900 }}>en línea</span>
+            Impuestos en{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>Québec</span> —{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>en línea</span>
           </>
         ),
-
-        heroExperience:
-          "Más de 30 años de experiencia. Miles de declaraciones preparadas en Québec.",
-
-        heroSubShort:
-          "Servicio de impuestos en Québec 100% en línea. Abra su expediente, suba documentos y preparamos su declaración. Le contactamos si falta algo.",
-
+        heroExperience: "30+ años de experiencia en Québec",
+        heroSubShort: "Simple. Rápido. 100% en línea. Suba sus documentos y nos encargamos del resto.",
         heroSubMore:
           "Servicio independiente solo para Québec. Portal seguro (foto/PDF). Depósito para abrir el expediente, saldo antes de presentar. Presentación electrónica (TED) cuando aplique.",
 
@@ -710,15 +645,15 @@ getPrice: "View details",
         chooseType: "Elija su situación",
         t1Title: "👤 Empleado/a, estudiante o jubilado/a",
         t1Desc: "T4, RL-1, pensión, estudios, etc.",
-        t1Btn: "Comenzar ahora",
+        t1Btn: "Empezar ahora",
 
         autoTitle: "💼 Autónomo / por cuenta propia",
         autoDesc: "Ingresos + gastos según comprobantes.",
-        autoBtn: "Comenzar ahora",
+        autoBtn: "Empezar ahora",
 
         t2Title: "🏢 Empresa incorporada",
         t2Desc: "Declaración (T2 + CO-17) según sus documentos.",
-        t2Btn: "Abrir expediente corporativo",
+        t2Btn: "Abrir expediente",
 
         seoTitle: "Servicio de impuestos en Québec, simple y guiado",
         seoP1:
@@ -749,43 +684,28 @@ getPrice: "View details",
 
         pricingTitle: "Precios 2026",
         pricingSub:
-  "Precios base. El monto final depende de la complejidad (múltiples ingresos, propiedades en alquiler, contabilidad incompleta, etc.) y se confirma antes de presentar la declaración. Todos los precios están en dólares canadienses (CAD) e incluyen los impuestos aplicables (GST/QST).",
-
-plans: [
-  {
-    t: "Impuestos — Particular",
-    p: "desde $100 CAD (impuestos incluidos)",
-    pts: [
-      "Depósito requerido: $100",
-      "Portal seguro",
-      "Preparación según documentos proporcionados",
-    ],
-    href: "/tarifs/t1",
-  },
-  {
-    t: "Autónomo",
-    p: "desde $150 CAD (impuestos incluidos)",
-    pts: [
-      "Depósito requerido: $150",
-      "Portal seguro",
-      "Ingresos y gastos según comprobantes",
-    ],
-    href: "/tarifs/travailleur-autonome",
-  },
-  {
-    t: "Empresa incorporada",
-    p: "desde $850 CAD (impuestos incluidos)",
-    pts: [
-      "Depósito requerido: $450",
-      "Portal seguro",
-      "T2 + CO-17",
-      "Empresa sin ingresos: desde $450 CAD",
-    ],
-    href: "/tarifs/t2",
-  },
-],
-
-getPrice: "Ver detalles",
+          "Precios base. El monto final depende de la complejidad (múltiples ingresos, propiedades en alquiler, contabilidad incompleta, etc.) y se confirma antes de presentar la declaración. Todos los precios están en dólares canadienses (CAD) e incluyen los impuestos aplicables (GST/QST).",
+        plans: [
+          {
+            t: "Impuestos — Particular",
+            p: "desde $100 CAD (impuestos incluidos)",
+            pts: ["Depósito requerido: $100", "Portal seguro", "Preparación según documentos proporcionados"],
+            href: "/tarifs/t1",
+          },
+          {
+            t: "Autónomo",
+            p: "desde $150 CAD (impuestos incluidos)",
+            pts: ["Depósito requerido: $150", "Portal seguro", "Ingresos y gastos según comprobantes"],
+            href: "/tarifs/travailleur-autonome",
+          },
+          {
+            t: "Empresa incorporada",
+            p: "desde $850 CAD (impuestos incluidos)",
+            pts: ["Depósito requerido: $450", "Portal seguro", "T2 + CO-17", "Empresa sin ingresos: desde $450 CAD"],
+            href: "/tarifs/t2",
+          },
+        ],
+        getPrice: "Ver detalles",
 
         whyTitle: "Por qué elegir ComptaNet Québec",
         whyPoints: [
@@ -822,12 +742,12 @@ getPrice: "Ver detalles",
           contact: "Contacto",
           help: "¿Necesitas ayuda?",
           legal: {
-  privacy: "Política de privacidad",
-  terms: "Términos de uso",
-  disclaimer: "Aviso legal",
-  note:
-    "ComptaNet Québec es una marca operada por Les Entreprises Kema Inc. (NEQ: 1175912972). Servicio independiente — no somos la CRA ni Revenu Québec. Las declaraciones se preparan y presentan únicamente con la información proporcionada por el cliente. Todos los precios están en dólares canadienses (CAD) e incluyen los impuestos aplicables (GST/QST).",
-},
+            privacy: "Política de privacidad",
+            terms: "Términos de uso",
+            disclaimer: "Aviso legal",
+            note:
+              "ComptaNet Québec es una marca operada por Les Entreprises Kema Inc. (NEQ: 1175912972). Servicio independiente — no somos la CRA ni Revenu Québec. Las declaraciones se preparan y presentan únicamente con la información proporcionada por el cliente. Todos los precios están en dólares canadienses (CAD) e incluyen los impuestos aplicables (GST/QST).",
+          },
         },
       },
     };
@@ -835,31 +755,29 @@ getPrice: "Ver detalles",
     return dict;
   }, [bleu]);
 
- const T = COPY[lang];
+  const T = COPY[lang];
 
-// 👉 AJOUTE ICI
-const reviews = GOOGLE_REVIEWS[lang] ?? GOOGLE_REVIEWS.fr;
+  // Reviews
+  const reviews = GOOGLE_REVIEWS[lang] ?? GOOGLE_REVIEWS.fr;
+  const reviewsCount = reviews.length;
+  const reviewsRating =
+    reviewsCount > 0
+      ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewsCount
+      : 0;
 
-const reviewsCount = reviews.length;
+  // ✅ Liens (inchangés)
+  const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
+  const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
 
-const reviewsRating =
-  reviewsCount > 0
-    ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewsCount
-    : 0;
-
-// ✅ Liens (inchangés)
-const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
-const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
-
-const toT1 = `/espace-client?lang=${encodeURIComponent(
-  lang
-)}&next=${encodeURIComponent("/formulaire-fiscal")}`;
-const toT1Auto = `/espace-client?lang=${encodeURIComponent(
-  lang
-)}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
-const toT2 = `/espace-client?lang=${encodeURIComponent(
-  lang
-)}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
+  const toT1 = `/espace-client?lang=${encodeURIComponent(
+    lang
+  )}&next=${encodeURIComponent("/formulaire-fiscal")}`;
+  const toT1Auto = `/espace-client?lang=${encodeURIComponent(
+    lang
+  )}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
+  const toT2 = `/espace-client?lang=${encodeURIComponent(
+    lang
+  )}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
   // ✅ FAQ schema (JSON-LD)
   const faqJsonLd = useMemo(() => {
@@ -874,83 +792,77 @@ const toT2 = `/espace-client?lang=${encodeURIComponent(
     };
   }, [T.faq]);
 
-  // ✅ Organization schema (JSON-LD) — SEO boost
+  // ✅ LocalBusiness schema (JSON-LD)
   const localJsonLd = useMemo(() => {
-  const base = "https://www.comptanetquebec.com";
-  return {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: "ComptaNet Québec",
-    url: base,
-    telephone: "+15819852599",
-    email: "comptanetquebec@gmail.com",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "849, boulevard Pie XII",
-      addressLocality: "Québec",
-      addressRegion: "QC",
-      postalCode: "G1X 3T2",
-      addressCountry: "CA",
-    },
-    areaServed: { "@type": "AdministrativeArea", name: "Québec" },
-  };
-}, []);
+    const base = "https://www.comptanetquebec.com";
+    return {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name: "ComptaNet Québec",
+      url: base,
+      telephone: "+15819852599",
+      email: "comptanetquebec@gmail.com",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "849, boulevard Pie XII",
+        addressLocality: "Québec",
+        addressRegion: "QC",
+        postalCode: "G1X 3T2",
+        addressCountry: "CA",
+      },
+      areaServed: { "@type": "AdministrativeArea", name: "Québec" },
+    };
+  }, []);
 
   const onContactSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-  e.preventDefault();
-  setContactOk(null);
-  setContactErr(null);
+    e.preventDefault();
+    setContactOk(null);
+    setContactErr(null);
 
-  const token = recaptchaRef.current?.getToken() || "";
-
-  if (!token) {
-    setContactErr(
-      lang === "fr"
-        ? "Merci de cocher « Je ne suis pas un robot »."
-        : lang === "en"
-        ? 'Please check "I’m not a robot".'
-        : 'Por favor marque "No soy un robot".'
-    );
-    return;
-  }
-
-  setContactBusy(true);
-  try {
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: contactName,
-        email: contactEmail,
-        message: contactMsg,
-        token,
-        company: "", // honeypot
-      }),
-    });
-
-    const data = (await res.json()) as { ok?: boolean; error?: string };
-
-    if (!res.ok || !data?.ok) {
-      throw new Error(data?.error || "bad_status");
+    const token = recaptchaRef.current?.getToken() || "";
+    if (!token) {
+      setContactErr(
+        lang === "fr"
+          ? "Merci de cocher « Je ne suis pas un robot »."
+          : lang === "en"
+          ? 'Please check "I’m not a robot".'
+          : 'Por favor marque "No soy un robot".'
+      );
+      return;
     }
 
-    setContactOk(T.sentOk);
-    setContactName("");
-    setContactEmail("");
-    setContactMsg("");
-    recaptchaRef.current?.reset();
-  } catch {
-    setContactErr(T.sentErr);
-  } finally {
-    setContactBusy(false);
-  }
-};
+    setContactBusy(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: contactName,
+          email: contactEmail,
+          message: contactMsg,
+          token,
+          company: "", // honeypot
+        }),
+      });
 
-// ✅ EN DEHORS de la fonction (juste après)
-const learnMoreLabel =
-  lang === "fr" ? "En savoir plus" : lang === "en" ? "Learn more" : "Saber más";
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "bad_status");
 
-  // ✅ CTA principal (3 langues)
+      setContactOk(T.sentOk);
+      setContactName("");
+      setContactEmail("");
+      setContactMsg("");
+      recaptchaRef.current?.reset();
+    } catch {
+      setContactErr(T.sentErr);
+    } finally {
+      setContactBusy(false);
+    }
+  };
+
+  const learnMoreLabel =
+    lang === "fr" ? "En savoir plus" : lang === "en" ? "Learn more" : "Saber más";
+
   const primaryCta =
     lang === "fr"
       ? "Choisir mon type d’impôt"
@@ -960,20 +872,18 @@ const learnMoreLabel =
 
   return (
     <main className={styles.main}>
-     
       {/* FAQ JSON-LD */}
       <Script
         id="faq-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-
-      {/* Organization JSON-LD */}
-       <Script
-  id="local-jsonld"
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{ __html: JSON.stringify(localJsonLd) }}
-/>
+      {/* LocalBusiness JSON-LD */}
+      <Script
+        id="local-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localJsonLd) }}
+      />
 
       {/* NAVBAR */}
       <header className={styles.header}>
@@ -1093,7 +1003,7 @@ const learnMoreLabel =
 
             <p className={styles.heroSub}>{T.heroSubShort}</p>
 
-            {/* ✅ CTA principal */}
+            {/* CTA principal */}
             <div className={styles.heroPrimaryCtaRow}>
               <a
                 href="#types-impot"
@@ -1104,7 +1014,7 @@ const learnMoreLabel =
               </a>
             </div>
 
-            {/* ✅ Lien secondaire */}
+            {/* Lien secondaire */}
             <div className={styles.heroMoreLinkRow}>
               <Link
                 href={`/declaration-impot-quebec?lang=${encodeURIComponent(lang)}`}
@@ -1117,32 +1027,34 @@ const learnMoreLabel =
 
             <TrustBar items={T.trust} />
 
-<GoogleReviews
-  lang={lang}
-  rating={reviewsRating || 5.0}
-  count={reviewsCount || GOOGLE_REVIEWS.fr.length}
-  items={reviewsCount ? reviews : GOOGLE_REVIEWS.fr}
-  googleUrl="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
-  compact
-/>
-<div className={styles.heroLinks}>
-  <Link href={toClient} className={styles.heroLink} prefetch>
-    {T.nav.client}
-  </Link>
-  <span className={styles.heroSep}>•</span>
-  <Link href={toHelp} className={styles.heroLink} prefetch>
-    {T.nav.help}
-  </Link>
-  {isAdmin && (
-    <>
-      <span className={styles.heroSep}>•</span>
-      <Link href="/admin/dossiers" className={styles.heroLinkAdmin}>
-        Admin
-      </Link>
-    </>
-  )}
-</div>
-            {/* ✅ Anchor target */}
+            <GoogleReviews
+              lang={lang}
+              rating={reviewsRating || 5.0}
+              count={reviewsCount || GOOGLE_REVIEWS.fr.length}
+              items={reviewsCount ? reviews : GOOGLE_REVIEWS.fr}
+              googleUrl="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
+              compact
+            />
+
+            <div className={styles.heroLinks}>
+              <Link href={toClient} className={styles.heroLink} prefetch>
+                {T.nav.client}
+              </Link>
+              <span className={styles.heroSep}>•</span>
+              <Link href={toHelp} className={styles.heroLink} prefetch>
+                {T.nav.help}
+              </Link>
+              {isAdmin && (
+                <>
+                  <span className={styles.heroSep}>•</span>
+                  <Link href="/admin/dossiers" className={styles.heroLinkAdmin}>
+                    Admin
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Anchor target */}
             <div id="types-impot" className={styles.choiceBox}>
               <div className={styles.choiceTitle}>{T.chooseType}</div>
 
@@ -1298,196 +1210,177 @@ const learnMoreLabel =
         <FAQ items={T.faq} />
       </section>
 
-     {/* CONTACT */}
-<section id="contact" className={styles.section} style={{ marginBottom: 0 }}>
-  <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
+      {/* CONTACT */}
+      <section id="contact" className={styles.section} style={{ marginBottom: 0 }}>
+        <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
 
-  <div className={styles.contactGrid}>
-    {/* Colonne gauche : infos */}
-    <div className={styles.contactCard}>
-      <h3 className={styles.contactCardTitle}>
-        {lang === "fr"
-          ? "Coordonnées"
-          : lang === "en"
-          ? "Contact details"
-          : "Datos de contacto"}
-      </h3>
+        <div className={styles.contactGrid}>
+          {/* Colonne gauche : infos */}
+          <div className={styles.contactCard}>
+            <h3 className={styles.contactCardTitle}>
+              {lang === "fr"
+                ? "Coordonnées"
+                : lang === "en"
+                ? "Contact details"
+                : "Datos de contacto"}
+            </h3>
 
-      <div className={styles.contactLine}>
-        <span className={styles.contactLabel}>
-          {lang === "fr" ? "Adresse" : lang === "en" ? "Address" : "Dirección"}
-        </span>
-        <span className={styles.contactValue}>
-          849, boulevard Pie XII<br />
-          Québec (QC) G1X 3T2
-        </span>
-      </div>
+            <div className={styles.contactLine}>
+              <span className={styles.contactLabel}>
+                {lang === "fr" ? "Adresse" : lang === "en" ? "Address" : "Dirección"}
+              </span>
+              <span className={styles.contactValue}>
+                849, boulevard Pie XII<br />
+                Québec (QC) G1X 3T2
+              </span>
+            </div>
 
-      <div className={styles.contactLine}>
-        <span className={styles.contactLabel}>
-          {lang === "fr"
-            ? "Sur rendez-vous"
-            : lang === "en"
-            ? "By appointment"
-            : "Con cita"}
-        </span>
-        <span className={styles.contactValue}>
-          {lang === "fr"
-            ? "Sur rendez-vous seulement"
-            : lang === "en"
-            ? "Appointment only"
-            : "Solo con cita"}
-        </span>
-      </div>
+            <div className={styles.contactLine}>
+              <span className={styles.contactLabel}>
+                {lang === "fr" ? "Sur rendez-vous" : lang === "en" ? "By appointment" : "Con cita"}
+              </span>
+              <span className={styles.contactValue}>
+                {lang === "fr" ? "Sur rendez-vous seulement" : lang === "en" ? "Appointment only" : "Solo con cita"}
+              </span>
+            </div>
 
-      <div className={styles.contactLine}>
-        <span className={styles.contactLabel}>
-          {lang === "fr" ? "Téléphone" : lang === "en" ? "Phone" : "Teléfono"}
-        </span>
-        {/* Visible mais PAS cliquable (évite les appels) */}
-        <span className={styles.contactValue}>581-985-2599</span>
-      </div>
+            <div className={styles.contactLine}>
+              <span className={styles.contactLabel}>
+                {lang === "fr" ? "Téléphone" : lang === "en" ? "Phone" : "Teléfono"}
+              </span>
+              <span className={styles.contactValue}>581-985-2599</span>
+            </div>
 
-      <div className={styles.contactLine}>
-        <span className={styles.contactLabel}>
-          {lang === "fr" ? "Courriel" : lang === "en" ? "Email" : "Correo"}
-        </span>
-        <a
-  className={styles.contactValueLink}
-  href="mailto:info@comptanetquebec.com"
->
-  info@comptanetquebec.com
-</a>
-      </div>
+            <div className={styles.contactLine}>
+              <span className={styles.contactLabel}>
+                {lang === "fr" ? "Courriel" : lang === "en" ? "Email" : "Correo"}
+              </span>
+              <a className={styles.contactValueLink} href="mailto:info@comptanetquebec.com">
+                info@comptanetquebec.com
+              </a>
+            </div>
 
-      <div className={styles.contactNote}>
-        {lang === "fr"
-          ? "Service 100 % en ligne partout au Québec. Rencontres en personne possibles sur rendez-vous seulement, à Québec."
-          : lang === "en"
-          ? "100% online service across Québec. In-person meetings are available by appointment only in Québec City."
-          : "Servicio 100 % en línea en todo Québec. Las reuniones presenciales están disponibles solo con cita previa en la ciudad de Québec."}
-      </div>
+            <div className={styles.contactNote}>
+              {lang === "fr"
+                ? "Service 100 % en ligne partout au Québec. Rencontres en personne possibles sur rendez-vous seulement, à Québec."
+                : lang === "en"
+                ? "100% online service across Québec. In-person meetings are available by appointment only in Québec City."
+                : "Servicio 100 % en línea en todo Québec. Las reuniones presenciales están disponibles solo con cita previa en la ciudad de Québec."}
+            </div>
 
-      <div className={styles.contactPrefer}>
-        <div className={styles.contactPreferTitle}>
-          {lang === "fr"
-            ? "Canal prioritaire"
-            : lang === "en"
-            ? "Preferred channel"
-            : "Canal preferido"}
+            <div className={styles.contactPrefer}>
+              <div className={styles.contactPreferTitle}>
+                {lang === "fr"
+                  ? "Canal prioritaire"
+                  : lang === "en"
+                  ? "Preferred channel"
+                  : "Canal preferido"}
+              </div>
+
+              <div className={styles.contactPreferText}>
+                {lang === "fr"
+                  ? "Pour un service rapide, utilisez l’espace client ou le formulaire. Aucune réception sans rendez-vous."
+                  : lang === "en"
+                  ? "For faster service, please use the client portal or the form. No walk-ins — appointment required."
+                  : "Para un servicio más rápido, use el portal del cliente o el formulario. No atendemos sin cita previa."}
+              </div>
+
+              <div className={styles.contactPriority}>
+                {lang === "fr"
+                  ? "⚡ Priorité : ouvrez votre dossier dans l’espace client."
+                  : lang === "en"
+                  ? "⚡ Priority: open your file in the client portal."
+                  : "⚡ Prioridad: abra su expediente en el portal del cliente."}
+              </div>
+            </div>
+
+            <div className={styles.contactCtas}>
+              <Link
+                href={toClient}
+                className="btn btn-primary"
+                style={{ borderRadius: 10 }}
+                prefetch
+              >
+                {lang === "fr"
+                  ? "Ouvrir l’espace client"
+                  : lang === "en"
+                  ? "Open client portal"
+                  : "Abrir portal del cliente"}
+              </Link>
+
+              <Link
+                href={toHelp}
+                className="btn btn-outline"
+                style={{ borderRadius: 10 }}
+                prefetch
+              >
+                {lang === "fr" ? "Besoin d’aide ?" : lang === "en" ? "Need help?" : "¿Necesitas ayuda?"}
+              </Link>
+            </div>
+          </div>
+
+          {/* Colonne droite : formulaire */}
+          <div className={styles.contactCard}>
+            <h3 className={styles.contactCardTitle}>
+              {lang === "fr"
+                ? "Écrire un message"
+                : lang === "en"
+                ? "Send a message"
+                : "Enviar un mensaje"}
+            </h3>
+
+            <form onSubmit={onContactSubmit} className={styles.contactForm}>
+              <input
+                name="name"
+                placeholder={T.contactPlaceholders.name}
+                required
+                className={styles.input}
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+              />
+
+              <input
+                name="email"
+                placeholder={T.contactPlaceholders.email}
+                type="email"
+                required
+                className={styles.input}
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+              />
+
+              <textarea
+                name="message"
+                placeholder={T.contactPlaceholders.msg}
+                rows={5}
+                required
+                className={styles.input}
+                value={contactMsg}
+                onChange={(e) => setContactMsg(e.target.value)}
+              />
+
+              <RecaptchaV2 ref={recaptchaRef} siteKey="6Lc072ssAAAAABf_BKFEvaxaqX0lTK3klGU9Z39D" />
+
+              {contactErr && <div className={styles.err}>{contactErr}</div>}
+              {contactOk && <div className={styles.ok}>{contactOk}</div>}
+
+              <button
+                type="submit"
+                disabled={contactBusy}
+                className="btn btn-primary"
+                style={{ borderRadius: btnRadius }}
+              >
+                {contactBusy ? T.sending : T.send}
+              </button>
+            </form>
+
+            <p className={styles.contactHint}>
+              {T.contactHint}{" "}
+              <a href="mailto:info@comptanetquebec.com">info@comptanetquebec.com</a>
+            </p>
+          </div>
         </div>
-
-        <div className={styles.contactPreferText}>
-          {lang === "fr"
-            ? "Pour un service rapide, utilisez l’espace client ou le formulaire. Aucune réception sans rendez-vous."
-            : lang === "en"
-            ? "For faster service, please use the client portal or the form. No walk-ins — appointment required."
-            : "Para un servicio más rápido, use el portal del cliente o el formulario. No atendemos sin cita previa."}
-        </div>
-
-        <div className={styles.contactPriority}>
-          {lang === "fr"
-            ? "⚡ Priorité : ouvrez votre dossier dans l’espace client."
-            : lang === "en"
-            ? "⚡ Priority: open your file in the client portal."
-            : "⚡ Prioridad: abra su expediente en el portal del cliente."}
-        </div>
-      </div>
-
-      <div className={styles.contactCtas}>
-        <Link
-          href={toClient}
-          className="btn btn-primary"
-          style={{ borderRadius: 10 }}
-          prefetch
-        >
-          {lang === "fr"
-            ? "Ouvrir l’espace client"
-            : lang === "en"
-            ? "Open client portal"
-            : "Abrir portal del cliente"}
-        </Link>
-
-        <Link
-          href={toHelp}
-          className="btn btn-outline"
-          style={{ borderRadius: 10 }}
-          prefetch
-        >
-          {lang === "fr"
-            ? "Besoin d’aide ?"
-            : lang === "en"
-            ? "Need help?"
-            : "¿Necesitas ayuda?"}
-        </Link>
-      </div>
-    </div>
-
-    {/* Colonne droite : formulaire */}
-    <div className={styles.contactCard}>
-      <h3 className={styles.contactCardTitle}>
-        {lang === "fr"
-          ? "Écrire un message"
-          : lang === "en"
-          ? "Send a message"
-          : "Enviar un mensaje"}
-      </h3>
-
-      <form onSubmit={onContactSubmit} className={styles.contactForm}>
-        <input
-          name="name"
-          placeholder={T.contactPlaceholders.name}
-          required
-          className={styles.input}
-          value={contactName}
-          onChange={(e) => setContactName(e.target.value)}
-        />
-
-        <input
-          name="email"
-          placeholder={T.contactPlaceholders.email}
-          type="email"
-          required
-          className={styles.input}
-          value={contactEmail}
-          onChange={(e) => setContactEmail(e.target.value)}
-        />
-
-        <textarea
-          name="message"
-          placeholder={T.contactPlaceholders.msg}
-          rows={5}
-          required
-          className={styles.input}
-          value={contactMsg}
-          onChange={(e) => setContactMsg(e.target.value)}
-        />
-
-        <RecaptchaV2
-  ref={recaptchaRef}
-  siteKey="6Lc072ssAAAAABf_BKFEvaxaqX0lTK3klGU9Z39D"
-/>
-
-        {contactErr && <div className={styles.err}>{contactErr}</div>}
-        {contactOk && <div className={styles.ok}>{contactOk}</div>}
-
-        <button
-          type="submit"
-          disabled={contactBusy}
-          className="btn btn-primary"
-          style={{ borderRadius: btnRadius }}
-        >
-          {contactBusy ? T.sending : T.send}
-        </button>
-      </form>
-
-      <p className={styles.contactHint}>
-        {T.contactHint}{" "}
-        <a href="mailto:info@comptanetquebec.com">info@comptanetquebec.com</a>
-      </p>
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* FOOTER */}
       <footer className={styles.footer}>
