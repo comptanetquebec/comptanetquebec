@@ -232,7 +232,6 @@ export default function Home() {
   const [contactOk, setContactOk] = useState<string | null>(null);
   const [contactErr, setContactErr] = useState<string | null>(null);
 
-  // ✅ reCAPTCHA (component)
   const recaptchaRef = useRef<RecaptchaV2Handle>(null);
 
   const setLangAndPersist = useCallback((next: Lang) => {
@@ -242,7 +241,6 @@ export default function Home() {
     window.dispatchEvent(new Event("cq:lang"));
   }, []);
 
-  // ✅ Init langue: URL > cookie > fr
   useEffect(() => {
     const fromUrl = readLangFromUrl();
     const fromCookieRaw = getCookie(LANG_COOKIE);
@@ -256,7 +254,6 @@ export default function Home() {
     window.dispatchEvent(new Event("cq:lang"));
   }, []);
 
-  // ✅ Check admin
   useEffect(() => {
     let alive = true;
 
@@ -275,13 +272,11 @@ export default function Home() {
     };
   }, []);
 
-  // ✅ ferme le menu mobile quand on change de langue
   useEffect(() => {
     if (mobileNavOpen) setMobileNavOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
-  // ✅ fermer menu mobile si on clique un anchor
   const closeMobile = useCallback(() => setMobileNavOpen(false), []);
 
   const COPY = useMemo(() => {
@@ -300,24 +295,24 @@ export default function Home() {
           close: "Fermer",
         },
 
-        // ✅ PLUS COURT / PLUS FRIENDLY
         heroTitle: (
           <>
             Déclaration d’impôt{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>au Québec</span>{" "}
-            — <span style={{ color: bleu, fontWeight: 900 }}>en ligne</span>
+            <span style={{ color: bleu, fontWeight: 900 }}>au Québec</span> —{" "}
+            <span style={{ color: bleu, fontWeight: 900 }}>en ligne</span>
           </>
         ),
         heroExperience: "30+ ans d’expérience au Québec",
-        heroSubShort: "Simple. Rapide. 100% en ligne. Déposez vos documents et on s’occupe du reste.",
+        heroSubShort:
+          "Simple. Rapide. 100% en ligne. Déposez vos documents et on s’occupe du reste.",
         heroSubMore:
           "Service indépendant de préparation de déclarations de revenus au Québec. Portail sécurisé (photo/PDF). Acompte à l’ouverture, solde avant l’envoi. Transmission électronique (TED) lorsque applicable.",
 
         trust: [
           { t: "Québec seulement" },
-          { t: "Paiement sécurisé (Stripe)" },
-          { t: "Accréditation TED" },
+          { t: "Paiement Stripe" },
           { t: "Portail sécurisé" },
+          { t: "Accréditation TED" },
           { t: "Confidentialité" },
           { t: "Acompte requis" },
         ],
@@ -332,7 +327,8 @@ export default function Home() {
         autoBtn: "Commencer maintenant",
 
         t2Title: "🏢 Compagnie incorporée",
-        t2Desc: "Déclaration de société (T2 + CO-17) selon les documents fournis.",
+        t2Desc:
+          "Déclaration de société (T2 + CO-17) selon les documents fournis.",
         t2Btn: "Créer mon dossier",
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
@@ -475,25 +471,24 @@ export default function Home() {
           close: "Close",
         },
 
-        // ✅ SHORTER
         heroTitle: (
           <>
-            Québec{" "}
-            <span style={{ color: bleu, fontWeight: 900 }}>tax returns</span>{" "}
+            Québec <span style={{ color: bleu, fontWeight: 900 }}>tax returns</span>{" "}
             — <span style={{ color: bleu, fontWeight: 900 }}>online</span>
           </>
         ),
         heroExperience: "30+ years of Québec experience",
-        heroSubShort: "Simple. Fast. 100% online. Upload your documents and we handle the rest.",
+        heroSubShort:
+          "Simple. Fast. 100% online. Upload your documents and we handle the rest.",
         heroSubMore:
           "Independent Québec tax preparation. Secure portal (photo/PDF). Deposit to open your file, balance before filing. TED e-filing when applicable.",
 
         trust: [
           { t: "Québec only" },
-          { t: "Secure payment (Stripe)" },
-          { t: "TED e-filing accreditation" },
+          { t: "Stripe payment" },
           { t: "Secure portal" },
-          { t: "Confidentiality" },
+          { t: "TED accredited" },
+          { t: "Confidential" },
           { t: "Deposit required" },
         ],
 
@@ -544,19 +539,35 @@ export default function Home() {
           {
             t: "Tax return — Individual",
             p: "from $100",
-            pts: ["Deposit: $100", "Secure client portal", "Prepared from documents provided", "Taxes included (CAD)"],
+            pts: [
+              "Deposit: $100",
+              "Secure client portal",
+              "Prepared from documents provided",
+              "Taxes included (CAD)",
+            ],
             href: "/tarifs/t1",
           },
           {
             t: "Self-employed",
             p: "from $150",
-            pts: ["Deposit: $150", "Secure client portal", "Income and expenses based on documents", "Taxes included (CAD)"],
+            pts: [
+              "Deposit: $150",
+              "Secure client portal",
+              "Income and expenses based on documents",
+              "Taxes included (CAD)",
+            ],
             href: "/tarifs/travailleur-autonome",
           },
           {
             t: "Incorporated business",
             p: "from $450",
-            pts: ["Deposit: $450", "Secure client portal", "T2 + CO-17 corporate filing", "No-revenue corporation: from $450", "Taxes included (CAD)"],
+            pts: [
+              "Deposit: $450",
+              "Secure client portal",
+              "T2 + CO-17 corporate filing",
+              "No-revenue corporation: from $450",
+              "Taxes included (CAD)",
+            ],
             href: "/tarifs/t2",
           },
         ],
@@ -565,7 +576,7 @@ export default function Home() {
         whyTitle: "Why choose ComptaNet Québec",
         whyPoints: [
           { t: "30+ years experience", d: "Clear process, Québec only." },
-          { t: "TED accreditation", d: "Electronic filing when applicable." },
+          { t: "TED accredited", d: "Electronic filing when applicable." },
           { t: "Confidentiality", d: "Strictly confidential." },
           { t: "Secure portal", d: "Upload photo/PDF, all in one place." },
         ],
@@ -620,7 +631,6 @@ export default function Home() {
           close: "Cerrar",
         },
 
-        // ✅ SHORTER
         heroTitle: (
           <>
             Impuestos en{" "}
@@ -629,17 +639,18 @@ export default function Home() {
           </>
         ),
         heroExperience: "30+ años de experiencia en Québec",
-        heroSubShort: "Simple. Rápido. 100% en línea. Suba sus documentos y nos encargamos del resto.",
+        heroSubShort:
+          "Simple. Rápido. 100% en línea. Suba sus documentos y nos encargamos del resto.",
         heroSubMore:
           "Servicio independiente solo para Québec. Portal seguro (foto/PDF). Depósito para abrir el expediente, saldo antes de presentar. Presentación electrónica (TED) cuando aplique.",
 
         trust: [
           { t: "Solo Québec" },
-          { t: "Pago seguro (Stripe)" },
-          { t: "Acreditación TED" },
+          { t: "Pago Stripe" },
           { t: "Portal seguro" },
-          { t: "Confidencialidad" },
-          { t: "Depósito requerido" },
+          { t: "TED" },
+          { t: "Confidencial" },
+          { t: "Depósito" },
         ],
 
         chooseType: "Elija su situación",
@@ -689,19 +700,32 @@ export default function Home() {
           {
             t: "Impuestos — Particular",
             p: "desde $100 CAD (impuestos incluidos)",
-            pts: ["Depósito requerido: $100", "Portal seguro", "Preparación según documentos proporcionados"],
+            pts: [
+              "Depósito requerido: $100",
+              "Portal seguro",
+              "Preparación según documentos proporcionados",
+            ],
             href: "/tarifs/t1",
           },
           {
             t: "Autónomo",
             p: "desde $150 CAD (impuestos incluidos)",
-            pts: ["Depósito requerido: $150", "Portal seguro", "Ingresos y gastos según comprobantes"],
+            pts: [
+              "Depósito requerido: $150",
+              "Portal seguro",
+              "Ingresos y gastos según comprobantes",
+            ],
             href: "/tarifs/travailleur-autonome",
           },
           {
             t: "Empresa incorporada",
             p: "desde $850 CAD (impuestos incluidos)",
-            pts: ["Depósito requerido: $450", "Portal seguro", "T2 + CO-17", "Empresa sin ingresos: desde $450 CAD"],
+            pts: [
+              "Depósito requerido: $450",
+              "Portal seguro",
+              "T2 + CO-17",
+              "Empresa sin ingresos: desde $450 CAD",
+            ],
             href: "/tarifs/t2",
           },
         ],
@@ -765,7 +789,6 @@ export default function Home() {
       ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewsCount
       : 0;
 
-  // ✅ Liens (inchangés)
   const toClient = `/espace-client?lang=${encodeURIComponent(lang)}`;
   const toHelp = `/aide?lang=${encodeURIComponent(lang)}`;
 
@@ -779,7 +802,6 @@ export default function Home() {
     lang
   )}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
-  // ✅ FAQ schema (JSON-LD)
   const faqJsonLd = useMemo(() => {
     return {
       "@context": "https://schema.org",
@@ -792,7 +814,6 @@ export default function Home() {
     };
   }, [T.faq]);
 
-  // ✅ LocalBusiness schema (JSON-LD)
   const localJsonLd = useMemo(() => {
     const base = "https://www.comptanetquebec.com";
     return {
@@ -841,7 +862,7 @@ export default function Home() {
           email: contactEmail,
           message: contactMsg,
           token,
-          company: "", // honeypot
+          company: "",
         }),
       });
 
@@ -870,15 +891,19 @@ export default function Home() {
       ? "Choose my tax type"
       : "Elegir mi tipo de impuesto";
 
+  const reviewsTitle =
+    lang === "fr" ? "Avis clients" : lang === "en" ? "Reviews" : "Reseñas";
+
+  const viewOnGoogle =
+    lang === "fr" ? "Voir sur Google" : lang === "en" ? "View on Google" : "Ver en Google";
+
   return (
     <main className={styles.main}>
-      {/* FAQ JSON-LD */}
       <Script
         id="faq-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      {/* LocalBusiness JSON-LD */}
       <Script
         id="local-jsonld"
         type="application/ld+json"
@@ -900,7 +925,6 @@ export default function Home() {
             <strong className={styles.brandName}>{T.brand}</strong>
           </div>
 
-          {/* Mobile actions */}
           <div className={styles.headerActions}>
             <div className={styles.langInline}>
               <span className={styles.langLabel}>{T.langLabel}</span>
@@ -1003,7 +1027,6 @@ export default function Home() {
 
             <p className={styles.heroSub}>{T.heroSubShort}</p>
 
-            {/* CTA principal */}
             <div className={styles.heroPrimaryCtaRow}>
               <a
                 href="#types-impot"
@@ -1014,7 +1037,6 @@ export default function Home() {
               </a>
             </div>
 
-            {/* Lien secondaire */}
             <div className={styles.heroMoreLinkRow}>
               <Link
                 href={`/declaration-impot-quebec?lang=${encodeURIComponent(lang)}`}
@@ -1025,16 +1047,31 @@ export default function Home() {
               </Link>
             </div>
 
-            <TrustBar items={T.trust} />
+            {/* ✅ Trust: seulement 3 pills dans le hero */}
+            <TrustBar items={T.trust.slice(0, 3)} />
 
-            <GoogleReviews
-              lang={lang}
-              rating={reviewsRating || 5.0}
-              count={reviewsCount || GOOGLE_REVIEWS.fr.length}
-              items={reviewsCount ? reviews : GOOGLE_REVIEWS.fr}
-              googleUrl="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
-              compact
-            />
+            {/* ✅ Mini preuve avis (compact) */}
+            <div className={styles.heroMiniProof}>
+              <div className={styles.heroMiniProofLeft}>
+                <span className={styles.star} aria-hidden="true">
+                  ★
+                </span>
+                <strong>{(reviewsRating || 5.0).toFixed(1)}</strong>
+                <span className={styles.muted}>
+                  ({reviewsCount || GOOGLE_REVIEWS.fr.length}{" "}
+                  {lang === "fr" ? "avis" : lang === "en" ? "reviews" : "reseñas"})
+                </span>
+              </div>
+
+              <a
+                className={styles.heroMiniProofLink}
+                href="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {viewOnGoogle}
+              </a>
+            </div>
 
             <div className={styles.heroLinks}>
               <Link href={toClient} className={styles.heroLink} prefetch>
@@ -1059,24 +1096,9 @@ export default function Home() {
               <div className={styles.choiceTitle}>{T.chooseType}</div>
 
               <div className={styles.choiceGrid}>
-                <TaxChoiceCard
-                  title={T.t1Title}
-                  desc={T.t1Desc}
-                  btn={T.t1Btn}
-                  href={toT1}
-                />
-                <TaxChoiceCard
-                  title={T.autoTitle}
-                  desc={T.autoDesc}
-                  btn={T.autoBtn}
-                  href={toT1Auto}
-                />
-                <TaxChoiceCard
-                  title={T.t2Title}
-                  desc={T.t2Desc}
-                  btn={T.t2Btn}
-                  href={toT2}
-                />
+                <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
+                <TaxChoiceCard title={T.autoTitle} desc={T.autoDesc} btn={T.autoBtn} href={toT1Auto} />
+                <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
               </div>
 
               <div className={styles.microLine}>
@@ -1095,6 +1117,20 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ✅ SECTION AVIS (déplacée hors hero) */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>{reviewsTitle}</h2>
+
+        <GoogleReviews
+          lang={lang}
+          rating={reviewsRating || 5.0}
+          count={reviewsCount || GOOGLE_REVIEWS.fr.length}
+          items={reviewsCount ? reviews : GOOGLE_REVIEWS.fr}
+          googleUrl="https://maps.app.goo.gl/kBT1kbiqb4EWs3mT6?g_st=afm"
+          compact
+        />
       </section>
 
       {/* SEO INTRO */}
@@ -1215,7 +1251,6 @@ export default function Home() {
         <h2 className={styles.sectionTitle}>{T.contactTitle}</h2>
 
         <div className={styles.contactGrid}>
-          {/* Colonne gauche : infos */}
           <div className={styles.contactCard}>
             <h3 className={styles.contactCardTitle}>
               {lang === "fr"
@@ -1237,10 +1272,18 @@ export default function Home() {
 
             <div className={styles.contactLine}>
               <span className={styles.contactLabel}>
-                {lang === "fr" ? "Sur rendez-vous" : lang === "en" ? "By appointment" : "Con cita"}
+                {lang === "fr"
+                  ? "Sur rendez-vous"
+                  : lang === "en"
+                  ? "By appointment"
+                  : "Con cita"}
               </span>
               <span className={styles.contactValue}>
-                {lang === "fr" ? "Sur rendez-vous seulement" : lang === "en" ? "Appointment only" : "Solo con cita"}
+                {lang === "fr"
+                  ? "Sur rendez-vous seulement"
+                  : lang === "en"
+                  ? "Appointment only"
+                  : "Solo con cita"}
               </span>
             </div>
 
@@ -1319,7 +1362,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Colonne droite : formulaire */}
           <div className={styles.contactCard}>
             <h3 className={styles.contactCardTitle}>
               {lang === "fr"
