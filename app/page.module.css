@@ -980,3 +980,27 @@
 .heroMiniProofLink:hover {
   text-decoration: underline;
 }
+/* ===== FIX reCAPTCHA mobile (minimal) ===== */
+.recaptchaWrap{
+  position: relative;
+  z-index: 30;
+  pointer-events: auto;
+  overflow: visible;
+  min-height: 78px;
+  margin: 8px 0 6px;
+}
+
+/* évite que l'iframe soit coupée */
+.contactCard,
+.contactForm,
+.contactGrid{
+  overflow: visible;
+}
+
+/* mobile: le widget est large (~302px) */
+@media (max-width: 420px){
+  .recaptchaWrap{
+    transform: scale(0.92);
+    transform-origin: 0 0;
+  }
+}
