@@ -1377,7 +1377,9 @@ export default function Home() {
                 onChange={(e) => setContactMsg(e.target.value)}
               />
 
-              <RecaptchaV2 ref={recaptchaRef} siteKey="6Lc072ssAAAAABf_BKFEvaxaqX0lTK3klGU9Z39D" />
+              <div className={styles.recaptchaWrap}>
+  <RecaptchaV2 ref={recaptchaRef} siteKey="6Lc072ssAAAAABf_BKFEvaxaqX0lTK3klGU9Z39D" />
+</div>
 
               {contactErr && <div className={styles.err}>{contactErr}</div>}
               {contactOk && <div className={styles.ok}>{contactOk}</div>}
