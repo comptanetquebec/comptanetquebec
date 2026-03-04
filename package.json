@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
-    "@supabase/ssr": "^0.4.0",
+    "@supabase/ssr": "^0.9.0",
     "autoprefixer": "^10.4.20",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
