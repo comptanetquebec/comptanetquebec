@@ -47,8 +47,7 @@ const COPY: Record<Lang, Copy> = {
     subtitle:
       "Prix avec taxes incluses. Les prix finaux peuvent varier selon votre dossier et les documents fournis.",
     disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
-    disclaimerBottom:
-      "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
+    disclaimerBottom: "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
     back: "Retour à l’accueil",
     currencyNote: "Tous les montants sont en CAD.",
     sections: [
@@ -111,6 +110,11 @@ const COPY: Record<Lang, Copy> = {
           { label: "Personne seule (avec ou sans enfants)", price: "110 $" },
           { label: "Couple (avec ou sans enfants)", price: "170 $" },
           { label: "Redressement d’une déclaration (année en cours ou précédente)", price: "120 $" },
+          {
+            label: "Déclaration d’une personne décédée (sans succession) — à partir de",
+            price: "150 $",
+            note: "Inclut la déclaration finale seulement. La succession et/ou revenus après décès sont facturés séparément.",
+          },
         ],
       },
     ],
@@ -177,6 +181,11 @@ const COPY: Record<Lang, Copy> = {
           { label: "Single (with or without children)", price: "$110" },
           { label: "Couple (with or without children)", price: "$170" },
           { label: "Return adjustment (current or prior year)", price: "$120" },
+          {
+            label: "Deceased person return (no estate) — starting at",
+            price: "$150",
+            note: "Final return only. Estate filings and/or post-death income are billed separately.",
+          },
         ],
       },
     ],
@@ -229,7 +238,11 @@ const COPY: Record<Lang, Copy> = {
           },
           { label: "Gastos de mudanza (formulario o totales listos)", price: "$90" },
           { label: "Criptomonedas", price: "$70" },
-          { label: "División de gastos médicos", price: "$45", note: "Se reclaman por una sola persona." },
+          {
+            label: "División de gastos médicos",
+            price: "$45",
+            note: "Se reclaman por una sola persona.",
+          },
           { label: "Documentos extra (evaluado por el contador)", price: "$10" },
           { label: "T1135 — Bienes en el extranjero", price: "$60" },
           { label: "Crédito por infertilidad", price: "$50" },
@@ -243,6 +256,11 @@ const COPY: Record<Lang, Copy> = {
           { label: "Persona sola (con o sin hijos)", price: "$110" },
           { label: "Pareja (con o sin hijos)", price: "$170" },
           { label: "Rectificación de declaración (año en curso o anterior)", price: "$120" },
+          {
+            label: "Declaración de persona fallecida (sin sucesión) — desde",
+            price: "$150",
+            note: "Solo la declaración final. La sucesión y/o ingresos después del fallecimiento se cobran aparte.",
+          },
         ],
       },
     ],
