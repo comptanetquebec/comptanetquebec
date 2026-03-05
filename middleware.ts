@@ -2,20 +2,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-type CookieToSet = {
-  name: string;
-  value: string;
-  options?: {
-    path?: string;
-    domain?: string;
-    maxAge?: number;
-    expires?: Date;
-    httpOnly?: boolean;
-    secure?: boolean;
-    sameSite?: "lax" | "strict" | "none";
-  };
-};
-
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
@@ -24,16 +10,18 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
+        // ✅ retourner {name,value} (pas les objets Cookie complets)
         getAll() {
-          return req.cookies.getAll();
+          return req.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
         },
-        setAll(cookiesToSet: CookieToSet[]) {
+
+        // ✅ ne pas typer le paramètre + corriger sameSite=false
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(
-              name,
-              value,
-              options ?? {}
-            );
+            res.cookies.set(name, value, {
+              ...options,
+              sameSite: options?.sameSite === false ? undefined : options?.sameSite,
+            });
           });
         },
       },
