@@ -2,20 +2,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-type CookieToSet = {
-  name: string;
-  value: string;
-  options?: {
-    path?: string;
-    domain?: string;
-    maxAge?: number;
-    expires?: Date;
-    httpOnly?: boolean;
-    secure?: boolean;
-    sameSite?: "lax" | "strict" | "none";
-  };
-};
-
 export async function GET(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -27,32 +13,45 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // ✅ on utilise UNE seule response (res) pour ne pas perdre les cookies setAll()
-  const res = NextResponse.json({ isAdmin: false }, { status: 200 });
+  // ✅ On crée une réponse vide qu’on retourne à la fin
+  const res = NextResponse.next();
 
   const supabase = createServerClient(url, anon, {
     cookies: {
       getAll() {
         return req.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
       },
-      setAll(cookiesToSet: CookieToSet[]) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          res.cookies.set(name, value, options);
+      setAll(cookies) {
+        cookies.forEach(({ name, value, options }) => {
+          const sameSite =
+            options?.sameSite === false ? undefined : options?.sameSite;
+
+          res.cookies.set(name, value, { ...options, sameSite });
         });
       },
     },
   });
 
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth?.user) return res;
+  const isAdminUser = !!auth?.user;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", auth.user.id)
-    .maybeSingle();
+  let isAdmin = false;
 
-  // ✅ on renvoie sur la même response pour garder les cookies
-  res.headers.set("content-type", "application/json");
-  return NextResponse.json({ isAdmin: !!profile?.is_admin }, { status: 200 });
+  if (isAdminUser) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+
+    isAdmin = !!profile?.is_admin;
+  }
+
+  // ✅ Retourner du JSON en gardant les cookies de res
+  const json = NextResponse.json({ isAdmin }, { status: 200 });
+
+  // recopier les cookies que Supabase a posés
+  res.cookies.getAll().forEach((c) => json.cookies.set(c));
+
+  return json;
 }
