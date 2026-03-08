@@ -857,12 +857,6 @@ function FormulaireFiscalTAInner({
     return nb > 0;
   }, [nbPersonnesMaison3112]);
 
-  // si nb = 0, vide la liste enfants
-  useEffect(() => {
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    if (nb === 0 && enfants.length > 0) setEnfants([]);
-  }, [nbPersonnesMaison3112, enfants.length]);
-
   /* =========================== Save draft (insert/update) =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
     if (hydrating.current) return fidDisplay ?? null;
