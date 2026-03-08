@@ -1298,7 +1298,7 @@ return (
 
         <DependantsSection
           L={L}
-          show={showEnfantsSection}
+          show={true}
           enfants={enfants}
           ajouterEnfant={ajouterEnfant}
           updateEnfant={(i, field, value) => {
