@@ -47,9 +47,6 @@ function isValidPostal(v: string) {
 function normalizePhone(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
-function hasAnyPhone(a: string, b: string) {
-  return normalizePhone(a).length > 0 || normalizePhone(b).length > 0;
-}
 function isNumericLike(v: string) {
   const s = (v || "").trim().replace(",", ".");
   if (!s) return false;
@@ -118,7 +115,7 @@ function markNumeric(v: string): Mark {
   return isNumericLike(t) ? "ok" : "bad";
 }
 
-export default function SpouseSection(props: {
+type Props = {
   L: CopyPack;
   PROVINCES: { value: ProvinceCode; label: string }[];
 
@@ -158,7 +155,9 @@ export default function SpouseSection(props: {
   setProvinceConjoint: (v: ProvinceCode) => void;
   codePostalConjoint: string;
   setCodePostalConjoint: (v: string) => void;
-}) {
+};
+
+export default function SpouseSection(props: Props) {
   const {
     L,
     PROVINCES,
@@ -208,9 +207,7 @@ export default function SpouseSection(props: {
     const mSIN = showIncludedFields ? markSIN(nasConjoint) : ("ok" as Mark);
     const mDOB = showIncludedFields ? markDOB(dobConjoint) : ("ok" as Mark);
     const mPhone = showIncludedFields ? markPhonePair(telConjoint, telCellConjoint) : ("ok" as Mark);
-    const mEmail = showIncludedFields
-      ? ((courrielConjoint || "").trim() ? markEmail(courrielConjoint) : ("todo" as Mark))
-      : ("ok" as Mark);
+    const mEmail = showIncludedFields ? markEmail(courrielConjoint) : ("ok" as Mark);
 
     const mAddr = showAddrFields ? markRequired(adresseConjoint) : ("ok" as Mark);
     const mCity = showAddrFields ? markRequired(villeConjoint) : ("ok" as Mark);
@@ -218,16 +215,17 @@ export default function SpouseSection(props: {
     const mPostal = showAddrFields ? markPostal(codePostalConjoint) : ("ok" as Mark);
 
     const blockOk =
-      (!aUnConjoint ||
-        ((showNetIncome ? mNet === "ok" : true) &&
-          (showIncludedFields
-            ? mFN === "ok" &&
-              mLN === "ok" &&
-              mSIN === "ok" &&
-              mDOB === "ok" &&
-              mPhone === "ok"
-            : true) &&
-          (showAddrFields ? mAddr === "ok" && mCity === "ok" && mProv === "ok" && mPostal === "ok" : true)));
+      !aUnConjoint ||
+      ((showNetIncome ? mNet === "ok" : true) &&
+        (showIncludedFields
+          ? mFN === "ok" &&
+            mLN === "ok" &&
+            mSIN === "ok" &&
+            mDOB === "ok" &&
+            mPhone === "ok" &&
+            mEmail === "ok"
+          : true) &&
+        (showAddrFields ? mAddr === "ok" && mCity === "ok" && mProv === "ok" && mPostal === "ok" : true));
 
     return {
       net: mNet,
@@ -299,74 +297,81 @@ export default function SpouseSection(props: {
             </div>
           )}
 
-          <div className="ff-grid2 ff-mt">
-            <Field
-              label={<LabelWithMark text={L.spouse.spouseFirstName} mark={marks.fn} />}
-              value={prenomConjoint}
-              onChange={setPrenomConjoint}
-              required={traiterConjoint}
-            />
+          {showIncludedFields && (
+            <>
+              <div className="ff-grid2 ff-mt">
+                <Field
+                  label={<LabelWithMark text={L.spouse.spouseFirstName} mark={marks.fn} />}
+                  value={prenomConjoint}
+                  onChange={setPrenomConjoint}
+                  required
+                />
 
-            <Field
-              label={<LabelWithMark text={L.spouse.spouseLastName} mark={marks.ln} />}
-              value={nomConjoint}
-              onChange={setNomConjoint}
-              required={traiterConjoint}
-            />
+                <Field
+                  label={<LabelWithMark text={L.spouse.spouseLastName} mark={marks.ln} />}
+                  value={nomConjoint}
+                  onChange={setNomConjoint}
+                  required
+                />
 
-            <Field
-              label={<LabelWithMark text={L.spouse.spouseSin} mark={marks.sin} />}
-              value={nasConjoint}
-              onChange={setNasConjoint}
-              placeholder={L.fields.sinPh}
-              inputMode="numeric"
-              formatter={formatNASInput}
-              maxLength={11}
-              required={traiterConjoint}
-            />
+                <Field
+                  label={<LabelWithMark text={L.spouse.spouseSin} mark={marks.sin} />}
+                  value={nasConjoint}
+                  onChange={setNasConjoint}
+                  placeholder={L.fields.sinPh}
+                  inputMode="numeric"
+                  formatter={formatNASInput}
+                  maxLength={11}
+                  required
+                />
 
-            <Field
-              label={<LabelWithMark text={L.spouse.spouseDob} mark={marks.dob} />}
-              value={dobConjoint}
-              onChange={setDobConjoint}
-              placeholder={L.fields.dobPh}
-              inputMode="numeric"
-              formatter={formatDateInput}
-              maxLength={10}
-              required={traiterConjoint}
-            />
-          </div>
+                <Field
+                  label={<LabelWithMark text={L.spouse.spouseDob} mark={marks.dob} />}
+                  value={dobConjoint}
+                  onChange={setDobConjoint}
+                  placeholder={L.fields.dobPh}
+                  inputMode="numeric"
+                  formatter={formatDateInput}
+                  maxLength={10}
+                  required
+                />
+              </div>
 
-          <div className="ff-grid2 ff-mt">
-            {/* téléphone: un seul mark pour la paire */}
-            <div className="ff-grid2" style={{ gap: 12 }}>
-              <Field
-                label={<LabelWithMark text={L.spouse.spousePhone} mark={marks.phone} />}
-                value={telConjoint}
-                onChange={setTelConjoint}
-                placeholder="(418) 555-1234"
-                inputMode="tel"
-                formatter={formatPhoneInput}
-                maxLength={14}
-              />
-              <Field
-                label={<LabelWithMark text={L.spouse.spouseMobile} mark={marks.phone} />}
-                value={telCellConjoint}
-                onChange={setTelCellConjoint}
-                placeholder="(418) 555-1234"
-                inputMode="tel"
-                formatter={formatPhoneInput}
-                maxLength={14}
-              />
-            </div>
+              <div className="ff-grid2 ff-mt">
+                <div className="ff-grid2" style={{ gap: 12 }}>
+                  <Field
+                    label={<LabelWithMark text={L.spouse.spousePhone} mark={marks.phone} />}
+                    value={telConjoint}
+                    onChange={setTelConjoint}
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
+                  />
 
-            <Field
-              label={<LabelWithMark text={L.spouse.spouseEmail} mark={marks.email} />}
-              value={courrielConjoint}
-              onChange={setCourrielConjoint}
-              type="email"
-            />
-          </div>
+                  <Field
+                    label={<LabelWithMark text={L.spouse.spouseMobile} mark={marks.phone} />}
+                    value={telCellConjoint}
+                    onChange={setTelCellConjoint}
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
+                  />
+                </div>
+
+                <Field
+                  label={<LabelWithMark text={L.spouse.spouseEmail} mark={marks.email} />}
+                  value={courrielConjoint}
+                  onChange={setCourrielConjoint}
+                  type="email"
+                  placeholder="nom@exemple.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            </>
+          )}
 
           <div className="ff-mt">
             <CheckboxField
@@ -376,7 +381,7 @@ export default function SpouseSection(props: {
             />
           </div>
 
-          {!adresseConjointeIdentique && (
+          {showAddrFields && (
             <div className="ff-mt">
               <Field
                 label={<LabelWithMark text={L.spouse.spouseAddress} mark={marks.addr} />}
