@@ -1383,7 +1383,7 @@ function FormulaireFiscalTAInner({
 
           <DependantsSection
             L={L}
-            show={showEnfantsSection}
+            show={true}
             showErrors={showErrors}
             enfants={enfants}
             ajouterEnfant={ajouterEnfant}
