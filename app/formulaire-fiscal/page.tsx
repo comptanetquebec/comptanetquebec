@@ -790,11 +790,6 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     return nb > 0;
   }, [nbPersonnesMaison3112]);
 
-  useEffect(() => {
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    if (nb === 0 && enfants.length > 0) setEnfants([]);
-  }, [nbPersonnesMaison3112, enfants.length]);
-
   /* =========================== Status (✅ corrige l’erreur Vercel) =========================== */
   const status = useMemo<BlocksStatus>(() => {
     const telAnyMark: Mark = firstNonEmpty(normalizePhone(tel), normalizePhone(telCell)) ? "ok" : "bad";
