@@ -7,7 +7,7 @@ import type { Child, Sexe } from "../types";
 import type { CopyPack } from "../copy";
 import { formatDateInput, formatNASInput } from "../formatters";
 
-type Mark = "ok" | "bad";
+type Mark = "ok" | "bad" | "warn";
 
 function MarkIcon({ mark }: { mark: Mark }) {
   const base: React.CSSProperties = {
@@ -41,6 +41,23 @@ function MarkIcon({ mark }: { mark: Mark }) {
     );
   }
 
+  if (mark === "warn") {
+    return (
+      <span
+        aria-label="à faire"
+        title="À faire"
+        style={{
+          ...base,
+          color: "#1f2937",
+          background: "#f3f4f6",
+          borderColor: "rgba(0,0,0,.18)",
+        }}
+      >
+        →
+      </span>
+    );
+  }
+
   return (
     <span
       aria-label="à corriger"
@@ -57,7 +74,6 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
-/** Label + ✓ collé au texte (comme ton image #1) */
 function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -67,15 +83,15 @@ function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   );
 }
 
-// Validation légère: on ne fait pas de date “parfaite”, juste non vide + longueur attendue.
-// (Ton page.tsx fait déjà la validation bloquante globale.)
 function isFilled(v: string) {
   return !!(v || "").trim();
 }
+
 function looksLikeDob(v: string) {
   const s = (v || "").trim();
   return /^\d{2}\/\d{2}\/\d{4}$/.test(s);
 }
+
 function looksLikeSinIfAny(v: string) {
   const d = (v || "").replace(/\D+/g, "");
   return d.length === 0 || d.length === 9;
@@ -85,15 +101,27 @@ export default function DependantsSection(props: {
   L: CopyPack;
   show: boolean;
   enfants: Child[];
+  aucunePersonneACharge: boolean;
   ajouterEnfant: () => void;
   updateEnfant: (i: number, field: keyof Child, value: string) => void;
   removeEnfant: (i: number) => void;
 }) {
-  const { L, show, enfants, ajouterEnfant, updateEnfant, removeEnfant } = props;
+  const {
+    L,
+    show,
+    enfants,
+    aucunePersonneACharge,
+    ajouterEnfant,
+    updateEnfant,
+    removeEnfant,
+  } = props;
+
   if (!show) return null;
 
   const blockMark: Mark = useMemo(() => {
-    if (enfants.length === 0) return "bad";
+    if (aucunePersonneACharge) return "ok";
+    if (enfants.length === 0) return "warn";
+
     const allOk = enfants.every((e) => {
       const okPrenom = isFilled(e.prenom);
       const okNom = isFilled(e.nom);
@@ -102,13 +130,13 @@ export default function DependantsSection(props: {
       const okNas = looksLikeSinIfAny(e.nas);
       return okPrenom && okNom && okDob && okSexe && okNas;
     });
+
     return allOk ? "ok" : "bad";
-  }, [enfants]);
+  }, [enfants, aucunePersonneACharge]);
 
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        {/* ✅ icône collée au titre (pas à droite) */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <h2 style={{ margin: 0 }}>{L.sections.dependantsTitle}</h2>
           <MarkIcon mark={blockMark} />
@@ -116,11 +144,26 @@ export default function DependantsSection(props: {
         <p style={{ marginTop: 8 }}>{L.sections.dependantsDesc}</p>
       </div>
 
-      {enfants.length === 0 ? (
-        /* ✅ icône collée au texte (pas à droite) */
-        <div className="ff-empty" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+      {aucunePersonneACharge ? (
+        <div
+          className="ff-empty"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
+            color: "#14532d",
+          }}
+        >
+          <span>Aucune personne à charge sélectionnée.</span>
+          <MarkIcon mark="ok" />
+        </div>
+      ) : enfants.length === 0 ? (
+        <div
+          className="ff-empty"
+          style={{ display: "inline-flex", alignItems: "center", gap: 10 }}
+        >
           <span>{L.dependants.none}</span>
-          <MarkIcon mark="bad" />
+          <MarkIcon mark="warn" />
         </div>
       ) : (
         <div className="ff-stack">
@@ -145,7 +188,6 @@ export default function DependantsSection(props: {
                     gap: 12,
                   }}
                 >
-                  {/* ✅ à gauche: titre + icône collée */}
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                     <div className="ff-childtitle">{L.dependants.titleN(i + 1)}</div>
                     <MarkIcon mark={childMark} />
