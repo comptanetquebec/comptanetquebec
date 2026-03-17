@@ -1314,6 +1314,7 @@ return (
   L={L}
   show={true}
   enfants={enfants}
+  aucunePersonneACharge={aucunePersonneACharge}
   ajouterEnfant={ajouterEnfant}
   updateEnfant={(i, field, value) => {
     if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
