@@ -108,7 +108,7 @@ const COPY: Record<Lang, Copy> = {
         title: "Années précédentes (avant l’année en cours)",
         lines: [
           { label: "Personne seule (avec ou sans enfants)", price: "110 $" },
-          { label: "Couple (avec ou sans enfants)", price: "170 $" },
+          { label: "Couple (avec ou sans enfants)", price: "210 $" },
           { label: "Redressement d’une déclaration (année en cours ou précédente)", price: "120 $" },
           {
             label: "Déclaration d’une personne décédée (sans succession) — à partir de",
@@ -179,7 +179,7 @@ const COPY: Record<Lang, Copy> = {
         title: "Prior years (before current year)",
         lines: [
           { label: "Single (with or without children)", price: "$110" },
-          { label: "Couple (with or without children)", price: "$170" },
+          { label: "Couple (with or without children)", price: "$210" },
           { label: "Return adjustment (current or prior year)", price: "$120" },
           {
             label: "Deceased person return (no estate) — starting at",
@@ -254,7 +254,7 @@ const COPY: Record<Lang, Copy> = {
         title: "Años anteriores (antes del año en curso)",
         lines: [
           { label: "Persona sola (con o sin hijos)", price: "$110" },
-          { label: "Pareja (con o sin hijos)", price: "$170" },
+          { label: "Pareja (con o sin hijos)", price: "$210" },
           { label: "Rectificación de declaración (año en curso o anterior)", price: "$120" },
           {
             label: "Declaración de persona fallecida (sin sucesión) — desde",
