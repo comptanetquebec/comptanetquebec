@@ -351,25 +351,27 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     { debut: "", fin: "" },
   ]);
 
-  /* =========================== Enfants =========================== */
-  const [enfants, setEnfants] = useState<Child[]>([]);
+ /* =========================== Enfants =========================== */
+const [enfants, setEnfants] = useState<Child[]>([]);
+const [aucunePersonneACharge, setAucunePersonneACharge] = useState(false);
 
-  const ajouterEnfant = useCallback(() => {
-    setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
-  }, []);
+const ajouterEnfant = useCallback(() => {
+  setAucunePersonneACharge(false);
+  setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
+}, []);
 
-  const updateEnfant = useCallback((i: number, field: keyof Child, value: string) => {
-    setEnfants((prev) => {
-      const copy = [...prev];
-      copy[i] = { ...copy[i], [field]: value };
-      return copy;
-    });
-  }, []);
+const updateEnfant = useCallback((i: number, field: keyof Child, value: string) => {
+  setEnfants((prev) => {
+    const copy = [...prev];
+    copy[i] = { ...copy[i], [field]: value };
+    return copy;
+  });
+}, []);
 
-  const removeEnfant = useCallback((i: number) => {
-    setEnfants((prev) => prev.filter((_, idx) => idx !== i));
-  }, []);
-
+const removeEnfant = useCallback((i: number) => {
+  setEnfants((prev) => prev.filter((_, idx) => idx !== i));
+}, []);
+  
   /* =========================== Questions =========================== */
   const [habiteSeulTouteAnnee, setHabiteSeulTouteAnnee] = useState<YesNo>("");
   const [nbPersonnesMaison3112, setNbPersonnesMaison3112] = useState("");
@@ -485,17 +487,18 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
         nas: normalizeNAS(x.nas),
         sexe: x.sexe as Sexe,
       })),
-      questionsGenerales: {
-        habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
-        nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
-        biensEtranger100k: biensEtranger100k as any,
-        citoyenCanadien: citoyenCanadien as any,
-        nonResident: nonResident as any,
-        maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
-        appelerTechnicien: appelerTechnicien as any,
-        copieImpots,
-        anneeImposition: anneeImposition.trim(),
-      },
+    questionsGenerales: {
+  habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
+  nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
+  biensEtranger100k: biensEtranger100k as any,
+  citoyenCanadien: citoyenCanadien as any,
+  nonResident: nonResident as any,
+  maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
+  appelerTechnicien: appelerTechnicien as any,
+  copieImpots,
+  anneeImposition: anneeImposition.trim(),
+  aucunePersonneACharge,
+},
       validations: {
         exactitudeInfo: vExactitude,
         dossierComplet: vDossierComplet,
@@ -503,7 +506,7 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
         delaisSiManquant: vDelais,
       },
     };
-  }, [
+   }, [
     type,
     prenom,
     nom,
@@ -542,6 +545,7 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     assuranceMedsConjoint,
     assuranceMedsConjointPeriodes,
     enfants,
+    aucunePersonneACharge,
     habiteSeulTouteAnnee,
     nbPersonnesMaison3112,
     biensEtranger100k,
@@ -556,7 +560,6 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     vFraisVariables,
     vDelais,
   ]);
-
   const t = useCallback(
     (fr: string, en: string, es: string) => (lang === "fr" ? fr : lang === "en" ? en : es),
     [lang]
@@ -853,7 +856,8 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
         : "bad";
 
     const medsBlock: Mark = medsClientOk === "ok" && medsSpouseOk === "ok" ? "ok" : "bad";
-    const dependantsBlock: Mark = !showEnfantsSection ? "ok" : enfants.length > 0 ? "ok" : "bad";
+    const dependantsBlock: Mark =
+  aucunePersonneACharge ? "ok" : enfants.length > 0 ? "ok" : "warn";
 
     return {
       client: { block: clientBlock },
@@ -903,6 +907,7 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     vFraisVariables,
     vDelais,
     enfants.length,
+    aucunePersonneACharge,
     showEnfantsSection,
   ]);
 
@@ -1037,6 +1042,7 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     }
 
     setEnfants(form?.personnesACharge ?? []);
+    setAucunePersonneACharge((form?.personnesACharge ?? []).length === 0);
 
     const q = form?.questionsGenerales ?? {};
     setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as YesNo) ?? "");
@@ -1287,19 +1293,35 @@ return (
           }}
         />
 
-        <DependantsSection
-          L={L}
-          show={true}
-          enfants={enfants}
-          ajouterEnfant={ajouterEnfant}
-          updateEnfant={(i, field, value) => {
-            if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
-            if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
-            return updateEnfant(i, field, value);
-          }}
-          removeEnfant={removeEnfant}
-        />
+       <div style={{ marginBottom: 10 }}>
+  <button
+    type="button"
+    className="ff-btn ff-btn-outline"
+    onClick={() => {
+      setAucunePersonneACharge(true);
+      setEnfants([]);
+    }}
+  >
+    {t(
+      "Aucune personne à charge",
+      "No dependants",
+      "Ninguna persona a cargo"
+    )}
+  </button>
+</div>
 
+<DependantsSection
+  L={L}
+  show={true}
+  enfants={enfants}
+  ajouterEnfant={ajouterEnfant}
+  updateEnfant={(i, field, value) => {
+    if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
+    if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
+    return updateEnfant(i, field, value);
+  }}
+  removeEnfant={removeEnfant}
+/>
         <QuestionsSection
           L={L}
           anneeImposition={anneeImposition}
