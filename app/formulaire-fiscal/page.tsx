@@ -714,10 +714,6 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
     if (!habiteSeulTouteAnnee) errors.push(t("Question : Habitez-vous seul(e) toute l’année ? obligatoire.", "Question: Did you live alone all year? required.", "Pregunta: ¿Vivió solo(a) todo el año? obligatorio."));
     if (!nbPersonnesMaison3112.trim()) errors.push(t("Question : Nombre de personnes au 31/12 : obligatoire.", "Question: Number of people living with you on 12/31: required.", "Pregunta: Número de personas que vivían con usted el 31/12: obligatorio."));
 
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    if (nb > 0 && enfants.length === 0) {
-      errors.push(t("Personnes à charge : ajoutez au moins 1 personne.", "Dependants: add at least 1 dependant.", "Dependientes: agregue al menos 1 dependiente."));
-    }
 
     if (!biensEtranger100k) errors.push(t("Question : Biens à l’étranger > 100 000 $ : obligatoire.", "Question: Foreign assets over $100,000: required.", "Pregunta: Bienes en el extranjero > $100,000: obligatorio."));
     if (!citoyenCanadien) errors.push(t("Question : Citoyen(ne) canadien(ne) : obligatoire.", "Question: Canadian citizen: required.", "Pregunta: Ciudadano(a) canadiense: obligatorio."));
