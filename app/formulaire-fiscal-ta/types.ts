@@ -105,6 +105,9 @@ export type FormQuestionsData = {
   appelerTechnicien?: YesNo;
 
   copieImpots?: CopieImpots;
+
+  // ✅ nouveau champ pour éviter de forcer un enfant
+  aucunePersonneACharge?: boolean;
 };
 
 /* ===================== TA - STEP 2 (REVENU & DÉPENSES) ===================== */
