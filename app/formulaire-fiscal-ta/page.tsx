@@ -1034,6 +1034,10 @@ copieImpots,
       }
 
       setEnfants(form?.personnesACharge ?? []);
+      setAucunePersonneACharge(
+  !!form?.questionsGenerales?.aucunePersonneACharge ||
+  (form?.personnesACharge ?? []).length === 0
+);
 
       const q = form?.questionsGenerales ?? {};
       setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as any) ?? "");
@@ -1162,9 +1166,8 @@ copieImpots,
           (!!assuranceMedsConjoint &&
             assuranceMedsConjointPeriodes.some((p) => isValidDateJJMMAAAA(p.debut) && isValidDateJJMMAAAA(p.fin)))));
 
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    const okDependants = nb === 0 || enfants.length > 0;
-
+    const okDependants = aucunePersonneACharge || enfants.length > 0;
+    
     const okQuestions =
       isValidYear(anneeImposition) &&
       !!habiteSeulTouteAnnee &&
