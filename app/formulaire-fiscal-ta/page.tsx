@@ -267,10 +267,12 @@ function FormulaireFiscalTAInner({
 
   /* =========================== Enfants =========================== */
   const [enfants, setEnfants] = useState<Child[]>([]);
+  const [aucunePersonneACharge, setAucunePersonneACharge] = useState(false);
 
   const ajouterEnfant = useCallback(() => {
-    setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
-  }, []);
+  setAucunePersonneACharge(false);
+  setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
+}, []);
 
   const updateEnfant = useCallback((i: number, field: keyof Child, value: string) => {
     setEnfants((prev) => {
@@ -407,16 +409,17 @@ function FormulaireFiscalTAInner({
         sexe: x.sexe as Sexe,
       })),
       questionsGenerales: {
-        habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
-        nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
-        biensEtranger100k: biensEtranger100k as any,
-        citoyenCanadien: citoyenCanadien as any,
-        nonResident: nonResident as any,
-        maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
-        appelerTechnicien: appelerTechnicien as any,
-        copieImpots,
-        anneeImposition: anneeImposition.trim(),
-      },
+  habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
+  nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
+  biensEtranger100k: biensEtranger100k as any,
+  citoyenCanadien: citoyenCanadien as any,
+  nonResident: nonResident as any,
+  maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
+  appelerTechnicien: appelerTechnicien as any,
+  copieImpots,
+  anneeImposition: anneeImposition.trim(),
+  aucunePersonneACharge,
+},
       validations: {
         exactitudeInfo: vExactitude,
         dossierComplet: vDossierComplet,
@@ -425,58 +428,58 @@ function FormulaireFiscalTAInner({
       },
     };
   }, [
-    aUnConjoint,
-    adresse,
-    adresseConjointeIdentique,
-    adresseConjoint,
-    ancienEtatCivil,
-    anneeImposition,
-    app,
-    appConjoint,
-    appelerTechnicien,
-    assuranceMedsClient,
-    assuranceMedsClientPeriodes,
-    assuranceMedsConjoint,
-    assuranceMedsConjointPeriodes,
-    biensEtranger100k,
-    citoyenCanadien,
-    codePostal,
-    codePostalConjoint,
-    courriel,
-    courrielConjoint,
-    dateChangementEtatCivil,
-    dob,
-    dobConjoint,
-    enfants,
-    etatCivil,
-    etatCivilChange,
-    habiteSeulTouteAnnee,
-    maisonAcheteeOuVendue,
-    nas,
-    nasConjoint,
-    nbPersonnesMaison3112,
-    nom,
-    nomConjoint,
-    nonResident,
-    prenom,
-    prenomConjoint,
-    province,
-    provinceConjoint,
-    revenuNetConjoint,
-    tel,
-    telCell,
-    telCellConjoint,
-    telConjoint,
-    traiterConjoint,
-    ville,
-    villeConjoint,
-    vDelais,
-    vDossierComplet,
-    vExactitude,
-    vFraisVariables,
-    copieImpots,
-  ]);
-
+   aUnConjoint,
+adresse,
+adresseConjointeIdentique,
+adresseConjoint,
+ancienEtatCivil,
+anneeImposition,
+app,
+appConjoint,
+appelerTechnicien,
+assuranceMedsClient,
+assuranceMedsClientPeriodes,
+assuranceMedsConjoint,
+assuranceMedsConjointPeriodes,
+biensEtranger100k,
+citoyenCanadien,
+codePostal,
+codePostalConjoint,
+courriel,
+courrielConjoint,
+dateChangementEtatCivil,
+dob,
+dobConjoint,
+enfants,
+aucunePersonneACharge,
+etatCivil,
+etatCivilChange,
+habiteSeulTouteAnnee,
+maisonAcheteeOuVendue,
+nas,
+nasConjoint,
+nbPersonnesMaison3112,
+nom,
+nomConjoint,
+nonResident,
+prenom,
+prenomConjoint,
+province,
+provinceConjoint,
+revenuNetConjoint,
+tel,
+telCell,
+telCellConjoint,
+telConjoint,
+traiterConjoint,
+ville,
+villeConjoint,
+vDelais,
+vDossierComplet,
+vExactitude,
+vFraisVariables,
+copieImpots,
+]);
   /* ===================== Step 1 validation (bloquant) ===================== */
   const step1Errors = useMemo(() => {
     const errors: string[] = [];
@@ -696,17 +699,6 @@ function FormulaireFiscalTAInner({
         )
       );
 
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    if (nb > 0 && enfants.length === 0) {
-      errors.push(
-        t(
-          "Personnes à charge : ajoutez au moins 1 personne.",
-          "Dependants: add at least 1 dependant.",
-          "Dependientes: agregue al menos 1 dependiente."
-        )
-      );
-    }
-
     if (!biensEtranger100k)
       errors.push(
         t(
@@ -853,9 +845,9 @@ function FormulaireFiscalTAInner({
 
   // showEnfantsSection
   const showEnfantsSection = useMemo(() => {
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    return nb > 0;
-  }, [nbPersonnesMaison3112]);
+  const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+  return nb > 0 || aucunePersonneACharge;
+}, [nbPersonnesMaison3112, aucunePersonneACharge]);
 
   /* =========================== Save draft (insert/update) =========================== */
   const saveDraft = useCallback(async (): Promise<string | null> => {
@@ -1187,17 +1179,16 @@ function FormulaireFiscalTAInner({
     const okConf = vExactitude && vDossierComplet && vFraisVariables && vDelais;
 
     return { okClient, okSpouse, okMeds, okDependants, okQuestions, okConf };
-  }, [
-    prenom, nom, nas, dob, etatCivil, courriel, adresse, ville, province, codePostal, tel, telCell,
-    etatCivilChange, ancienEtatCivil, dateChangementEtatCivil,
-    aUnConjoint, traiterConjoint, revenuNetConjoint, prenomConjoint, nomConjoint, nasConjoint, dobConjoint,
-    telConjoint, telCellConjoint, adresseConjointeIdentique, adresseConjoint, villeConjoint, provinceConjoint, codePostalConjoint,
-    assuranceMedsClient, assuranceMedsClientPeriodes, assuranceMedsConjoint, assuranceMedsConjointPeriodes,
-    nbPersonnesMaison3112, enfants.length,
-    anneeImposition, habiteSeulTouteAnnee, biensEtranger100k, citoyenCanadien, nonResident, maisonAcheteeOuVendue, appelerTechnicien, copieImpots,
-    vExactitude, vDossierComplet, vFraisVariables, vDelais,
-  ]);
-
+}, [
+  prenom, nom, nas, dob, etatCivil, courriel, adresse, ville, province, codePostal, tel, telCell,
+  etatCivilChange, ancienEtatCivil, dateChangementEtatCivil,
+  aUnConjoint, traiterConjoint, revenuNetConjoint, prenomConjoint, nomConjoint, nasConjoint, dobConjoint,
+  telConjoint, telCellConjoint, adresseConjointeIdentique, adresseConjoint, villeConjoint, provinceConjoint, codePostalConjoint,
+  assuranceMedsClient, assuranceMedsClientPeriodes, assuranceMedsConjoint, assuranceMedsConjointPeriodes,
+  nbPersonnesMaison3112, enfants.length, aucunePersonneACharge,
+  anneeImposition, habiteSeulTouteAnnee, biensEtranger100k, citoyenCanadien, nonResident, maisonAcheteeOuVendue, appelerTechnicien, copieImpots,
+  vExactitude, vDossierComplet, vFraisVariables, vDelais,
+]);
   function Badge({ ok }: { ok: boolean }) {
     return (
       <span
@@ -1375,20 +1366,37 @@ function FormulaireFiscalTAInner({
             }}
           />
 
-          <DependantsSection
-            L={L}
-            show={true}
-            showErrors={showErrors}
-            enfants={enfants}
-            ajouterEnfant={ajouterEnfant}
-            updateEnfant={(i, field, value) => {
-              if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
-              if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
-              return updateEnfant(i, field, value);
-            }}
-            removeEnfant={removeEnfant}
-          />
+          <div style={{ marginBottom: 10 }}>
+  <button
+    type="button"
+    className="ff-btn ff-btn-outline"
+    onClick={() => {
+      setAucunePersonneACharge(true);
+      setEnfants([]);
+    }}
+  >
+    {t(
+      "Aucune personne à charge",
+      "No dependants",
+      "Ninguna persona a cargo"
+    )}
+  </button>
+</div>
 
+          <DependantsSection
+  L={L}
+  show={true}
+  showErrors={showErrors}
+  enfants={enfants}
+  aucunePersonneACharge={aucunePersonneACharge}
+  ajouterEnfant={ajouterEnfant}
+  updateEnfant={(i, field, value) => {
+    if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
+    if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
+    return updateEnfant(i, field, value);
+  }}
+  removeEnfant={removeEnfant}
+/>
           <QuestionsSection
             L={L}
             showErrors={showErrors}
