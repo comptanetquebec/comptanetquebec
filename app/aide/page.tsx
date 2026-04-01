@@ -1,89 +1,153 @@
 import Link from "next/link";
 import AssistantChat from "@/components/AssistantChat";
 
-export const metadata = {
-  title: "Assistant ComptaNet | Aide",
-  description:
-    "Obtenez une réponse rapide à vos questions générales sur l’impôt au Québec, les documents requis et le fonctionnement du service.",
-};
+type Lang = "fr" | "en" | "es";
 
-export default function AidePage() {
+function normalizeLang(lang?: string): Lang {
+  if (lang === "en") return "en";
+  if (lang === "es") return "es";
+  return "fr";
+}
+
+const COPY = {
+  fr: {
+    title: "Assistant ComptaNet",
+    intro:
+      "Réponse rapide à vos questions sur l’impôt et les documents requis.",
+    open: "Ouvrir un dossier",
+    portal: "Portail sécurisé",
+    before: "Avant de commencer",
+    bullets: [
+      "Information générale seulement",
+      "Aucun avis personnalisé",
+      "Ne partagez pas d’informations sensibles",
+      "Utilisez le portail pour vos documents",
+    ],
+    fastTitle: "Le plus rapide",
+    fastText:
+      "Ouvrez votre dossier en ligne et déposez vos documents immédiatement.",
+    start: "Commencer",
+    aria: "Assistant fiscal",
+  },
+
+  en: {
+    title: "ComptaNet Assistant",
+    intro:
+      "Quick answers to your tax questions and required documents.",
+    open: "Open a file",
+    portal: "Secure portal",
+    before: "Before you begin",
+    bullets: [
+      "General information only",
+      "No personalized advice",
+      "Do not share sensitive data",
+      "Use the portal for documents",
+    ],
+    fastTitle: "Fastest option",
+    fastText:
+      "Open your file online and upload your documents right away.",
+    start: "Start now",
+    aria: "Tax assistant",
+  },
+
+  es: {
+    title: "Asistente ComptaNet",
+    intro:
+      "Respuestas rápidas a sus preguntas sobre impuestos y documentos.",
+    open: "Abrir expediente",
+    portal: "Portal seguro",
+    before: "Antes de comenzar",
+    bullets: [
+      "Información general solamente",
+      "Sin asesoría personalizada",
+      "No comparta datos sensibles",
+      "Use el portal para documentos",
+    ],
+    fastTitle: "Más rápido",
+    fastText:
+      "Abra su expediente en línea y suba sus documentos inmediatamente.",
+    start: "Comenzar",
+    aria: "Asistente fiscal",
+  },
+} as const;
+
+export default function AidePage({
+  searchParams,
+}: {
+  searchParams?: { lang?: string };
+}) {
+  const lang = normalizeLang(searchParams?.lang);
+  const c = COPY[lang];
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-2xl">
-            <h1 className="text-2xl font-semibold text-neutral-900">
-              Assistant ComptaNet
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
+      
+      {/* HEADER */}
+      <header className="mb-6 space-y-4">
+        
+        {/* TITRE + BOUTONS */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold">
+              {c.title}
             </h1>
-
-            <p className="mt-2 text-sm leading-6 text-neutral-600">
-              Obtenez une réponse rapide à vos questions générales sur l’impôt au
-              Québec, les documents requis et le fonctionnement du service.
+            <p className="text-sm text-neutral-600 mt-1">
+              {c.intro}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Link
               href="/espace-client"
-              className="rounded-xl bg-[#004aad] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95"
+              className="rounded-xl bg-[#004aad] px-4 py-2 text-sm font-medium text-white"
             >
-              Ouvrir un dossier
+              {c.open}
             </Link>
 
             <Link
               href="/espace-client"
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+              className="rounded-xl border px-4 py-2 text-sm"
             >
-              Accéder au portail sécurisé
+              {c.portal}
             </Link>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-neutral-700">
-          <p className="font-semibold text-neutral-900">Avant de commencer</p>
-
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>Ce chat fournit de l’information générale seulement.</li>
-            <li>Aucun avis fiscal personnalisé n’est donné dans cette section.</li>
-            <li>
-              N’écrivez pas d’informations sensibles ici (NAS, carte, mots de
-              passe, coordonnées bancaires).
-            </li>
-            <li>
-              Pour transmettre vos documents, utilisez toujours le portail
-              sécurisé.
-            </li>
+        {/* INFO */}
+        <div className="rounded-xl bg-blue-50 border p-3 text-xs sm:text-sm">
+          <p className="font-medium mb-1">{c.before}</p>
+          <ul className="list-disc pl-4 space-y-1">
+            {c.bullets.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
           </ul>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold text-neutral-900">
-            Le plus rapide pour commencer
+        {/* CTA RAPIDE */}
+        <div className="rounded-xl border p-3 text-sm">
+          <p className="font-medium">{c.fastTitle}</p>
+          <p className="text-neutral-600 mt-1">
+            {c.fastText}
           </p>
 
-          <p className="mt-1 text-sm text-neutral-600">
-            Si vous êtes prêt(e) à avancer, ouvrez directement votre dossier en
-            ligne et déposez vos documents dans le portail sécurisé.
-          </p>
-
-          <div className="mt-3">
-            <Link
-              href="/espace-client"
-              className="inline-flex rounded-xl bg-[#004aad] px-4 py-2 text-sm font-medium text-white transition hover:opacity-95"
-            >
-              Commencer maintenant
-            </Link>
-          </div>
+          <Link
+            href="/espace-client"
+            className="inline-block mt-2 rounded-xl bg-[#004aad] px-4 py-2 text-white text-sm"
+          >
+            {c.start}
+          </Link>
         </div>
+
       </header>
 
+      {/* CHAT */}
       <section
-        aria-label="Assistant fiscal général"
-        className="rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4"
+        aria-label={c.aria}
+        className="rounded-xl border p-2 sm:p-3"
       >
-        <AssistantChat lang="fr" />
+        <AssistantChat lang={lang} />
       </section>
+
     </main>
   );
 }
