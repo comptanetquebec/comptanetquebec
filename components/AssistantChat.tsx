@@ -10,56 +10,85 @@ type Msg = {
   id: string;
   role: Role;
   content: string;
+  actions?: string[];
 };
 
 const MAX_CHARS = 1500;
 const BRAND_BLUE = "#004aad";
 
+const ACTION_LINKS: Record<string, string> = {
+  "Ouvrir un dossier": "/espace-client",
+  "Open a file": "/espace-client",
+  "Abrir expediente": "/espace-client",
+  "Portail sécurisé": "/espace-client",
+  "Secure portal": "/espace-client",
+  "Portal seguro": "/espace-client",
+};
+
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
+}
+
+function t(
+  lang: Lang,
+  fr: string,
+  en: string,
+  es: string
+): string {
+  if (lang === "en") return en;
+  if (lang === "es") return es;
+  return fr;
 }
 
 function welcomeFor(lang: Lang): Msg {
   return {
     id: "welcome",
     role: "assistant",
-    content:
+    content: t(
+      lang,
+      "Bonjour 👋 Je suis l’assistant de ComptaNet Québec.\nJe peux vous orienter rapidement selon votre situation.",
+      "Hi 👋 I’m the ComptaNet Québec assistant.\nI can quickly guide you based on your situation.",
+      "Hola 👋 Soy el asistente de ComptaNet Québec.\nPuedo orientarte rápidamente según tu situación."
+    ),
+    actions:
       lang === "fr"
-        ? "Bonjour 👋 Je suis l’assistant de ComptaNet Québec.\nComment puis-je vous aider avec vos impôts aujourd’hui ?"
+        ? ["T1", "Travailleur autonome", "T2", "Ouvrir un dossier"]
         : lang === "en"
-        ? "Hi 👋 I’m the ComptaNet Québec assistant.\nHow can I help you with your taxes today?"
-        : "Hola 👋 Soy el asistente de ComptaNet Québec.\n¿Cómo puedo ayudarte con tus impuestos hoy?",
+        ? ["T1", "Self-employed", "T2", "Open a file"]
+        : ["T1", "Autónomo", "T2", "Abrir expediente"],
   };
 }
 
-/** Micro-sécurité (court, non anxiogène) */
 function microSafety(lang: Lang) {
-  return lang === "fr"
-    ? "Astuce : évitez d’écrire des infos sensibles (NAS, carte, mots de passe)."
-    : lang === "en"
-    ? "Tip: avoid sharing sensitive info (SIN, card numbers, passwords)."
-    : "Consejo: evita compartir datos sensibles (NAS/SIN, tarjetas, contraseñas).";
+  return t(
+    lang,
+    "Astuce : évitez d’écrire des infos sensibles (NAS, carte, mots de passe).",
+    "Tip: avoid sharing sensitive info (SIN, card numbers, passwords).",
+    "Consejo: evita compartir datos sensibles (NAS/SIN, tarjetas, contraseñas)."
+  );
 }
 
 function quickPrompts(lang: Lang): string[] {
   if (lang === "en") {
     return [
-      "What documents are needed for an individual return (T1)?",
+      "What documents are needed for a T1?",
       "What documents are needed for self-employed?",
-      "What is the difference between T1, self-employed, and corporate (T2)?",
+      "Difference between T1, self-employed, and T2?",
       "How does the secure portal work?",
     ];
   }
+
   if (lang === "es") {
     return [
-      "¿Qué documentos se necesitan para una declaración personal (T1)?",
+      "¿Qué documentos se necesitan para una T1?",
       "¿Qué documentos se necesitan para autónomo?",
-      "¿Cuál es la diferencia entre T1, autónomo y corporación (T2)?",
+      "¿Diferencia entre T1, autónomo y T2?",
       "¿Cómo funciona el portal seguro?",
     ];
   }
+
   return [
-    "Quels documents pour une déclaration T1 (particulier) ?",
+    "Quels documents pour une T1 ?",
     "Quels documents pour travailleur autonome ?",
     "Différence entre T1, autonome et T2 ?",
     "Comment fonctionne le portail sécurisé ?",
@@ -72,12 +101,12 @@ function reportBody(lang: Lang, messages: Msg[]) {
     .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
     .join("\n\n");
 
-  const intro =
-    lang === "fr"
-      ? "Décrivez le problème (ex: réponse inappropriée, demande dangereuse, etc.).\n\n"
-      : lang === "en"
-      ? "Describe the issue (e.g., inappropriate answer, unsafe request, etc.).\n\n"
-      : "Describe el problema (p. ej., respuesta inapropiada, solicitud peligrosa, etc.).\n\n";
+  const intro = t(
+    lang,
+    "Décrivez le problème (ex: réponse inappropriée, erreur, etc.).\n\n",
+    "Describe the issue (e.g., inappropriate answer, error, etc.).\n\n",
+    "Describa el problema (p. ej., respuesta inapropiada, error, etc.).\n\n"
+  );
 
   return `${microSafety(lang)}\n\n${intro}${lastMsgs}`;
 }
@@ -91,7 +120,6 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const reqIdRef = useRef(0);
 
-  // Reset si la langue change
   useEffect(() => {
     setMessages([welcomeFor(lang)]);
     setInput("");
@@ -103,11 +131,10 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
   const remaining = MAX_CHARS - input.length;
 
   const canSend = useMemo(() => {
-    const t = input.trim();
-    return status !== "thinking" && t.length > 0 && t.length <= MAX_CHARS;
+    const text = input.trim();
+    return status !== "thinking" && text.length > 0 && text.length <= MAX_CHARS;
   }, [input, status]);
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, status, errorMsg]);
@@ -118,11 +145,12 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
     if (raw.length > MAX_CHARS) {
       setErrorMsg(
-        lang === "fr"
-          ? `Message trop long (max ${MAX_CHARS} caractères).`
-          : lang === "en"
-          ? `Message too long (max ${MAX_CHARS} characters).`
-          : `Mensaje demasiado largo (máx ${MAX_CHARS} caracteres).`
+        t(
+          lang,
+          `Message trop long (max ${MAX_CHARS} caractères).`,
+          `Message too long (max ${MAX_CHARS} characters).`,
+          `Mensaje demasiado largo (máx ${MAX_CHARS} caracteres).`
+        )
       );
       return;
     }
@@ -133,19 +161,36 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
     const myReq = ++reqIdRef.current;
 
-    setMessages((prev) => [...prev, { id: uid(), role: "user", content: raw }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: uid(), role: "user", content: raw },
+    ]);
 
     try {
       const res: AIResponse = await askAssistant(raw, lang);
+
       if (myReq !== reqIdRef.current) return;
 
       setMessages((prev) => [
         ...prev,
-        { id: uid(), role: "assistant", content: res.content },
+        {
+          id: uid(),
+          role: "assistant",
+          content: res.content,
+          actions: res.next_actions,
+        },
       ]);
     } catch (e: unknown) {
       if (myReq !== reqIdRef.current) return;
-      const msg = e instanceof Error ? e.message : "Erreur inattendue";
+
+      const fallback = t(
+        lang,
+        "Erreur inattendue.",
+        "Unexpected error.",
+        "Error inesperado."
+      );
+
+      const msg = e instanceof Error ? e.message : fallback;
       setErrorMsg(msg);
     } finally {
       if (myReq === reqIdRef.current) setStatus("idle");
@@ -164,17 +209,19 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
     const last = [...messages]
       .reverse()
       .find((m) => m.role === "assistant" && m.id !== "welcome");
+
     if (!last) return;
+
     navigator.clipboard?.writeText(last.content).catch(() => {});
   }
 
   function report() {
-    const subject =
-      lang === "fr"
-        ? "Signalement — Assistant ComptaNet"
-        : lang === "en"
-        ? "Report — ComptaNet Assistant"
-        : "Reporte — Asistente ComptaNet";
+    const subject = t(
+      lang,
+      "Signalement — Assistant ComptaNet",
+      "Report — ComptaNet Assistant",
+      "Reporte — Asistente ComptaNet"
+    );
 
     const body = reportBody(lang, messages);
     window.location.href = `mailto:comptanetquebec@gmail.com?subject=${encodeURIComponent(
@@ -184,10 +231,8 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
   return (
     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-      {/* Header */}
       <div className="border-b px-4 py-3">
         <div className="flex items-start justify-between gap-3">
-          {/* Left: logo + titles */}
           <div className="flex items-center gap-3">
             <div className="relative h-9 w-9 overflow-hidden rounded-xl border bg-white">
               <Image
@@ -204,11 +249,12 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
                 Assistant ComptaNet Québec
               </p>
               <p className="truncate text-xs text-neutral-600">
-                {lang === "fr"
-                  ? "Info générale — aucun avis personnalisé."
-                  : lang === "en"
-                  ? "General info — no personalized advice."
-                  : "Info general — sin asesoría personalizada."}
+                {t(
+                  lang,
+                  "Info générale — aucun avis personnalisé.",
+                  "General info — no personalized advice.",
+                  "Información general — sin asesoría personalizada."
+                )}
               </p>
               <p className="mt-1 line-clamp-1 text-[11px] text-neutral-500">
                 {microSafety(lang)}
@@ -216,24 +262,28 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
             </div>
           </div>
 
-          {/* Right: actions */}
           <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={copyLastAssistant}
               className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
-              title={lang === "fr" ? "Copier la dernière réponse" : "Copy last answer"}
+              title={t(
+                lang,
+                "Copier la dernière réponse",
+                "Copy last answer",
+                "Copiar la última respuesta"
+              )}
             >
-              {lang === "fr" ? "Copier" : lang === "en" ? "Copy" : "Copiar"}
+              {t(lang, "Copier", "Copy", "Copiar")}
             </button>
 
             <button
               type="button"
               onClick={report}
               className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
-              title={lang === "fr" ? "Signaler" : "Report"}
+              title={t(lang, "Signaler", "Report", "Reportar")}
             >
-              {lang === "fr" ? "Signaler" : lang === "en" ? "Report" : "Reportar"}
+              {t(lang, "Signaler", "Report", "Reportar")}
             </button>
 
             <button
@@ -241,39 +291,43 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
               onClick={onReset}
               className="rounded-lg border px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
             >
-              {lang === "fr" ? "Nouvelle" : lang === "en" ? "New" : "Nueva"}
+              {t(lang, "Nouvelle", "New", "Nueva")}
             </button>
           </div>
         </div>
 
-        {/* Quick prompts (discrets) */}
         <div className="mt-3 flex flex-wrap gap-2">
-          {quickPrompts(lang).map((p) => (
+          {quickPrompts(lang).map((prompt) => (
             <button
-              key={p}
+              key={prompt}
               type="button"
-              onClick={() => onSend(p)}
+              onClick={() => onSend(prompt)}
               disabled={status === "thinking"}
               className="rounded-full border bg-white px-3 py-1 text-xs text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
             >
-              {p}
+              {prompt}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Messages (hauteur responsive pour éviter de scroller la page) */}
-      <div className="h-[320px] sm:h-[380px] lg:h-[420px] overflow-y-auto px-4 py-4">
+      <div className="h-[320px] overflow-y-auto px-4 py-4 sm:h-[380px] lg:h-[420px]">
         <div className="space-y-3">
           {messages.map((m) => (
-            <Bubble key={m.id} role={m.role} content={m.content} />
+            <Bubble
+              key={m.id}
+              role={m.role}
+              content={m.content}
+              actions={m.actions}
+              onAction={onSend}
+            />
           ))}
 
           {status === "thinking" && <TypingBubble />}
 
           {errorMsg && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {(lang === "fr" ? "Erreur : " : "Error: ") + errorMsg}
+              {t(lang, "Erreur : ", "Error: ", "Error: ") + errorMsg}
             </div>
           )}
 
@@ -281,18 +335,16 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
         </div>
       </div>
 
-      {/* Composer */}
       <div className="border-t p-4">
         <div className="flex gap-2">
           <textarea
             className="min-h-[44px] max-h-[140px] flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[rgba(0,74,173,0.18)]"
-            placeholder={
-              lang === "fr"
-                ? "Écrivez votre question… (Entrée pour envoyer)"
-                : lang === "en"
-                ? "Write your question… (Enter to send)"
-                : "Escriba su pregunta… (Enter para enviar)"
-            }
+            placeholder={t(
+              lang,
+              "Écrivez votre question… (Entrée pour envoyer)",
+              "Write your question… (Enter to send)",
+              "Escriba su pregunta… (Enter para enviar)"
+            )}
             value={input}
             onChange={(e) => setInput(e.currentTarget.value)}
             onKeyDown={(e) => {
@@ -312,21 +364,18 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
           >
             {status === "thinking"
               ? "…"
-              : lang === "fr"
-              ? "Envoyer"
-              : lang === "en"
-              ? "Send"
-              : "Enviar"}
+              : t(lang, "Envoyer", "Send", "Enviar")}
           </button>
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-3">
           <p className="text-xs text-neutral-500">
-            {lang === "fr"
-              ? "Pour un avis personnalisé, il faut analyser votre situation et vos documents."
-              : lang === "en"
-              ? "For personalized advice, we must review your situation and documents."
-              : "Para una respuesta personalizada, debemos revisar tu situación y documentos."}
+            {t(
+              lang,
+              "Pour un avis personnalisé, il faut analyser votre situation et vos documents.",
+              "For personalized advice, we must review your situation and documents.",
+              "Para una respuesta personalizada, debemos revisar su situación y sus documentos."
+            )}
           </p>
 
           <p className={`text-xs ${remaining < 0 ? "text-red-600" : "text-neutral-500"}`}>
@@ -338,8 +387,19 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
   );
 }
 
-function Bubble({ role, content }: { role: Role; content: string }) {
+function Bubble({
+  role,
+  content,
+  actions,
+  onAction,
+}: {
+  role: Role;
+  content: string;
+  actions?: string[];
+  onAction?: (a: string) => void;
+}) {
   const isUser = role === "user";
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
@@ -350,6 +410,38 @@ function Bubble({ role, content }: { role: Role; content: string }) {
         style={isUser ? { backgroundColor: BRAND_BLUE } : undefined}
       >
         {content}
+
+        {!!actions?.length && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {actions.map((action) => {
+              const href = ACTION_LINKS[action];
+
+              if (href) {
+                return (
+                  <a
+                    key={action}
+                    href={href}
+                    className="rounded-full px-3 py-1.5 text-xs font-medium text-white"
+                    style={{ backgroundColor: BRAND_BLUE }}
+                  >
+                    {action}
+                  </a>
+                );
+              }
+
+              return (
+                <button
+                  key={action}
+                  type="button"
+                  onClick={() => onAction?.(action)}
+                  className="rounded-full border bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
+                >
+                  {action}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -367,4 +459,4 @@ function TypingBubble() {
       </div>
     </div>
   );
-}
+                }
