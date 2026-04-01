@@ -29,12 +29,7 @@ function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
 
-function t(
-  lang: Lang,
-  fr: string,
-  en: string,
-  es: string
-): string {
+function t(lang: Lang, fr: string, en: string, es: string): string {
   if (lang === "en") return en;
   if (lang === "es") return es;
   return fr;
@@ -231,10 +226,10 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
 
   return (
     <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-      <div className="border-b px-4 py-3">
-        <div className="flex items-start justify-between gap-3">
+      <div className="border-b px-3 py-3 sm:px-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative h-9 w-9 overflow-hidden rounded-xl border bg-white">
+            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border bg-white">
               <Image
                 src="/logo-cq.png"
                 alt="ComptaNet Québec"
@@ -256,13 +251,13 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
                   "Información general — sin asesoría personalizada."
                 )}
               </p>
-              <p className="mt-1 line-clamp-1 text-[11px] text-neutral-500">
+              <p className="mt-1 line-clamp-2 text-[11px] text-neutral-500 sm:line-clamp-1">
                 {microSafety(lang)}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap gap-2 sm:justify-end">
             <button
               type="button"
               onClick={copyLastAssistant}
@@ -311,7 +306,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
         </div>
       </div>
 
-      <div className="h-[320px] overflow-y-auto px-4 py-4 sm:h-[380px] lg:h-[420px]">
+      <div className="h-[320px] overflow-y-auto px-3 py-4 sm:h-[380px] sm:px-4 lg:h-[420px]">
         <div className="space-y-3">
           {messages.map((m) => (
             <Bubble
@@ -335,7 +330,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
         </div>
       </div>
 
-      <div className="border-t p-4">
+      <div className="border-t p-3 sm:p-4">
         <div className="flex gap-2">
           <textarea
             className="min-h-[44px] max-h-[140px] flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[rgba(0,74,173,0.18)]"
@@ -359,7 +354,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
             type="button"
             disabled={!canSend}
             onClick={() => onSend()}
-            className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-40"
+            className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-40"
             style={{ backgroundColor: BRAND_BLUE }}
           >
             {status === "thinking"
@@ -368,8 +363,8 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
           </button>
         </div>
 
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <p className="text-xs text-neutral-500">
+        <div className="mt-2 flex items-start justify-between gap-3">
+          <p className="max-w-[80%] text-xs text-neutral-500">
             {t(
               lang,
               "Pour un avis personnalisé, il faut analyser votre situation et vos documents.",
@@ -378,7 +373,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
             )}
           </p>
 
-          <p className={`text-xs ${remaining < 0 ? "text-red-600" : "text-neutral-500"}`}>
+          <p className={`shrink-0 text-xs ${remaining < 0 ? "text-red-600" : "text-neutral-500"}`}>
             {remaining}
           </p>
         </div>
@@ -400,44 +395,49 @@ function Bubble({
 }) {
   const isUser = role === "user";
 
+  const linkActions = (actions ?? []).filter((action) => ACTION_LINKS[action]);
+  const buttonActions = (actions ?? []).filter((action) => !ACTION_LINKS[action]);
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={[
-          "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed",
+          "max-w-[90%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed sm:max-w-[85%]",
           isUser ? "text-white" : "bg-neutral-100 text-neutral-900",
         ].join(" ")}
         style={isUser ? { backgroundColor: BRAND_BLUE } : undefined}
       >
         {content}
 
-        {!!actions?.length && (
+        {!!buttonActions.length && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {actions.map((action) => {
+            {buttonActions.map((action) => (
+              <button
+                key={action}
+                type="button"
+                onClick={() => onAction?.(action)}
+                className="rounded-full border bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
+              >
+                {action}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!!linkActions.length && (
+          <div className="mt-3 space-y-2">
+            {linkActions.map((action) => {
               const href = ACTION_LINKS[action];
 
-              if (href) {
-                return (
-                  <a
-                    key={action}
-                    href={href}
-                    className="rounded-full px-3 py-1.5 text-xs font-medium text-white"
-                    style={{ backgroundColor: BRAND_BLUE }}
-                  >
-                    {action}
-                  </a>
-                );
-              }
-
               return (
-                <button
+                <a
                   key={action}
-                  type="button"
-                  onClick={() => onAction?.(action)}
-                  className="rounded-full border bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 hover:bg-neutral-50"
+                  href={href}
+                  className="block w-full rounded-xl px-4 py-2 text-center text-sm font-semibold text-white shadow-sm"
+                  style={{ backgroundColor: BRAND_BLUE }}
                 >
                   {action}
-                </button>
+                </a>
               );
             })}
           </div>
