@@ -65,7 +65,6 @@ export default function PaiementPage() {
       const { error } = await supabase
         .from("formulaires_fiscaux")
         .update({
-          payment_mode: "interac",
           payment_status: "sent",
           payment_sent_at: new Date().toISOString(),
         })
@@ -78,13 +77,14 @@ export default function PaiementPage() {
       router.push(
         `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
       );
-    } catch (err) {
-      console.error("Erreur paiement Interac:", err);
+    } catch (error: any) {
+      console.error("Erreur Supabase:", error);
+
       setErrorMsg(
         t(
-          "Impossible d’enregistrer le virement pour le moment. Veuillez réessayer.",
-          "Unable to save the transfer right now. Please try again.",
-          "No fue posible registrar la transferencia en este momento. Inténtelo de nuevo."
+          `Erreur : ${error?.message || "inconnue"}`,
+          `Error: ${error?.message || "unknown"}`,
+          `Error: ${error?.message || "desconocido"}`
         )
       );
     } finally {
@@ -201,11 +201,7 @@ export default function PaiementPage() {
                 aria-busy={loadingInterac}
               >
                 {loadingInterac
-                  ? t(
-                      "Enregistrement...",
-                      "Saving...",
-                      "Guardando..."
-                    )
+                  ? t("Enregistrement...", "Saving...", "Guardando...")
                   : t(
                       "J’ai envoyé le virement",
                       "I sent the transfer",
