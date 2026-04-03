@@ -23,6 +23,7 @@ const DEPOT_ROUTE = "/formulaire-fiscal/depot-documents";
  * Lang
  */
 type Lang = "fr" | "en" | "es";
+
 function normalizeLang(v?: string | null): Lang {
   const x = (v || "").toLowerCase();
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
@@ -46,13 +47,6 @@ function resolveLang(urlLang: string | null): Lang {
     return l;
   }
   return normalizeLang(getCookie("cq_lang"));
-}
-
-function withLang(path: string, lang: Lang, extra?: Record<string, string>) {
-  const u = new URL(path, window.location.origin);
-  u.searchParams.set("lang", lang);
-  if (extra) for (const [k, v] of Object.entries(extra)) u.searchParams.set(k, v);
-  return u.pathname + u.search;
 }
 
 function t(lang: Lang, fr: string, en: string, es: string) {
@@ -110,6 +104,7 @@ export default function DepotDocumentsPage() {
   const lang = useMemo(() => resolveLang(params.get("lang")), [params]);
 
   const nextPath = useMemo(() => {
+    if (typeof window === "undefined") return `${DEPOT_ROUTE}?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`;
     const u = new URL(DEPOT_ROUTE, window.location.origin);
     u.searchParams.set("fid", fid);
     u.searchParams.set("type", type);
@@ -119,7 +114,9 @@ export default function DepotDocumentsPage() {
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <DepotDocumentsInner userId={userId} fid={fid} type={type} lang={lang} />}
+      {(userId) => (
+        <DepotDocumentsInner userId={userId} fid={fid} type={type} lang={lang} />
+      )}
     </RequireAuth>
   );
 }
@@ -181,13 +178,22 @@ function DepotDocumentsInner({
 
   const getSignedUrl = useCallback(
     async (path: string) => {
-      const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(path, 60 * 10);
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .createSignedUrl(path, 60 * 10);
+
       if (error || !data?.signedUrl) {
         throw new Error(
           error?.message ||
-            t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.")
+            t(
+              lang,
+              "Impossible d’ouvrir le fichier.",
+              "Cannot open file.",
+              "No se puede abrir el archivo."
+            )
         );
       }
+
       return data.signedUrl;
     },
     [lang]
@@ -203,7 +209,12 @@ function DepotDocumentsInner({
           "❌ " +
             errMessage(
               e,
-              t(lang, "Impossible d’ouvrir le fichier.", "Cannot open file.", "No se puede abrir el archivo.")
+              t(
+                lang,
+                "Impossible d’ouvrir le fichier.",
+                "Cannot open file.",
+                "No se puede abrir el archivo."
+              )
             )
         );
       }
@@ -211,9 +222,6 @@ function DepotDocumentsInner({
     [getSignedUrl, lang]
   );
 
-  /**
-   * ✅ UPLOAD RÉEL + INSERT DB (avec LOGS)
-   */
   const handleFiles = useCallback(
     async (files: FileList | null) => {
       if (!files || files.length === 0) return;
@@ -238,16 +246,6 @@ function DepotDocumentsInner({
           const clean = safeFilename(file.name);
           const storagePath = `${fid}/${Date.now()}-${uniq6()}-${clean}`;
 
-          console.log("UPLOAD TRY:", {
-            fid,
-            bucket: STORAGE_BUCKET,
-            storagePath,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-          });
-
-          // 1) Upload Storage
           const { data: upData, error: upErr } = await supabase.storage
             .from(STORAGE_BUCKET)
             .upload(storagePath, file, {
@@ -256,14 +254,9 @@ function DepotDocumentsInner({
               contentType: file.type || undefined,
             });
 
-          console.log("UPLOAD RESULT:", { upData, upErr });
-
           if (upErr) throw new Error(upErr.message);
           if (!upData?.path) throw new Error("Upload: path manquant.");
 
-          console.log("UPLOAD OK PATH:", upData.path);
-
-          // 2) Insert DB après upload OK
           const { error: insErr } = await supabase.from(DOCS_TABLE).insert({
             formulaire_id: fid,
             user_id: userId,
@@ -277,9 +270,22 @@ function DepotDocumentsInner({
         }
 
         await loadDocs();
-        setMsg(t(lang, "✅ Upload terminé.", "✅ Upload complete.", "✅ Subida completada."));
+        setMsg(
+          t(
+            lang,
+            "✅ Upload terminé.",
+            "✅ Upload complete.",
+            "✅ Subida completada."
+          )
+        );
       } catch (e: unknown) {
-        setMsg("❌ " + errMessage(e, t(lang, "Erreur upload.", "Upload error.", "Error de subida.")));
+        setMsg(
+          "❌ " +
+            errMessage(
+              e,
+              t(lang, "Erreur upload.", "Upload error.", "Error de subida.")
+            )
+        );
       } finally {
         setUploading(false);
       }
@@ -315,17 +321,29 @@ function DepotDocumentsInner({
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
               <span>
-                {t(lang, "Étape 2/3 — Dépôt de documents", "Step 2/3 — Upload documents", "Paso 2/3 — Subir documentos")}
+                {t(
+                  lang,
+                  "Étape 2/4 — Dépôt de documents",
+                  "Step 2/4 — Upload documents",
+                  "Paso 2/4 — Subir documentos"
+                )}
               </span>
             </div>
           </div>
           <div />
         </header>
 
-        <Steps step={2} lang={lang} />
+        <Steps step={2} lang={lang} fid={fid} type={type} />
 
         <div className="ff-title">
-          <h1>{t(lang, "Dépôt de documents", "Document upload", "Subida de documentos")}</h1>
+          <h1>
+            {t(
+              lang,
+              "Dépôt de documents",
+              "Document upload",
+              "Subida de documentos"
+            )}
+          </h1>
           <p>
             {t(
               lang,
@@ -344,7 +362,14 @@ function DepotDocumentsInner({
 
         <section className="ff-card">
           <div className="ff-card-head">
-            <h2>{t(lang, "Téléverser vos documents", "Upload your documents", "Suba sus documentos")}</h2>
+            <h2>
+              {t(
+                lang,
+                "Téléverser vos documents",
+                "Upload your documents",
+                "Suba sus documentos"
+              )}
+            </h2>
             <p>
               {t(
                 lang,
@@ -359,14 +384,34 @@ function DepotDocumentsInner({
             <div className={`ff-drop ${disabledUpload ? "ff-drop--disabled" : ""}`}>
               <div className="ff-drop__text">
                 <p className="ff-drop__title">
-                  {t(lang, "Déposez vos fichiers ici", "Drop your files here", "Suelte sus archivos aquí")}
+                  {t(
+                    lang,
+                    "Déposez vos fichiers ici",
+                    "Drop your files here",
+                    "Suelte sus archivos aquí"
+                  )}
                 </p>
-                <p className="ff-drop__hint">{t(lang, "PDF, images, Office, ZIP.", "PDF, images, Office, ZIP.", "PDF, imágenes, Office, ZIP.")}</p>
+                <p className="ff-drop__hint">
+                  {t(
+                    lang,
+                    "PDF, images, Office, ZIP.",
+                    "PDF, images, Office, ZIP.",
+                    "PDF, imágenes, Office, ZIP."
+                  )}
+                </p>
               </div>
 
               <div className="ff-doc-actions">
-                <label className="ff-btn ff-btn-primary" style={{ cursor: disabledUpload ? "not-allowed" : "pointer" }}>
-                  {t(lang, "Choisir des fichiers", "Choose files", "Elegir archivos")}
+                <label
+                  className="ff-btn ff-btn-primary"
+                  style={{ cursor: disabledUpload ? "not-allowed" : "pointer" }}
+                >
+                  {t(
+                    lang,
+                    "Choisir des fichiers",
+                    "Choose files",
+                    "Elegir archivos"
+                  )}
                   <input
                     className="ff-file-input"
                     type="file"
@@ -380,7 +425,11 @@ function DepotDocumentsInner({
                   />
                 </label>
 
-                {uploading && <div className="ff-progress">{t(lang, "Téléversement…", "Uploading…", "Subiendo…")}</div>}
+                {uploading && (
+                  <div className="ff-progress">
+                    {t(lang, "Téléversement…", "Uploading…", "Subiendo…")}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -396,14 +445,28 @@ function DepotDocumentsInner({
 
           <div className="ff-mt">
             <div className="ff-subtitle">
-              {t(lang, "Documents envoyés", "Uploaded documents", "Documentos subidos")}
+              {t(
+                lang,
+                "Documents envoyés",
+                "Uploaded documents",
+                "Documentos subidos"
+              )}
               {docsCount > 0 ? ` (${docsCount})` : ""}
             </div>
 
             {loadingDocs ? (
-              <div className="ff-empty">{t(lang, "Chargement…", "Loading…", "Cargando…")}</div>
+              <div className="ff-empty">
+                {t(lang, "Chargement…", "Loading…", "Cargando…")}
+              </div>
             ) : docsCount === 0 ? (
-              <div className="ff-empty">{t(lang, "Aucun document.", "No documents yet.", "Aún no hay documentos.")}</div>
+              <div className="ff-empty">
+                {t(
+                  lang,
+                  "Aucun document.",
+                  "No documents yet.",
+                  "Aún no hay documentos."
+                )}
+              </div>
             ) : (
               <div className="ff-files">
                 {docs.map((d) => (
@@ -414,7 +477,11 @@ function DepotDocumentsInner({
                     </div>
 
                     <div className="ff-file__right">
-                      <button type="button" className="ff-btn ff-btn-soft" onClick={() => void openDoc(d)}>
+                      <button
+                        type="button"
+                        className="ff-btn ff-btn-soft"
+                        onClick={() => void openDoc(d)}
+                      >
                         {t(lang, "Ouvrir", "Open", "Abrir")}
                       </button>
                     </div>
@@ -424,31 +491,36 @@ function DepotDocumentsInner({
             )}
           </div>
 
-        <div className="ff-submit">
-  <button
-    type="button"
-    className="ff-btn ff-btn-primary ff-btn-big"
-    disabled={!fid || docsCount === 0}
-    onClick={() =>
-      router.push(
-        `/formulaire-fiscal/paiement?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
-      )
-    }
-  >
-    {t(lang, "Suivant : paiement →", "Next: payment →", "Siguiente: pago →")}
-  </button>
+          <div className="ff-submit">
+            <button
+              type="button"
+              className="ff-btn ff-btn-primary ff-btn-big"
+              disabled={!fid || docsCount === 0}
+              onClick={() =>
+                router.push(
+                  `/formulaire-fiscal/paiement?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+                )
+              }
+            >
+              {t(
+                lang,
+                "Suivant : paiement →",
+                "Next: payment →",
+                "Siguiente: pago →"
+              )}
+            </button>
 
-  {docsCount === 0 && (
-    <p className="ff-footnote">
-      {t(
-        lang,
-        "Ajoutez au moins 1 document pour continuer.",
-        "Upload at least 1 document to continue.",
-        "Suba al menos 1 documento para continuar."
-      )}
-    </p>
-  )}
-</div>
+            {docsCount === 0 && (
+              <p className="ff-footnote">
+                {t(
+                  lang,
+                  "Ajoutez au moins 1 document pour continuer.",
+                  "Upload at least 1 document to continue.",
+                  "Suba al menos 1 documento para continuar."
+                )}
+              </p>
+            )}
+          </div>
         </section>
       </div>
     </main>
