@@ -424,30 +424,31 @@ function DepotDocumentsInner({
             )}
           </div>
 
-          <div className="ff-submit">
-            <button
-              type="button"
-              className="ff-btn ff-btn-primary ff-btn-big"
-              disabled={!fid || docsCount === 0}
-             onClick={() =>
-  router.push(
-    `/formulaire-fiscal/paiement?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
-  )
-}
-              {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
-            </button>
+        <div className="ff-submit">
+  <button
+    type="button"
+    className="ff-btn ff-btn-primary ff-btn-big"
+    disabled={!fid || docsCount === 0}
+    onClick={() =>
+      router.push(
+        `/formulaire-fiscal/paiement?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+      )
+    }
+  >
+    {t(lang, "Suivant : paiement →", "Next: payment →", "Siguiente: pago →")}
+  </button>
 
-            {docsCount === 0 && (
-              <p className="ff-footnote">
-                {t(
-                  lang,
-                  "Ajoutez au moins 1 document pour continuer.",
-                  "Upload at least 1 document to continue.",
-                  "Suba al menos 1 documento para continuar."
-                )}
-              </p>
-            )}
-          </div>
+  {docsCount === 0 && (
+    <p className="ff-footnote">
+      {t(
+        lang,
+        "Ajoutez au moins 1 document pour continuer.",
+        "Upload at least 1 document to continue.",
+        "Suba al menos 1 documento para continuar."
+      )}
+    </p>
+  )}
+</div>
         </section>
       </div>
     </main>
