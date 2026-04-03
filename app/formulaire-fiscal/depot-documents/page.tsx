@@ -429,8 +429,11 @@ function DepotDocumentsInner({
               type="button"
               className="ff-btn ff-btn-primary ff-btn-big"
               disabled={!fid || docsCount === 0}
-              onClick={() => router.push(withLang("/formulaire-fiscal/envoyer-dossier", lang, { fid, type }))}
-            >
+             onClick={() =>
+  router.push(
+    `/formulaire-fiscal/paiement?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+  )
+}
               {t(lang, "Suivant : envoyer →", "Next: submit →", "Siguiente: enviar →")}
             </button>
 
