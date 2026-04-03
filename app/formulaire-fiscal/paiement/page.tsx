@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
 
@@ -25,6 +26,41 @@ export default function PaiementPage() {
   const type = params.get("type") || "T1";
   const lang = normalizeLang(params.get("lang"));
   const montant = "100 $";
+
+  const [cqId, setCqId] = useState<string | null>(null);
+  const [loadingCqId, setLoadingCqId] = useState(false);
+
+  useEffect(() => {
+    if (!fid) return;
+
+    let mounted = true;
+
+    const loadCqId = async () => {
+      setLoadingCqId(true);
+
+      const { data, error } = await supabase
+        .from("formulaires_fiscaux")
+        .select("cq_id")
+        .eq("id", fid)
+        .single();
+
+      if (!mounted) return;
+
+      if (error) {
+        setCqId(null);
+      } else {
+        setCqId(data?.cq_id ?? null);
+      }
+
+      setLoadingCqId(false);
+    };
+
+    void loadCqId();
+
+    return () => {
+      mounted = false;
+    };
+  }, [fid]);
 
   const goInterac = () => {
     router.push(
@@ -53,7 +89,9 @@ export default function PaiementPage() {
             />
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
-              <span>{t(lang, "Étape 3/4 — Paiement", "Step 3/4 — Payment", "Paso 3/4 — Pago")}</span>
+              <span>
+                {t(lang, "Étape 3/4 — Paiement", "Step 3/4 — Payment", "Paso 3/4 — Pago")}
+              </span>
             </div>
           </div>
 
@@ -63,7 +101,14 @@ export default function PaiementPage() {
         </header>
 
         <div className="ff-title">
-          <h1>{t(lang, "Paiement de votre dossier", "Payment for your file", "Pago de su expediente")}</h1>
+          <h1>
+            {t(
+              lang,
+              "Paiement de votre dossier",
+              "Payment for your file",
+              "Pago de su expediente"
+            )}
+          </h1>
           <p>
             {t(
               lang,
@@ -77,7 +122,14 @@ export default function PaiementPage() {
         <div className="ff-form">
           <section className="ff-card" style={{ marginBottom: 20 }}>
             <div className="ff-card-head">
-              <h2>{t(lang, "Virement Interac (recommandé)", "Interac e-Transfer (recommended)", "Transferencia Interac (recomendada)")}</h2>
+              <h2>
+                {t(
+                  lang,
+                  "Virement Interac (recommandé)",
+                  "Interac e-Transfer (recommended)",
+                  "Transferencia Interac (recomendada)"
+                )}
+              </h2>
               <p>
                 {t(
                   lang,
@@ -90,17 +142,26 @@ export default function PaiementPage() {
 
             <div className="ff-grid2">
               <div className="ff-field">
-                <div className="ff-label">{t(lang, "Montant", "Amount", "Monto")}</div>
+                <div className="ff-label">
+                  {t(lang, "Montant", "Amount", "Monto")}
+                </div>
                 <div className="ff-empty" style={{ borderStyle: "solid" }}>
                   {montant}
                 </div>
               </div>
 
               <div className="ff-field">
-                <div className="ff-label">{t(lang, "Courriel", "Email", "Correo")}</div>
-                <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                  comptanetquebec@gmail.com
+                <div className="ff-label">
+                  {t(lang, "Courriel", "Email", "Correo")}
                 </div>
+                <div className="ff-empty" style={{ borderStyle: "solid" }}>
+  <a
+    href="mailto:comptanetquebec@gmail.com"
+    style={{ color: "#004aad", fontWeight: 600, textDecoration: "underline" }}
+  >
+    comptanetquebec@gmail.com
+  </a>
+</div>
               </div>
             </div>
 
@@ -129,12 +190,16 @@ export default function PaiementPage() {
               </div>
             </div>
 
-            {fid && (
+            {(loadingCqId || cqId) && (
               <div className="ff-mt">
                 <div className="ff-field">
-                  <div className="ff-label">{t(lang, "Numéro de dossier", "File number", "Número de expediente")}</div>
+                  <div className="ff-label">
+                    {t(lang, "Numéro de dossier", "File number", "Número de expediente")}
+                  </div>
                   <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                    {fid}
+                    {loadingCqId
+                      ? t(lang, "Chargement…", "Loading…", "Cargando…")
+                      : cqId}
                   </div>
                 </div>
               </div>
@@ -144,9 +209,15 @@ export default function PaiementPage() {
               <p className="ff-footnote">
                 {t(
                   lang,
-                  "Veuillez inscrire votre nom complet" + (fid ? " et votre numéro de dossier" : "") + " dans le message du virement.",
-                  "Please include your full name" + (fid ? " and your file number" : "") + " in the transfer message.",
-                  "Indique su nombre completo" + (fid ? " y su número de expediente" : "") + " en el mensaje de la transferencia."
+                  "Veuillez inscrire votre nom complet" +
+                    (cqId ? " et votre numéro de dossier" : "") +
+                    " dans le message du virement.",
+                  "Please include your full name" +
+                    (cqId ? " and your file number" : "") +
+                    " in the transfer message.",
+                  "Indique su nombre completo" +
+                    (cqId ? " y su número de expediente" : "") +
+                    " en el mensaje de la transferencia."
                 )}
               </p>
             </div>
@@ -157,14 +228,21 @@ export default function PaiementPage() {
                 className="ff-btn ff-btn-primary ff-btn-big"
                 onClick={goInterac}
               >
-                {t(lang, "J’ai effectué le virement", "I sent the transfer", "Ya envié la transferencia")}
+                {t(
+                  lang,
+                  "J’ai effectué le virement",
+                  "I sent the transfer",
+                  "Ya envié la transferencia"
+                )}
               </button>
             </div>
           </section>
 
           <section className="ff-card">
             <div className="ff-card-head">
-              <h2>{t(lang, "Paiement par carte", "Card payment", "Pago con tarjeta")}</h2>
+              <h2>
+                {t(lang, "Paiement par carte", "Card payment", "Pago con tarjeta")}
+              </h2>
               <p>
                 {t(
                   lang,
@@ -177,14 +255,18 @@ export default function PaiementPage() {
 
             <div className="ff-grid2">
               <div className="ff-field">
-                <div className="ff-label">{t(lang, "Montant", "Amount", "Monto")}</div>
+                <div className="ff-label">
+                  {t(lang, "Montant", "Amount", "Monto")}
+                </div>
                 <div className="ff-empty" style={{ borderStyle: "solid" }}>
                   {montant}
                 </div>
               </div>
 
               <div className="ff-field">
-                <div className="ff-label">{t(lang, "Mode", "Method", "Método")}</div>
+                <div className="ff-label">
+                  {t(lang, "Mode", "Method", "Método")}
+                </div>
                 <div className="ff-empty" style={{ borderStyle: "solid" }}>
                   Stripe
                 </div>
