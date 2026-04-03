@@ -1,21 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
 
-type Lang = "fr" | "en" | "es";
-
-function normalizeLang(v: string | null | undefined): Lang {
+function normalizeLang(v: string | null | undefined): "fr" | "en" | "es" {
   const x = (v || "").toLowerCase();
-  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
-}
-
-function t(lang: Lang, fr: string, en: string, es: string) {
-  return lang === "fr" ? fr : lang === "en" ? en : es;
+  return x === "fr" || x === "en" || x === "es" ? x : "fr";
 }
 
 export default function PaiementPage() {
@@ -25,46 +18,13 @@ export default function PaiementPage() {
   const fid = params.get("fid") || "";
   const type = params.get("type") || "T1";
   const lang = normalizeLang(params.get("lang"));
-  const montant = "100 $";
 
-  const [cqId, setCqId] = useState<string | null>(null);
-  const [loadingCqId, setLoadingCqId] = useState(false);
-
-  useEffect(() => {
-    if (!fid) return;
-
-    let mounted = true;
-
-    const loadCqId = async () => {
-      setLoadingCqId(true);
-
-      const { data, error } = await supabase
-        .from("formulaires_fiscaux")
-        .select("cq_id")
-        .eq("id", fid)
-        .single();
-
-      if (!mounted) return;
-
-      if (error) {
-        setCqId(null);
-      } else {
-        setCqId(data?.cq_id ?? null);
-      }
-
-      setLoadingCqId(false);
-    };
-
-    void loadCqId();
-
-    return () => {
-      mounted = false;
-    };
-  }, [fid]);
+  const t = (fr: string, en: string, es: string) =>
+    lang === "fr" ? fr : lang === "en" ? en : es;
 
   const goInterac = () => {
     router.push(
-      `/merci?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+      `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
     );
   };
 
@@ -89,9 +49,7 @@ export default function PaiementPage() {
             />
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
-              <span>
-                {t(lang, "Étape 3/4 — Paiement", "Step 3/4 — Payment", "Paso 3/4 — Pago")}
-              </span>
+              <span>{t("Étape 3/4 — Paiement", "Step 3/4 — Payment", "Paso 3/4 — Pago")}</span>
             </div>
           </div>
 
@@ -101,196 +59,84 @@ export default function PaiementPage() {
         </header>
 
         <div className="ff-title">
-          <h1>
-            {t(
-              lang,
-              "Paiement de votre dossier",
-              "Payment for your file",
-              "Pago de su expediente"
-            )}
-          </h1>
+          <h1>{t("Paiement de votre dossier", "Payment for your file", "Pago de su expediente")}</h1>
           <p>
             {t(
-              lang,
-              "Vos documents ont bien été reçus. Veuillez choisir votre mode de paiement pour poursuivre.",
-              "Your documents have been received. Please choose your payment method to continue.",
-              "Sus documentos han sido recibidos. Elija su método de pago para continuar."
+              "Choisissez votre mode de paiement pour poursuivre.",
+              "Choose your payment method to continue.",
+              "Elija su método de pago para continuar."
             )}
           </p>
         </div>
 
         <div className="ff-form">
           <section className="ff-card" style={{ marginBottom: 20 }}>
-            <div className="ff-card-head">
-              <h2>
-                {t(
-                  lang,
-                  "Virement Interac (recommandé)",
-                  "Interac e-Transfer (recommended)",
-                  "Transferencia Interac (recomendada)"
-                )}
-              </h2>
+            <h2 style={{ marginTop: 0 }}>
+              {t("Virement Interac (recommandé)", "Interac e-Transfer (recommended)", "Transferencia Interac (recomendada)")}
+            </h2>
+
+            <p>{t("Méthode simple et rapide.", "Simple and fast method.", "Método simple y rápido.")}</p>
+
+            <p><strong>{t("Montant :", "Amount:", "Monto:")}</strong> 100 $</p>
+            <p><strong>{t("Courriel :", "Email:", "Correo:")}</strong> comptanetquebec@gmail.com</p>
+
+            <p style={{ fontWeight: 600 }}>
+              {t(
+                "Traitement prioritaire avec cette méthode.",
+                "Priority processing with this method.",
+                "Procesamiento prioritario con este método."
+              )}
+            </p>
+
+            <p>
+              {t(
+                "Dépôt automatique activé. Aucune question de sécurité requise.",
+                "Autodeposit enabled. No security question required.",
+                "Depósito automático activado. No se requiere pregunta de seguridad."
+              )}
+            </p>
+
+            {fid && (
               <p>
-                {t(
-                  lang,
-                  "Méthode simple et rapide.",
-                  "Simple and fast method.",
-                  "Método simple y rápido."
-                )}
+                <strong>{t("Numéro de dossier :", "File number:", "Número de expediente:")}</strong> {fid}
               </p>
-            </div>
-
-            <div className="ff-grid2">
-              <div className="ff-field">
-                <div className="ff-label">
-                  {t(lang, "Montant", "Amount", "Monto")}
-                </div>
-                <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                  {montant}
-                </div>
-              </div>
-
-              <div className="ff-field">
-                <div className="ff-label">
-                  {t(lang, "Courriel", "Email", "Correo")}
-                </div>
-                <div className="ff-empty" style={{ borderStyle: "solid" }}>
-  <a
-    href="mailto:comptanetquebec@gmail.com"
-    style={{ color: "#004aad", fontWeight: 600, textDecoration: "underline" }}
-  >
-    comptanetquebec@gmail.com
-  </a>
-</div>
-              </div>
-            </div>
-
-            <div className="ff-mt">
-              <div
-                className="ff-empty"
-                style={{ borderStyle: "solid", color: "#0f5132", fontWeight: 700 }}
-              >
-                {t(
-                  lang,
-                  "Traitement prioritaire avec cette méthode.",
-                  "Priority processing with this method.",
-                  "Procesamiento prioritario con este método."
-                )}
-              </div>
-            </div>
-
-            <div className="ff-mt">
-              <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                {t(
-                  lang,
-                  "Dépôt automatique activé. Aucune question de sécurité requise.",
-                  "Autodeposit enabled. No security question required.",
-                  "Depósito automático activado. No se requiere pregunta de seguridad."
-                )}
-              </div>
-            </div>
-
-            {(loadingCqId || cqId) && (
-              <div className="ff-mt">
-                <div className="ff-field">
-                  <div className="ff-label">
-                    {t(lang, "Numéro de dossier", "File number", "Número de expediente")}
-                  </div>
-                  <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                    {loadingCqId
-                      ? t(lang, "Chargement…", "Loading…", "Cargando…")
-                      : cqId}
-                  </div>
-                </div>
-              </div>
             )}
 
-            <div className="ff-mt">
-              <p className="ff-footnote">
-                {t(
-                  lang,
-                  "Veuillez inscrire votre nom complet" +
-                    (cqId ? " et votre numéro de dossier" : "") +
-                    " dans le message du virement.",
-                  "Please include your full name" +
-                    (cqId ? " and your file number" : "") +
-                    " in the transfer message.",
-                  "Indique su nombre completo" +
-                    (cqId ? " y su número de expediente" : "") +
-                    " en el mensaje de la transferencia."
-                )}
-              </p>
-            </div>
+            <p>
+              {t(
+                "Veuillez inscrire votre nom complet et votre numéro de dossier dans le message du virement.",
+                "Please include your full name and file number in the transfer message.",
+                "Indique su nombre completo y su número de expediente en el mensaje de la transferencia."
+              )}
+            </p>
 
-            <div className="ff-submit" style={{ marginTop: 14 }}>
-              <button
-                type="button"
-                className="ff-btn ff-btn-primary ff-btn-big"
-                onClick={goInterac}
-              >
-                {t(
-                  lang,
-                  "J’ai effectué le virement",
-                  "I sent the transfer",
-                  "Ya envié la transferencia"
-                )}
+            <div style={{ marginTop: 16 }}>
+              <button type="button" className="ff-btn ff-btn-primary ff-btn-big" onClick={goInterac}>
+                {t("J’ai effectué le virement", "I sent the transfer", "Ya envié la transferencia")}
               </button>
             </div>
           </section>
 
           <section className="ff-card">
-            <div className="ff-card-head">
-              <h2>
-                {t(lang, "Paiement par carte", "Card payment", "Pago con tarjeta")}
-              </h2>
-              <p>
-                {t(
-                  lang,
-                  "Paiement sécurisé avec Stripe.",
-                  "Secure payment with Stripe.",
-                  "Pago seguro con Stripe."
-                )}
-              </p>
-            </div>
+            <h2 style={{ marginTop: 0 }}>
+              {t("Paiement par carte", "Card payment", "Pago con tarjeta")}
+            </h2>
 
-            <div className="ff-grid2">
-              <div className="ff-field">
-                <div className="ff-label">
-                  {t(lang, "Montant", "Amount", "Monto")}
-                </div>
-                <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                  {montant}
-                </div>
-              </div>
+            <p>{t("Paiement sécurisé avec Stripe.", "Secure payment with Stripe.", "Pago seguro con Stripe.")}</p>
 
-              <div className="ff-field">
-                <div className="ff-label">
-                  {t(lang, "Mode", "Method", "Método")}
-                </div>
-                <div className="ff-empty" style={{ borderStyle: "solid" }}>
-                  Stripe
-                </div>
-              </div>
-            </div>
+            <p><strong>{t("Montant :", "Amount:", "Monto:")}</strong> 100 $</p>
 
-            <div className="ff-mt">
-              <p className="ff-footnote">
-                {t(
-                  lang,
-                  "Le traitement débute après confirmation du paiement.",
-                  "Processing begins after payment confirmation.",
-                  "El tratamiento comienza después de la confirmación del pago."
-                )}
-              </p>
-            </div>
+            <p>
+              {t(
+                "Vous serez redirigé vers l’étape finale de paiement sécurisé.",
+                "You will be redirected to the final secure payment step.",
+                "Será redirigido al paso final de pago seguro."
+              )}
+            </p>
 
-            <div className="ff-submit" style={{ marginTop: 14 }}>
-              <button
-                type="button"
-                className="ff-btn ff-btn-outline ff-btn-big"
-                onClick={goStripe}
-              >
-                {t(lang, "Payer par carte", "Pay by card", "Pagar con tarjeta")}
+            <div style={{ marginTop: 16 }}>
+              <button type="button" className="ff-btn ff-btn-outline ff-btn-big" onClick={goStripe}>
+                {t("Payer par carte", "Pay by card", "Pagar con tarjeta")}
               </button>
             </div>
           </section>
