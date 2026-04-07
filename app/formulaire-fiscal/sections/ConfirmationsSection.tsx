@@ -55,7 +55,6 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
-/** ✅ label + icône collée (comme ton image #1) */
 function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -75,6 +74,8 @@ export default function ConfirmationsSection(props: {
   setVFraisVariables: (v: boolean) => void;
   vDelais: boolean;
   setVDelais: (v: boolean) => void;
+  vConsentement: boolean;
+  setVConsentement: (v: boolean) => void;
 }) {
   const {
     L,
@@ -86,6 +87,8 @@ export default function ConfirmationsSection(props: {
     setVFraisVariables,
     vDelais,
     setVDelais,
+    vConsentement,
+    setVConsentement,
   } = props;
 
   const marks = useMemo(() => {
@@ -93,14 +96,34 @@ export default function ConfirmationsSection(props: {
     const m2: Mark = vDossierComplet ? "ok" : "bad";
     const m3: Mark = vFraisVariables ? "ok" : "bad";
     const m4: Mark = vDelais ? "ok" : "bad";
-    const blockOk = m1 === "ok" && m2 === "ok" && m3 === "ok" && m4 === "ok";
-    return { m1, m2, m3, m4, block: blockOk ? ("ok" as Mark) : ("bad" as Mark) };
-  }, [vExactitude, vDossierComplet, vFraisVariables, vDelais]);
+    const m5: Mark = vConsentement ? "ok" : "bad";
+
+    const blockOk =
+      m1 === "ok" &&
+      m2 === "ok" &&
+      m3 === "ok" &&
+      m4 === "ok" &&
+      m5 === "ok";
+
+    return {
+      m1,
+      m2,
+      m3,
+      m4,
+      m5,
+      block: blockOk ? ("ok" as Mark) : ("bad" as Mark),
+    };
+  }, [
+    vExactitude,
+    vDossierComplet,
+    vFraisVariables,
+    vDelais,
+    vConsentement,
+  ]);
 
   return (
     <section className="ff-card">
       <div className="ff-card-head">
-        {/* ✅ icône collée au titre (pas à droite) */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <h2 style={{ margin: 0 }}>{L.sections.confirmsTitle}</h2>
           <MarkIcon mark={marks.block} />
@@ -114,20 +137,34 @@ export default function ConfirmationsSection(props: {
           checked={vExactitude}
           onChange={setVExactitude}
         />
+
         <CheckboxField
           label={<LabelWithMark text={L.confirms.complete} mark={marks.m2} />}
           checked={vDossierComplet}
           onChange={setVDossierComplet}
         />
+
         <CheckboxField
           label={<LabelWithMark text={L.confirms.fees} mark={marks.m3} />}
           checked={vFraisVariables}
           onChange={setVFraisVariables}
         />
+
         <CheckboxField
           label={<LabelWithMark text={L.confirms.delays} mark={marks.m4} />}
           checked={vDelais}
           onChange={setVDelais}
+        />
+
+        <CheckboxField
+          label={
+            <LabelWithMark
+              text="J’accepte que ComptaNet Québec collecte, utilise et conserve mes renseignements personnels afin de préparer ma déclaration de revenus."
+              mark={marks.m5}
+            />
+          }
+          checked={vConsentement}
+          onChange={setVConsentement}
         />
       </div>
     </section>
