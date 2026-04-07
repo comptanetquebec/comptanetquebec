@@ -388,6 +388,7 @@ const removeEnfant = useCallback((i: number) => {
   const [vDossierComplet, setVDossierComplet] = useState(false);
   const [vFraisVariables, setVFraisVariables] = useState(false);
   const [vDelais, setVDelais] = useState(false);
+  const [vConsentement, setVConsentement] = useState(false);
 
   /* =========================== Docs helpers =========================== */
   const loadDocs = useCallback(async (fid: string) => {
