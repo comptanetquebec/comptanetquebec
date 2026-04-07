@@ -730,7 +730,15 @@ const removeEnfant = useCallback((i: number) => {
     if (!vDossierComplet) errors.push(t("Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.", "Confirmation: ‘I provided all required information’ is required.", "Confirmación: ‘He proporcionado toda la información requerida’ es obligatorio."));
     if (!vFraisVariables) errors.push(t("Confirmation : ‘Des frais supplémentaires peuvent s’appliquer’ obligatoire.", "Confirmation: ‘Additional fees may apply’ is required.", "Confirmación: ‘Pueden aplicarse cargos adicionales’ es obligatorio."));
     if (!vDelais) errors.push(t("Confirmation : ‘Un dossier incomplet retarde le traitement’ obligatoire.", "Confirmation: ‘An incomplete file delays processing’ is required.", "Confirmación: ‘Un expediente incompleto retrasa el procesamiento’ es obligatorio."));
-
+    if (!vConsentement)
+  errors.push(
+    t(
+      "Consentement : vous devez accepter l’utilisation de vos renseignements personnels.",
+      "Consent: you must accept the use of your personal information.",
+      "Consentimiento: debe aceptar el uso de su información personal."
+    )
+  );
+    
     return errors;
   }, [
     t,
@@ -1347,16 +1355,18 @@ return (
         />
 
         <ConfirmationsSection
-          L={L}
-          vExactitude={vExactitude}
-          setVExactitude={setVExactitude}
-          vDossierComplet={vDossierComplet}
-          setVDossierComplet={setVDossierComplet}
-          vFraisVariables={vFraisVariables}
-          setVFraisVariables={setVFraisVariables}
-          vDelais={vDelais}
-          setVDelais={setVDelais}
-        />
+  L={L}
+  vExactitude={vExactitude}
+  setVExactitude={setVExactitude}
+  vDossierComplet={vDossierComplet}
+  setVDossierComplet={setVDossierComplet}
+  vFraisVariables={vFraisVariables}
+  setVFraisVariables={setVFraisVariables}
+  vDelais={vDelais}
+  setVDelais={setVDelais}
+  vConsentement={vConsentement}
+  setVConsentement={setVConsentement}
+/>
 
         <DocsSummary
           L={L}
