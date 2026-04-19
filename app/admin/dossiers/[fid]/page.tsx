@@ -3,34 +3,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 
-type ProfileRow = {
-  is_admin: boolean | null;
-};
-
-type FormRow = {
-  id: string;
-  form_type: string | null;
-};
+type ProfileRow = { is_admin: boolean | null };
+type FormRow = { id: string; form_type: string | null };
 
 function routeForFormPresentiel(form_type: string | null) {
   const t = (form_type ?? "").toLowerCase();
 
-  // T1 = on ne touche pas
-  if (t === "t1" || t.includes("t1")) {
-    return "/formulaire-fiscal-presentiel-t1";
-  }
+  if (t === "t1" || t.includes("t1")) return "/formulaire-fiscal-presentiel-t1";
+  if (t === "ta" || t.includes("autonome") || t.includes("travailleur")) return "/formulaire-fiscal-presentiel-ta";
+  if (t === "t2" || t.includes("t2")) return "/formulaire-fiscal-presentiel-t2";
 
-  // TA = ouvrir le vrai formulaire client
-  if (t === "ta" || t.includes("autonome") || t.includes("travailleur")) {
-    return "/formulaire-fiscal-ta";
-  }
-
-  // T2 = on laisse comme avant
-  if (t === "t2" || t.includes("t2")) {
-    return "/formulaire-fiscal-presentiel-t2";
-  }
-
-  // fallback
   return "/formulaire-fiscal-presentiel-t1";
 }
 
@@ -41,48 +23,35 @@ export default async function AdminOpenDossierPage({
 }) {
   const supabase = await supabaseServer();
 
-  // 1) Vérification utilisateur connecté
+  // 1) Auth
   const { data: auth, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !auth?.user) redirect("/espace-client?next=/admin/dossiers");
 
-  if (authErr || !auth?.user) {
-    redirect("/espace-client?next=/admin/dossiers");
-  }
-
-  // 2) Vérification admin
+  // 2) Admin check
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", auth.user.id)
     .maybeSingle<ProfileRow>();
 
-  if (profErr) {
-    return <div className="p-6">Erreur: {profErr.message}</div>;
-  }
+  if (profErr) return <div className="p-6">Erreur: {profErr.message}</div>;
+  if (!profile?.is_admin) return <div className="p-6">Accès refusé</div>;
 
-  if (!profile?.is_admin) {
-    return <div className="p-6">Accès refusé</div>;
-  }
-
-  // 3) Charger le dossier
+  // 3) Charger le dossier (formulaires_fiscaux)
   const { data: form, error: formErr } = await supabase
     .from("formulaires_fiscaux")
     .select("id, form_type")
     .eq("id", params.fid)
     .maybeSingle<FormRow>();
 
-  if (formErr) {
-    return <div className="p-6">Erreur: {formErr.message}</div>;
-  }
-
-  if (!form) {
-    return <div className="p-6">Dossier introuvable.</div>;
-  }
+  if (formErr) return <div className="p-6">Erreur: {formErr.message}</div>;
+  if (!form) return <div className="p-6">Dossier introuvable.</div>;
 
   const lang = "fr";
   const baseForm = routeForFormPresentiel(form.form_type);
 
-  const formUrl = `${baseForm}?fid=${encodeURIComponent(form.id)}&lang=${encodeURIComponent(lang)}`;
-  const docsUrl = `/admin/dossiers/docs?fid=${encodeURIComponent(form.id)}&lang=${encodeURIComponent(lang)}`;
+  const formUrl = `${baseForm}?fid=${encodeURIComponent(form.id)}&lang=${lang}`;
+  const docsUrl = `/admin/dossiers/docs?fid=${encodeURIComponent(form.id)}&lang=${lang}`;
 
   return (
     <main className="p-6 max-w-xl">
@@ -102,7 +71,6 @@ export default async function AdminOpenDossierPage({
       <div className="mt-6 text-xs text-gray-500">
         <div>fid: {form.id}</div>
         <div>type: {form.form_type ?? "?"}</div>
-        <div>route: {baseForm}</div>
       </div>
     </main>
   );
