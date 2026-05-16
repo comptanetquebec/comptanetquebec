@@ -106,7 +106,9 @@ export type FormQuestionsdata = {
   maisonAcheteeOuVendue?: string;
   appelerTechnicien?: string;
   copieImpots?: CopieImpots;
+  avisCotisation?: string;
   anneeImposition?: string;
+  aucunePersonneACharge?: boolean;
 };
 
 export type Formdata = {
@@ -121,6 +123,7 @@ export type Formdata = {
     dossierComplet?: boolean;
     fraisVariables?: boolean;
     delaisSiManquant?: boolean;
+    consentement?: boolean;
   };
 };
 
