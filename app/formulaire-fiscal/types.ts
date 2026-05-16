@@ -20,6 +20,7 @@ export type ProvinceCode =
 export type Sexe = "M" | "F" | "X" | "";
 export type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 export type CopieImpots = "espaceClient" | "courriel" | "";
+export type AvisCotisation = "poste" | "siteGouvernement" | "";
 
 export type EtatCivil =
   | "celibataire"
@@ -106,7 +107,7 @@ export type FormQuestionsdata = {
   maisonAcheteeOuVendue?: string;
   appelerTechnicien?: string;
   copieImpots?: CopieImpots;
-  avisCotisation?: string;
+  avisCotisation?: AvisCotisation;
   anneeImposition?: string;
   aucunePersonneACharge?: boolean;
 };
@@ -143,17 +144,12 @@ export type InsertIdRow = {
 };
 
 /* ===================== UI STATUS (VERT / ROUGE / ORANGE) ===================== */
-/**
- * Utilisé par MarkIcon (page.tsx) pour afficher des pastilles :
- * - ok = vert
- * - bad = rouge
- * - warn = orange
- */
+
 export type Mark = "ok" | "bad" | "warn";
 
 export type BlockMark = {
   mark: Mark;
-  reason?: string; // optionnel (ex: "NAS manquant")
+  reason?: string;
 };
 
 export type FormBlocksStatus = {
