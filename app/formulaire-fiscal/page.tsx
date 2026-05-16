@@ -979,20 +979,24 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
 
   const fid = dataInsert?.id ?? null;
 
-  if (fid) {
-    await supabase.from("dossier_statuses").upsert(
-      {
-        formulaire_id: fid,
-        status: "recu",
-        updated_at: now,
-      },
-      { onConflict: "formulaire_id" }
-    );
+if (fid) {
+  const { error: statusError } = await supabase.from("dossier_statuses").upsert(
+    {
+      formulaire_id: fid,
+      status: "recu",
+      updated_at: now,
+    },
+    { onConflict: "formulaire_id" }
+  );
 
-    setFormulaireId(fid);
+  if (statusError) {
+    console.error("Erreur dossier_statuses:", statusError);
   }
 
-  return fid;
+  setFormulaireId(fid);
+}
+
+return fid;
 }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
   /* =========================== Load last form (preload) =========================== */
