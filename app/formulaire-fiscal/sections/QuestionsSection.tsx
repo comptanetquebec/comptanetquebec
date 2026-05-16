@@ -4,7 +4,7 @@
 import React, { useMemo } from "react";
 import { Field, YesNoField, SelectField } from "../ui";
 import type { YesNo } from "../ui";
-import type { CopieImpots } from "../types";
+import type { CopieImpots, AvisCotisation } from "../types";
 import type { CopyPack } from "../copy";
 
 function isValidYear(v: string) {
@@ -15,7 +15,6 @@ function isValidYear(v: string) {
 }
 
 type Mark = "ok" | "bad" | "todo";
-type AvisCotisation = "" | "poste" | "gouvernement";
 
 function MarkIcon({ mark }: { mark: Mark }) {
   const cls =
@@ -37,9 +36,10 @@ function MarkIcon({ mark }: { mark: Mark }) {
 
 function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
   return (
-    <>
-      {text} <MarkIcon mark={mark} />
-    </>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span>{text}</span>
+      <MarkIcon mark={mark} />
+    </span>
   );
 }
 
@@ -48,14 +48,12 @@ function markYesNo(v: YesNo): Mark {
 }
 
 function markYear(v: string): Mark {
-  const t = (v || "").trim();
-  if (!t) return "todo";
-  return isValidYear(t) ? "ok" : "bad";
+  return isValidYear(v) ? "ok" : "bad";
 }
 
 function markPeopleCount(v: string): Mark {
   const t = (v || "").trim();
-  if (!t) return "todo";
+  if (!t) return "bad";
   const n = Number(t);
   if (!Number.isFinite(n)) return "bad";
   return n >= 0 ? "ok" : "bad";
@@ -189,7 +187,6 @@ export default function QuestionsSection(props: {
           onChange={(v) => setAnneeImposition(v.replace(/[^\d]/g, "").slice(0, 4))}
           placeholder={L.questions.taxYearPh}
           inputMode="numeric"
-          required
         />
 
         <YesNoField
@@ -197,7 +194,6 @@ export default function QuestionsSection(props: {
           label={<LabelWithMark text={L.questions.livedAlone} mark={marks.lived} />}
           value={habiteSeulTouteAnnee}
           onChange={setHabiteSeulTouteAnnee}
-          required
         />
 
         <Field
@@ -206,7 +202,6 @@ export default function QuestionsSection(props: {
           onChange={(v) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
           placeholder={L.questions.peopleCountPh}
           inputMode="numeric"
-          required
         />
 
         <YesNoField
@@ -214,7 +209,6 @@ export default function QuestionsSection(props: {
           label={<LabelWithMark text={L.questions.foreignAssets} mark={marks.foreign} />}
           value={biensEtranger100k}
           onChange={setBiensEtranger100k}
-          required
         />
 
         <YesNoField
@@ -222,7 +216,6 @@ export default function QuestionsSection(props: {
           label={<LabelWithMark text={L.questions.citizen} mark={marks.citizen} />}
           value={citoyenCanadien}
           onChange={setCitoyenCanadien}
-          required
         />
 
         <YesNoField
@@ -230,7 +223,6 @@ export default function QuestionsSection(props: {
           label={<LabelWithMark text={L.questions.nonResident} mark={marks.nonRes} />}
           value={nonResident}
           onChange={setNonResident}
-          required
         />
 
         <YesNoField
@@ -238,7 +230,6 @@ export default function QuestionsSection(props: {
           label={<LabelWithMark text={L.questions.homeTx} mark={marks.homeTx} />}
           value={maisonAcheteeOuVendue}
           onChange={setMaisonAcheteeOuVendue}
-          required
         />
 
         <YesNoField
@@ -246,14 +237,12 @@ export default function QuestionsSection(props: {
           label={<LabelWithMark text={L.questions.techCall} mark={marks.tech} />}
           value={appelerTechnicien}
           onChange={setAppelerTechnicien}
-          required
         />
 
         <SelectField<CopieImpots>
           label={<LabelWithMark text={L.questions.copy} mark={marks.copy} />}
           value={copieImpots}
           onChange={setCopieImpots}
-          required
           options={[
             { value: "espaceClient", label: L.questions.copyPortal },
             { value: "courriel", label: L.questions.copyEmail },
@@ -261,15 +250,9 @@ export default function QuestionsSection(props: {
         />
 
         <SelectField<AvisCotisation>
-          label={
-            <LabelWithMark
-              text="Comment souhaitez-vous recevoir votre avis de cotisation ?"
-              mark={marks.avis}
-            />
-          }
+          label={<LabelWithMark text="Comment souhaitez-vous recevoir votre avis de cotisation ?" mark={marks.avis} />}
           value={avisCotisation}
           onChange={setAvisCotisation}
-          required
           options={[
             { value: "poste", label: "Par la poste" },
             { value: "gouvernement", label: "Sur le site du gouvernement" },
