@@ -13,7 +13,6 @@ import {
 } from "../formatters";
 import { firstNonEmpty } from "../helpers";
 
-/** ======== mini validation locale (pour ✓ vert / ✕ rouge) ======== */
 type Mark = "ok" | "bad" | "todo";
 
 function MarkIcon({ mark }: { mark: Mark }) {
@@ -34,24 +33,36 @@ function MarkIcon({ mark }: { mark: Mark }) {
   );
 }
 
-function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
+function LabelWithMark({
+  text,
+  mark,
+  required = false,
+}: {
+  text: React.ReactNode;
+  mark: Mark;
+  required?: boolean;
+}) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span style={{ minWidth: 0 }}>{text}</span>
+
+      {required && mark !== "ok" ? (
+        <span style={{ color: "#dc2626", fontWeight: 800 }}>*</span>
+      ) : null}
+
       <MarkIcon mark={mark} />
     </span>
   );
 }
-/* ===========================
-   Normalizers & validators
-=========================== */
 
 function normalizeNAS(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 9);
 }
+
 function normalizePostal(v: string) {
   return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 }
+
 function normalizePhone(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
@@ -59,47 +70,54 @@ function normalizePhone(v: string) {
 function isValidNAS(v: string) {
   return normalizeNAS(v).length === 9;
 }
+
 function isValidPostal(v: string) {
   return normalizePostal(v).length === 6;
 }
+
 function isValidEmail(v: string) {
   const s = (v || "").trim();
   if (!s) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
+
 function isValidDateJJMMAAAA(v: string) {
   const s = (v || "").trim();
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return false;
+
   const [ddStr, mmStr, yyyyStr] = s.split("/");
   const dd = Number(ddStr);
   const mm = Number(mmStr);
   const yyyy = Number(yyyyStr);
+
   if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return false;
   if (yyyy < 1900 || yyyy > 2100) return false;
   if (mm < 1 || mm > 12) return false;
+
   const daysInMonth = new Date(yyyy, mm, 0).getDate();
   return dd >= 1 && dd <= daysInMonth;
 }
 
-/* ===========================
-   Mark helpers
-=========================== */
-
 function markTextRequired(v: string): Mark {
   return v.trim() ? "ok" : "bad";
 }
+
 function markEmail(v: string): Mark {
   return isValidEmail(v) ? "ok" : "bad";
 }
+
 function markNAS(v: string): Mark {
   return isValidNAS(v) ? "ok" : "bad";
 }
+
 function markDOB(v: string): Mark {
   return isValidDateJJMMAAAA(v) ? "ok" : "bad";
 }
+
 function markPostal(v: string): Mark {
   return isValidPostal(v) ? "ok" : "bad";
 }
+
 function markPhoneAny(tel: string, cell: string): Mark {
   const any = firstNonEmpty(normalizePhone(tel), normalizePhone(cell));
   return any ? "ok" : "bad";
@@ -268,33 +286,32 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2">
         <Field
-          label={<LabelWithMark text={L.fields.firstName} mark={marks.prenom} />}
+          label={<LabelWithMark text={L.fields.firstName} mark={marks.prenom} required />}
           value={prenom}
           onChange={setPrenom}
-          required
         />
+
         <Field
-          label={<LabelWithMark text={L.fields.lastName} mark={marks.nom} />}
+          label={<LabelWithMark text={L.fields.lastName} mark={marks.nom} required />}
           value={nom}
           onChange={setNom}
-          required
         />
+
         <Field
-          label={<LabelWithMark text={L.fields.sin} mark={marks.nas} />}
+          label={<LabelWithMark text={L.fields.sin} mark={marks.nas} required />}
           value={nas}
           onChange={setNas}
           placeholder={L.fields.sinPh}
-          required
           inputMode="numeric"
           formatter={formatNASInput}
           maxLength={11}
         />
+
         <Field
-          label={<LabelWithMark text={L.fields.dob} mark={marks.dob} />}
+          label={<LabelWithMark text={L.fields.dob} mark={marks.dob} required />}
           value={dob}
           onChange={setDob}
           placeholder={L.fields.dobPh}
-          required
           inputMode="numeric"
           formatter={formatDateInput}
           maxLength={10}
@@ -303,7 +320,7 @@ export default function ClientSection(props: {
 
       <div className="ff-grid2 ff-mt">
         <SelectField<EtatCivil>
-          label={<LabelWithMark text={L.fields.marital} mark={marks.etatCivil} />}
+          label={<LabelWithMark text={L.fields.marital} mark={marks.etatCivil} required />}
           value={etatCivil}
           onChange={setEtatCivil}
           options={[
@@ -314,8 +331,8 @@ export default function ClientSection(props: {
             { value: "divorce", label: "Divorcé(e)" },
             { value: "veuf", label: "Veuf(ve)" },
           ]}
-          required
         />
+
         <CheckboxField
           label={L.fields.maritalChanged}
           checked={etatCivilChange}
@@ -326,28 +343,27 @@ export default function ClientSection(props: {
       {etatCivilChange && (
         <div className="ff-grid2 ff-mt">
           <Field
-            label={<LabelWithMark text={L.fields.prevMarital} mark={marks.etatCivilPrev} />}
+            label={<LabelWithMark text={L.fields.prevMarital} mark={marks.etatCivilPrev} required />}
             value={ancienEtatCivil}
             onChange={setAncienEtatCivil}
             placeholder={L.fields.prevMaritalPh}
-            required
           />
+
           <Field
-            label={<LabelWithMark text={L.fields.changeDate} mark={marks.etatCivilDate} />}
+            label={<LabelWithMark text={L.fields.changeDate} mark={marks.etatCivilDate} required />}
             value={dateChangementEtatCivil}
             onChange={setDateChangementEtatCivil}
             placeholder={L.fields.changeDatePh}
             inputMode="numeric"
             formatter={formatDateInput}
             maxLength={10}
-            required
           />
         </div>
       )}
 
       <div className="ff-grid2 ff-mt">
         <Field
-          label={<LabelWithMark text={L.fields.phone} mark={marks.phoneAny} />}
+          label={<LabelWithMark text={L.fields.phone} mark={marks.phoneAny} required />}
           value={tel}
           onChange={setTel}
           placeholder="(418) 555-1234"
@@ -355,8 +371,9 @@ export default function ClientSection(props: {
           formatter={formatPhoneInput}
           maxLength={14}
         />
+
         <Field
-          label={<LabelWithMark text={L.fields.mobile} mark={marks.phoneAny} />}
+          label={<LabelWithMark text={L.fields.mobile} mark={marks.phoneAny} required />}
           value={telCell}
           onChange={setTelCell}
           placeholder="(418) 555-1234"
@@ -364,21 +381,20 @@ export default function ClientSection(props: {
           formatter={formatPhoneInput}
           maxLength={14}
         />
+
         <Field
-          label={<LabelWithMark text={L.fields.email} mark={marks.email} />}
+          label={<LabelWithMark text={L.fields.email} mark={marks.email} required />}
           value={courriel}
           onChange={setCourriel}
           type="email"
-          required
         />
       </div>
 
       <div className="ff-mt">
         <Field
-          label={<LabelWithMark text={L.fields.address} mark={marks.adresse} />}
+          label={<LabelWithMark text={L.fields.address} mark={marks.adresse} required />}
           value={adresse}
           onChange={setAdresse}
-          required
         />
 
         <div className="ff-grid4 ff-mt-sm">
@@ -390,26 +406,23 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={<LabelWithMark text={L.fields.city} mark={marks.ville} />}
+            label={<LabelWithMark text={L.fields.city} mark={marks.ville} required />}
             value={ville}
             onChange={setVille}
-            required
           />
 
           <SelectField<ProvinceCode>
-            label={<LabelWithMark text={L.fields.province} mark={marks.province} />}
+            label={<LabelWithMark text={L.fields.province} mark={marks.province} required />}
             value={province}
             onChange={setProvince}
             options={PROVINCES}
-            required
           />
 
           <Field
-            label={<LabelWithMark text={L.fields.postal} mark={marks.postal} />}
+            label={<LabelWithMark text={L.fields.postal} mark={marks.postal} required />}
             value={codePostal}
             onChange={setCodePostal}
             placeholder={L.fields.postalPh}
-            required
             formatter={formatPostalInput}
             maxLength={7}
             autoComplete="postal-code"
