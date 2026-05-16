@@ -382,6 +382,7 @@ const removeEnfant = useCallback((i: number) => {
   const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
   const [anneeImposition, setAnneeImposition] = useState<string>("");
+  const [avisCotisation, setAvisCotisation] = useState("");
 
   /* =========================== Validations finales =========================== */
   const [vExactitude, setVExactitude] = useState(false);
@@ -497,6 +498,7 @@ const removeEnfant = useCallback((i: number) => {
   maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
   appelerTechnicien: appelerTechnicien as any,
   copieImpots,
+  avisCotisation,
   anneeImposition: anneeImposition.trim(),
   aucunePersonneACharge,
 },
@@ -505,6 +507,7 @@ const removeEnfant = useCallback((i: number) => {
         dossierComplet: vDossierComplet,
         fraisVariables: vFraisVariables,
         delaisSiManquant: vDelais,
+        consentement: vConsentement,
       },
     };
    }, [
@@ -555,11 +558,13 @@ const removeEnfant = useCallback((i: number) => {
     maisonAcheteeOuVendue,
     appelerTechnicien,
     copieImpots,
+    avisCotisation,
     anneeImposition,
     vExactitude,
     vDossierComplet,
     vFraisVariables,
     vDelais,
+    vConsentement,
   ]);
   const t = useCallback(
     (fr: string, en: string, es: string) => (lang === "fr" ? fr : lang === "en" ? en : es),
@@ -785,6 +790,7 @@ const removeEnfant = useCallback((i: number) => {
     maisonAcheteeOuVendue,
     appelerTechnicien,
     copieImpots,
+    avisCotisation,
     vExactitude,
     vDossierComplet,
     vFraisVariables,
@@ -848,7 +854,7 @@ const removeEnfant = useCallback((i: number) => {
         ? "ok"
         : "bad";
 
-    const confirmsBlock: Mark = vExactitude && vDossierComplet && vFraisVariables && vDelais ? "ok" : "bad";
+    const confirmsBlock: Mark = vExactitude && vDossierComplet && vFraisVariables && vDelais && vConsentement ? "ok" : "bad";
 
     const clientBlock: Mark =
       markText(prenom) === "ok" &&
@@ -915,6 +921,7 @@ const removeEnfant = useCallback((i: number) => {
     vDossierComplet,
     vFraisVariables,
     vDelais,
+    vConsentement,
     enfants.length,
     aucunePersonneACharge,
     showEnfantsSection,
@@ -1062,6 +1069,7 @@ const removeEnfant = useCallback((i: number) => {
     setMaisonAcheteeOuVendue((q.maisonAcheteeOuVendue as YesNo) ?? "");
     setAppelerTechnicien((q.appelerTechnicien as YesNo) ?? "");
     setCopieImpots(q.copieImpots ?? "");
+    setAvisCotisation(q.avisCotisation ?? "");
     setAnneeImposition(q.anneeImposition ?? "");
 
     const v = form?.validations ?? {};
@@ -1069,6 +1077,7 @@ const removeEnfant = useCallback((i: number) => {
     setVDossierComplet(!!v.dossierComplet);
     setVFraisVariables(!!v.fraisVariables);
     setVDelais(!!v.delaisSiManquant);
+    setVConsentement(!!v.consentement);
 
     await loadDocs(fid);
     hydrating.current = false;
@@ -1352,6 +1361,8 @@ return (
           setAppelerTechnicien={setAppelerTechnicien}
           copieImpots={copieImpots}
           setCopieImpots={setCopieImpots}
+          avisCotisation={avisCotisation}
+          setAvisCotisation={setAvisCotisation}
         />
 
         <ConfirmationsSection
