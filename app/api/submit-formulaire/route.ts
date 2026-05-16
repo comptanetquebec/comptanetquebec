@@ -20,8 +20,9 @@ export async function POST(req: Request) {
   try {
     const payload = (await req.json()) as Record<string, string>;
 
-    // Si certaines cases arrivent en "true"/"false", on peut les convertir en booléens
+    // Conversion string → boolean
     const asBool = (v?: string) => v === "true";
+
     const normalized = {
       ...payload,
       treat_spouse: asBool(payload.treat_spouse),
@@ -35,9 +36,14 @@ export async function POST(req: Request) {
       call_back: asBool(payload.call_back),
     };
 
-    // 🔐 Simple et robuste : on stocke tout le formulaire dans une colonne JSONB
-    // Table recommandée: formulaires_fiscaux(id uuid default, created_at timestamptz default now(), data jsonb not null)
-    const { error } = await supabase.from("formulaires_fiscaux").insert([{ data: normalized }]);
+    // ✅ INSERT AVEC STATUT + DATE
+    const { error } = await supabase.from("formulaires_fiscaux").insert([
+      {
+        data: normalized,
+        statut: "a_faire", // IMPORTANT → apparaît dans ton admin
+        updated_at: new Date().toISOString(),
+      },
+    ]);
 
     if (error) {
       console.error("Supabase insert error:", error);
@@ -50,4 +56,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
   }
 }
-
