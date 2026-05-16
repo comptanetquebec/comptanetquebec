@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// On force l'exécution sur Node (et pas Edge), nécessaire pour la service_role
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
@@ -11,6 +10,7 @@ export async function POST(req: Request) {
   if (!SUPABASE_URL) {
     return NextResponse.json({ success: false, error: "Missing SUPABASE_URL" }, { status: 500 });
   }
+
   if (!SERVICE_ROLE) {
     return NextResponse.json({ success: false, error: "Missing SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
   }
@@ -20,7 +20,6 @@ export async function POST(req: Request) {
   try {
     const payload = (await req.json()) as Record<string, string>;
 
-    // Conversion string → boolean
     const asBool = (v?: string) => v === "true";
 
     const normalized = {
@@ -36,21 +35,42 @@ export async function POST(req: Request) {
       call_back: asBool(payload.call_back),
     };
 
-    // ✅ INSERT AVEC STATUT + DATE
-    const { error } = await supabase.from("formulaires_fiscaux").insert([
+    const { data: insertedForm, error: formError } = await supabase
+      .from("formulaires_fiscaux")
+      .insert([
+        {
+          data: normalized,
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select("id")
+      .single();
+
+    if (formError || !insertedForm) {
+      console.error("Supabase insert formulaire error:", formError);
+      return NextResponse.json(
+        { success: false, error: formError?.message ?? "Erreur création formulaire" },
+        { status: 400 }
+      );
+    }
+
+    const { error: statusError } = await supabase.from("dossier_statuses").insert([
       {
-        data: normalized,
-        statut: "a_faire", // IMPORTANT → apparaît dans ton admin
+        formulaire_id: insertedForm.id,
+        status: "recu",
         updated_at: new Date().toISOString(),
       },
     ]);
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    if (statusError) {
+      console.error("Supabase insert status error:", statusError);
+      return NextResponse.json({ success: false, error: statusError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      formulaire_id: insertedForm.id,
+    });
   } catch (err) {
     console.error("Request error:", err);
     return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
