@@ -20,7 +20,7 @@ export type ProvinceCode =
 export type Sexe = "M" | "F" | "X" | "";
 export type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
 export type CopieImpots = "espaceClient" | "courriel" | "";
-export type AvisCotisation = "poste" | "siteGouvernement" | "";
+export type AvisCotisation = "poste" | "gouvernement" | "";
 
 export type EtatCivil =
   | "celibataire"
