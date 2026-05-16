@@ -928,57 +928,71 @@ const removeEnfant = useCallback((i: number) => {
     showEnfantsSection,
   ]);
 
-  /* =========================== Save draft (insert/update) =========================== */
-  const saveDraft = useCallback(async (): Promise<string | null> => {
-    if (hydrating.current) return formulaireId ?? null;
-    if (submitting) return formulaireId ?? null;
+ /* =========================== Save draft (insert/update) =========================== */
+const saveDraft = useCallback(async (): Promise<string | null> => {
+  if (hydrating.current) return formulaireId ?? null;
+  if (submitting) return formulaireId ?? null;
 
-    if (formulaireId) {
-      const { error } = await supabase
-        .from(FORMS_TABLE)
-        .update({ lang, annee: anneeImposition || null, data: draftData })
-        .eq("id", formulaireId)
-        .eq("user_id", userId);
+  const now = new Date().toISOString();
 
-      if (error) throw new Error(supaErr(error));
-      return formulaireId;
-    }
+  if (formulaireId) {
+    const { error } = await supabase
+      .from(FORMS_TABLE)
+      .update({
+        lang,
+        annee: anneeImposition || null,
+        data: draftData,
+        updated_at: now,
+      })
+      .eq("id", formulaireId)
+      .eq("user_id", userId);
 
-   const { data: dataInsert, error: errorInsert } = await supabase
-  .from(FORMS_TABLE)
-  .insert({
-    user_id: userId,
-    form_type: type,
-    lang,
-    status: "draft",
-    annee: anneeImposition || null,
-    data: draftData,
-  })
-  .select("id")
-  .single<InsertIdRow>();
+    if (error) throw new Error(supaErr(error));
 
-if (errorInsert) throw new Error(supaErr(errorInsert));
+    await supabase.from("dossier_statuses").upsert(
+      {
+        formulaire_id: formulaireId,
+        status: "recu",
+        updated_at: now,
+      },
+      { onConflict: "formulaire_id" }
+    );
 
-const fid = dataInsert?.id ?? null;
+    return formulaireId;
+  }
 
-// ✅ AJOUT DU STATUT
-if (fid) {
-  const { error: statusError } = await supabase
-    .from("dossier_statuses")
-    .insert([
+  const { data: dataInsert, error: errorInsert } = await supabase
+    .from(FORMS_TABLE)
+    .insert({
+      user_id: userId,
+      form_type: type,
+      lang,
+      status: "draft",
+      annee: anneeImposition || null,
+      data: draftData,
+      updated_at: now,
+    })
+    .select("id")
+    .single<InsertIdRow>();
+
+  if (errorInsert) throw new Error(supaErr(errorInsert));
+
+  const fid = dataInsert?.id ?? null;
+
+  if (fid) {
+    await supabase.from("dossier_statuses").upsert(
       {
         formulaire_id: fid,
         status: "recu",
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       },
-    ]);
+      { onConflict: "formulaire_id" }
+    );
 
-  if (statusError) throw new Error(supaErr(statusError));
+    setFormulaireId(fid);
+  }
 
-  setFormulaireId(fid);
-}
-
-return fid;
+  return fid;
 }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
   /* =========================== Load last form (preload) =========================== */
