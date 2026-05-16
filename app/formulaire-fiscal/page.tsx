@@ -944,18 +944,42 @@ const removeEnfant = useCallback((i: number) => {
       return formulaireId;
     }
 
-    const { data: dataInsert, error: errorInsert } = await supabase
-      .from(FORMS_TABLE)
-      .insert({ user_id: userId, form_type: type, lang, status: "draft", annee: anneeImposition || null, data: draftData })
-      .select("id")
-      .single<InsertIdRow>();
+   const { data: dataInsert, error: errorInsert } = await supabase
+  .from(FORMS_TABLE)
+  .insert({
+    user_id: userId,
+    form_type: type,
+    lang,
+    status: "draft",
+    annee: anneeImposition || null,
+    data: draftData,
+  })
+  .select("id")
+  .single<InsertIdRow>();
 
-    if (errorInsert) throw new Error(supaErr(errorInsert));
+if (errorInsert) throw new Error(supaErr(errorInsert));
 
-    const fid = dataInsert?.id ?? null;
-    if (fid) setFormulaireId(fid);
-    return fid;
-  }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
+const fid = dataInsert?.id ?? null;
+
+// ✅ AJOUT DU STATUT
+if (fid) {
+  const { error: statusError } = await supabase
+    .from("dossier_statuses")
+    .insert([
+      {
+        formulaire_id: fid,
+        status: "recu",
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+
+  if (statusError) throw new Error(supaErr(statusError));
+
+  setFormulaireId(fid);
+}
+
+return fid;
+}, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
 
   /* =========================== Load last form (preload) =========================== */
   const loadLastForm = useCallback(async () => {
