@@ -928,7 +928,7 @@ const removeEnfant = useCallback((i: number) => {
     showEnfantsSection,
   ]);
 
- /* =========================== Save draft (insert/update) =========================== */
+/* =========================== Save draft (insert/update) =========================== */
 const saveDraft = useCallback(async (): Promise<string | null> => {
   if (hydrating.current) return formulaireId ?? null;
   if (submitting) return formulaireId ?? null;
@@ -949,7 +949,7 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
 
     if (error) throw new Error(supaErr(error));
 
-    await supabase.from("dossier_statuses").upsert(
+    const { error: statusError } = await supabase.from("dossier_statuses").upsert(
       {
         formulaire_id: formulaireId,
         status: "recu",
@@ -957,6 +957,10 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
       },
       { onConflict: "formulaire_id" }
     );
+
+    if (statusError) {
+      console.error("Erreur dossier_statuses:", statusError);
+    }
 
     return formulaireId;
   }
@@ -979,26 +983,25 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
 
   const fid = dataInsert?.id ?? null;
 
-if (fid) {
-  const { error: statusError } = await supabase.from("dossier_statuses").upsert(
-    {
-      formulaire_id: fid,
-      status: "recu",
-      updated_at: now,
-    },
-    { onConflict: "formulaire_id" }
-  );
+  if (fid) {
+    const { error: statusError } = await supabase.from("dossier_statuses").upsert(
+      {
+        formulaire_id: fid,
+        status: "recu",
+        updated_at: now,
+      },
+      { onConflict: "formulaire_id" }
+    );
 
-  if (statusError) {
-    console.error("Erreur dossier_statuses:", statusError);
+    if (statusError) {
+      console.error("Erreur dossier_statuses:", statusError);
+    }
+
+    setFormulaireId(fid);
   }
 
-  setFormulaireId(fid);
-}
-
-return fid;
+  return fid;
 }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
-
   /* =========================== Load last form (preload) =========================== */
   const loadLastForm = useCallback(async () => {
     hydrating.current = true;
