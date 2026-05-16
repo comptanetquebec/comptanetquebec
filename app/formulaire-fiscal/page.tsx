@@ -952,7 +952,7 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
     const { error: statusError } = await supabase.from("dossier_statuses").upsert(
       {
         formulaire_id: formulaireId,
-        status: "recu",
+        status: "a faire",
         updated_at: now,
       },
       { onConflict: "formulaire_id" }
