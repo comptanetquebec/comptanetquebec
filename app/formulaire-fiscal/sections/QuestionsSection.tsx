@@ -7,7 +7,6 @@ import type { YesNo } from "../ui";
 import type { CopieImpots } from "../types";
 import type { CopyPack } from "../copy";
 
-/* ---------- mini validation locale ---------- */
 function isValidYear(v: string) {
   const y = (v || "").trim();
   if (!/^\d{4}$/.test(y)) return false;
@@ -16,6 +15,7 @@ function isValidYear(v: string) {
 }
 
 type Mark = "ok" | "bad" | "todo";
+type AvisCotisation = "" | "poste" | "gouvernement";
 
 function MarkIcon({ mark }: { mark: Mark }) {
   const cls =
@@ -45,11 +45,6 @@ function LabelWithMark({ text, mark }: { text: React.ReactNode; mark: Mark }) {
 
 function markYesNo(v: YesNo): Mark {
   return v ? "ok" : "bad";
-}
-
-function markRequiredText(v: string): Mark {
-  const t = (v || "").trim();
-  return t ? "ok" : "bad";
 }
 
 function markYear(v: string): Mark {
@@ -99,6 +94,9 @@ export default function QuestionsSection(props: {
 
   copieImpots: CopieImpots;
   setCopieImpots: (v: CopieImpots) => void;
+
+  avisCotisation: AvisCotisation;
+  setAvisCotisation: (v: AvisCotisation) => void;
 }) {
   const {
     L,
@@ -120,22 +118,21 @@ export default function QuestionsSection(props: {
     setAppelerTechnicien,
     copieImpots,
     setCopieImpots,
+    avisCotisation,
+    setAvisCotisation,
   } = props;
 
   const marks = useMemo(() => {
     const mYear = markYear(anneeImposition);
-
     const mLived = markYesNo(habiteSeulTouteAnnee);
-
     const mPeople = markPeopleCount(nbPersonnesMaison3112);
-
     const mForeign = markYesNo(biensEtranger100k);
     const mCitizen = markYesNo(citoyenCanadien);
     const mNonRes = markYesNo(nonResident);
     const mHomeTx = markYesNo(maisonAcheteeOuVendue);
     const mTech = markYesNo(appelerTechnicien);
-
     const mCopy = markSelect(copieImpots);
+    const mAvis = markSelect(avisCotisation);
 
     const blockOk =
       mYear === "ok" &&
@@ -146,7 +143,8 @@ export default function QuestionsSection(props: {
       mNonRes === "ok" &&
       mHomeTx === "ok" &&
       mTech === "ok" &&
-      mCopy === "ok";
+      mCopy === "ok" &&
+      mAvis === "ok";
 
     return {
       year: mYear,
@@ -158,6 +156,7 @@ export default function QuestionsSection(props: {
       homeTx: mHomeTx,
       tech: mTech,
       copy: mCopy,
+      avis: mAvis,
       block: blockOk ? ("ok" as Mark) : ("bad" as Mark),
     };
   }, [
@@ -170,6 +169,7 @@ export default function QuestionsSection(props: {
     maisonAcheteeOuVendue,
     appelerTechnicien,
     copieImpots,
+    avisCotisation,
   ]);
 
   return (
@@ -257,6 +257,22 @@ export default function QuestionsSection(props: {
           options={[
             { value: "espaceClient", label: L.questions.copyPortal },
             { value: "courriel", label: L.questions.copyEmail },
+          ]}
+        />
+
+        <SelectField<AvisCotisation>
+          label={
+            <LabelWithMark
+              text="Comment souhaitez-vous recevoir votre avis de cotisation ?"
+              mark={marks.avis}
+            />
+          }
+          value={avisCotisation}
+          onChange={setAvisCotisation}
+          required
+          options={[
+            { value: "poste", label: "Par la poste" },
+            { value: "gouvernement", label: "Sur le site du gouvernement" },
           ]}
         />
       </div>
