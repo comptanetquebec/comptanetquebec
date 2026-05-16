@@ -10,6 +10,7 @@ type PaymentStatus = "unpaid" | "paid";
 type FormRow = {
   id: string;
   created_at: string | null;
+  updated_at: string | null;
   form_type: string | null;
   annee: number | null;
   data: Record<string, unknown> | null;
@@ -31,11 +32,9 @@ function safePayment(v: unknown): PaymentStatus {
 export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
 
-  // 1) Auth
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth?.user) redirect("/espace-client?next=/admin/dossiers");
 
-  // 2) Admin check
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
     .select("is_admin")
@@ -46,11 +45,10 @@ export default async function AdminDossiersPage() {
     return <div className="p-6">Accès refusé</div>;
   }
 
-  // 3) Formulaires (dossiers)
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, created_at, form_type, annee, data, user_id, cq_id, payment_status")
-    .order("created_at", { ascending: false })
+    .select("id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status")
+    .order("updated_at", { ascending: false, nullsFirst: false })
     .limit(500)
     .returns<FormRow[]>();
 
@@ -65,22 +63,20 @@ export default async function AdminDossiersPage() {
     return <AdminDossiersClient initialRows={[]} />;
   }
 
-  // 4) ✅ Docs count (FIABLE) : on récupère toutes les lignes puis on compte en JS
-  // (évite les NaN / null / agrégats instables)
   const { data: docsRows, error: docsErr } = await supabase
     .from("formulaire_documents")
     .select("formulaire_id")
     .in("formulaire_id", ids)
-    .limit(100000); // au besoin ajuste
+    .limit(100000);
 
   const docsMap = new Map<string, number>();
+
   if (!docsErr && docsRows) {
     for (const r of docsRows as { formulaire_id: string }[]) {
       docsMap.set(r.formulaire_id, (docsMap.get(r.formulaire_id) ?? 0) + 1);
     }
   }
 
-  // 5) Status (optionnel)
   const { data: stData, error: stErr } = await supabase
     .from("dossier_statuses")
     .select("formulaire_id, status, updated_at")
@@ -88,11 +84,13 @@ export default async function AdminDossiersPage() {
     .returns<StatusRow[]>();
 
   const statusMap = new Map<string, StatusRow>();
+
   if (!stErr && stData) {
-    for (const s of stData) statusMap.set(s.formulaire_id, s);
+    for (const s of stData) {
+      statusMap.set(s.formulaire_id, s);
+    }
   }
 
-  // 6) Rows UI (✅ plus de NaN)
   const rows: AdminDossierRow[] = list.map((f) => {
     const filled = !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
     const st = statusMap.get(f.id);
@@ -103,7 +101,7 @@ export default async function AdminDossiersPage() {
       payment_status: f.payment_status ? safePayment(f.payment_status) : "unpaid",
       created_at: f.created_at ?? null,
       status: st?.status ?? "recu",
-      updated_at: st?.updated_at ?? null,
+      updated_at: st?.updated_at ?? f.updated_at ?? f.created_at ?? null,
       form_type: f.form_type ?? null,
       tax_year: f.annee ?? null,
       form_filled: filled,
