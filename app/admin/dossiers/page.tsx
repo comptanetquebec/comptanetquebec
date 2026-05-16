@@ -46,11 +46,11 @@ export default async function AdminDossiersPage() {
   }
 
   const { data: forms, error: formsErr } = await supabase
-    .from("formulaires_fiscaux")
-    .select("id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status")
-    .order("updated_at", { ascending: false, nullsFirst: false })
-    .limit(500)
-    .returns<FormRow[]>();
+  .from("formulaires_fiscaux")
+  .select("id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status")
+  .order("created_at", { ascending: false })
+  .limit(500)
+  .returns<FormRow[]>();
 
   if (formsErr) {
     return <div className="p-6">Erreur chargement formulaires: {formsErr.message}</div>;
