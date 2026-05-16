@@ -17,6 +17,7 @@ import type {
   Sexe,
   AssuranceMeds,
   CopieImpots,
+  AvisCotisation,
   EtatCivil,
   Periode,
   Child,
@@ -382,7 +383,7 @@ const removeEnfant = useCallback((i: number) => {
   const [appelerTechnicien, setAppelerTechnicien] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
   const [anneeImposition, setAnneeImposition] = useState<string>("");
-  const [avisCotisation, setAvisCotisation] = useState("");
+  const [avisCotisation, setAvisCotisation] = useState<AvisCotisation>("");
 
   /* =========================== Validations finales =========================== */
   const [vExactitude, setVExactitude] = useState(false);
