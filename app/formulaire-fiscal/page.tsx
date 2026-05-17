@@ -1002,7 +1002,7 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
 
   return fid;
 }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
-  /* =========================== Load last form (preload) =========================== */
+ /* =========================== Load last form (preload) =========================== */
 const loadLastForm = useCallback(async () => {
   hydrating.current = true;
 
@@ -1023,10 +1023,10 @@ const loadLastForm = useCallback(async () => {
 
   let selected: FormRow | null = rows?.[0] ?? null;
 
-if (anneeImposition) {
-  const found = rows?.find((r) => Number(r.annee) === Number(anneeImposition));
-  selected = found ?? null;
-}
+  if (anneeImposition) {
+    const found = rows?.find((r) => Number(r.annee) === Number(anneeImposition));
+    selected = found ?? null;
+  }
 
   if (!selected) {
     setFormulaireId(null);
@@ -1128,7 +1128,7 @@ if (anneeImposition) {
   setCopieImpots(q.copieImpots ?? "");
   setAvisCotisation(q.avisCotisation ?? "");
 
-  if (q.anneeImposition) {
+  if (!anneeImposition && q.anneeImposition) {
     setAnneeImposition(q.anneeImposition);
   }
 
@@ -1146,7 +1146,6 @@ if (anneeImposition) {
 useEffect(() => {
   void loadLastForm();
 }, [loadLastForm]);
-
 /* =========================== Autosave debounce =========================== */
 useEffect(() => {
   if (hydrating.current) return;
