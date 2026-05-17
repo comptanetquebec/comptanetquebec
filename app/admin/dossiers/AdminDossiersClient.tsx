@@ -263,7 +263,10 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
               const mainRight = created ? ` • ${created}` : "";
 
               const mainLeftNode = r.client_name ? (
-                <span>{r.client_name}</span>
+                <span>
+                  {r.client_name}
+                  {r.cq_id && <span className="text-gray-500 font-normal"> • {r.cq_id}</span>}
+                </span>
               ) : r.cq_id ? (
                 <span>{r.cq_id}</span>
               ) : (
@@ -286,11 +289,15 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                         <span className="text-gray-500 font-normal">{mainRight}</span>
                       </div>
 
+                      <div className="text-sm font-semibold text-black">
+                        Dossier : {r.cq_id ?? "—"}
+                      </div>
+
                       {r.client_email && <div className="text-sm text-gray-500 truncate">{r.client_email}</div>}
 
                       {r.client_phone && <div className="text-sm text-gray-500 truncate">{r.client_phone}</div>}
 
-                      <div className="text-sm text-gray-500 truncate">ID: {r.formulaire_id}</div>
+                      <div className="text-xs text-gray-400 truncate">ID technique : {r.formulaire_id}</div>
 
                       {(r.form_type || r.tax_year != null) && (
                         <div className="text-sm text-gray-500">
