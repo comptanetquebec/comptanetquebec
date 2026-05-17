@@ -11,6 +11,16 @@ import Steps from "./Steps";
 import RequireAuth from "./RequireAuth";
 
 import { COPY, pickCopy, type CopyLang } from "./copy";
+
+// Sections
+import ClientSection from "./sections/ClientSection";
+import SpouseSection from "./sections/SpouseSection";
+import MedsSection from "./sections/MedsSection";
+import DependantsSection from "./sections/DependantsSection";
+import QuestionsSection from "./sections/QuestionsSection";
+import TravailleurAutonomeSection from "./sections/TravailleurAutonomeSection";
+import ConfirmationsSection from "./sections/ConfirmationsSection";
+import DocsSummary from "./sections/DocsSummary";
 import type {
   Lang,
   ProvinceCode,
@@ -30,15 +40,6 @@ import type {
 
 import type { YesNo } from "./ui"; // ✅ oui | non | ""
 import { firstNonEmpty } from "./helpers";
-
-// Sections
-import ClientSection from "./sections/ClientSection";
-import SpouseSection from "./sections/SpouseSection";
-import MedsSection from "./sections/MedsSection";
-import DependantsSection from "./sections/DependantsSection";
-import QuestionsSection from "./sections/QuestionsSection";
-import ConfirmationsSection from "./sections/ConfirmationsSection";
-import DocsSummary from "./sections/DocsSummary";
 
 /**
  * Storage / DB
@@ -385,6 +386,12 @@ const removeEnfant = useCallback((i: number) => {
   const [anneeImposition, setAnneeImposition] = useState<string>("");
   const [avisCotisation, setAvisCotisation] = useState<AvisCotisation>("");
 
+  /* =========================== Travailleur autonome =========================== */
+  const [taActif, setTaActif] = useState(false);
+  const [taNomEntreprise, setTaNomEntreprise] = useState("");
+  const [taRevenus, setTaRevenus] = useState("");
+  const [taDepenses, setTaDepenses] = useState("");
+
   /* =========================== Validations finales =========================== */
   const [vExactitude, setVExactitude] = useState(false);
   const [vDossierComplet, setVDossierComplet] = useState(false);
@@ -490,6 +497,12 @@ const removeEnfant = useCallback((i: number) => {
         nas: normalizeNAS(x.nas),
         sexe: x.sexe as Sexe,
       })),
+      travailleurAutonome: {
+        actif: taActif,
+        nomEntreprise: taActif ? taNomEntreprise.trim() : "",
+        revenus: taActif ? taRevenus.trim() : "",
+        depenses: taActif ? taDepenses.trim() : "",
+      },
     questionsGenerales: {
   habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
   nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
@@ -510,7 +523,7 @@ const removeEnfant = useCallback((i: number) => {
         delaisSiManquant: vDelais,
         consentement: vConsentement,
       },
-    };
+    } as Formdata;
    }, [
     type,
     prenom,
@@ -561,6 +574,10 @@ const removeEnfant = useCallback((i: number) => {
     copieImpots,
     avisCotisation,
     anneeImposition,
+    taActif,
+    taNomEntreprise,
+    taRevenus,
+    taDepenses,
     vExactitude,
     vDossierComplet,
     vFraisVariables,
@@ -796,6 +813,7 @@ const removeEnfant = useCallback((i: number) => {
     vDossierComplet,
     vFraisVariables,
     vDelais,
+    vConsentement,
   ]);
 
   const canContinue = step1Errors.length === 0;
@@ -1151,6 +1169,12 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
     setAnneeImposition(q.anneeImposition);
   }
 
+  const ta = (form as any)?.travailleurAutonome ?? {};
+  setTaActif(!!ta.actif);
+  setTaNomEntreprise(ta.nomEntreprise ?? "");
+  setTaRevenus(ta.revenus ?? "");
+  setTaDepenses(ta.depenses ?? "");
+
   const v = form?.validations ?? {};
   setVExactitude(!!v.exactitudeInfo);
   setVDossierComplet(!!v.dossierComplet);
@@ -1422,30 +1446,41 @@ return (
   removeEnfant={removeEnfant}
 />
         <QuestionsSection
-          L={L}
-          anneeImposition={anneeImposition}
-          setAnneeImposition={setAnneeImposition}
-          habiteSeulTouteAnnee={habiteSeulTouteAnnee}
-          setHabiteSeulTouteAnnee={setHabiteSeulTouteAnnee}
-          nbPersonnesMaison3112={nbPersonnesMaison3112}
-          setNbPersonnesMaison3112={(v: string) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
-          biensEtranger100k={biensEtranger100k}
-          setBiensEtranger100k={setBiensEtranger100k}
-          citoyenCanadien={citoyenCanadien}
-          setCitoyenCanadien={setCitoyenCanadien}
-          nonResident={nonResident}
-          setNonResident={setNonResident}
-          maisonAcheteeOuVendue={maisonAcheteeOuVendue}
-          setMaisonAcheteeOuVendue={setMaisonAcheteeOuVendue}
-          appelerTechnicien={appelerTechnicien}
-          setAppelerTechnicien={setAppelerTechnicien}
-          copieImpots={copieImpots}
-          setCopieImpots={setCopieImpots}
-          avisCotisation={avisCotisation}
-          setAvisCotisation={setAvisCotisation}
-        />
+  L={L}
+  anneeImposition={anneeImposition}
+  setAnneeImposition={setAnneeImposition}
+  habiteSeulTouteAnnee={habiteSeulTouteAnnee}
+  setHabiteSeulTouteAnnee={setHabiteSeulTouteAnnee}
+  nbPersonnesMaison3112={nbPersonnesMaison3112}
+  setNbPersonnesMaison3112={(v: string) => setNbPersonnesMaison3112(v.replace(/[^\d]/g, ""))}
+  biensEtranger100k={biensEtranger100k}
+  setBiensEtranger100k={setBiensEtranger100k}
+  citoyenCanadien={citoyenCanadien}
+  setCitoyenCanadien={setCitoyenCanadien}
+  nonResident={nonResident}
+  setNonResident={setNonResident}
+  maisonAcheteeOuVendue={maisonAcheteeOuVendue}
+  setMaisonAcheteeOuVendue={setMaisonAcheteeOuVendue}
+  appelerTechnicien={appelerTechnicien}
+  setAppelerTechnicien={setAppelerTechnicien}
+  copieImpots={copieImpots}
+  setCopieImpots={setCopieImpots}
+  avisCotisation={avisCotisation}
+  setAvisCotisation={setAvisCotisation}
+/>
 
-        <ConfirmationsSection
+<TravailleurAutonomeSection
+  actif={taActif}
+  setActif={setTaActif}
+  nomEntreprise={taNomEntreprise}
+  setNomEntreprise={setTaNomEntreprise}
+  revenus={taRevenus}
+  setRevenus={setTaRevenus}
+  depenses={taDepenses}
+  setDepenses={setTaDepenses}
+/>
+
+<ConfirmationsSection
   L={L}
   vExactitude={vExactitude}
   setVExactitude={setVExactitude}
