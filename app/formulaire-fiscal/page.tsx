@@ -1003,135 +1003,207 @@ const saveDraft = useCallback(async (): Promise<string | null> => {
   return fid;
 }, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
   /* =========================== Load last form (preload) =========================== */
-  const loadLastForm = useCallback(async () => {
-    hydrating.current = true;
+const loadLastForm = useCallback(async () => {
+  hydrating.current = true;
 
-    const { data: row, error } = await supabase
-      .from(FORMS_TABLE)
-      .select("id, data, created_at")
-      .eq("user_id", userId)
-      .eq("form_type", type)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<FormRow>();
+  const { data: rows, error } = await supabase
+    .from(FORMS_TABLE)
+    .select("id, data, created_at, annee")
+    .eq("user_id", userId)
+    .eq("form_type", type)
+    .order("created_at", { ascending: false })
+    .limit(10)
+    .returns<FormRow[]>();
 
-    if (error) {
-      setMsg(`Erreur chargement: ${error.message}`);
-      hydrating.current = false;
-      return;
-    }
-
-    if (!row) {
-      hydrating.current = false;
-      return;
-    }
-
-    const fid = row.id;
-    setFormulaireId(fid);
-
-    const form = row.data;
-    const client = form?.client ?? {};
-
-    setPrenom(client.prenom ?? "");
-    setNom(client.nom ?? "");
-    setNas(client.nas ? formatNASInput(client.nas) : "");
-    setDob(client.dob ?? "");
-    setEtatCivil(client.etatCivil ?? "");
-    setEtatCivilChange(!!client.etatCivilChange);
-    setAncienEtatCivil(client.ancienEtatCivil ?? "");
-    setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
-    setTel(client.tel ? formatPhoneInput(client.tel) : "");
-    setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
-    setAdresse(client.adresse ?? "");
-    setApp(client.app ?? "");
-    setVille(client.ville ?? "");
-    setProvince(client.province ?? "QC");
-    setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
-    setCourriel(client.courriel ?? "");
-
-    const cj = form?.conjoint ?? null;
-    setAUnConjoint(!!cj);
-
-    if (cj) {
-      setTraiterConjoint(!!cj.traiterConjoint);
-      setPrenomConjoint(cj.prenomConjoint ?? "");
-      setNomConjoint(cj.nomConjoint ?? "");
-      setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
-      setDobConjoint(cj.dobConjoint ?? "");
-      setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
-      setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
-      setCourrielConjoint(cj.courrielConjoint ?? "");
-      setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
-      setAdresseConjoint(cj.adresseConjoint ?? "");
-      setAppConjoint(cj.appConjoint ?? "");
-      setVilleConjoint(cj.villeConjoint ?? "");
-      setProvinceConjoint(cj.provinceConjoint ?? "QC");
-      setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
-      setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
-    } else {
-      setTraiterConjoint(true);
-      setPrenomConjoint("");
-      setNomConjoint("");
-      setNasConjoint("");
-      setDobConjoint("");
-      setTelConjoint("");
-      setTelCellConjoint("");
-      setCourrielConjoint("");
-      setAdresseConjointeIdentique(true);
-      setAdresseConjoint("");
-      setAppConjoint("");
-      setVilleConjoint("");
-      setProvinceConjoint("QC");
-      setCodePostalConjoint("");
-      setRevenuNetConjoint("");
-    }
-
-    const meds = form?.assuranceMedicamenteuse ?? null;
-    if (meds?.client) {
-      setAssuranceMedsClient(meds.client.regime ?? "");
-      setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
-    } else {
-      setAssuranceMedsClient("");
-      setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
-    }
-
-    if (meds?.conjoint) {
-      setAssuranceMedsConjoint(meds.conjoint?.regime ?? "");
-      setAssuranceMedsConjointPeriodes(meds.conjoint?.periodes ?? [{ debut: "", fin: "" }]);
-    } else {
-      setAssuranceMedsConjoint("");
-      setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
-    }
-
-    setEnfants(form?.personnesACharge ?? []);
-    setAucunePersonneACharge((form?.personnesACharge ?? []).length === 0);
-
-    const q = form?.questionsGenerales ?? {};
-    setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as YesNo) ?? "");
-    setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
-    setBiensEtranger100k((q.biensEtranger100k as YesNo) ?? "");
-    setCitoyenCanadien((q.citoyenCanadien as YesNo) ?? "");
-    setNonResident((q.nonResident as YesNo) ?? "");
-    setMaisonAcheteeOuVendue((q.maisonAcheteeOuVendue as YesNo) ?? "");
-    setAppelerTechnicien((q.appelerTechnicien as YesNo) ?? "");
-    setCopieImpots(q.copieImpots ?? "");
-    setAvisCotisation(q.avisCotisation ?? "");
-    setAnneeImposition(q.anneeImposition ?? "");
-
-    const v = form?.validations ?? {};
-    setVExactitude(!!v.exactitudeInfo);
-    setVDossierComplet(!!v.dossierComplet);
-    setVFraisVariables(!!v.fraisVariables);
-    setVDelais(!!v.delaisSiManquant);
-    setVConsentement(!!v.consentement);
-
-    await loadDocs(fid);
+  if (error) {
+    setMsg(`Erreur chargement: ${error.message}`);
     hydrating.current = false;
-  }, [userId, type, loadDocs]);
+    return;
+  }
 
-  useEffect(() => {
-    void loadLastForm();
-  }, [loadLastForm]);
+  let selected = rows?.[0] ?? null;
+
+  if (anneeImposition) {
+    selected = rows?.find((r) => Number(r.annee) === Number(anneeImposition)) ?? null;
+  }
+
+  if (!selected) {
+    setFormulaireId(null);
+    setCurrentFid(null);
+    setDocs([]);
+    hydrating.current = false;
+    return;
+  }
+
+  const fid = selected.id;
+  setFormulaireId(fid);
+
+  const form = selected.data;
+  const client = form?.client ?? {};
+
+  setPrenom(client.prenom ?? "");
+  setNom(client.nom ?? "");
+  setNas(client.nas ? formatNASInput(client.nas) : "");
+  setDob(client.dob ?? "");
+  setEtatCivil(client.etatCivil ?? "");
+  setEtatCivilChange(!!client.etatCivilChange);
+  setAncienEtatCivil(client.ancienEtatCivil ?? "");
+  setDateChangementEtatCivil(client.dateChangementEtatCivil ?? "");
+  setTel(client.tel ? formatPhoneInput(client.tel) : "");
+  setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
+  setAdresse(client.adresse ?? "");
+  setApp(client.app ?? "");
+  setVille(client.ville ?? "");
+  setProvince(client.province ?? "QC");
+  setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
+  setCourriel(client.courriel ?? "");
+
+  const cj = form?.conjoint ?? null;
+  setAUnConjoint(!!cj);
+
+  if (cj) {
+    setTraiterConjoint(!!cj.traiterConjoint);
+    setPrenomConjoint(cj.prenomConjoint ?? "");
+    setNomConjoint(cj.nomConjoint ?? "");
+    setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
+    setDobConjoint(cj.dobConjoint ?? "");
+    setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+    setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+    setCourrielConjoint(cj.courrielConjoint ?? "");
+    setAdresseConjointeIdentique(!!cj.adresseConjointeIdentique);
+    setAdresseConjoint(cj.adresseConjoint ?? "");
+    setAppConjoint(cj.appConjoint ?? "");
+    setVilleConjoint(cj.villeConjoint ?? "");
+    setProvinceConjoint(cj.provinceConjoint ?? "QC");
+    setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
+    setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+  } else {
+    setTraiterConjoint(true);
+    setPrenomConjoint("");
+    setNomConjoint("");
+    setNasConjoint("");
+    setDobConjoint("");
+    setTelConjoint("");
+    setTelCellConjoint("");
+    setCourrielConjoint("");
+    setAdresseConjointeIdentique(true);
+    setAdresseConjoint("");
+    setAppConjoint("");
+    setVilleConjoint("");
+    setProvinceConjoint("QC");
+    setCodePostalConjoint("");
+    setRevenuNetConjoint("");
+  }
+
+  const meds = form?.assuranceMedicamenteuse ?? null;
+
+  if (meds?.client) {
+    setAssuranceMedsClient(meds.client.regime ?? "");
+    setAssuranceMedsClientPeriodes(meds.client.periodes ?? [{ debut: "", fin: "" }]);
+  } else {
+    setAssuranceMedsClient("");
+    setAssuranceMedsClientPeriodes([{ debut: "", fin: "" }]);
+  }
+
+  if (meds?.conjoint) {
+    setAssuranceMedsConjoint(meds.conjoint.regime ?? "");
+    setAssuranceMedsConjointPeriodes(meds.conjoint.periodes ?? [{ debut: "", fin: "" }]);
+  } else {
+    setAssuranceMedsConjoint("");
+    setAssuranceMedsConjointPeriodes([{ debut: "", fin: "" }]);
+  }
+
+  setEnfants(form?.personnesACharge ?? []);
+  setAucunePersonneACharge((form?.personnesACharge ?? []).length === 0);
+
+  const q = form?.questionsGenerales ?? {};
+  setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as YesNo) ?? "");
+  setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
+  setBiensEtranger100k((q.biensEtranger100k as YesNo) ?? "");
+  setCitoyenCanadien((q.citoyenCanadien as YesNo) ?? "");
+  setNonResident((q.nonResident as YesNo) ?? "");
+  setMaisonAcheteeOuVendue((q.maisonAcheteeOuVendue as YesNo) ?? "");
+  setAppelerTechnicien((q.appelerTechnicien as YesNo) ?? "");
+  setCopieImpots(q.copieImpots ?? "");
+  setAvisCotisation(q.avisCotisation ?? "");
+
+  if (q.anneeImposition) {
+    setAnneeImposition(q.anneeImposition);
+  }
+
+  const v = form?.validations ?? {};
+  setVExactitude(!!v.exactitudeInfo);
+  setVDossierComplet(!!v.dossierComplet);
+  setVFraisVariables(!!v.fraisVariables);
+  setVDelais(!!v.delaisSiManquant);
+  setVConsentement(!!v.consentement);
+
+  await loadDocs(fid);
+  hydrating.current = false;
+}, [userId, type, anneeImposition, loadDocs]);
+
+useEffect(() => {
+  void loadLastForm();
+}, [loadLastForm]);
+
+/* =========================== Autosave debounce =========================== */
+useEffect(() => {
+  if (hydrating.current) return;
+
+  if (saveTimer.current) window.clearTimeout(saveTimer.current);
+
+  saveTimer.current = window.setTimeout(() => {
+    saveDraft().catch(() => {});
+  }, 800);
+
+  return () => {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+  };
+}, [lang, type, draftData, saveDraft]);
+
+/* =========================== Actions =========================== */
+const logout = useCallback(async () => {
+  await supabase.auth.signOut();
+  router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
+}, [router, lang]);
+
+const goToDepotDocuments = useCallback(async () => {
+  try {
+    setMsg(null);
+
+    if (!canContinue) {
+      setMsg(
+        t(
+          "❌ Certaines informations obligatoires manquent. Corrigez les champs en rouge dans les sections.",
+          "❌ Some required information is missing. Fix the red fields in the sections.",
+          "❌ Faltan datos obligatorios. Corrija los campos en rojo en las secciones."
+        )
+      );
+      document.getElementById("ff-inline-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    setMsg(t("⏳ Préparation du dossier…", "⏳ Preparing your file…", "⏳ Preparando el expediente…"));
+
+    const fidFromSave = await saveDraft();
+    const fid = fidFromSave || fidDisplay;
+
+    if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
+
+    setCurrentFid(fid);
+    await loadDocs(fid);
+
+    setMsg(t("✅ Redirection vers le dépôt…", "✅ Redirecting to upload…", "✅ Redirigiendo a la carga…"));
+
+    router.push(
+      `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+    );
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
+    setMsg("❌ " + message);
+    document.getElementById("ff-inline-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type, t]);
 
   /* =========================== Autosave debounce =========================== */
   useEffect(() => {
