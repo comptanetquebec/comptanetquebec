@@ -33,6 +33,12 @@ type ClientData = {
     tel?: string;
     telCell?: string;
   };
+  travailleurAutonome?: {
+    actif?: boolean;
+    nomEntreprise?: string;
+    revenus?: string;
+    depenses?: string;
+  };
 };
 
 function safePayment(v: unknown): PaymentStatus {
@@ -43,7 +49,10 @@ export default async function AdminDossiersPage() {
   const supabase = await supabaseServer();
 
   const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth?.user) redirect("/espace-client?next=/admin/dossiers");
+
+  if (authErr || !auth?.user) {
+    redirect("/espace-client?next=/admin/dossiers");
+  }
 
   const { data: profile, error: profErr } = await supabase
     .from("profiles")
@@ -106,9 +115,13 @@ export default async function AdminDossiersPage() {
     const st = statusMap.get(f.id);
 
     const data = f.data as ClientData | null;
+
     const client_name = `${data?.client?.prenom ?? ""} ${data?.client?.nom ?? ""}`.trim();
     const client_email = data?.client?.courriel ?? null;
     const client_phone = data?.client?.telCell || data?.client?.tel || null;
+
+    const isTA = !!data?.travailleurAutonome?.actif;
+    const formTypeLabel = isTA ? "T1 + TA" : f.form_type ?? null;
 
     return {
       formulaire_id: f.id,
@@ -120,7 +133,7 @@ export default async function AdminDossiersPage() {
       created_at: f.created_at ?? null,
       status: st?.status ?? "recu",
       updated_at: st?.updated_at ?? f.updated_at ?? f.created_at ?? null,
-      form_type: f.form_type ?? null,
+      form_type: formTypeLabel,
       tax_year: f.annee ?? null,
       form_filled: filled,
       docs_count: docsMap.get(f.id) ?? 0,
