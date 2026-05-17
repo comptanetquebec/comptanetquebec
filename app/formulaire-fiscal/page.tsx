@@ -19,6 +19,7 @@ import MedsSection from "./sections/MedsSection";
 import DependantsSection from "./sections/DependantsSection";
 import QuestionsSection from "./sections/QuestionsSection";
 import TravailleurAutonomeSection from "./sections/TravailleurAutonomeSection";
+import RevenusLocatifsSection from "./sections/RevenusLocatifsSection";
 import ConfirmationsSection from "./sections/ConfirmationsSection";
 import DocsSummary from "./sections/DocsSummary";
 import type {
@@ -392,6 +393,11 @@ const removeEnfant = useCallback((i: number) => {
   const [taRevenus, setTaRevenus] = useState("");
   const [taDepenses, setTaDepenses] = useState("");
 
+  /* =========================== Revenus locatifs =========================== */
+const [locatifActif, setLocatifActif] = useState(false);
+const [locatifRevenus, setLocatifRevenus] = useState("");
+const [locatifDepenses, setLocatifDepenses] = useState("");
+
   /* =========================== Validations finales =========================== */
   const [vExactitude, setVExactitude] = useState(false);
   const [vDossierComplet, setVDossierComplet] = useState(false);
@@ -438,152 +444,160 @@ const removeEnfant = useCallback((i: number) => {
     [getSignedUrl]
   );
 
-  /* =========================== Build data (memo) =========================== */
-  const draftData: Formdata = useMemo(() => {
-    const conjointData = aUnConjoint
+/* =========================== Build data (memo) =========================== */
+const draftData: Formdata = useMemo(() => {
+  const conjointData = aUnConjoint
+    ? {
+        traiterConjoint,
+        prenomConjoint: prenomConjoint.trim(),
+        nomConjoint: nomConjoint.trim(),
+        nasConjoint: normalizeNAS(nasConjoint),
+        dobConjoint: dobConjoint.trim(),
+        telConjoint: normalizePhone(telConjoint),
+        telCellConjoint: normalizePhone(telCellConjoint),
+        courrielConjoint: courrielConjoint.trim().toLowerCase(),
+        adresseConjointeIdentique,
+        adresseConjoint: (adresseConjointeIdentique ? adresse : adresseConjoint).trim(),
+        appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
+        villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
+        provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
+        codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
+        revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
+      }
+    : null;
+
+  const medsData =
+    province === "QC"
       ? {
-          traiterConjoint,
-          prenomConjoint: prenomConjoint.trim(),
-          nomConjoint: nomConjoint.trim(),
-          nasConjoint: normalizeNAS(nasConjoint),
-          dobConjoint: dobConjoint.trim(),
-          telConjoint: normalizePhone(telConjoint),
-          telCellConjoint: normalizePhone(telCellConjoint),
-          courrielConjoint: courrielConjoint.trim().toLowerCase(),
-          adresseConjointeIdentique,
-          adresseConjoint: (adresseConjointeIdentique ? adresse : adresseConjoint).trim(),
-          appConjoint: (adresseConjointeIdentique ? app : appConjoint).trim(),
-          villeConjoint: (adresseConjointeIdentique ? ville : villeConjoint).trim(),
-          provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
-          codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
-          revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
+          client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
+          conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
         }
       : null;
 
-    const medsData =
-      province === "QC"
-        ? {
-            client: { regime: assuranceMedsClient, periodes: assuranceMedsClientPeriodes },
-            conjoint: aUnConjoint ? { regime: assuranceMedsConjoint, periodes: assuranceMedsConjointPeriodes } : null,
-          }
-        : null;
-
-    return {
-      dossierType: type,
-      client: {
-        prenom: prenom.trim(),
-        nom: nom.trim(),
-        nas: normalizeNAS(nas),
-        dob: dob.trim(),
-        etatCivil,
-        etatCivilChange,
-        ancienEtatCivil: ancienEtatCivil.trim(),
-        dateChangementEtatCivil: dateChangementEtatCivil.trim(),
-        tel: normalizePhone(tel),
-        telCell: normalizePhone(telCell),
-        adresse: adresse.trim(),
-        app: app.trim(),
-        ville: ville.trim(),
-        province,
-        codePostal: normalizePostal(codePostal),
-        courriel: courriel.trim().toLowerCase(),
-      },
-      conjoint: conjointData,
-      assuranceMedicamenteuse: medsData,
-      personnesACharge: enfants.map((x) => ({
-        prenom: x.prenom.trim(),
-        nom: x.nom.trim(),
-        dob: x.dob.trim(),
-        nas: normalizeNAS(x.nas),
-        sexe: x.sexe as Sexe,
-      })),
-      travailleurAutonome: {
-        actif: taActif,
-        nomEntreprise: taActif ? taNomEntreprise.trim() : "",
-        revenus: taActif ? taRevenus.trim() : "",
-        depenses: taActif ? taDepenses.trim() : "",
-      },
+  return {
+    dossierType: type,
+    client: {
+      prenom: prenom.trim(),
+      nom: nom.trim(),
+      nas: normalizeNAS(nas),
+      dob: dob.trim(),
+      etatCivil,
+      etatCivilChange,
+      ancienEtatCivil: ancienEtatCivil.trim(),
+      dateChangementEtatCivil: dateChangementEtatCivil.trim(),
+      tel: normalizePhone(tel),
+      telCell: normalizePhone(telCell),
+      adresse: adresse.trim(),
+      app: app.trim(),
+      ville: ville.trim(),
+      province,
+      codePostal: normalizePostal(codePostal),
+      courriel: courriel.trim().toLowerCase(),
+    },
+    conjoint: conjointData,
+    assuranceMedicamenteuse: medsData,
+    personnesACharge: enfants.map((x) => ({
+      prenom: x.prenom.trim(),
+      nom: x.nom.trim(),
+      dob: x.dob.trim(),
+      nas: normalizeNAS(x.nas),
+      sexe: x.sexe as Sexe,
+    })),
+    travailleurAutonome: {
+      actif: taActif,
+      nomEntreprise: taActif ? taNomEntreprise.trim() : "",
+      revenus: taActif ? taRevenus.trim() : "",
+      depenses: taActif ? taDepenses.trim() : "",
+    },
+    revenusLocatifs: {
+      actif: locatifActif,
+      revenus: locatifActif ? locatifRevenus.trim() : "",
+      depenses: locatifActif ? locatifDepenses.trim() : "",
+    },
     questionsGenerales: {
-  habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
-  nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
-  biensEtranger100k: biensEtranger100k as any,
-  citoyenCanadien: citoyenCanadien as any,
-  nonResident: nonResident as any,
-  maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
-  appelerTechnicien: appelerTechnicien as any,
+      habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
+      nbPersonnesMaison3112: nbPersonnesMaison3112.trim(),
+      biensEtranger100k: biensEtranger100k as any,
+      citoyenCanadien: citoyenCanadien as any,
+      nonResident: nonResident as any,
+      maisonAcheteeOuVendue: maisonAcheteeOuVendue as any,
+      appelerTechnicien: appelerTechnicien as any,
+      copieImpots,
+      avisCotisation,
+      anneeImposition: anneeImposition.trim(),
+      aucunePersonneACharge,
+    },
+    validations: {
+      exactitudeInfo: vExactitude,
+      dossierComplet: vDossierComplet,
+      fraisVariables: vFraisVariables,
+      delaisSiManquant: vDelais,
+      consentement: vConsentement,
+    },
+  } as Formdata;
+}, [
+  type,
+  prenom,
+  nom,
+  nas,
+  dob,
+  etatCivil,
+  etatCivilChange,
+  ancienEtatCivil,
+  dateChangementEtatCivil,
+  tel,
+  telCell,
+  adresse,
+  app,
+  ville,
+  province,
+  codePostal,
+  courriel,
+  aUnConjoint,
+  traiterConjoint,
+  prenomConjoint,
+  nomConjoint,
+  nasConjoint,
+  dobConjoint,
+  telConjoint,
+  telCellConjoint,
+  courrielConjoint,
+  adresseConjointeIdentique,
+  adresseConjoint,
+  appConjoint,
+  villeConjoint,
+  provinceConjoint,
+  codePostalConjoint,
+  revenuNetConjoint,
+  assuranceMedsClient,
+  assuranceMedsClientPeriodes,
+  assuranceMedsConjoint,
+  assuranceMedsConjointPeriodes,
+  enfants,
+  aucunePersonneACharge,
+  habiteSeulTouteAnnee,
+  nbPersonnesMaison3112,
+  biensEtranger100k,
+  citoyenCanadien,
+  nonResident,
+  maisonAcheteeOuVendue,
+  appelerTechnicien,
   copieImpots,
   avisCotisation,
-  anneeImposition: anneeImposition.trim(),
-  aucunePersonneACharge,
-},
-      validations: {
-        exactitudeInfo: vExactitude,
-        dossierComplet: vDossierComplet,
-        fraisVariables: vFraisVariables,
-        delaisSiManquant: vDelais,
-        consentement: vConsentement,
-      },
-    } as Formdata;
-   }, [
-    type,
-    prenom,
-    nom,
-    nas,
-    dob,
-    etatCivil,
-    etatCivilChange,
-    ancienEtatCivil,
-    dateChangementEtatCivil,
-    tel,
-    telCell,
-    adresse,
-    app,
-    ville,
-    province,
-    codePostal,
-    courriel,
-    aUnConjoint,
-    traiterConjoint,
-    prenomConjoint,
-    nomConjoint,
-    nasConjoint,
-    dobConjoint,
-    telConjoint,
-    telCellConjoint,
-    courrielConjoint,
-    adresseConjointeIdentique,
-    adresseConjoint,
-    appConjoint,
-    villeConjoint,
-    provinceConjoint,
-    codePostalConjoint,
-    revenuNetConjoint,
-    assuranceMedsClient,
-    assuranceMedsClientPeriodes,
-    assuranceMedsConjoint,
-    assuranceMedsConjointPeriodes,
-    enfants,
-    aucunePersonneACharge,
-    habiteSeulTouteAnnee,
-    nbPersonnesMaison3112,
-    biensEtranger100k,
-    citoyenCanadien,
-    nonResident,
-    maisonAcheteeOuVendue,
-    appelerTechnicien,
-    copieImpots,
-    avisCotisation,
-    anneeImposition,
-    taActif,
-    taNomEntreprise,
-    taRevenus,
-    taDepenses,
-    vExactitude,
-    vDossierComplet,
-    vFraisVariables,
-    vDelais,
-    vConsentement,
-  ]);
+  anneeImposition,
+  taActif,
+  taNomEntreprise,
+  taRevenus,
+  taDepenses,
+  locatifActif,
+  locatifRevenus,
+  locatifDepenses,
+  vExactitude,
+  vDossierComplet,
+  vFraisVariables,
+  vDelais,
+  vConsentement,
+]);
   const t = useCallback(
     (fr: string, en: string, es: string) => (lang === "fr" ? fr : lang === "en" ? en : es),
     [lang]
@@ -1175,6 +1189,11 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
   setTaRevenus(ta.revenus ?? "");
   setTaDepenses(ta.depenses ?? "");
 
+  const loc = (form as any)?.revenusLocatifs ?? {};
+setLocatifActif(!!loc.actif);
+setLocatifRevenus(loc.revenus ?? "");
+setLocatifDepenses(loc.depenses ?? "");
+
   const v = form?.validations ?? {};
   setVExactitude(!!v.exactitudeInfo);
   setVDossierComplet(!!v.dossierComplet);
@@ -1445,7 +1464,7 @@ return (
   }}
   removeEnfant={removeEnfant}
 />
-        <QuestionsSection
+      <QuestionsSection
   L={L}
   anneeImposition={anneeImposition}
   setAnneeImposition={setAnneeImposition}
@@ -1478,6 +1497,15 @@ return (
   setRevenus={setTaRevenus}
   depenses={taDepenses}
   setDepenses={setTaDepenses}
+/>
+
+<RevenusLocatifsSection
+  actif={locatifActif}
+  setActif={setLocatifActif}
+  revenus={locatifRevenus}
+  setRevenus={setLocatifRevenus}
+  depenses={locatifDepenses}
+  setDepenses={setLocatifDepenses}
 />
 
 <ConfirmationsSection
