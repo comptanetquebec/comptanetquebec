@@ -1035,7 +1035,14 @@ const loadLastForm = useCallback(async () => {
     hydrating.current = false;
     return;
   }
-
+// 🚨 AJOUT ICI
+if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposition)) {
+  setFormulaireId(null);
+  setCurrentFid(null);
+  setDocs([]);
+  hydrating.current = false;
+  return;
+}
   const fid = selected.id;
   setFormulaireId(fid);
 
@@ -1144,8 +1151,10 @@ const loadLastForm = useCallback(async () => {
 }, [userId, type, anneeImposition, loadDocs]);
 
 useEffect(() => {
-  void loadLastForm();
-}, [loadLastForm]);
+  if (!anneeImposition) {
+    void loadLastForm();
+  }
+}, [loadLastForm, anneeImposition]);
 /* =========================== Autosave debounce =========================== */
 useEffect(() => {
   if (hydrating.current) return;
