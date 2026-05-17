@@ -10,8 +10,12 @@ export type PaymentStatus = "unpaid" | "paid";
 export type AdminDossierRow = {
   formulaire_id: string;
   cq_id: string | null;
-  payment_status: PaymentStatus | null;
 
+  client_name?: string | null;
+  client_email?: string | null;
+  client_phone?: string | null;
+
+  payment_status: PaymentStatus | null;
   created_at: string | null;
 
   status: DossierStatus;
@@ -106,6 +110,9 @@ function normalizeRows(input: AdminDossierRow[]): AdminDossierRow[] {
 
 function rowSearchText(r: AdminDossierRow) {
   const parts = [
+    r.client_name ?? "",
+    r.client_email ?? "",
+    r.client_phone ?? "",
     r.cq_id ?? "",
     r.formulaire_id ?? "",
     r.form_type ?? "",
@@ -115,6 +122,7 @@ function rowSearchText(r: AdminDossierRow) {
     r.form_filled ? "formulaire_rempli" : "formulaire_vide",
     String(safeInt(r.docs_count, 0)),
   ];
+
   return normalizeSearch(parts.join(" "));
 }
 
@@ -151,8 +159,8 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
       if (sort === "created_asc") return ac - bc;
       if (sort === "updated_desc") return bu - au;
 
-      const as = (a.cq_id ?? "").toLowerCase();
-      const bs = (b.cq_id ?? "").toLowerCase();
+      const as = (a.client_name ?? a.cq_id ?? "").toLowerCase();
+      const bs = (b.client_name ?? b.cq_id ?? "").toLowerCase();
       return as.localeCompare(bs);
     });
 
@@ -223,7 +231,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher (CQ, ID, type, année, payé)…"
+          placeholder="Rechercher (nom, courriel, téléphone, CQ, année)…"
           className="border rounded px-3 py-2 text-sm w-full sm:max-w-md"
         />
         <select
@@ -234,7 +242,7 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
           <option value="created_desc">Tri: Création (récent)</option>
           <option value="created_asc">Tri: Création (ancien)</option>
           <option value="updated_desc">Tri: Dernière maj (récent)</option>
-          <option value="cq_asc">Tri: CQ (A→Z)</option>
+          <option value="cq_asc">Tri: Nom / CQ (A→Z)</option>
         </select>
       </div>
 
@@ -254,7 +262,13 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
               const updated = formatDate(r.updated_at);
               const mainRight = created ? ` • ${created}` : "";
 
-              const mainLeftNode = r.cq_id ? <span>{r.cq_id}</span> : <span className="text-gray-400">CQ: (en attente)</span>;
+              const mainLeftNode = r.client_name ? (
+                <span>{r.client_name}</span>
+              ) : r.cq_id ? (
+                <span>{r.cq_id}</span>
+              ) : (
+                <span className="text-gray-400">Client sans nom</span>
+              );
 
               const formBadgeClass = r.form_filled
                 ? "bg-green-100 text-green-800 border-green-200"
@@ -271,6 +285,10 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                         {mainLeftNode}
                         <span className="text-gray-500 font-normal">{mainRight}</span>
                       </div>
+
+                      {r.client_email && <div className="text-sm text-gray-500 truncate">{r.client_email}</div>}
+
+                      {r.client_phone && <div className="text-sm text-gray-500 truncate">{r.client_phone}</div>}
 
                       <div className="text-sm text-gray-500 truncate">ID: {r.formulaire_id}</div>
 
