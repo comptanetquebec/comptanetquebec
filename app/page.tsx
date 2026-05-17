@@ -796,6 +796,10 @@ export default function Home() {
     lang
   )}&next=${encodeURIComponent("/formulaire-fiscal")}`;
 
+  const toT2 = `/espace-client?lang=${encodeURIComponent(
+    lang
+  )}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
+
   const faqJsonLd = useMemo(() => {
     return {
       "@context": "https://schema.org",
@@ -1066,8 +1070,18 @@ export default function Home() {
             <div id="types-impot" className={styles.choiceBox}>
               <div className={styles.choiceTitle}>{T.chooseType}</div>
 
-              <div className={styles.choiceGrid}>
+              <div
+                className={styles.choiceGrid}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(260px, 1fr))",
+                  gap: 18,
+                  maxWidth: 760,
+                  margin: "0 auto",
+                }}
+              >
                 <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
+                <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
               </div>
 
               <div className={styles.microLine}>
