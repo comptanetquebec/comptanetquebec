@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@supabase/supabase-js";
@@ -22,6 +22,8 @@ export default function PaiementPage() {
 
   const [loadingInterac, setLoadingInterac] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [cqId, setCqId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const supabase = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -33,6 +35,35 @@ export default function PaiementPage() {
 
   const t = (fr: string, en: string, es: string) =>
     lang === "fr" ? fr : lang === "en" ? en : es;
+
+  useEffect(() => {
+    const loadCqId = async () => {
+      if (!fid || !supabase) return;
+
+      const { data, error } = await supabase
+        .from("formulaires_fiscaux")
+        .select("cq_id")
+        .eq("id", fid)
+        .single();
+
+      if (!error && data?.cq_id) {
+        setCqId(data.cq_id);
+      }
+    };
+
+    loadCqId();
+  }, [fid, supabase]);
+
+  const copyCqId = async () => {
+    if (!cqId) return;
+
+    await navigator.clipboard.writeText(cqId);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
 
   const goInterac = async () => {
     setErrorMsg("");
@@ -75,7 +106,9 @@ export default function PaiementPage() {
       }
 
       router.push(
-        `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+        `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(
+          fid
+        )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
       );
     } catch (error: any) {
       console.error("Erreur Supabase:", error);
@@ -94,7 +127,9 @@ export default function PaiementPage() {
 
   const goStripe = () => {
     router.push(
-      `/formulaire-fiscal/envoyer-dossier?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+      `/formulaire-fiscal/envoyer-dossier?fid=${encodeURIComponent(
+        fid
+      )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
     );
   };
 
@@ -146,6 +181,53 @@ export default function PaiementPage() {
         </div>
 
         <div className="ff-form">
+          <section
+            className="ff-card"
+            style={{ marginBottom: 20, textAlign: "center" }}
+          >
+            <p style={{ marginTop: 0, marginBottom: 8, fontWeight: 700 }}>
+              {t(
+                "Numéro de dossier",
+                "File number",
+                "Número de expediente"
+              )}
+            </p>
+
+            <h2 style={{ margin: 0, fontSize: 28 }}>
+              {cqId || "..."}
+            </h2>
+
+            <p
+              style={{
+                color: "#b00020",
+                fontWeight: 800,
+                marginTop: 12,
+                marginBottom: 12,
+              }}
+            >
+              {t(
+                "IMPORTANT : inscrivez ce numéro dans le message du virement Interac.",
+                "IMPORTANT: write this number in the Interac transfer message.",
+                "IMPORTANTE: escriba este número en el mensaje de la transferencia Interac."
+              )}
+            </p>
+
+            <button
+              type="button"
+              className="ff-btn ff-btn-outline"
+              onClick={copyCqId}
+              disabled={!cqId}
+            >
+              {copied
+                ? t("Copié !", "Copied!", "¡Copiado!")
+                : t(
+                    "Copier le numéro",
+                    "Copy number",
+                    "Copiar número"
+                  )}
+            </button>
+          </section>
+
           <section className="ff-card" style={{ marginBottom: 20 }}>
             <h2 style={{ marginTop: 0 }}>
               {t(
@@ -179,6 +261,19 @@ export default function PaiementPage() {
                 "Depósito automático activado. No se requiere pregunta de seguridad."
               )}
             </p>
+
+            {cqId ? (
+              <p>
+                <strong>
+                  {t(
+                    "Message à inscrire :",
+                    "Message to write:",
+                    "Mensaje a escribir:"
+                  )}
+                </strong>{" "}
+                {cqId}
+              </p>
+            ) : null}
 
             {errorMsg ? (
               <p
