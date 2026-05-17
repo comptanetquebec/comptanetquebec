@@ -25,6 +25,16 @@ type StatusRow = {
   updated_at: string | null;
 };
 
+type ClientData = {
+  client?: {
+    prenom?: string;
+    nom?: string;
+    courriel?: string;
+    tel?: string;
+    telCell?: string;
+  };
+};
+
 function safePayment(v: unknown): PaymentStatus {
   return v === "paid" ? "paid" : "unpaid";
 }
@@ -46,11 +56,11 @@ export default async function AdminDossiersPage() {
   }
 
   const { data: forms, error: formsErr } = await supabase
-  .from("formulaires_fiscaux")
-  .select("id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status")
-  .order("created_at", { ascending: false })
-  .limit(500)
-  .returns<FormRow[]>();
+    .from("formulaires_fiscaux")
+    .select("id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status")
+    .order("created_at", { ascending: false })
+    .limit(500)
+    .returns<FormRow[]>();
 
   if (formsErr) {
     return <div className="p-6">Erreur chargement formulaires: {formsErr.message}</div>;
@@ -95,9 +105,17 @@ export default async function AdminDossiersPage() {
     const filled = !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
     const st = statusMap.get(f.id);
 
+    const data = f.data as ClientData | null;
+    const client_name = `${data?.client?.prenom ?? ""} ${data?.client?.nom ?? ""}`.trim();
+    const client_email = data?.client?.courriel ?? null;
+    const client_phone = data?.client?.telCell || data?.client?.tel || null;
+
     return {
       formulaire_id: f.id,
       cq_id: f.cq_id ?? null,
+      client_name: client_name || null,
+      client_email,
+      client_phone,
       payment_status: f.payment_status ? safePayment(f.payment_status) : "unpaid",
       created_at: f.created_at ?? null,
       status: st?.status ?? "recu",
