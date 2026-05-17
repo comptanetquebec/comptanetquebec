@@ -318,8 +318,8 @@ export default function Home() {
         ],
 
         chooseType: "Choisissez votre situation",
-        t1Title: "👤 Salarié(e), étudiant(e) ou retraité(e)",
-        t1Desc: "T4, Relevé 1, pension, études, etc.",
+        t1Title: "👤 Particulier (T1)",
+        t1Desc: "Salarié(e), étudiant(e), retraité(e) ou travailleur autonome.",
         t1Btn: "Commencer maintenant",
 
         autoTitle: "💼 Travailleur autonome / à mon compte",
@@ -493,8 +493,8 @@ export default function Home() {
         ],
 
         chooseType: "Choose your situation",
-        t1Title: "👤 Employee, student or retiree",
-        t1Desc: "T4, RL-1, pension, studies, etc.",
+        t1Title: "👤 Individual (T1)",
+        t1Desc: "Employee, student, retiree or self-employed.",
         t1Btn: "Start now",
 
         autoTitle: "💼 Self-employed / business income",
@@ -654,8 +654,8 @@ export default function Home() {
         ],
 
         chooseType: "Elija su situación",
-        t1Title: "👤 Empleado/a, estudiante o jubilado/a",
-        t1Desc: "T4, RL-1, pensión, estudios, etc.",
+        t1Title: "👤 Particular (T1)",
+        t1Desc: "Empleado/a, estudiante, jubilado/a o autónomo/a.",
         t1Btn: "Empezar ahora",
 
         autoTitle: "💼 Autónomo / por cuenta propia",
@@ -795,12 +795,6 @@ export default function Home() {
   const toT1 = `/espace-client?lang=${encodeURIComponent(
     lang
   )}&next=${encodeURIComponent("/formulaire-fiscal")}`;
-  const toT1Auto = `/espace-client?lang=${encodeURIComponent(
-    lang
-  )}&next=${encodeURIComponent("/formulaire-fiscal-ta")}`;
-  const toT2 = `/espace-client?lang=${encodeURIComponent(
-    lang
-  )}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
   const faqJsonLd = useMemo(() => {
     return {
@@ -1074,8 +1068,6 @@ export default function Home() {
 
               <div className={styles.choiceGrid}>
                 <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
-                <TaxChoiceCard title={T.autoTitle} desc={T.autoDesc} btn={T.autoBtn} href={toT1Auto} />
-                <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
               </div>
 
               <div className={styles.microLine}>
