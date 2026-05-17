@@ -1205,65 +1205,6 @@ const goToDepotDocuments = useCallback(async () => {
   }
 }, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type, t]);
 
-  /* =========================== Autosave debounce =========================== */
-  useEffect(() => {
-    if (hydrating.current) return;
-
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-
-    saveTimer.current = window.setTimeout(() => {
-      saveDraft().catch(() => {});
-    }, 800);
-
-    return () => {
-      if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    };
-  }, [lang, type, draftData, saveDraft]);
-
-  /* =========================== Actions =========================== */
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-    router.replace(`/espace-client?lang=${encodeURIComponent(lang)}`);
-  }, [router, lang]);
-
-  const goToDepotDocuments = useCallback(async () => {
-    try {
-      setMsg(null);
-
-      if (!canContinue) {
-        setMsg(
-          t(
-            "❌ Certaines informations obligatoires manquent. Corrigez les champs en rouge dans les sections.",
-            "❌ Some required information is missing. Fix the red fields in the sections.",
-            "❌ Faltan datos obligatorios. Corrija los campos en rojo en las secciones."
-          )
-        );
-        document.getElementById("ff-inline-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
-
-      setMsg(t("⏳ Préparation du dossier…", "⏳ Preparing your file…", "⏳ Preparando el expediente…"));
-
-      const fidFromSave = await saveDraft();
-      const fid = fidFromSave || fidDisplay;
-
-      if (!fid) throw new Error("Impossible de créer le dossier (fid manquant).");
-
-      setCurrentFid(fid);
-      await loadDocs(fid);
-
-      setMsg(t("✅ Redirection vers le dépôt…", "✅ Redirecting to upload…", "✅ Redirigiendo a la carga…"));
-
-      router.push(
-        `/formulaire-fiscal/depot-documents?fid=${encodeURIComponent(fid)}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
-      );
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Erreur dépôt documents.";
-      setMsg("❌ " + message);
-      document.getElementById("ff-inline-errors")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type, t]);
-
  /* =========================== RENDER =========================== */
 return (
   <main className="ff-bg">
