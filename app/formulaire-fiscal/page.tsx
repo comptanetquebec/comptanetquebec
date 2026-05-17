@@ -1021,11 +1021,12 @@ const loadLastForm = useCallback(async () => {
     return;
   }
 
-  let selected = rows?.[0] ?? null;
+  let selected: FormRow | null = rows?.[0] ?? null;
 
-  if (anneeImposition) {
-    selected = rows?.find((r) => Number(r.annee) === Number(anneeImposition)) ?? null;
-  }
+if (anneeImposition) {
+  const found = rows?.find((r) => Number(r.annee) === Number(anneeImposition));
+  selected = found ?? null;
+}
 
   if (!selected) {
     setFormulaireId(null);
