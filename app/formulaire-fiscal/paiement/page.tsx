@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
 
@@ -25,20 +25,12 @@ export default function PaiementPage() {
   const [cqId, setCqId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!url || !anonKey) return null;
-    return createClient(url, anonKey);
-  }, []);
-
   const t = (fr: string, en: string, es: string) =>
     lang === "fr" ? fr : lang === "en" ? en : es;
 
   useEffect(() => {
     const loadCqId = async () => {
-      if (!fid || !supabase) return;
+      if (!fid) return;
 
       const { data, error } = await supabase
         .from("formulaires_fiscaux")
@@ -46,13 +38,18 @@ export default function PaiementPage() {
         .eq("id", fid)
         .single();
 
-      if (!error && data?.cq_id) {
+      if (error) {
+        console.error("Erreur chargement cq_id:", error);
+        return;
+      }
+
+      if (data?.cq_id) {
         setCqId(data.cq_id);
       }
     };
 
     loadCqId();
-  }, [fid, supabase]);
+  }, [fid]);
 
   const copyCqId = async () => {
     if (!cqId) return;
@@ -79,17 +76,6 @@ export default function PaiementPage() {
       return;
     }
 
-    if (!supabase) {
-      setErrorMsg(
-        t(
-          "Configuration Supabase manquante.",
-          "Missing Supabase configuration.",
-          "Falta la configuración de Supabase."
-        )
-      );
-      return;
-    }
-
     try {
       setLoadingInterac(true);
 
@@ -101,9 +87,7 @@ export default function PaiementPage() {
         })
         .eq("id", fid);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       router.push(
         `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(
@@ -220,11 +204,7 @@ export default function PaiementPage() {
             >
               {copied
                 ? t("Copié !", "Copied!", "¡Copiado!")
-                : t(
-                    "Copier le numéro",
-                    "Copy number",
-                    "Copiar número"
-                  )}
+                : t("Copier le numéro", "Copy number", "Copiar número")}
             </button>
           </section>
 
@@ -341,11 +321,7 @@ export default function PaiementPage() {
                 className="ff-btn ff-btn-outline ff-btn-big"
                 onClick={goStripe}
               >
-                {t(
-                  "Payer par carte",
-                  "Pay by card",
-                  "Pagar con tarjeta"
-                )}
+                {t("Payer par carte", "Pay by card", "Pagar con tarjeta")}
               </button>
             </div>
           </section>
