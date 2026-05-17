@@ -286,7 +286,6 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
                     <div className="min-w-0">
                       <div className="font-semibold truncate">
                         {mainLeftNode}
-                        <span className="text-gray-500 font-normal">{mainRight}</span>
                       </div>
 
                       <div className="text-sm font-semibold text-black">
