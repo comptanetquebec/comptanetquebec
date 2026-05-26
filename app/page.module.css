@@ -931,12 +931,15 @@
 /* ✅ AJOUTE ÇA DANS page.module.css (sans enlever tes styles existants) */
 
 .heroCard {
+  width: min(860px, calc(100vw - 24px));
+  max-width: 100%;
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 18px;
   padding: 18px 18px 16px;
-  max-width: 920px;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 
 .heroSub {
@@ -1002,5 +1005,20 @@
   .recaptchaWrap{
     transform: scale(0.92);
     transform-origin: 0 0;
+  }
+}
+@media (max-width: 420px) {
+  .heroTitle {
+    font-size: 24px;
+    line-height: 1.15;
+  }
+
+  .heroCard {
+    padding: 14px 12px;
+  }
+
+  .choiceBox {
+    width: 100%;
+    box-sizing: border-box;
   }
 }
