@@ -20,6 +20,7 @@ type Section = {
 type Copy = {
   pageTitle: string;
   subtitle: string;
+  taxNotice: string;
   disclaimerTop: string;
   disclaimerBottom: string;
   back: string;
@@ -40,14 +41,17 @@ function setLangQuery(params: URLSearchParams, lang: Lang) {
   return next.toString();
 }
 
-/* ✅ T1 seulement (sans travailleur autonome) */
+/* ✅ T1 seulement — prix avant taxes */
 const COPY: Record<Lang, Copy> = {
   fr: {
     pageTitle: "Impôt des particuliers (T1) — Tarifs",
     subtitle:
-      "Prix avec taxes incluses. Les prix finaux peuvent varier selon votre dossier et les documents fournis.",
-    disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
-    disclaimerBottom: "Prix avant taxes. Certains cas complexes peuvent nécessiter une évaluation.",
+      "Les prix affichés sont avant taxes. Les taxes applicables seront ajoutées à la facture.",
+    taxNotice: "Prix avant taxes — TPS et TVQ en sus.",
+    disclaimerTop:
+      "Les tarifs peuvent varier selon la complexité du dossier et les documents fournis.",
+    disclaimerBottom:
+      "Prix avant taxes. Certains dossiers complexes peuvent nécessiter une évaluation supplémentaire.",
     back: "Retour à l’accueil",
     currencyNote: "Tous les montants sont en CAD.",
     sections: [
@@ -105,15 +109,15 @@ const COPY: Record<Lang, Copy> = {
         ],
       },
       {
-        title: "Années précédentes (avant l’année en cours)",
+        title: "Années précédentes",
         lines: [
           { label: "Personne seule (avec ou sans enfants)", price: "110 $" },
           { label: "Couple (avec ou sans enfants)", price: "210 $" },
-          { label: "Redressement d’une déclaration (année en cours ou précédente)", price: "120 $" },
+          { label: "Redressement d’une déclaration", price: "120 $" },
           {
-            label: "Déclaration d’une personne décédée (sans succession) — à partir de",
+            label: "Déclaration d’une personne décédée sans succession — à partir de",
             price: "150 $",
-            note: "Inclut la déclaration finale seulement. La succession et/ou revenus après décès sont facturés séparément.",
+            note: "Inclut la déclaration finale seulement. La succession et/ou les revenus après décès sont facturés séparément.",
           },
         ],
       },
@@ -123,18 +127,21 @@ const COPY: Record<Lang, Copy> = {
   en: {
     pageTitle: "Personal Income Tax (T1) — Pricing",
     subtitle:
-      "Price including taxes. Final pricing may vary based on your situation and documents provided.",
-    disclaimerTop: "Prices may change depending on your file.",
-    disclaimerBottom: "Prices before taxes. Complex cases may require an assessment.",
+      "Prices shown are before taxes. Applicable taxes will be added to the invoice.",
+    taxNotice: "Prices before taxes — GST and QST extra.",
+    disclaimerTop:
+      "Pricing may vary depending on the complexity of your file and the documents provided.",
+    disclaimerBottom:
+      "Prices before taxes. Complex cases may require an additional assessment.",
     back: "Back to Home",
     currencyNote: "All amounts are in CAD.",
     sections: [
       {
         title: "Basic returns",
         lines: [
-          { label: "Single (with or without income / children)", price: "$100" },
-          { label: "Student (with or without income)", price: "$90" },
-          { label: "Minor with income (included in parents’ return or separate)", price: "$60" },
+          { label: "Single person with or without income / children", price: "$100" },
+          { label: "Student with or without income", price: "$90" },
+          { label: "Minor with income, included in parents’ return or separate", price: "$60" },
           { label: "Couple without children", price: "$180" },
           { label: "Couple with children", price: "$200" },
         ],
@@ -142,47 +149,47 @@ const COPY: Record<Lang, Copy> = {
       {
         title: "Real estate",
         lines: [
-          { label: "Sale of a home (per owner)", price: "$60" },
-          { label: "Sale of an income property home (per owner)", price: "$110" },
+          { label: "Sale of a home, per owner", price: "$60" },
+          { label: "Sale of an income property, per owner", price: "$110" },
           {
-            label: "First-time home buyer credit (when more than one owner)",
+            label: "First-time home buyer credit, when more than one owner",
             price: "$45",
-            note: "Credit applies to one person: calculations/simulations to optimize.",
+            note: "Credit applies to one person: calculations and simulations to optimize.",
           },
-          { label: "Rental income (per owner)", price: "$150" },
-          { label: "Additional building (add per building, per owner)", price: "+ $90" },
-          { label: "Sale of a rental building (per owner)", price: "$110" },
+          { label: "Rental income, per owner", price: "$150" },
+          { label: "Additional building, per building and per owner", price: "+ $90" },
+          { label: "Sale of a rental building, per owner", price: "$110" },
         ],
       },
       {
         title: "Forms & add-ons",
         lines: [
-          { label: "T5008 — Securities transactions (per form)", price: "$20" },
-          { label: "USD → CAD conversion (per form)", price: "$30" },
+          { label: "T5008 — Securities transactions, per form", price: "$20" },
+          { label: "USD → CAD conversion, per form", price: "$30" },
           {
             label:
-              "Employment expenses (employee: driver, salaried home office, sales rep, etc.)",
+              "Employment expenses, employee: driver, salaried home office, sales representative, etc.",
             price: "$70",
             note: "Not the same as self-employed.",
           },
-          { label: "Moving expenses (form or totals provided)", price: "$90" },
+          { label: "Moving expenses, form or totals provided", price: "$90" },
           { label: "Cryptocurrency filing", price: "$70" },
           { label: "Medical expense split", price: "$45", note: "Claimed by one person." },
-          { label: "Extra documents (assessed by accountant)", price: "$10" },
+          { label: "Extra documents, assessed by accountant", price: "$10" },
           { label: "T1135 — Foreign property", price: "$60" },
           { label: "Infertility treatment credit", price: "$50" },
-          { label: "Tax simulation (e.g., RRSP optimization before deadline)", price: "$80" },
-          { label: "Print & mail your documents", price: "$20" },
+          { label: "Tax simulation, ex.: RRSP optimization before deadline", price: "$80" },
+          { label: "Print and mail your documents", price: "$20" },
         ],
       },
       {
-        title: "Prior years (before current year)",
+        title: "Prior years",
         lines: [
-          { label: "Single (with or without children)", price: "$110" },
-          { label: "Couple (with or without children)", price: "$210" },
-          { label: "Return adjustment (current or prior year)", price: "$120" },
+          { label: "Single person with or without children", price: "$110" },
+          { label: "Couple with or without children", price: "$210" },
+          { label: "Return adjustment", price: "$120" },
           {
-            label: "Deceased person return (no estate) — starting at",
+            label: "Deceased person return without estate — starting at",
             price: "$150",
             note: "Final return only. Estate filings and/or post-death income are billed separately.",
           },
@@ -194,18 +201,21 @@ const COPY: Record<Lang, Copy> = {
   es: {
     pageTitle: "Impuesto personal (T1) — Tarifas",
     subtitle:
-      "Precio con impuestos incluidos. El precio final puede variar según su situación y documentos.",
-    disclaimerTop: "Según su expediente, los precios pueden cambiar.",
-    disclaimerBottom: "Precios antes de impuestos. Los casos complejos pueden requerir evaluación.",
+      "Los precios indicados son antes de impuestos. Los impuestos aplicables se añadirán a la factura.",
+    taxNotice: "Precios antes de impuestos — impuestos aplicables no incluidos.",
+    disclaimerTop:
+      "Las tarifas pueden variar según la complejidad del expediente y los documentos proporcionados.",
+    disclaimerBottom:
+      "Precios antes de impuestos. Algunos casos complejos pueden requerir una evaluación adicional.",
     back: "Volver al inicio",
     currencyNote: "Todos los montos están en CAD.",
     sections: [
       {
         title: "Declaraciones básicas",
         lines: [
-          { label: "Persona sola (con o sin ingresos / hijos)", price: "$100" },
-          { label: "Estudiante (con o sin ingresos)", price: "$90" },
-          { label: "Menor con ingresos (en la declaración de los padres o separada)", price: "$60" },
+          { label: "Persona sola con o sin ingresos / hijos", price: "$100" },
+          { label: "Estudiante con o sin ingresos", price: "$90" },
+          { label: "Menor con ingresos, en la declaración de los padres o separada", price: "$60" },
           { label: "Pareja sin hijos", price: "$180" },
           { label: "Pareja con hijos", price: "$200" },
         ],
@@ -213,51 +223,51 @@ const COPY: Record<Lang, Copy> = {
       {
         title: "Inmuebles",
         lines: [
-          { label: "Venta de una casa (por propietario)", price: "$60" },
-          { label: "Venta de casa con ingresos (por propietario)", price: "$110" },
+          { label: "Venta de una casa, por propietario", price: "$60" },
+          { label: "Venta de casa con ingresos, por propietario", price: "$110" },
           {
-            label: "Crédito primera vivienda (si hay más de un propietario)",
+            label: "Crédito primera vivienda, si hay más de un propietario",
             price: "$45",
-            note: "El crédito aplica a una sola persona: cálculos/simulaciones para optimizar.",
+            note: "El crédito aplica a una sola persona: cálculos y simulaciones para optimizar.",
           },
-          { label: "Ingresos por alquiler (por propietario)", price: "$150" },
-          { label: "Inmueble adicional (añadir por inmueble, por propietario)", price: "+ $90" },
-          { label: "Venta de un inmueble de alquiler (por propietario)", price: "$110" },
+          { label: "Ingresos por alquiler, por propietario", price: "$150" },
+          { label: "Inmueble adicional, por inmueble y por propietario", price: "+ $90" },
+          { label: "Venta de un inmueble de alquiler, por propietario", price: "$110" },
         ],
       },
       {
         title: "Formularios y extras",
         lines: [
-          { label: "T5008 — Operaciones en valores (por formulario)", price: "$20" },
-          { label: "Conversión USD → CAD (por formulario)", price: "$30" },
+          { label: "T5008 — Operaciones en valores, por formulario", price: "$20" },
+          { label: "Conversión USD → CAD, por formulario", price: "$30" },
           {
             label:
-              "Gastos de empleo (asalariado: conductor, oficina en casa, representante, etc.)",
+              "Gastos de empleo, asalariado: conductor, oficina en casa, representante, etc.",
             price: "$70",
             note: "No confundir con autónomo.",
           },
-          { label: "Gastos de mudanza (formulario o totales listos)", price: "$90" },
+          { label: "Gastos de mudanza, formulario o totales listos", price: "$90" },
           { label: "Criptomonedas", price: "$70" },
           {
             label: "División de gastos médicos",
             price: "$45",
             note: "Se reclaman por una sola persona.",
           },
-          { label: "Documentos extra (evaluado por el contador)", price: "$10" },
+          { label: "Documentos extra, evaluado por el contador", price: "$10" },
           { label: "T1135 — Bienes en el extranjero", price: "$60" },
           { label: "Crédito por infertilidad", price: "$50" },
-          { label: "Simulación de impuestos (ej.: optimización RRSP)", price: "$80" },
+          { label: "Simulación de impuestos, ej.: optimización RRSP", price: "$80" },
           { label: "Imprimir y enviar por correo", price: "$20" },
         ],
       },
       {
-        title: "Años anteriores (antes del año en curso)",
+        title: "Años anteriores",
         lines: [
-          { label: "Persona sola (con o sin hijos)", price: "$110" },
-          { label: "Pareja (con o sin hijos)", price: "$210" },
-          { label: "Rectificación de declaración (año en curso o anterior)", price: "$120" },
+          { label: "Persona sola con o sin hijos", price: "$110" },
+          { label: "Pareja con o sin hijos", price: "$210" },
+          { label: "Rectificación de declaración", price: "$120" },
           {
-            label: "Declaración de persona fallecida (sin sucesión) — desde",
+            label: "Declaración de persona fallecida sin sucesión — desde",
             price: "$150",
             note: "Solo la declaración final. La sucesión y/o ingresos después del fallecimiento se cobran aparte.",
           },
@@ -275,34 +285,35 @@ export default function T1PricingPage() {
   const lang = useMemo(() => safeLang(sp.get("lang")), [sp]);
   const t = COPY[lang];
 
-  // ✅ Si quelqu’un arrive avec un lang invalide, on corrige l’URL vers fr
   useEffect(() => {
     const raw = (sp.get("lang") || "fr").toLowerCase();
     const normalized = safeLang(raw);
+
     if (raw !== normalized) {
       const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), normalized);
       router.replace(`${pathname}?${nextQuery}`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, router]);
+  }, [pathname, router, sp]);
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-10">
-        {/* Top bar (sans switch langues) */}
         <div className="text-sm text-slate-600">
           <span className="font-semibold text-slate-900">ComptaNet Québec</span>{" "}
           <span className="ml-2">{t.currencyNote}</span>
         </div>
 
-        {/* Header */}
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">{t.pageTitle}</h1>
           <p className="mt-2 text-sm text-slate-600">{t.subtitle}</p>
+
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+            {t.taxNotice}
+          </div>
+
           <p className="mt-3 text-xs text-slate-500">{t.disclaimerTop}</p>
         </div>
 
-        {/* Sections */}
         <div className="mt-6 grid gap-6">
           {t.sections.map((sec) => (
             <section
@@ -318,9 +329,17 @@ export default function T1PricingPage() {
                     className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between"
                   >
                     <div className="pr-4">
-                      <div className="text-sm font-medium text-slate-900">{line.label}</div>
-                      {line.note && <div className="mt-1 text-xs text-slate-500">{line.note}</div>}
+                      <div className="text-sm font-medium text-slate-900">
+                        {line.label}
+                      </div>
+
+                      {line.note && (
+                        <div className="mt-1 text-xs text-slate-500">
+                          {line.note}
+                        </div>
+                      )}
                     </div>
+
                     <div className="text-sm font-bold text-slate-900 sm:text-right">
                       {line.price}
                     </div>
@@ -331,8 +350,7 @@ export default function T1PricingPage() {
           ))}
         </div>
 
-        {/* Bas de page (sans infos perso) */}
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
+        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-500">{t.disclaimerBottom}</p>
 
           <Link
@@ -345,4 +363,4 @@ export default function T1PricingPage() {
       </div>
     </main>
   );
-}
+                }
