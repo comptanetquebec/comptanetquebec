@@ -22,6 +22,7 @@ function setLangQuery(params: URLSearchParams, lang: Lang) {
 type Copy = {
   pageTitle: string;
   subtitle: string;
+  taxNotice: string;
   disclaimerTop: string;
   disclaimerBottom: string;
   back: string;
@@ -38,91 +39,99 @@ const COPY: Record<Lang, Copy> = {
   fr: {
     pageTitle: "Travailleurs autonomes — Tarifs",
     subtitle:
-      "Prix avec taxes incluses. Les prix finaux sont confirmés après revue de vos pièces et de la complexité.",
-    disclaimerTop: "Selon votre dossier, les prix pourront être sujets à changement.",
+      "Les prix affichés sont avant taxes. Les taxes applicables seront ajoutées à la facture.",
+    taxNotice: "Prix avant taxes — TPS et TVQ en sus.",
+    disclaimerTop:
+      "Les tarifs finaux sont confirmés après revue des pièces, du volume et de la complexité du dossier.",
     disclaimerBottom:
-      "Prix avant taxes. Les dossiers plus complexes (plusieurs activités, inventaire, volume élevé, etc.) peuvent nécessiter une évaluation.",
+      "Prix avant taxes. Les dossiers plus complexes peuvent nécessiter une évaluation supplémentaire.",
     back: "Retour à l’accueil",
     ctaEstimate: "Estimer mon dossier",
-    estimateHint: "Répondez à 4 questions dans votre espace client (30 secondes).",
+    estimateHint: "Répondez à 4 questions dans votre espace client.",
     currencyNote: "Tous les montants sont en CAD.",
     sections: [
       {
         title: "Tarifs",
         lines: [
-          { label: "Revenus « compilés »", price: "150 $ à 300 $" },
-          { label: "Plusieurs sources / planification plus complexe", price: "300 $ à 800 $" },
-          { label: "Données non compilées (ajout manuel)", price: "+ 90 $" },
-          { label: "Déclaration de taxes (TPS/TVQ)", price: "95 $" },
+          { label: "Revenus et dépenses déjà compilés", price: "150 $ à 300 $" },
+          { label: "Plusieurs sources ou planification plus complexe", price: "300 $ à 800 $" },
+          { label: "Données non compilées / ajout manuel", price: "+ 90 $" },
+          { label: "Déclaration de taxes TPS/TVQ", price: "95 $" },
         ],
       },
       {
-        title: "Inclus (selon le cas)",
+        title: "Inclus selon le cas",
         lines: [
           { label: "Optimisation des dépenses admissibles" },
-          { label: "État des résultats (revenus / dépenses)" },
+          { label: "État des résultats : revenus et dépenses" },
           { label: "Validation des pièces et cohérence des chiffres" },
         ],
       },
     ],
   },
+
   en: {
     pageTitle: "Self-Employed — Pricing",
     subtitle:
-      "Price including taxes. Final pricing is confirmed after reviewing your documents and complexity.",
-    disclaimerTop: "Prices may change depending on your file.",
+      "Prices shown are before taxes. Applicable taxes will be added to the invoice.",
+    taxNotice: "Prices before taxes — GST and QST extra.",
+    disclaimerTop:
+      "Final pricing is confirmed after reviewing your documents, volume and file complexity.",
     disclaimerBottom:
-      "Prices before taxes. More complex files (multiple activities, inventory, high volume, etc.) may require an assessment.",
+      "Prices before taxes. More complex files may require an additional assessment.",
     back: "Back to Home",
     ctaEstimate: "Estimate my file",
-    estimateHint: "Answer 4 quick questions in your client portal (30 seconds).",
+    estimateHint: "Answer 4 quick questions in your client portal.",
     currencyNote: "All amounts are in CAD.",
     sections: [
       {
         title: "Pricing",
         lines: [
-          { label: "“Compiled” income/expenses", price: "$150–$300" },
-          { label: "Multiple sources / more complex planning", price: "$300–$800" },
-          { label: "Uncompiled data (manual entry)", price: "+ $90" },
-          { label: "Sales tax return (GST/QST)", price: "$95" },
+          { label: "Income and expenses already compiled", price: "$150–$300" },
+          { label: "Multiple sources or more complex planning", price: "$300–$800" },
+          { label: "Uncompiled data / manual entry", price: "+ $90" },
+          { label: "GST/QST sales tax return", price: "$95" },
         ],
       },
       {
-        title: "Included (as applicable)",
+        title: "Included when applicable",
         lines: [
           { label: "Eligible expense optimization" },
-          { label: "Profit & loss statement (income / expenses)" },
+          { label: "Profit and loss statement: income and expenses" },
           { label: "Document review and consistency checks" },
         ],
       },
     ],
   },
+
   es: {
     pageTitle: "Autónomos — Tarifas",
     subtitle:
-      "Precio con impuestos incluidos. El precio final se confirma tras revisar sus documentos y la complejidad.",
-    disclaimerTop: "Según su expediente, los precios pueden cambiar.",
+      "Los precios indicados son antes de impuestos. Los impuestos aplicables se añadirán a la factura.",
+    taxNotice: "Precios antes de impuestos — impuestos aplicables no incluidos.",
+    disclaimerTop:
+      "El precio final se confirma después de revisar los documentos, el volumen y la complejidad del expediente.",
     disclaimerBottom:
-      "Precios antes de impuestos. Casos más complejos (varias actividades, inventario, gran volumen, etc.) pueden requerir evaluación.",
+      "Precios antes de impuestos. Algunos casos complejos pueden requerir una evaluación adicional.",
     back: "Volver al inicio",
     ctaEstimate: "Estimar mi caso",
-    estimateHint: "Responde 4 preguntas rápidas en tu área de cliente (30 segundos).",
+    estimateHint: "Responde 4 preguntas rápidas en tu área de cliente.",
     currencyNote: "Todos los montos están en CAD.",
     sections: [
       {
         title: "Tarifas",
         lines: [
-          { label: "Ingresos/gastos « compilados »", price: "$150–$300" },
-          { label: "Varias fuentes / planificación más compleja", price: "$300–$800" },
-          { label: "Datos no compilados (carga manual)", price: "+ $90" },
-          { label: "Declaración de impuestos sobre ventas (GST/QST)", price: "$95" },
+          { label: "Ingresos y gastos ya compilados", price: "$150–$300" },
+          { label: "Varias fuentes o planificación más compleja", price: "$300–$800" },
+          { label: "Datos no compilados / entrada manual", price: "+ $90" },
+          { label: "Declaración GST/QST", price: "$95" },
         ],
       },
       {
-        title: "Incluye (según el caso)",
+        title: "Incluye según el caso",
         lines: [
           { label: "Optimización de gastos admisibles" },
-          { label: "Estado de resultados (ingresos / gastos)" },
+          { label: "Estado de resultados: ingresos y gastos" },
           { label: "Revisión de documentos y coherencia" },
         ],
       },
@@ -138,35 +147,36 @@ export default function TravAutonomePricingPage() {
   const lang = useMemo(() => getLang(new URLSearchParams(sp.toString())), [sp]);
   const t = COPY[lang];
 
-  // ✅ Corrige l’URL si lang invalide
   useEffect(() => {
     const raw = (sp.get("lang") || "fr").toLowerCase();
     const normalized = getLang(new URLSearchParams(sp.toString()));
+
     if (raw !== normalized) {
       const nextQuery = setLangQuery(new URLSearchParams(sp.toString()), normalized);
       router.replace(`${pathname}?${nextQuery}`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, router]);
+  }, [pathname, router, sp]);
 
-  // 👉 Page protégée dans l’espace client
   const estimateHref = `/espace-client/devis-autonome?lang=${lang}`;
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-10">
-        {/* Top bar (sans switch langues) */}
         <div className="text-sm text-slate-600">
           <span className="font-semibold text-slate-900">ComptaNet Québec</span>{" "}
           <span className="ml-2">{t.currencyNote}</span>
         </div>
 
-        {/* Header */}
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">{t.pageTitle}</h1>
               <p className="mt-2 text-sm text-slate-600">{t.subtitle}</p>
+
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+                {t.taxNotice}
+              </div>
+
               <p className="mt-3 text-xs text-slate-500">{t.disclaimerTop}</p>
             </div>
 
@@ -182,7 +192,6 @@ export default function TravAutonomePricingPage() {
           </div>
         </div>
 
-        {/* Sections */}
         <div className="mt-6 grid gap-6">
           {t.sections.map((sec) => (
             <section
@@ -198,9 +207,17 @@ export default function TravAutonomePricingPage() {
                     className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between"
                   >
                     <div className="pr-4">
-                      <div className="text-sm font-medium text-slate-900">{line.label}</div>
-                      {line.note && <div className="mt-1 text-xs text-slate-500">{line.note}</div>}
+                      <div className="text-sm font-medium text-slate-900">
+                        {line.label}
+                      </div>
+
+                      {line.note && (
+                        <div className="mt-1 text-xs text-slate-500">
+                          {line.note}
+                        </div>
+                      )}
                     </div>
+
                     {line.price ? (
                       <div className="text-sm font-bold text-slate-900 sm:text-right">
                         {line.price}
@@ -215,8 +232,7 @@ export default function TravAutonomePricingPage() {
           ))}
         </div>
 
-        {/* Bas de page (sans infos perso) */}
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
+        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-500">{t.disclaimerBottom}</p>
 
           <Link
