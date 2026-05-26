@@ -1072,13 +1072,6 @@ export default function Home() {
 
               <div
                 className={styles.choiceGrid}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(260px, 1fr))",
-                  gap: 18,
-                  maxWidth: 760,
-                  margin: "0 auto",
-                }}
               >
                 <TaxChoiceCard title={T.t1Title} desc={T.t1Desc} btn={T.t1Btn} href={toT1} />
                 <TaxChoiceCard title={T.t2Title} desc={T.t2Desc} btn={T.t2Btn} href={toT2} />
