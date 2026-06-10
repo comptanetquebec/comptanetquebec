@@ -15,8 +15,11 @@ export default function ConfirmationPage() {
   const params = useSearchParams();
 
   const fid = params.get("fid") || "";
+  const cq = params.get("cq") || "";
   const type = params.get("type") || "T1";
   const lang = normalizeLang(params.get("lang"));
+
+  const numeroDossier = cq || fid;
 
   const t = (fr: string, en: string, es: string) =>
     lang === "fr" ? fr : lang === "en" ? en : es;
@@ -34,9 +37,16 @@ export default function ConfirmationPage() {
               priority
               style={{ height: 40, width: "auto" }}
             />
+
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
-              <span>{t("Étape 4/4 — Confirmation", "Step 4/4 — Confirmation", "Paso 4/4 — Confirmación")}</span>
+              <span>
+                {t(
+                  "Étape 4/4 — Confirmation",
+                  "Step 4/4 — Confirmation",
+                  "Paso 4/4 — Confirmación"
+                )}
+              </span>
             </div>
           </div>
 
@@ -47,6 +57,7 @@ export default function ConfirmationPage() {
 
         <div className="ff-title">
           <h1>{t("Merci", "Thank you", "Gracias")}</h1>
+
           <p>
             {t(
               "Votre dossier a bien été reçu.",
@@ -54,6 +65,7 @@ export default function ConfirmationPage() {
               "Su expediente ha sido recibido."
             )}
           </p>
+
           <p>
             {t(
               "Le traitement débutera après validation du paiement.",
@@ -62,9 +74,16 @@ export default function ConfirmationPage() {
             )}
           </p>
 
-          {fid && (
+          {numeroDossier && (
             <p>
-              <strong>{t("Numéro de dossier :", "File number:", "Número de expediente:")}</strong> {fid}
+              <strong>
+                {t(
+                  "Numéro de dossier :",
+                  "File number:",
+                  "Número de expediente:"
+                )}
+              </strong>{" "}
+              {numeroDossier}
             </p>
           )}
         </div>
