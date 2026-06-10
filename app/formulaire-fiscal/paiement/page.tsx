@@ -82,7 +82,7 @@ export default function PaiementPage() {
       const { error } = await supabase
         .from("formulaires_fiscaux")
         .update({
-          payment_status: "sent",
+          payment_status: "interac_sent",
           payment_sent_at: new Date().toISOString(),
         })
         .eq("id", fid);
@@ -90,10 +90,12 @@ export default function PaiementPage() {
       if (error) throw error;
 
       router.push(
-        `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(
-          fid
-        )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
-      );
+  `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(
+    fid
+  )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(
+    lang
+  )}&cq=${encodeURIComponent(cqId || "")}`
+);
     } catch (error: any) {
       console.error("Erreur Supabase:", error);
 
