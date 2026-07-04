@@ -1027,3 +1027,8 @@
     box-sizing: border-box;
   }
 }
+.choiceCard{
+  text-decoration: none !important;
+  color: inherit !important;
+  cursor: pointer !important;
+}
