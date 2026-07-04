@@ -160,21 +160,25 @@ function TaxChoiceCard(props: {
   const { title, desc, btn, href } = props;
 
   return (
-    <div className={styles.choiceCard}>
+    <Link
+      href={href}
+      className={styles.choiceCard}
+      aria-label={btn}
+      prefetch
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
       <div className={styles.choiceCardTitle}>{title}</div>
       <div className={styles.choiceCardDesc}>{desc}</div>
+
       <div className={styles.choiceCardAction}>
-        <Link
-          href={href}
+        <span
           className="btn btn-primary"
           style={{ width: "100%", borderRadius: 10 }}
-          aria-label={btn}
-          prefetch
         >
           {btn}
-        </Link>
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
 
