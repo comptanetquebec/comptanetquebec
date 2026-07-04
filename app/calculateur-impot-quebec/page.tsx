@@ -3,79 +3,43 @@
 import { useMemo, useState } from "react";
 import styles from "./page.module.css";
 
-const FED_BRACKETS = [
-  { upTo: 58523, rate: 0.14 },
-  { upTo: 117045, rate: 0.205 },
-  { upTo: 181440, rate: 0.26 },
-  { upTo: 258482, rate: 0.29 },
-  { upTo: Infinity, rate: 0.33 },
-];
+import ProgressBar from "./components/ProgressBar";
+import StepPersonal from "./components/StepPersonal";
+import StepIncome from "./components/StepIncome";
+import StepDeductions from "./components/StepDeductions";
+import StepResults from "./components/StepResults";
 
-const QC_BRACKETS = [
-  { upTo: 54345, rate: 0.14 },
-  { upTo: 108680, rate: 0.19 },
-  { upTo: 132245, rate: 0.24 },
-  { upTo: Infinity, rate: 0.2575 },
-];
+import { calculateTax2026 } from "./lib/tax2026";
 
-const FED_BPA = 16452;
-const QC_BPA = 18952;
-const QC_ABATEMENT = 0.165;
-
-function taxByBrackets(income: number, brackets: { upTo: number; rate: number }[]) {
-  let tax = 0;
-  let previous = 0;
-
-  for (const bracket of brackets) {
-    const taxable = Math.max(0, Math.min(income, bracket.upTo) - previous);
-    tax += taxable * bracket.rate;
-    previous = bracket.upTo;
-    if (income <= bracket.upTo) break;
-  }
-
-  return tax;
-}
-
-function money(value: number) {
-  return value.toLocaleString("fr-CA", {
-    style: "currency",
-    currency: "CAD",
-    maximumFractionDigits: 0,
-  });
-}
+const TOTAL_STEPS = 4;
 
 export default function CalculateurImpotQuebec() {
+  const [step, setStep] = useState(1);
+
+  const [maritalStatus, setMaritalStatus] = useState("single");
+  const [childrenCount, setChildrenCount] = useState("0");
+
   const [income, setIncome] = useState("");
   const [federalPaid, setFederalPaid] = useState("");
   const [quebecPaid, setQuebecPaid] = useState("");
 
+  const [rrsp, setRrsp] = useState("");
+  const [medical, setMedical] = useState("");
+  const [donations, setDonations] = useState("");
+
   const result = useMemo(() => {
-    const revenu = Number(income) || 0;
-    const fedPaid = Number(federalPaid) || 0;
-    const qcPaid = Number(quebecPaid) || 0;
+    return calculateTax2026({
+      income: Number(income) || 0,
+      federalTaxPaid: Number(federalPaid) || 0,
+      quebecTaxPaid: Number(quebecPaid) || 0,
+      rrsp: Number(rrsp) || 0,
+      medical: Number(medical) || 0,
+      donations: Number(donations) || 0,
+    });
+  }, [income, federalPaid, quebecPaid, rrsp, medical, donations]);
 
-    const federalGross = taxByBrackets(revenu, FED_BRACKETS);
-    const federalCredit = FED_BPA * 0.14;
-    const federalAfterCredit = Math.max(0, federalGross - federalCredit);
-    const federalTax = Math.max(0, federalAfterCredit * (1 - QC_ABATEMENT));
-
-    const quebecGross = taxByBrackets(revenu, QC_BRACKETS);
-    const quebecCredit = QC_BPA * 0.14;
-    const quebecTax = Math.max(0, quebecGross - quebecCredit);
-
-    const totalTax = federalTax + quebecTax;
-    const totalPaid = fedPaid + qcPaid;
-    const balance = totalTax - totalPaid;
-
-    return {
-      revenu,
-      federalTax,
-      quebecTax,
-      totalTax,
-      totalPaid,
-      balance,
-    };
-  }, [income, federalPaid, quebecPaid]);
+  const nextStep = () => setStep((current) => Math.min(current + 1, TOTAL_STEPS));
+  const previousStep = () => setStep((current) => Math.max(current - 1, 1));
 
   return (
     <main className={styles.page}>
@@ -83,75 +47,67 @@ export default function CalculateurImpotQuebec() {
         <p className={styles.badge}>Estimateur 2026</p>
         <h1>Calculateur d’impôt Québec 2026</h1>
         <p>
-          Entrez vos montants T4 et Relevé 1 pour obtenir une estimation rapide
-          de votre solde ou remboursement.
+          Obtenez une estimation rapide de votre solde ou remboursement à partir
+          de vos montants T4 et Relevé 1.
         </p>
       </section>
 
       <section className={styles.card}>
-        <div className={styles.grid}>
-          <label>
-            Revenu d’emploi total
-            <input
-              type="number"
-              value={income}
-              onChange={(e) => setIncome(e.target.value)}
-              placeholder="Ex. 52000"
-            />
-          </label>
+        <ProgressBar currentStep={step} totalSteps={TOTAL_STEPS} />
 
-          <label>
-            Impôt fédéral retenu — T4
-            <input
-              type="number"
-              value={federalPaid}
-              onChange={(e) => setFederalPaid(e.target.value)}
-              placeholder="Ex. 4200"
-            />
-          </label>
+        {step === 1 && (
+          <StepPersonal
+            maritalStatus={maritalStatus}
+            setMaritalStatus={setMaritalStatus}
+            childrenCount={childrenCount}
+            setChildrenCount={setChildrenCount}
+          />
+        )}
 
-          <label>
-            Impôt Québec retenu — Relevé 1
-            <input
-              type="number"
-              value={quebecPaid}
-              onChange={(e) => setQuebecPaid(e.target.value)}
-              placeholder="Ex. 5100"
-            />
-          </label>
+        {step === 2 && (
+          <StepIncome
+            income={income}
+            setIncome={setIncome}
+            federalPaid={federalPaid}
+            setFederalPaid={setFederalPaid}
+            quebecPaid={quebecPaid}
+            setQuebecPaid={setQuebecPaid}
+          />
+        )}
+
+        {step === 3 && (
+          <StepDeductions
+            rrsp={rrsp}
+            setRrsp={setRrsp}
+            medical={medical}
+            setMedical={setMedical}
+            donations={donations}
+            setDonations={setDonations}
+          />
+        )}
+
+        {step === 4 && (
+          <StepResults
+            federalTax={result.federalTax}
+            quebecTax={result.quebecTax}
+            totalPaid={result.totalPaid}
+            balance={result.balance}
+          />
+        )}
+
+        <div className={styles.navButtons}>
+          {step > 1 && (
+            <button type="button" onClick={previousStep} className={styles.secondaryButton}>
+              Précédent
+            </button>
+          )}
+
+          {step < TOTAL_STEPS && (
+            <button type="button" onClick={nextStep} className={styles.primaryButton}>
+              Suivant
+            </button>
+          )}
         </div>
-
-        <div className={styles.results}>
-          <div>
-            <span>Impôt fédéral estimé</span>
-            <strong>{money(result.federalTax)}</strong>
-          </div>
-
-          <div>
-            <span>Impôt Québec estimé</span>
-            <strong>{money(result.quebecTax)}</strong>
-          </div>
-
-          <div>
-            <span>Total retenu</span>
-            <strong>{money(result.totalPaid)}</strong>
-          </div>
-
-          <div className={result.balance > 0 ? styles.due : styles.refund}>
-            <span>{result.balance > 0 ? "Solde estimé à payer" : "Remboursement estimé"}</span>
-            <strong>{money(Math.abs(result.balance))}</strong>
-          </div>
-        </div>
-
-        <p className={styles.note}>
-          Ceci est une estimation seulement. Le résultat réel peut varier selon
-          les crédits, déductions, REER, frais médicaux, enfants, conjoint,
-          travail autonome ou autres situations fiscales.
-        </p>
-
-        <a href="/contact" className={styles.cta}>
-          Faire préparer ma déclaration par ComptaNet Québec
-        </a>
       </section>
     </main>
   );
