@@ -179,3 +179,30 @@
   border: 2px solid #0b5ed7;
   background: #eef6ff;
 }
+.navButtons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: #0b5ed7;
+  color: #fff;
+  margin-left: auto;
+}
+
+.secondaryButton {
+  background: #e5e7eb;
+  color: #111827;
+}
