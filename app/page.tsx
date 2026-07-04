@@ -1086,15 +1086,27 @@ plans: [
                   : "✅ Depósito requerido • ✅ Pago seguro (Stripe) • ✅ Acreditación TED"}
               </div>
 
-              <div className={styles.heroCtaLinkRow}>
-                <a href="#tarifs" className={styles.heroCtaLink}>
-                  {T.nav.pricing}
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+             <div className={styles.heroCtaLinkRow}>
+  <a href="#tarifs" className={styles.heroCtaLink}>
+    {T.nav.pricing}
+  </a>
+</div>
+
+<div style={{ marginTop: 16 }}>
+  <Link
+    href={`/calculateur-impot-quebec?lang=${encodeURIComponent(lang)}`}
+    className="btn btn-primary"
+    style={{ width: "100%", borderRadius: 10 }}
+    prefetch
+  >
+    🧮 Calculateur d'impôt gratuit
+  </Link>
+</div>
+
+</div> {/* choiceBox */}
+</div> {/* heroCard */}
+</div>
+</section>
 
       {/* ✅ SECTION AVIS (déplacée hors hero) */}
       <section className={styles.section}>
