@@ -49,6 +49,7 @@ type CopyDict = {
   t2Title: string;
   t2Desc: string;
   t2Btn: string;
+  calculatorBtn: string;
 
   seoTitle: string;
   seoP1: string;
@@ -334,6 +335,7 @@ export default function Home() {
         t2Desc:
           "Déclaration de société (T2 + CO-17) selon les documents fournis.",
         t2Btn: "Créer mon dossier",
+        calculatorBtn: "🧮 Calculateur d'impôt gratuit",
 
         seoTitle: "Service d’impôt au Québec, simple et guidé",
         seoP1:
@@ -508,6 +510,7 @@ plans: [
         t2Title: "🏢 Incorporated business",
         t2Desc: "Corporate filing (T2 + CO-17) based on your documents.",
         t2Btn: "Open my file",
+        calculatorBtn: "🧮 Free Tax Calculator",
 
         seoTitle: "Québec tax return service, simple and guided",
         seoP1:
@@ -666,6 +669,7 @@ plans: [
         t2Title: "🏢 Empresa incorporada",
         t2Desc: "Declaración (T2 + CO-17) según sus documentos.",
         t2Btn: "Abrir expediente",
+        calculatorBtn: "🧮 Calculadora gratuita de impuestos",
 
         seoTitle: "Servicio de impuestos en Québec, simple y guiado",
         seoP1:
@@ -1099,7 +1103,7 @@ plans: [
     style={{ width: "100%", borderRadius: 10 }}
     prefetch
   >
-    🧮 Calculateur d'impôt gratuit
+    {T.calculatorBtn}
   </Link>
 </div>
 
