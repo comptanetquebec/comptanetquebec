@@ -154,3 +154,28 @@
   font-size: 16px;
   background: white;
 }
+.summaryCard {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summaryCard span {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.summaryCard strong {
+  font-size: 30px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.summaryHighlight {
+  border: 2px solid #0b5ed7;
+  background: #eef6ff;
+}
