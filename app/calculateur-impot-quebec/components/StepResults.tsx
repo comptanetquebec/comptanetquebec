@@ -54,12 +54,19 @@ export default function StepResults({
       </div>
 
       <p className={styles.note}>
-        Le résultat est basé uniquement sur les renseignements saisis. Une
-        déclaration complète peut modifier le montant final.
-      </p>
+  Le résultat est basé uniquement sur les renseignements saisis. Une
+  déclaration complète peut modifier le montant final.
+  <br />
+  <br />
+  <strong>Besoin d'un calcul précis?</strong>
+  <br />
+  L'équipe de ComptaNet Québec peut préparer votre déclaration de revenus et
+  s'assurer que vous bénéficiez de tous les crédits et déductions auxquels vous
+  avez droit.
+</p>
 
       <a href="/" className={styles.cta}>
-        Faire préparer ma déclaration par ComptaNet Québec
+        Faire préparer ma déclaration avec ComptaNet Québec
       </a>
     </div>
   );
