@@ -58,7 +58,7 @@ export default function StepResults({
         déclaration complète peut modifier le montant final.
       </p>
 
-      <a href="/contact" className={styles.cta}>
+      <a href="/" className={styles.cta}>
         Faire préparer ma déclaration par ComptaNet Québec
       </a>
     </div>
