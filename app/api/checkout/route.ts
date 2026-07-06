@@ -133,6 +133,9 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
+        automatic_tax: {
+      enabled: true,
+    },
         client_reference_id: cqId,
         line_items: [{ price: priceId, quantity: 1 }],
         success_url: successUrl.toString(),
