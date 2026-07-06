@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/supabaseServer";
 export const runtime = "nodejs";
 
 type Lang = "fr" | "en" | "es";
-type TaxType = "t1" | "ta" | "t2";
+type TaxType = "t1" | "t2";
 type PayMode = "acompte" | "solde";
 
 type CheckoutBody = {
@@ -23,7 +23,7 @@ function normalizeLang(v: unknown): Lang {
 
 function normalizeTaxType(v: unknown): TaxType | null {
   const x = String(v ?? "").toLowerCase();
-  return x === "t1" || x === "ta" || x === "t2" ? (x as TaxType) : null;
+  return x === "t1" || x === "t2" ? (x as TaxType) : null;
 }
 
 function normalizePayMode(v: unknown): PayMode | null {
@@ -52,7 +52,6 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
 
   const map: Record<TaxType, string | undefined> = {
     t1: process.env.STRIPE_PRICE_ACOMPTE_T1,
-    ta: process.env.STRIPE_PRICE_ACOMPTE_TA,
     t2: process.env.STRIPE_PRICE_ACOMPTE_T2,
   };
 
