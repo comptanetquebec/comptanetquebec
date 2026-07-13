@@ -137,8 +137,6 @@ const session = await stripe.checkout.sessions.create(
       enabled: true,
     },
 
-    allow_promotion_codes: true,
-
     client_reference_id: cqId,
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: successUrl.toString(),
