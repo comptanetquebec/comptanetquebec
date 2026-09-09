@@ -169,33 +169,30 @@ export default async function FacturePage({
   const lang = normalizeLang(query?.lang);
   const L = COPY[lang];
 
-  const supabase =
-    await supabaseServer();
+  const supabase = await supabaseServer();
 
-  /* AUTH */
+  /* =========================
+     AUTHENTIFICATION
+  ========================= */
 
   const {
     data: auth,
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (
-    authError ||
-    !auth?.user
-  ) {
+  if (authError || !auth?.user) {
     redirect("/espace-client");
   }
 
-  /* ADMIN */
+  /* =========================
+     VÉRIFICATION ADMIN
+  ========================= */
 
   const { data: profile } =
     await supabase
       .from("profiles")
       .select("is_admin")
-      .eq(
-        "id",
-        auth.user.id
-      )
+      .eq("id", auth.user.id)
       .maybeSingle<ProfileRow>();
 
   if (!profile?.is_admin) {
@@ -206,7 +203,9 @@ export default async function FacturePage({
     );
   }
 
-  /* FACTURE */
+  /* =========================
+     FACTURE
+  ========================= */
 
   const {
     data: facture,
@@ -217,34 +216,40 @@ export default async function FacturePage({
     .eq("id", id)
     .maybeSingle<FactureRow>();
 
-  if (
-    error ||
-    !facture
-  ) {
+  if (error || !facture) {
     notFound();
   }
 
-  /* LIGNES */
+  /* =========================
+     LIGNES DE FACTURE
+  ========================= */
 
   const {
     data: lignesData,
+    error: lignesError,
   } = await supabase
     .from("facture_lignes")
     .select(
       "id, description, quantite, prix_unitaire, montant, ordre"
     )
-    .eq(
-      "facture_id",
-      facture.id
-    )
+    .eq("facture_id", facture.id)
     .order("ordre", {
       ascending: true,
     });
 
+  if (lignesError) {
+    console.error(
+      "Erreur facture_lignes :",
+      lignesError
+    );
+  }
+
   /*
-    Anciennes factures :
-    si aucune facture_lignes n'existe,
-    on affiche l'ancienne ligne.
+    Compatibilité avec les anciennes factures.
+
+    Si aucune ligne n'existe encore dans
+    facture_lignes, on utilise les anciennes
+    colonnes de factures.
   */
 
   const lignes: LigneRow[] =
@@ -256,22 +261,25 @@ export default async function FacturePage({
             id: `legacy-${facture.id}`,
 
             description:
-              facture.description ??
-              "",
+              facture.description ?? "",
 
             quantite:
-              facture.quantite ??
-              1,
+              Number(
+                facture.quantite ?? 1
+              ),
 
             prix_unitaire:
-              facture.prix_unitaire ??
-              0,
+              Number(
+                facture.prix_unitaire ?? 0
+              ),
 
             montant:
-              (facture.quantite ??
-                1) *
-              (facture.prix_unitaire ??
-                0),
+              Number(
+                facture.sous_total ??
+                  (facture.quantite ?? 1) *
+                    (facture.prix_unitaire ??
+                      0)
+              ),
 
             ordre: 1,
           },
@@ -293,7 +301,9 @@ export default async function FacturePage({
     <main className="min-h-screen bg-slate-100 px-4 py-8 md:px-8">
       <div className="mx-auto max-w-4xl">
 
-        {/* RETOUR + ACTIONS */}
+        {/* =====================
+            RETOUR + ACTIONS
+        ====================== */}
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
 
@@ -327,8 +337,7 @@ export default async function FacturePage({
                   facture.cq_id,
 
                 client_nom:
-                  facture.client_nom ??
-                  "",
+                  facture.client_nom ?? "",
 
                 client_courriel:
                   facture.client_courriel,
@@ -345,6 +354,10 @@ export default async function FacturePage({
                 client_code_postal:
                   facture.client_code_postal,
 
+                /*
+                  Ancien format conservé
+                  pour compatibilité.
+                */
                 description:
                   facture.description,
 
@@ -374,12 +387,41 @@ export default async function FacturePage({
 
                 date_facture:
                   facture.date_facture,
+
+                /*
+                  IMPORTANT :
+                  toutes les lignes sont maintenant
+                  envoyées au générateur PDF.
+                */
+                lignes: lignes.map(
+                  (ligne) => ({
+                    description:
+                      ligne.description,
+
+                    quantite:
+                      Number(
+                        ligne.quantite
+                      ),
+
+                    prix_unitaire:
+                      Number(
+                        ligne.prix_unitaire
+                      ),
+
+                    montant:
+                      Number(
+                        ligne.montant
+                      ),
+                  })
+                ),
               }}
             />
           </div>
         </div>
 
-        {/* FACTURE */}
+        {/* =====================
+            FACTURE
+        ====================== */}
 
         <article className="overflow-hidden rounded-2xl bg-white shadow-lg">
 
@@ -390,6 +432,7 @@ export default async function FacturePage({
             <div className="flex flex-col justify-between gap-8 md:flex-row">
 
               <div>
+
                 <div className="text-3xl font-black tracking-tight text-blue-900">
                   ComptaNet Québec
                 </div>
@@ -399,6 +442,7 @@ export default async function FacturePage({
                 </div>
 
                 <div className="mt-6 space-y-1 text-sm text-slate-600">
+
                   <div>
                     849, boulevard Pie-XII
                   </div>
@@ -414,6 +458,7 @@ export default async function FacturePage({
                   <div>
                     comptanetquebec@gmail.com
                   </div>
+
                 </div>
               </div>
 
@@ -426,6 +471,7 @@ export default async function FacturePage({
                 <div className="mt-5 space-y-2 text-sm">
 
                   <div>
+
                     <span className="font-semibold text-slate-500">
                       {L.invoiceNumber} :
                     </span>{" "}
@@ -434,10 +480,12 @@ export default async function FacturePage({
                       {facture.numero_facture ??
                         "—"}
                     </span>
+
                   </div>
 
                   {facture.cq_id && (
                     <div>
+
                       <span className="font-semibold text-slate-500">
                         {L.clientNumber} :
                       </span>{" "}
@@ -445,10 +493,12 @@ export default async function FacturePage({
                       <span className="font-bold text-slate-900">
                         {facture.cq_id}
                       </span>
+
                     </div>
                   )}
 
                   <div>
+
                     <span className="font-semibold text-slate-500">
                       {L.date} :
                     </span>{" "}
@@ -457,13 +507,16 @@ export default async function FacturePage({
                       {facture.date_facture ??
                         "—"}
                     </span>
+
                   </div>
 
                 </div>
               </div>
             </div>
 
-            {/* CLIENT */}
+            {/* =====================
+                CLIENT
+            ====================== */}
 
             <div className="mt-10 rounded-2xl bg-blue-50 p-6">
 
@@ -478,9 +531,7 @@ export default async function FacturePage({
 
               {facture.client_courriel && (
                 <div className="mt-1 text-sm text-slate-600">
-                  {
-                    facture.client_courriel
-                  }
+                  {facture.client_courriel}
                 </div>
               )}
 
@@ -492,14 +543,18 @@ export default async function FacturePage({
 
             </div>
 
-            {/* TABLEAU */}
+            {/* =====================
+                TABLEAU
+            ====================== */}
 
             <div className="mt-10 overflow-hidden rounded-xl border border-slate-200">
 
               <table className="w-full text-sm">
 
                 <thead className="bg-blue-900 text-white">
+
                   <tr>
+
                     <th className="px-5 py-4 text-left">
                       {L.description}
                     </th>
@@ -515,36 +570,31 @@ export default async function FacturePage({
                     <th className="px-5 py-4 text-right">
                       {L.amount}
                     </th>
+
                   </tr>
+
                 </thead>
 
                 <tbody>
+
                   {lignes.map(
-                    (
-                      ligne,
-                      index
-                    ) => (
+                    (ligne, index) => (
+
                       <tr
-                        key={
-                          ligne.id
-                        }
+                        key={ligne.id}
                         className={
-                          index % 2 ===
-                          0
+                          index % 2 === 0
                             ? "bg-white"
                             : "bg-slate-50"
                         }
                       >
+
                         <td className="px-5 py-5 text-slate-800">
-                          {
-                            ligne.description
-                          }
+                          {ligne.description}
                         </td>
 
                         <td className="px-5 py-5 text-center text-slate-700">
-                          {
-                            ligne.quantite
-                          }
+                          {ligne.quantite}
                         </td>
 
                         <td
@@ -563,8 +613,7 @@ export default async function FacturePage({
 
                         <td
                           className={`px-5 py-5 text-right font-semibold ${
-                            ligne.montant <
-                            0
+                            ligne.montant < 0
                               ? "text-red-600"
                               : "text-slate-900"
                           }`}
@@ -574,19 +623,25 @@ export default async function FacturePage({
                             lang
                           )}
                         </td>
+
                       </tr>
                     )
                   )}
+
                 </tbody>
 
               </table>
+
             </div>
 
-            {/* TOTAUX */}
+            {/* =====================
+                TOTAUX
+            ====================== */}
 
             <div className="mt-8 ml-auto max-w-sm">
 
               <div className="flex justify-between py-2 text-slate-600">
+
                 <span>
                   {L.subtotal}
                 </span>
@@ -597,9 +652,11 @@ export default async function FacturePage({
                     lang
                   )}
                 </span>
+
               </div>
 
               <div className="flex justify-between py-2 text-slate-600">
+
                 <span>
                   {L.gst}
                 </span>
@@ -610,9 +667,11 @@ export default async function FacturePage({
                     lang
                   )}
                 </span>
+
               </div>
 
               <div className="flex justify-between py-2 text-slate-600">
+
                 <span>
                   {L.qst}
                 </span>
@@ -623,6 +682,7 @@ export default async function FacturePage({
                     lang
                   )}
                 </span>
+
               </div>
 
               <div className="mt-3 flex items-center justify-between border-t-2 border-blue-900 pt-4">
@@ -639,9 +699,12 @@ export default async function FacturePage({
                 </span>
 
               </div>
+
             </div>
 
-            {/* PAIEMENT */}
+            {/* =====================
+                PAIEMENT
+            ====================== */}
 
             <div className="mt-10 grid gap-5 md:grid-cols-2">
 
@@ -675,7 +738,9 @@ export default async function FacturePage({
 
             </div>
 
-            {/* NUMÉROS TAXES */}
+            {/* =====================
+                TPS / TVQ
+            ====================== */}
 
             <div className="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-500">
 
@@ -689,6 +754,8 @@ export default async function FacturePage({
 
             </div>
 
+            {/* MERCI */}
+
             <div className="mt-8 text-center text-lg font-bold text-blue-900">
               {L.thankYou}
             </div>
@@ -698,6 +765,7 @@ export default async function FacturePage({
           <div className="h-4 bg-blue-900" />
 
         </article>
+
       </div>
     </main>
   );
