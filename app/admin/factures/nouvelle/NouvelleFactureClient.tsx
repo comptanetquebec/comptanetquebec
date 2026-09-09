@@ -214,21 +214,22 @@ export default function NouvelleFactureClient({
 
     const now = new Date();
     const dateFacture = now.toISOString().slice(0, 10);
+    const estPayee = statut === "paid";
 
     /*
-      Numéro temporaire.
-      Nous mettrons ensuite en place une vraie
-      numérotation CQ automatique dans Supabase.
-    */
-    const numeroFacture = `CQ-${Date.now()}`;
+      IMPORTANT :
+      numero_facture n'est plus envoyé ici.
 
-    const estPayee = statut === "paid";
+      Supabase génère maintenant automatiquement :
+      F-000001
+      F-000002
+      F-000003
+      etc.
+    */
 
     const { error } = await supabase
       .from("factures")
       .insert({
-        numero_facture: numeroFacture,
-
         client_nom: clientNom.trim(),
 
         client_courriel:
@@ -246,7 +247,12 @@ export default function NouvelleFactureClient({
         client_code_postal:
           clientCodePostal.trim().toUpperCase() || null,
 
+        /*
+          Facture créée manuellement.
+          Aucun dossier Internet associé pour le moment.
+        */
         formulaire_id: null,
+        cq_id: null,
 
         description: description.trim(),
 
