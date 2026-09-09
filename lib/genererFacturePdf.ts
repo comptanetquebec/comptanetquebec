@@ -782,88 +782,31 @@ export async function genererFacturePdf(
   doc.setDrawColor(...blue);
   doc.setFillColor(...blue);
 
-  // ==========================================
-  // ADRESSE — épingle plus propre
-  // ==========================================
+ // ==========================================
+// ADRESSE — vraie icône PNG
+// ==========================================
 
-  doc.setLineWidth(0.6);
+doc.addImage(
+  "/icon-location.png",
+  "PNG",
+  11,
+  47,
+  6,
+  6
+);
 
-  // cercle extérieur
-  doc.circle(
-    14,
-    50,
-    2.1,
-    "S"
-  );
+// ==========================================
+// TÉLÉPHONE — vraie icône PNG
+// ==========================================
 
-  // point intérieur
-  doc.circle(
-    14,
-    50,
-    0.65,
-    "F"
-  );
-
-  // pointe de l'épingle
-  doc.line(
-    12.7,
-    51.5,
-    14,
-    54
-  );
-
-  doc.line(
-    15.3,
-    51.5,
-    14,
-    54
-  );
-
-  // ==========================================
-  // TÉLÉPHONE — combiné plus propre
-  // ==========================================
-
-  doc.setLineWidth(1.3);
-  doc.setLineCap("round");
-
-  doc.line(
-    11.8,
-    61.5,
-    13.2,
-    63.5
-  );
-
-  doc.line(
-    13.2,
-    63.5,
-    15.3,
-    65.2
-  );
-
-  doc.line(
-    15.3,
-    65.2,
-    17.2,
-    63.8
-  );
-
-  // extrémité supérieure du combiné
-  doc.setLineWidth(1.8);
-
-  doc.line(
-    11.5,
-    61.2,
-    13,
-    60.6
-  );
-
-  // extrémité inférieure
-  doc.line(
-    16.8,
-    63.6,
-    17.8,
-    65
-  );
+doc.addImage(
+  "/icon-phone.png",
+  "PNG",
+  11,
+  60,
+  6,
+  6
+);
 
   // ==========================================
   // COURRIEL — ON GARDE EXACTEMENT L'ACTUEL
