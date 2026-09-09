@@ -6,6 +6,13 @@ import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
 
+type LigneFacture = {
+  id: string;
+  description: string;
+  quantite: number;
+  prixUnitaire: string;
+};
+
 const COPY = {
   fr: {
     title: "Nouvelle facture",
@@ -20,12 +27,14 @@ const COPY = {
     province: "Province",
     postal: "Code postal",
 
-    invoice: "Facture",
-    description: "Description du service",
-    descriptionPlaceholder:
-      "Ex. : Préparation de la déclaration de revenus",
+    invoice: "Services facturés",
+    description: "Description",
+    descriptionPlaceholder: "Ex. : Déclaration de revenus T1",
     quantity: "Quantité",
     price: "Prix avant taxes",
+    amount: "Montant",
+    addLine: "+ Ajouter une ligne",
+    removeLine: "Retirer",
 
     subtotal: "Sous-total",
     gst: "TPS (5 %)",
@@ -46,8 +55,12 @@ const COPY = {
     saving: "Enregistrement...",
     success: "Facture enregistrée.",
     required:
-      "Le nom du client, la description et le prix sont obligatoires.",
+      "Le nom du client et au moins une ligne avec une description et un montant sont obligatoires.",
+    invalidTotal:
+      "Le total de la facture doit être supérieur à 0 $.",
     saveError: "Impossible d'enregistrer la facture.",
+    lineError:
+      "La facture a été créée, mais les lignes n'ont pas pu être enregistrées.",
   },
 
   en: {
@@ -63,12 +76,14 @@ const COPY = {
     province: "Province",
     postal: "Postal code",
 
-    invoice: "Invoice",
-    description: "Service description",
-    descriptionPlaceholder:
-      "E.g. Personal income tax return preparation",
+    invoice: "Services billed",
+    description: "Description",
+    descriptionPlaceholder: "E.g. Personal income tax return",
     quantity: "Quantity",
     price: "Price before taxes",
+    amount: "Amount",
+    addLine: "+ Add a line",
+    removeLine: "Remove",
 
     subtotal: "Subtotal",
     gst: "GST (5%)",
@@ -89,8 +104,12 @@ const COPY = {
     saving: "Saving...",
     success: "Invoice saved.",
     required:
-      "Client name, description and price are required.",
+      "Client name and at least one line with a description and amount are required.",
+    invalidTotal:
+      "The invoice total must be greater than $0.",
     saveError: "Unable to save invoice.",
+    lineError:
+      "The invoice was created, but the invoice lines could not be saved.",
   },
 
   es: {
@@ -106,12 +125,14 @@ const COPY = {
     province: "Provincia",
     postal: "Código postal",
 
-    invoice: "Factura",
-    description: "Descripción del servicio",
-    descriptionPlaceholder:
-      "Ej.: Preparación de la declaración de impuestos",
+    invoice: "Servicios facturados",
+    description: "Descripción",
+    descriptionPlaceholder: "Ej.: Declaración de impuestos",
     quantity: "Cantidad",
     price: "Precio antes de impuestos",
+    amount: "Importe",
+    addLine: "+ Agregar una línea",
+    removeLine: "Eliminar",
 
     subtotal: "Subtotal",
     gst: "GST/TPS (5 %)",
@@ -132,13 +153,26 @@ const COPY = {
     saving: "Guardando...",
     success: "Factura guardada.",
     required:
-      "El nombre del cliente, la descripción y el precio son obligatorios.",
+      "El nombre del cliente y al menos una línea con descripción e importe son obligatorios.",
+    invalidTotal:
+      "El total de la factura debe ser superior a $0.",
     saveError: "No se pudo guardar la factura.",
+    lineError:
+      "La factura fue creada, pero no se pudieron guardar las líneas.",
   },
 } as const;
 
 function roundMoney(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function nouvelleLigne(): LigneFacture {
+  return {
+    id: crypto.randomUUID(),
+    description: "",
+    quantite: 1,
+    prixUnitaire: "",
+  };
 }
 
 export default function NouvelleFactureClient({
@@ -155,9 +189,9 @@ export default function NouvelleFactureClient({
   const [clientProvince, setClientProvince] = useState("QC");
   const [clientCodePostal, setClientCodePostal] = useState("");
 
-  const [description, setDescription] = useState("");
-  const [quantite, setQuantite] = useState(1);
-  const [prixUnitaire, setPrixUnitaire] = useState("");
+  const [lignes, setLignes] = useState<LigneFacture[]>([
+    nouvelleLigne(),
+  ]);
 
   const [statut, setStatut] = useState("unpaid");
   const [modePaiement, setModePaiement] = useState("interac");
@@ -165,13 +199,24 @@ export default function NouvelleFactureClient({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  function prixNombre(value: string) {
+    return Number(value.replace(",", ".")) || 0;
+  }
+
+  function montantLigne(ligne: LigneFacture) {
+    const quantite = Number(ligne.quantite) || 1;
+    const prix = prixNombre(ligne.prixUnitaire);
+
+    return roundMoney(quantite * prix);
+  }
+
   const montants = useMemo(() => {
-    const prix =
-      Number(prixUnitaire.replace(",", ".")) || 0;
+    const sousTotal = roundMoney(
+      lignes.reduce((total, ligne) => {
+        return total + montantLigne(ligne);
+      }, 0)
+    );
 
-    const qty = Number(quantite) || 1;
-
-    const sousTotal = roundMoney(prix * qty);
     const tps = roundMoney(sousTotal * 0.05);
     const tvq = roundMoney(sousTotal * 0.09975);
     const total = roundMoney(sousTotal + tps + tvq);
@@ -182,7 +227,7 @@ export default function NouvelleFactureClient({
       tvq,
       total,
     };
-  }, [prixUnitaire, quantite]);
+  }, [lignes]);
 
   function money(value: number) {
     const locale =
@@ -198,42 +243,108 @@ export default function NouvelleFactureClient({
     }).format(value);
   }
 
+  function modifierLigne(
+    id: string,
+    champ: "description" | "quantite" | "prixUnitaire",
+    valeur: string | number
+  ) {
+    setLignes((actuelles) =>
+      actuelles.map((ligne) =>
+        ligne.id === id
+          ? {
+              ...ligne,
+              [champ]: valeur,
+            }
+          : ligne
+      )
+    );
+  }
+
+  function ajouterLigne() {
+    setLignes((actuelles) => [
+      ...actuelles,
+      nouvelleLigne(),
+    ]);
+  }
+
+  function retirerLigne(id: string) {
+    setLignes((actuelles) => {
+      if (actuelles.length === 1) {
+        return actuelles;
+      }
+
+      return actuelles.filter(
+        (ligne) => ligne.id !== id
+      );
+    });
+  }
+
   async function enregistrer() {
     setMessage(null);
 
+    /*
+      Une ligne est valide si :
+      - elle possède une description
+      - son montant n'est pas égal à zéro
+
+      Les montants négatifs sont permis :
+      Rabais = -20
+      Crédit = -50
+      Ajustement = -10
+    */
+    const lignesValides = lignes.filter(
+      (ligne) =>
+        ligne.description.trim() &&
+        prixNombre(ligne.prixUnitaire) !== 0
+    );
+
     if (
       !clientNom.trim() ||
-      !description.trim() ||
-      montants.sousTotal <= 0
+      lignesValides.length === 0
     ) {
       setMessage(L.required);
+      return;
+    }
+
+    /*
+      Une facture normale doit quand même
+      terminer avec un sous-total positif.
+    */
+    if (montants.sousTotal < 0.01) {
+      setMessage(L.invalidTotal);
       return;
     }
 
     setSaving(true);
 
     const now = new Date();
-    const dateFacture = now.toISOString().slice(0, 10);
+    const dateFacture =
+      now.toISOString().slice(0, 10);
+
     const estPayee = statut === "paid";
 
     /*
-      IMPORTANT :
-      numero_facture n'est plus envoyé ici.
+      On conserve la première ligne dans
+      les anciennes colonnes de "factures"
+      pour garder la compatibilité avec
+      l'affichage et le PDF actuels.
 
-      Supabase génère maintenant automatiquement :
-      F-000001
-      F-000002
-      F-000003
-      etc.
+      Les vraies lignes complètes sont
+      enregistrées dans "facture_lignes".
     */
+    const premiereLigne = lignesValides[0];
 
-    const { error } = await supabase
+    const {
+      data: factureCreee,
+      error: factureError,
+    } = await supabase
       .from("factures")
       .insert({
         client_nom: clientNom.trim(),
 
         client_courriel:
-          clientCourriel.trim().toLowerCase() || null,
+          clientCourriel.trim().toLowerCase() ||
+          null,
 
         client_adresse:
           clientAdresse.trim() || null,
@@ -245,28 +356,27 @@ export default function NouvelleFactureClient({
           clientProvince.trim() || null,
 
         client_code_postal:
-          clientCodePostal.trim().toUpperCase() || null,
+          clientCodePostal
+            .trim()
+            .toUpperCase() || null,
 
-        /*
-          Facture créée manuellement.
-          Aucun dossier Internet associé pour le moment.
-        */
         formulaire_id: null,
         cq_id: null,
 
-        description: description.trim(),
+        description:
+          premiereLigne.description.trim(),
 
-        quantite,
+        quantite:
+          Number(premiereLigne.quantite) || 1,
 
         prix_unitaire:
-          Number(prixUnitaire.replace(",", ".")) || 0,
+          prixNombre(
+            premiereLigne.prixUnitaire
+          ),
 
         sous_total: montants.sousTotal,
-
         tps: montants.tps,
-
         tvq: montants.tvq,
-
         total: montants.total,
 
         statut,
@@ -280,26 +390,78 @@ export default function NouvelleFactureClient({
         date_facture: dateFacture,
 
         date_paiement:
-          estPayee ? now.toISOString() : null,
+          estPayee
+            ? now.toISOString()
+            : null,
 
         updated_at: now.toISOString(),
-      });
+      })
+      .select("id, numero_facture")
+      .single();
 
-    setSaving(false);
+    if (factureError || !factureCreee) {
+      setSaving(false);
 
-    if (error) {
-      setMessage(`${L.saveError} ${error.message}`);
+      setMessage(
+        `${L.saveError} ${
+          factureError?.message ?? ""
+        }`.trim()
+      );
+
       return;
     }
 
-    setMessage(L.success);
+    /*
+      Enregistrement de toutes les lignes,
+      incluant les rabais négatifs.
+    */
+    const lignesAInserer =
+      lignesValides.map(
+        (ligne, index) => ({
+          facture_id: factureCreee.id,
+
+          description:
+            ligne.description.trim(),
+
+          quantite:
+            Number(ligne.quantite) || 1,
+
+          prix_unitaire:
+            prixNombre(
+              ligne.prixUnitaire
+            ),
+
+          montant:
+            montantLigne(ligne),
+
+          ordre: index + 1,
+        })
+      );
+
+    const { error: lignesError } =
+      await supabase
+        .from("facture_lignes")
+        .insert(lignesAInserer);
+
+    setSaving(false);
+
+    if (lignesError) {
+      setMessage(
+        `${L.lineError} ${lignesError.message}`
+      );
+      return;
+    }
+
+    setMessage(
+      `${L.success} ${
+        factureCreee.numero_facture ?? ""
+      }`.trim()
+    );
   }
 
   return (
     <main className="min-h-screen bg-slate-50 p-5 md:p-8">
-      <div className="mx-auto max-w-5xl">
-
-        {/* RETOUR */}
+      <div className="mx-auto max-w-6xl">
         <Link
           href={`/admin/factures?lang=${lang}`}
           className="text-sm font-semibold text-blue-700 hover:underline"
@@ -307,7 +469,6 @@ export default function NouvelleFactureClient({
           {L.back}
         </Link>
 
-        {/* TITRE */}
         <div className="mb-8 mt-5">
           <h1 className="text-3xl font-bold text-slate-900">
             {L.title}
@@ -318,139 +479,200 @@ export default function NouvelleFactureClient({
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* CLIENT */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-5 text-xl font-bold text-slate-900">
+            {L.client}
+          </h2>
 
-          {/* CLIENT */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label={L.name}
+              value={clientNom}
+              onChange={setClientNom}
+            />
 
-            <h2 className="mb-5 text-xl font-bold text-slate-900">
-              {L.client}
-            </h2>
+            <Field
+              label={L.email}
+              type="email"
+              value={clientCourriel}
+              onChange={setClientCourriel}
+            />
 
-            <div className="space-y-4">
+            <Field
+              label={L.address}
+              value={clientAdresse}
+              onChange={setClientAdresse}
+            />
 
-              <Field
-                label={L.name}
-                value={clientNom}
-                onChange={setClientNom}
-              />
+            <Field
+              label={L.city}
+              value={clientVille}
+              onChange={setClientVille}
+            />
 
-              <Field
-                label={L.email}
-                type="email"
-                value={clientCourriel}
-                onChange={setClientCourriel}
-              />
+            <Field
+              label={L.province}
+              value={clientProvince}
+              onChange={setClientProvince}
+            />
 
-              <Field
-                label={L.address}
-                value={clientAdresse}
-                onChange={setClientAdresse}
-              />
+            <Field
+              label={L.postal}
+              value={clientCodePostal}
+              onChange={setClientCodePostal}
+            />
+          </div>
+        </section>
 
-              <div className="grid grid-cols-2 gap-3">
-
-                <Field
-                  label={L.city}
-                  value={clientVille}
-                  onChange={setClientVille}
-                />
-
-                <Field
-                  label={L.province}
-                  value={clientProvince}
-                  onChange={setClientProvince}
-                />
-
-              </div>
-
-              <Field
-                label={L.postal}
-                value={clientCodePostal}
-                onChange={setClientCodePostal}
-              />
-
-            </div>
-          </section>
-
-          {/* FACTURE */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-            <h2 className="mb-5 text-xl font-bold text-slate-900">
+        {/* SERVICES */}
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold text-slate-900">
               {L.invoice}
             </h2>
 
-            <div className="space-y-4">
+            <button
+              type="button"
+              onClick={ajouterLigne}
+              className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
+            >
+              {L.addLine}
+            </button>
+          </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-slate-700">
-                  {L.description}
-                </label>
+          <div className="space-y-4">
+            {lignes.map((ligne, index) => (
+              <div
+                key={ligne.id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-bold text-slate-500">
+                    #{index + 1}
+                  </span>
 
-                <textarea
-                  value={description}
-                  onChange={(e) =>
-                    setDescription(e.target.value)
-                  }
-                  placeholder={L.descriptionPlaceholder}
-                  rows={4}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-                />
-              </div>
+                  {lignes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        retirerLigne(ligne.id)
+                      }
+                      className="text-sm font-semibold text-red-600 hover:underline"
+                    >
+                      {L.removeLine}
+                    </button>
+                  )}
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 md:grid-cols-[1fr_110px_160px_150px]">
+                  {/* DESCRIPTION */}
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">
+                      {L.description}
+                    </label>
 
-                <div>
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    {L.quantity}
-                  </label>
-
-                  <input
-                    type="number"
-                    min="1"
-                    value={quantite}
-                    onChange={(e) =>
-                      setQuantite(
-                        Math.max(
-                          1,
-                          Number(e.target.value) || 1
+                    <input
+                      type="text"
+                      value={ligne.description}
+                      placeholder={
+                        L.descriptionPlaceholder
+                      }
+                      onChange={(e) =>
+                        modifierLigne(
+                          ligne.id,
+                          "description",
+                          e.target.value
                         )
-                      )
-                    }
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3"
-                  />
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-600"
+                    />
+                  </div>
+
+                  {/* QUANTITÉ */}
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">
+                      {L.quantity}
+                    </label>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={ligne.quantite}
+                      onChange={(e) =>
+                        modifierLigne(
+                          ligne.id,
+                          "quantite",
+                          Math.max(
+                            1,
+                            Number(
+                              e.target.value
+                            ) || 1
+                          )
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3"
+                    />
+                  </div>
+
+                  {/* PRIX */}
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">
+                      {L.price}
+                    </label>
+
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={ligne.prixUnitaire}
+                      placeholder="125.00"
+                      onChange={(e) =>
+                        modifierLigne(
+                          ligne.id,
+                          "prixUnitaire",
+                          e.target.value
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+                    />
+
+                    <p className="mt-1 text-xs text-slate-400">
+                      Ex. 125 ou -20
+                    </p>
+                  </div>
+
+                  {/* MONTANT */}
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-slate-700">
+                      {L.amount}
+                    </label>
+
+                    <div
+                      className={`rounded-xl border border-slate-200 bg-white px-4 py-3 text-right font-bold ${
+                        montantLigne(ligne) < 0
+                          ? "text-red-600"
+                          : "text-slate-900"
+                      }`}
+                    >
+                      {money(
+                        montantLigne(ligne)
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-semibold text-slate-700">
-                    {L.price}
-                  </label>
-
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={prixUnitaire}
-                    onChange={(e) =>
-                      setPrixUnitaire(e.target.value)
-                    }
-                    placeholder="150.00"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3"
-                  />
-                </div>
-
               </div>
-            </div>
-          </section>
-        </div>
+            ))}
+          </div>
+        </section>
 
-        {/* CALCUL TAXES */}
+        {/* CALCUL DES TAXES */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
           <div className="ml-auto max-w-md space-y-3">
-
             <MoneyLine
               label={L.subtotal}
-              value={money(montants.sousTotal)}
+              value={money(
+                montants.sousTotal
+              )}
             />
 
             <MoneyLine
@@ -464,9 +686,7 @@ export default function NouvelleFactureClient({
             />
 
             <div className="border-t border-slate-200 pt-4">
-
               <div className="flex items-center justify-between">
-
                 <span className="text-xl font-bold text-slate-900">
                   {L.total}
                 </span>
@@ -474,7 +694,6 @@ export default function NouvelleFactureClient({
                 <span className="text-2xl font-bold text-blue-700">
                   {money(montants.total)}
                 </span>
-
               </div>
             </div>
           </div>
@@ -482,13 +701,11 @@ export default function NouvelleFactureClient({
 
         {/* PAIEMENT */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
           <h2 className="mb-5 text-xl font-bold text-slate-900">
             {L.payment}
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
-
             {/* STATUT */}
             <div>
               <label className="mb-1 block text-sm font-semibold text-slate-700">
@@ -522,7 +739,9 @@ export default function NouvelleFactureClient({
                 <select
                   value={modePaiement}
                   onChange={(e) =>
-                    setModePaiement(e.target.value)
+                    setModePaiement(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-slate-300 px-4 py-3"
                 >
@@ -544,7 +763,6 @@ export default function NouvelleFactureClient({
                 </select>
               </div>
             )}
-
           </div>
         </section>
 
@@ -555,20 +773,19 @@ export default function NouvelleFactureClient({
           </div>
         )}
 
-        {/* BOUTON */}
+        {/* ENREGISTRER */}
         <div className="mt-6 flex justify-end">
-
           <button
             type="button"
             disabled={saving}
             onClick={enregistrer}
             className="rounded-xl bg-blue-700 px-7 py-3 font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? L.saving : L.save}
+            {saving
+              ? L.saving
+              : L.save}
           </button>
-
         </div>
-
       </div>
     </main>
   );
@@ -587,7 +804,6 @@ function Field({
 }) {
   return (
     <div>
-
       <label className="mb-1 block text-sm font-semibold text-slate-700">
         {label}
       </label>
@@ -600,7 +816,6 @@ function Field({
         }
         className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
       />
-
     </div>
   );
 }
@@ -614,15 +829,11 @@ function MoneyLine({
 }) {
   return (
     <div className="flex justify-between text-slate-600">
-
-      <span>
-        {label}
-      </span>
+      <span>{label}</span>
 
       <span className="font-semibold">
         {value}
       </span>
-
     </div>
   );
 }
