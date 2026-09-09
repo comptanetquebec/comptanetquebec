@@ -307,17 +307,22 @@ export default async function AdminFacturesPage({
 
                   {factures.map((facture) => {
                     const paye =
-                      facture.statut === "paid" ||
-                      facture.statut === "payee" ||
-                      facture.statut === "paid_stripe";
+                      facture.statut === "paid";
 
                     return (
                       <tr
                         key={facture.id}
                         className="hover:bg-slate-50"
                       >
-                        <td className="whitespace-nowrap px-5 py-4 font-semibold text-blue-700">
-                          {facture.numero_facture ?? "—"}
+
+                        {/* NUMÉRO CLIQUABLE */}
+                        <td className="whitespace-nowrap px-5 py-4 font-semibold">
+                          <Link
+                            href={`/admin/factures/${facture.id}?lang=${lang}`}
+                            className="text-blue-700 hover:underline"
+                          >
+                            {facture.numero_facture ?? "—"}
+                          </Link>
                         </td>
 
                         <td className="px-5 py-4">
@@ -369,6 +374,7 @@ export default async function AdminFacturesPage({
                               )
                             : "—"}
                         </td>
+
                       </tr>
                     );
                   })}
