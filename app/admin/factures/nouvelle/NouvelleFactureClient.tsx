@@ -22,7 +22,8 @@ const COPY = {
 
     invoice: "Facture",
     description: "Description du service",
-    descriptionPlaceholder: "Ex. : Préparation de la déclaration de revenus",
+    descriptionPlaceholder:
+      "Ex. : Préparation de la déclaration de revenus",
     quantity: "Quantité",
     price: "Prix avant taxes",
 
@@ -32,6 +33,7 @@ const COPY = {
     total: "TOTAL",
 
     payment: "Paiement",
+    status: "Statut",
     unpaid: "À payer",
     paid: "Payée",
     paymentMethod: "Mode de paiement",
@@ -43,7 +45,8 @@ const COPY = {
     save: "Enregistrer la facture",
     saving: "Enregistrement...",
     success: "Facture enregistrée.",
-    required: "Le nom du client, la description et le prix sont obligatoires.",
+    required:
+      "Le nom du client, la description et le prix sont obligatoires.",
     saveError: "Impossible d'enregistrer la facture.",
   },
 
@@ -62,7 +65,8 @@ const COPY = {
 
     invoice: "Invoice",
     description: "Service description",
-    descriptionPlaceholder: "E.g. Personal income tax return preparation",
+    descriptionPlaceholder:
+      "E.g. Personal income tax return preparation",
     quantity: "Quantity",
     price: "Price before taxes",
 
@@ -72,6 +76,7 @@ const COPY = {
     total: "TOTAL",
 
     payment: "Payment",
+    status: "Status",
     unpaid: "Amount due",
     paid: "Paid",
     paymentMethod: "Payment method",
@@ -83,7 +88,8 @@ const COPY = {
     save: "Save invoice",
     saving: "Saving...",
     success: "Invoice saved.",
-    required: "Client name, description and price are required.",
+    required:
+      "Client name, description and price are required.",
     saveError: "Unable to save invoice.",
   },
 
@@ -102,7 +108,8 @@ const COPY = {
 
     invoice: "Factura",
     description: "Descripción del servicio",
-    descriptionPlaceholder: "Ej.: Preparación de la declaración de impuestos",
+    descriptionPlaceholder:
+      "Ej.: Preparación de la declaración de impuestos",
     quantity: "Cantidad",
     price: "Precio antes de impuestos",
 
@@ -112,6 +119,7 @@ const COPY = {
     total: "TOTAL",
 
     payment: "Pago",
+    status: "Estado",
     unpaid: "Por pagar",
     paid: "Pagada",
     paymentMethod: "Método de pago",
@@ -123,7 +131,8 @@ const COPY = {
     save: "Guardar factura",
     saving: "Guardando...",
     success: "Factura guardada.",
-    required: "El nombre del cliente, la descripción y el precio son obligatorios.",
+    required:
+      "El nombre del cliente, la descripción y el precio son obligatorios.",
     saveError: "No se pudo guardar la factura.",
   },
 } as const;
@@ -157,7 +166,9 @@ export default function NouvelleFactureClient({
   const [message, setMessage] = useState<string | null>(null);
 
   const montants = useMemo(() => {
-    const prix = Number(prixUnitaire.replace(",", ".")) || 0;
+    const prix =
+      Number(prixUnitaire.replace(",", ".")) || 0;
+
     const qty = Number(quantite) || 1;
 
     const sousTotal = roundMoney(prix * qty);
@@ -174,13 +185,17 @@ export default function NouvelleFactureClient({
   }, [prixUnitaire, quantite]);
 
   function money(value: number) {
-    return new Intl.NumberFormat(
-      lang === "fr" ? "fr-CA" : lang === "es" ? "es-CA" : "en-CA",
-      {
-        style: "currency",
-        currency: "CAD",
-      }
-    ).format(value);
+    const locale =
+      lang === "fr"
+        ? "fr-CA"
+        : lang === "es"
+        ? "es-CA"
+        : "en-CA";
+
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "CAD",
+    }).format(value);
   }
 
   async function enregistrer() {
@@ -201,44 +216,68 @@ export default function NouvelleFactureClient({
     const dateFacture = now.toISOString().slice(0, 10);
 
     /*
-      Numéro temporaire unique.
-      On remplacera ensuite ceci par notre numérotation CQ définitive
-      directement dans Supabase.
+      Numéro temporaire.
+      Nous mettrons ensuite en place une vraie
+      numérotation CQ automatique dans Supabase.
     */
     const numeroFacture = `CQ-${Date.now()}`;
 
     const estPayee = statut === "paid";
 
-    const { error } = await supabase.from("factures").insert({
-      numero_facture: numeroFacture,
+    const { error } = await supabase
+      .from("factures")
+      .insert({
+        numero_facture: numeroFacture,
 
-      client_nom: clientNom.trim(),
-      client_courriel: clientCourriel.trim().toLowerCase() || null,
-      client_adresse: clientAdresse.trim() || null,
-      client_ville: clientVille.trim() || null,
-      client_province: clientProvince.trim() || null,
-      client_code_postal: clientCodePostal.trim().toUpperCase() || null,
+        client_nom: clientNom.trim(),
 
-      formulaire_id: null,
+        client_courriel:
+          clientCourriel.trim().toLowerCase() || null,
 
-      description: description.trim(),
-      quantite,
-      prix_unitaire: Number(prixUnitaire.replace(",", ".")) || 0,
+        client_adresse:
+          clientAdresse.trim() || null,
 
-      sous_total: montants.sousTotal,
-      tps: montants.tps,
-      tvq: montants.tvq,
-      total: montants.total,
+        client_ville:
+          clientVille.trim() || null,
 
-      statut,
-      montant_paye: estPayee ? montants.total : 0,
-      mode_paiement: estPayee ? modePaiement : null,
+        client_province:
+          clientProvince.trim() || null,
 
-      date_facture: dateFacture,
-      date_paiement: estPayee ? now.toISOString() : null,
+        client_code_postal:
+          clientCodePostal.trim().toUpperCase() || null,
 
-      updated_at: now.toISOString(),
-    });
+        formulaire_id: null,
+
+        description: description.trim(),
+
+        quantite,
+
+        prix_unitaire:
+          Number(prixUnitaire.replace(",", ".")) || 0,
+
+        sous_total: montants.sousTotal,
+
+        tps: montants.tps,
+
+        tvq: montants.tvq,
+
+        total: montants.total,
+
+        statut,
+
+        montant_paye:
+          estPayee ? montants.total : 0,
+
+        mode_paiement:
+          estPayee ? modePaiement : null,
+
+        date_facture: dateFacture,
+
+        date_paiement:
+          estPayee ? now.toISOString() : null,
+
+        updated_at: now.toISOString(),
+      });
 
     setSaving(false);
 
@@ -254,6 +293,7 @@ export default function NouvelleFactureClient({
     <main className="min-h-screen bg-slate-50 p-5 md:p-8">
       <div className="mx-auto max-w-5xl">
 
+        {/* RETOUR */}
         <Link
           href={`/admin/factures?lang=${lang}`}
           className="text-sm font-semibold text-blue-700 hover:underline"
@@ -261,7 +301,8 @@ export default function NouvelleFactureClient({
           {L.back}
         </Link>
 
-        <div className="mt-5 mb-8">
+        {/* TITRE */}
+        <div className="mb-8 mt-5">
           <h1 className="text-3xl font-bold text-slate-900">
             {L.title}
           </h1>
@@ -275,11 +316,13 @@ export default function NouvelleFactureClient({
 
           {/* CLIENT */}
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
             <h2 className="mb-5 text-xl font-bold text-slate-900">
               {L.client}
             </h2>
 
             <div className="space-y-4">
+
               <Field
                 label={L.name}
                 value={clientNom}
@@ -300,6 +343,7 @@ export default function NouvelleFactureClient({
               />
 
               <div className="grid grid-cols-2 gap-3">
+
                 <Field
                   label={L.city}
                   value={clientVille}
@@ -311,6 +355,7 @@ export default function NouvelleFactureClient({
                   value={clientProvince}
                   onChange={setClientProvince}
                 />
+
               </div>
 
               <Field
@@ -318,16 +363,19 @@ export default function NouvelleFactureClient({
                 value={clientCodePostal}
                 onChange={setClientCodePostal}
               />
+
             </div>
           </section>
 
           {/* FACTURE */}
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
             <h2 className="mb-5 text-xl font-bold text-slate-900">
               {L.invoice}
             </h2>
 
             <div className="space-y-4">
+
               <div>
                 <label className="mb-1 block text-sm font-semibold text-slate-700">
                   {L.description}
@@ -335,7 +383,9 @@ export default function NouvelleFactureClient({
 
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) =>
+                    setDescription(e.target.value)
+                  }
                   placeholder={L.descriptionPlaceholder}
                   rows={4}
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
@@ -343,6 +393,7 @@ export default function NouvelleFactureClient({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-slate-700">
                     {L.quantity}
@@ -353,7 +404,12 @@ export default function NouvelleFactureClient({
                     min="1"
                     value={quantite}
                     onChange={(e) =>
-                      setQuantite(Math.max(1, Number(e.target.value)))
+                      setQuantite(
+                        Math.max(
+                          1,
+                          Number(e.target.value) || 1
+                        )
+                      )
                     }
                     className="w-full rounded-xl border border-slate-300 px-4 py-3"
                   />
@@ -368,18 +424,22 @@ export default function NouvelleFactureClient({
                     type="text"
                     inputMode="decimal"
                     value={prixUnitaire}
-                    onChange={(e) => setPrixUnitaire(e.target.value)}
+                    onChange={(e) =>
+                      setPrixUnitaire(e.target.value)
+                    }
                     placeholder="150.00"
                     className="w-full rounded-xl border border-slate-300 px-4 py-3"
                   />
                 </div>
+
               </div>
             </div>
           </section>
         </div>
 
-        {/* TOTAL */}
+        {/* CALCUL TAXES */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
           <div className="ml-auto max-w-md space-y-3">
 
             <MoneyLine
@@ -398,7 +458,9 @@ export default function NouvelleFactureClient({
             />
 
             <div className="border-t border-slate-200 pt-4">
+
               <div className="flex items-center justify-between">
+
                 <span className="text-xl font-bold text-slate-900">
                   {L.total}
                 </span>
@@ -406,6 +468,7 @@ export default function NouvelleFactureClient({
                 <span className="text-2xl font-bold text-blue-700">
                   {money(montants.total)}
                 </span>
+
               </div>
             </div>
           </div>
@@ -413,62 +476,91 @@ export default function NouvelleFactureClient({
 
         {/* PAIEMENT */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-5 text-xl font-bold">
+
+          <h2 className="mb-5 text-xl font-bold text-slate-900">
             {L.payment}
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
+
+            {/* STATUT */}
             <div>
-              <label className="mb-1 block text-sm font-semibold">
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
                 {L.status}
               </label>
 
               <select
                 value={statut}
-                onChange={(e) => setStatut(e.target.value)}
+                onChange={(e) =>
+                  setStatut(e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-4 py-3"
               >
-                <option value="unpaid">{L.unpaid}</option>
-                <option value="paid">{L.paid}</option>
+                <option value="unpaid">
+                  {L.unpaid}
+                </option>
+
+                <option value="paid">
+                  {L.paid}
+                </option>
               </select>
             </div>
 
+            {/* MODE DE PAIEMENT */}
             {statut === "paid" && (
               <div>
-                <label className="mb-1 block text-sm font-semibold">
+                <label className="mb-1 block text-sm font-semibold text-slate-700">
                   {L.paymentMethod}
                 </label>
 
                 <select
                   value={modePaiement}
-                  onChange={(e) => setModePaiement(e.target.value)}
+                  onChange={(e) =>
+                    setModePaiement(e.target.value)
+                  }
                   className="w-full rounded-xl border border-slate-300 px-4 py-3"
                 >
-                  <option value="interac">{L.interac}</option>
-                  <option value="stripe">{L.stripe}</option>
-                  <option value="cash">{L.cash}</option>
-                  <option value="other">{L.other}</option>
+                  <option value="interac">
+                    {L.interac}
+                  </option>
+
+                  <option value="stripe">
+                    {L.stripe}
+                  </option>
+
+                  <option value="cash">
+                    {L.cash}
+                  </option>
+
+                  <option value="other">
+                    {L.other}
+                  </option>
                 </select>
               </div>
             )}
+
           </div>
         </section>
 
+        {/* MESSAGE */}
         {message && (
-          <div className="mt-5 rounded-xl bg-slate-100 p-4 font-medium">
+          <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 font-medium text-slate-700">
             {message}
           </div>
         )}
 
+        {/* BOUTON */}
         <div className="mt-6 flex justify-end">
+
           <button
             type="button"
             disabled={saving}
             onClick={enregistrer}
-            className="rounded-xl bg-blue-700 px-7 py-3 font-bold text-white hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-xl bg-blue-700 px-7 py-3 font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? L.saving : L.save}
           </button>
+
         </div>
 
       </div>
@@ -489,6 +581,7 @@ function Field({
 }) {
   return (
     <div>
+
       <label className="mb-1 block text-sm font-semibold text-slate-700">
         {label}
       </label>
@@ -496,9 +589,12 @@ function Field({
       <input
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) =>
+          onChange(e.target.value)
+        }
         className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
       />
+
     </div>
   );
 }
@@ -512,8 +608,15 @@ function MoneyLine({
 }) {
   return (
     <div className="flex justify-between text-slate-600">
-      <span>{label}</span>
-      <span className="font-semibold">{value}</span>
+
+      <span>
+        {label}
+      </span>
+
+      <span className="font-semibold">
+        {value}
+      </span>
+
     </div>
   );
 }
