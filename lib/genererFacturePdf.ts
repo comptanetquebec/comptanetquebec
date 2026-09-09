@@ -31,9 +31,10 @@ type Lang = "fr" | "en" | "es";
 const COPY = {
   fr: {
     invoice: "FACTURE",
-    invoiceNo: "N° DE FACTURE",
+    invoiceNo: "N° FACTURE",
     clientNo: "N° CLIENT",
     date: "DATE",
+    for: "POUR",
     billedTo: "FACTURÉ À",
     description: "DESCRIPTION",
     quantity: "QTÉ",
@@ -42,14 +43,18 @@ const COPY = {
     subtotal: "Sous-total",
     gst: "TPS (5 %)",
     qst: "TVQ (9,975 %)",
-    total: "TOTAL",
-    payment: "MODE DE PAIEMENT",
-    interac: "Virement Interac",
-    stripe: "Paiement en ligne",
+    totalDue: "TOTAL À PAYER",
+    totalPaid: "TOTAL PAYÉ",
+    paymentInterac: "PAIEMENT PAR VIREMENT INTERAC",
+    paymentOnline: "PAIEMENT EN LIGNE",
     paid: "PAYÉE",
     unpaid: "À PAYER",
-    thanks: "MERCI DE VOTRE CONFIANCE",
+    gstNumber: "N° d'inscription TPS",
+    qstNumber: "N° d'inscription TVQ",
+    trust: "Merci de votre confiance !",
+    partner: ["VOTRE", "PARTENAIRE", "DE CONFIANCE"],
     tagline: "IMPÔTS  •  TENUE DE LIVRES  •  SERVICES AUX ENTREPRISES",
+    service: ["AU SERVICE DES PARTICULIERS", "ET DES ENTREPRISES DU QUÉBEC"],
   },
 
   en: {
@@ -57,6 +62,7 @@ const COPY = {
     invoiceNo: "INVOICE NO.",
     clientNo: "CLIENT NO.",
     date: "DATE",
+    for: "FOR",
     billedTo: "BILLED TO",
     description: "DESCRIPTION",
     quantity: "QTY",
@@ -65,21 +71,26 @@ const COPY = {
     subtotal: "Subtotal",
     gst: "GST (5%)",
     qst: "QST (9.975%)",
-    total: "TOTAL",
-    payment: "PAYMENT METHOD",
-    interac: "Interac e-Transfer",
-    stripe: "Online payment",
+    totalDue: "TOTAL DUE",
+    totalPaid: "TOTAL PAID",
+    paymentInterac: "PAYMENT BY INTERAC E-TRANSFER",
+    paymentOnline: "ONLINE PAYMENT",
     paid: "PAID",
     unpaid: "AMOUNT DUE",
-    thanks: "THANK YOU FOR YOUR TRUST",
+    gstNumber: "GST registration no.",
+    qstNumber: "QST registration no.",
+    trust: "Thank you for your trust!",
+    partner: ["YOUR", "TRUSTED", "PARTNER"],
     tagline: "TAXES  •  BOOKKEEPING  •  BUSINESS SERVICES",
+    service: ["SERVING INDIVIDUALS", "AND BUSINESSES IN QUÉBEC"],
   },
 
   es: {
     invoice: "FACTURA",
-    invoiceNo: "N.º DE FACTURA",
-    clientNo: "N.º DE CLIENTE",
+    invoiceNo: "N.º FACTURA",
+    clientNo: "N.º CLIENTE",
     date: "FECHA",
+    for: "POR",
     billedTo: "FACTURADO A",
     description: "DESCRIPCIÓN",
     quantity: "CANT.",
@@ -88,15 +99,19 @@ const COPY = {
     subtotal: "Subtotal",
     gst: "GST/TPS (5 %)",
     qst: "QST/TVQ (9,975 %)",
-    total: "TOTAL",
-    payment: "MÉTODO DE PAGO",
-    interac: "Transferencia Interac",
-    stripe: "Pago en línea",
+    totalDue: "TOTAL A PAGAR",
+    totalPaid: "TOTAL PAGADO",
+    paymentInterac: "PAGO POR TRANSFERENCIA INTERAC",
+    paymentOnline: "PAGO EN LÍNEA",
     paid: "PAGADA",
     unpaid: "POR PAGAR",
-    thanks: "GRACIAS POR SU CONFIANZA",
+    gstNumber: "N.º de registro GST/TPS",
+    qstNumber: "N.º de registro QST/TVQ",
+    trust: "¡Gracias por su confianza!",
+    partner: ["SU", "SOCIO", "DE CONFIANZA"],
     tagline:
       "IMPUESTOS  •  TENEDURÍA DE LIBROS  •  SERVICIOS PARA EMPRESAS",
+    service: ["AL SERVICIO DE PARTICULARES", "Y EMPRESAS DE QUÉBEC"],
   },
 } as const;
 
@@ -152,225 +167,326 @@ export function genererFacturePdf(
   const W = 215.9;
   const H = 279.4;
 
-  // Couleurs ComptaNet
-  const navy: [number, number, number] = [18, 52, 100];
-  const blue: [number, number, number] = [36, 99, 170];
-  const lightBlue: [number, number, number] = [234, 244, 253];
-  const paleBlue: [number, number, number] = [246, 250, 254];
-  const dark: [number, number, number] = [30, 41, 59];
-  const grey: [number, number, number] = [100, 116, 139];
-  const line: [number, number, number] = [218, 228, 238];
+  // =========================================================
+  // COULEURS
+  // =========================================================
 
-  const green: [number, number, number] = [22, 101, 52];
-  const greenBg: [number, number, number] = [220, 252, 231];
+  const navy: [number, number, number] = [8, 62, 103];
+  const blue: [number, number, number] = [22, 94, 145];
+  const mediumBlue: [number, number, number] = [69, 132, 186];
 
-  const amber: [number, number, number] = [146, 64, 14];
-  const amberBg: [number, number, number] = [254, 249, 195];
+  const lightBlue: [number, number, number] = [235, 245, 253];
+  const lighterBlue: [number, number, number] = [246, 250, 254];
 
-  const isPaid = facture.statut === "paid";
+  const dark: [number, number, number] = [22, 34, 49];
+  const grey: [number, number, number] = [76, 91, 107];
+  const line: [number, number, number] = [199, 216, 230];
 
-  // =====================================================
-  // GRAND EN-TÊTE BLEU
-  // =====================================================
+  const green: [number, number, number] = [31, 122, 72];
+  const greenBg: [number, number, number] = [226, 247, 234];
+
+  const amber: [number, number, number] = [153, 92, 10];
+  const amberBg: [number, number, number] = [255, 246, 210];
+
+  const isPaid =
+    facture.statut?.toLowerCase() === "paid" ||
+    facture.statut?.toLowerCase() === "payee" ||
+    facture.statut?.toLowerCase() === "payée";
+
+  // =========================================================
+  // LOGO CQ
+  // =========================================================
 
   doc.setFillColor(...navy);
-  doc.rect(0, 0, W, 55, "F");
+  doc.circle(23, 19, 10, "F");
 
-  // Petit accent bleu
-  doc.setFillColor(...blue);
-  doc.rect(0, 55, W, 3, "F");
-
-  // Marque
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text("ComptaNet", 18, 23);
-
-  doc.setTextColor(156, 211, 255);
-  doc.text("Québec", 18, 32);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(220, 235, 250);
-  doc.text(L.tagline, 18, 42);
-
-  // FACTURE à droite
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(28);
-  doc.text(L.invoice, 198, 24, {
-    align: "right",
+  doc.setFontSize(15);
+  doc.text("CQ", 23, 22.5, {
+    align: "center",
   });
 
-  doc.setFontSize(11);
-  doc.setTextColor(190, 220, 245);
+  // =========================================================
+  // COMPTANET QUÉBEC
+  // =========================================================
+
+  doc.setTextColor(...navy);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text("ComptaNet", 38, 17);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(18);
+  doc.text("Québec", 38, 26);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.8);
+  doc.setCharSpace(1.2);
+  doc.text(L.tagline, 13, 36);
+  doc.setCharSpace(0);
+
+  // =========================================================
+  // VOTRE PARTENAIRE DE CONFIANCE
+  // =========================================================
+
+  doc.setTextColor(...dark);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.setCharSpace(1.6);
+
+  let partnerY = 12;
+
+  L.partner.forEach((text) => {
+    doc.text(text, 178, partnerY);
+    partnerY += 5;
+  });
+
+  doc.setCharSpace(0);
+
+  doc.setDrawColor(...mediumBlue);
+  doc.setLineWidth(0.5);
+  doc.line(178, 29, 190, 29);
+
+  // =========================================================
+  // COORDONNÉES ENTREPRISE
+  // =========================================================
+
+  const contactX = 14;
+  const textX = 22;
+
+  doc.setTextColor(...navy);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+
+  // Pin
+  doc.circle(contactX, 50, 1.7, "S");
+  doc.circle(contactX, 50, 0.5, "F");
+  doc.line(contactX, 51.7, contactX, 54);
+
+  // Téléphone
+  doc.setLineWidth(0.8);
+  doc.line(12.8, 61.5, 15.5, 64.2);
+  doc.line(15.5, 64.2, 17.2, 62.7);
+
+  // Courriel
+  doc.setLineWidth(0.4);
+  doc.rect(11.5, 69, 5.5, 4, "S");
+  doc.line(11.5, 69, 14.25, 71);
+  doc.line(17, 69, 14.25, 71);
+
+  doc.setTextColor(...dark);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+
   doc.text(
-    facture.numero_facture ?? "—",
-    198,
-    34,
-    { align: "right" }
+    "849, boulevard Pie XII",
+    textX,
+    50
   );
 
-  // =====================================================
-  // CARTES INFOS FACTURE
-  // =====================================================
+  doc.text(
+    "Québec, Québec  G1X 3T2",
+    textX,
+    56
+  );
 
-  const cardY = 68;
-  const cardW = facture.cq_id ? 54 : 83;
+  doc.text(
+    "581-985-2599",
+    textX,
+    64
+  );
 
-  function infoCard(
-    x: number,
-    title: string,
-    value: string
-  ) {
-    doc.setFillColor(...paleBlue);
-    doc.roundedRect(
-      x,
-      cardY,
-      cardW,
-      25,
-      3,
-      3,
-      "F"
-    );
+  doc.text(
+    "comptanetquebec@gmail.com",
+    textX,
+    72
+  );
 
-    doc.setTextColor(...grey);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.text(title, x + 6, cardY + 8);
+  // =========================================================
+  // TITRE FACTURE
+  // =========================================================
 
-    doc.setTextColor(...navy);
-    doc.setFontSize(10);
-    doc.text(value, x + 6, cardY + 17);
-  }
+  doc.setTextColor(...navy);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(28);
+
+  doc.text(
+    L.invoice,
+    200,
+    54,
+    {
+      align: "right",
+    }
+  );
+
+  // =========================================================
+  // BLOC INFOS FACTURE
+  // =========================================================
+
+  doc.setFillColor(...lighterBlue);
+  doc.roundedRect(
+    126,
+    60,
+    74,
+    facture.cq_id ? 36 : 30,
+    3,
+    3,
+    "F"
+  );
+
+  const labelX = 132;
+  const colonX = 159;
+  const valueX = 166;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...navy);
+
+  doc.text(L.invoiceNo, labelX, 69);
+  doc.text(":", colonX, 69);
+
+  doc.text(L.date, labelX, 77);
+  doc.text(":", colonX, 77);
+
+  doc.text(L.for, labelX, 85);
+  doc.text(":", colonX, 85);
 
   if (facture.cq_id) {
-    infoCard(
-      18,
-      L.invoiceNo,
-      facture.numero_facture ?? "—"
-    );
+    doc.text(L.clientNo, labelX, 93);
+    doc.text(":", colonX, 93);
+  }
 
-    infoCard(
-      80,
-      L.clientNo,
-      facture.cq_id
-    );
+  doc.setTextColor(...dark);
+  doc.setFont("helvetica", "normal");
 
-    infoCard(
-      142,
-      L.date,
-      formatDate(facture.date_facture, lang)
-    );
-  } else {
-    infoCard(
-      18,
-      L.invoiceNo,
-      facture.numero_facture ?? "—"
-    );
+  doc.text(
+    facture.numero_facture ?? "—",
+    valueX,
+    69
+  );
 
-    infoCard(
-      115,
-      L.date,
-      formatDate(facture.date_facture, lang)
+  doc.text(
+    formatDate(
+      facture.date_facture,
+      lang
+    ),
+    valueX,
+    77
+  );
+
+  const shortDescription =
+    facture.description &&
+    facture.description.length > 30
+      ? facture.description.substring(0, 30) + "..."
+      : facture.description || "—";
+
+  doc.text(
+    shortDescription,
+    valueX,
+    85
+  );
+
+  if (facture.cq_id) {
+    doc.text(
+      facture.cq_id,
+      valueX,
+      93
     );
   }
 
-  // =====================================================
-  // CLIENT
-  // =====================================================
+  // =========================================================
+  // FACTURÉ À
+  // =========================================================
 
-  const clientY = 104;
+  const clientY = 82;
 
   doc.setFillColor(...lightBlue);
   doc.roundedRect(
-    18,
+    10,
     clientY,
-    180,
-    48,
-    4,
-    4,
+    94,
+    39,
+    3,
+    3,
     "F"
   );
 
-  // Accent vertical
-  doc.setFillColor(...blue);
-  doc.roundedRect(
-    18,
-    clientY,
-    4,
-    48,
-    2,
-    2,
-    "F"
-  );
-
-  doc.setTextColor(...blue);
+  doc.setTextColor(...navy);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
+  doc.setFontSize(8.5);
   doc.text(
     L.billedTo,
-    29,
-    clientY + 11
+    15,
+    clientY + 10
   );
 
   doc.setTextColor(...dark);
-  doc.setFontSize(14);
+  doc.setFontSize(10.5);
   doc.text(
     facture.client_nom || "—",
-    29,
-    clientY + 22
+    15,
+    clientY + 19
   );
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.setTextColor(...grey);
 
-  let addressY = clientY + 31;
+  let clientLineY = clientY + 27;
 
   if (facture.client_adresse) {
     doc.text(
       facture.client_adresse,
-      29,
-      addressY
+      15,
+      clientLineY
     );
-    addressY += 5;
+    clientLineY += 6;
   }
 
-  const city = [
+  const ville = [
     facture.client_ville,
     facture.client_province,
-    facture.client_code_postal,
   ]
     .filter(Boolean)
-    .join(", ");
+    .join(" (");
 
-  if (city) {
-    doc.text(city, 29, addressY);
+  if (
+    facture.client_ville &&
+    facture.client_province
+  ) {
+    doc.text(
+      `${facture.client_ville} (${facture.client_province})`,
+      15,
+      clientLineY
+    );
+    clientLineY += 6;
+  } else if (ville) {
+    doc.text(ville, 15, clientLineY);
+    clientLineY += 6;
   }
 
-  if (facture.client_courriel) {
-    doc.setTextColor(...navy);
-    doc.setFont("helvetica", "bold");
+  if (facture.client_code_postal) {
     doc.text(
-      facture.client_courriel,
-      190,
-      clientY + 30,
-      { align: "right" }
+      facture.client_code_postal,
+      15,
+      clientLineY
     );
   }
 
-  // =====================================================
-  // TABLEAU SERVICE
-  // =====================================================
+  // =========================================================
+  // TABLEAU
+  // =========================================================
 
-  const qty = Number(facture.quantite ?? 1);
+  const qty = Number(
+    facture.quantite ?? 1
+  );
+
   const price = Number(
     facture.prix_unitaire ?? 0
   );
 
   autoTable(doc, {
-    startY: 164,
+    startY: 128,
 
     head: [[
       L.description,
@@ -381,7 +497,7 @@ export function genererFacturePdf(
 
     body: [[
       facture.description || "—",
-      String(qty),
+      qty.toFixed(2).replace(".", ","),
       money(price, lang),
       money(
         facture.sous_total ??
@@ -391,17 +507,20 @@ export function genererFacturePdf(
     ]],
 
     margin: {
-      left: 18,
-      right: 18,
+      left: 10,
+      right: 10,
     },
 
-    theme: "plain",
+    theme: "grid",
 
     styles: {
       font: "helvetica",
-      fontSize: 9,
+      fontSize: 8.5,
       cellPadding: 5,
       textColor: dark,
+      lineColor: line,
+      lineWidth: 0.25,
+      valign: "middle",
     },
 
     headStyles: {
@@ -409,88 +528,219 @@ export function genererFacturePdf(
       textColor: [255, 255, 255],
       fontStyle: "bold",
       minCellHeight: 12,
+      lineColor: [150, 190, 220],
     },
 
     bodyStyles: {
-      fillColor: [250, 252, 254],
-      minCellHeight: 17,
+      fillColor: [249, 252, 255],
+      minCellHeight: 21,
     },
 
     columnStyles: {
       0: {
-        cellWidth: 86,
+        cellWidth: 100,
       },
+
       1: {
-        cellWidth: 22,
+        cellWidth: 23,
         halign: "center",
       },
+
       2: {
-        cellWidth: 36,
+        cellWidth: 34,
         halign: "right",
       },
+
       3: {
-        cellWidth: 36,
+        cellWidth: 39,
         halign: "right",
-        fontStyle: "bold",
       },
     },
   });
 
-  // =====================================================
-  // ZONE PAIEMENT À GAUCHE
-  // =====================================================
+  // =========================================================
+  // TOTAUX
+  // =========================================================
 
-  const paymentY = 205;
+  const totalsX = 121;
+  const totalsRight = 200;
+  const totalsY = 169;
 
-  doc.setFillColor(...paleBlue);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...dark);
+
+  doc.text(
+    L.subtotal,
+    totalsX,
+    totalsY
+  );
+
+  doc.text(
+    money(
+      facture.sous_total,
+      lang
+    ),
+    totalsRight,
+    totalsY,
+    {
+      align: "right",
+    }
+  );
+
+  doc.setDrawColor(...line);
+  doc.line(
+    totalsX,
+    totalsY + 4,
+    totalsRight,
+    totalsY + 4
+  );
+
+  doc.text(
+    L.gst,
+    totalsX,
+    totalsY + 12
+  );
+
+  doc.text(
+    money(facture.tps, lang),
+    totalsRight,
+    totalsY + 12,
+    {
+      align: "right",
+    }
+  );
+
+  doc.line(
+    totalsX,
+    totalsY + 16,
+    totalsRight,
+    totalsY + 16
+  );
+
+  doc.text(
+    L.qst,
+    totalsX,
+    totalsY + 24
+  );
+
+  doc.text(
+    money(facture.tvq, lang),
+    totalsRight,
+    totalsY + 24,
+    {
+      align: "right",
+    }
+  );
+
+  // Total
+  doc.setFillColor(...lightBlue);
   doc.roundedRect(
-    18,
-    paymentY,
-    82,
-    44,
-    4,
-    4,
+    totalsX - 5,
+    totalsY + 30,
+    84,
+    15,
+    2,
+    2,
     "F"
   );
 
-  doc.setTextColor(...blue);
+  doc.setTextColor(...navy);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
+  doc.setFontSize(10);
+
   doc.text(
-    L.payment,
-    26,
+    isPaid
+      ? L.totalPaid
+      : L.totalDue,
+    totalsX,
+    totalsY + 39.5
+  );
+
+  doc.setFontSize(13);
+
+  doc.text(
+    money(facture.total, lang),
+    totalsRight - 2,
+    totalsY + 39.5,
+    {
+      align: "right",
+    }
+  );
+
+  // =========================================================
+  // PAIEMENT
+  // =========================================================
+
+  const paymentY = 219;
+
+  doc.setFillColor(...lightBlue);
+  doc.roundedRect(
+    10,
+    paymentY,
+    103,
+    25,
+    3,
+    3,
+    "F"
+  );
+
+  // Icône banque simplifiée
+  doc.setFillColor(255, 255, 255);
+  doc.circle(
+    23,
+    paymentY + 12.5,
+    8,
+    "F"
+  );
+
+  doc.setTextColor(...navy);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text(
+    "$",
+    23,
+    paymentY + 16,
+    {
+      align: "center",
+    }
+  );
+
+  doc.setFontSize(7.7);
+
+  const isStripe =
+    facture.mode_paiement?.toLowerCase() ===
+    "stripe";
+
+  doc.text(
+    isStripe
+      ? L.paymentOnline
+      : L.paymentInterac,
+    36,
     paymentY + 10
   );
 
-  const mode =
-    facture.mode_paiement === "stripe"
-      ? L.stripe
-      : L.interac;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
 
-  doc.setTextColor(...dark);
-  doc.setFontSize(11);
-  doc.text(
-    mode,
-    26,
-    paymentY + 21
-  );
-
-  if (
-    !facture.mode_paiement ||
-    facture.mode_paiement === "interac"
-  ) {
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...grey);
-    doc.setFontSize(7.5);
-
+  if (!isStripe) {
     doc.text(
       "comptanetquebec@gmail.com",
-      26,
-      paymentY + 30
+      36,
+      paymentY + 18
+    );
+  } else {
+    doc.text(
+      "ComptaNet Québec",
+      36,
+      paymentY + 18
     );
   }
 
-  // Statut comme sceau
+  // =========================================================
+  // STATUT
+  // =========================================================
+
   if (isPaid) {
     doc.setFillColor(...greenBg);
     doc.setTextColor(...green);
@@ -500,179 +750,183 @@ export function genererFacturePdf(
   }
 
   doc.roundedRect(
-    26,
-    paymentY + 34,
-    65,
-    7,
+    122,
+    paymentY,
+    78,
+    10,
     3,
     3,
     "F"
   );
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
+  doc.setFontSize(8.5);
 
   doc.text(
     isPaid
       ? L.paid
       : L.unpaid,
-    58.5,
-    paymentY + 39,
+    161,
+    paymentY + 6.5,
     {
       align: "center",
     }
   );
 
-  // =====================================================
-  // TOTAUX À DROITE
-  // =====================================================
+  // =========================================================
+  // NUMÉROS TPS / TVQ
+  // =========================================================
 
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(...line);
-  doc.roundedRect(
-    109,
-    paymentY,
-    89,
-    44,
-    4,
-    4,
-    "FD"
-  );
-
-  const labelX = 118;
-  const amountX = 190;
-
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...grey);
-  doc.setFontSize(8.5);
-
-  doc.text(
-    L.subtotal,
-    labelX,
-    paymentY + 10
-  );
-
-  doc.text(
-    money(facture.sous_total, lang),
-    amountX,
-    paymentY + 10,
-    { align: "right" }
-  );
-
-  doc.text(
-    L.gst,
-    labelX,
-    paymentY + 18
-  );
-
-  doc.text(
-    money(facture.tps, lang),
-    amountX,
-    paymentY + 18,
-    { align: "right" }
-  );
-
-  doc.text(
-    L.qst,
-    labelX,
-    paymentY + 26
-  );
-
-  doc.text(
-    money(facture.tvq, lang),
-    amountX,
-    paymentY + 26,
-    { align: "right" }
-  );
-
-  // Total bleu foncé
-  doc.setFillColor(...navy);
-  doc.roundedRect(
-    113,
-    paymentY + 31,
-    81,
-    10,
-    2,
-    2,
-    "F"
-  );
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-
-  doc.text(
-    L.total,
-    119,
-    paymentY + 37.5
-  );
-
-  doc.setFontSize(12);
-
-  doc.text(
-    money(facture.total, lang),
-    189,
-    paymentY + 37.5,
-    {
-      align: "right",
-    }
-  );
-
-  // =====================================================
-  // CONTACT / NUMÉROS DE TAXES
-  // =====================================================
-
-  doc.setDrawColor(...line);
-  doc.line(18, 258, 198, 258);
-
+  doc.setTextColor(...dark);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
-  doc.setTextColor(...grey);
 
   doc.text(
-    "849, boulevard Pie-XII • Québec (Québec) G1X 3T2",
-    18,
-    266
+    `${L.gstNumber} : 701807737`,
+    14,
+    252
   );
 
   doc.text(
-    "581-985-2599 • comptanetquebec@gmail.com",
-    18,
-    271
+    `${L.qstNumber} : 1227932399`,
+    14,
+    258
   );
 
-  doc.text(
-    "TPS : 701807737   •   TVQ : 1227932399",
-    198,
-    266,
-    {
-      align: "right",
-    }
+  // =========================================================
+  // MERCI DE VOTRE CONFIANCE
+  // =========================================================
+
+  doc.setDrawColor(...line);
+  doc.line(
+    122,
+    219,
+    122,
+    258
   );
 
-  // =====================================================
-  // BANDEAU MERCI
-  // =====================================================
-
-  doc.setFillColor(...navy);
-  doc.rect(0, H - 8, W, 8, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
+  doc.setTextColor(...navy);
+  doc.setFont(
+    "times",
+    "italic"
+  );
+  doc.setFontSize(15);
 
   doc.text(
-    L.thanks,
-    W / 2,
-    H - 3,
+    L.trust,
+    161,
+    239,
     {
       align: "center",
     }
   );
 
-  // =====================================================
-  // TÉLÉCHARGEMENT
-  // =====================================================
+  doc.setDrawColor(...mediumBlue);
+  doc.setLineWidth(0.5);
+  doc.line(
+    155,
+    244,
+    167,
+    244
+  );
+
+  doc.setFont(
+    "helvetica",
+    "normal"
+  );
+
+  doc.setFontSize(5.8);
+  doc.setCharSpace(1.1);
+  doc.setTextColor(...grey);
+
+  doc.text(
+    L.service[0],
+    161,
+    251,
+    {
+      align: "center",
+    }
+  );
+
+  doc.text(
+    L.service[1],
+    161,
+    256,
+    {
+      align: "center",
+    }
+  );
+
+  doc.setCharSpace(0);
+
+  // =========================================================
+  // VAGUES DU BAS
+  // =========================================================
+
+  // Vague bleu très pâle
+  doc.setFillColor(225, 240, 253);
+
+  doc.lines(
+    [
+      [30, 7],
+      [35, 4],
+      [35, -2],
+      [35, -5],
+      [35, -4],
+      [45, 0],
+      [0, 16],
+      [-180, 0],
+    ],
+    0,
+    H - 16,
+    [1, 1],
+    "F",
+    true
+  );
+
+  // Vague intermédiaire
+  doc.setFillColor(150, 194, 229);
+
+  doc.lines(
+    [
+      [38, 7],
+      [42, 3],
+      [42, -4],
+      [40, -5],
+      [54, -1],
+      [0, 12],
+      [-216, 0],
+    ],
+    0,
+    H - 10,
+    [1, 1],
+    "F",
+    true
+  );
+
+  // Vague foncée
+  doc.setFillColor(79, 137, 184);
+
+  doc.lines(
+    [
+      [45, 7],
+      [50, 2],
+      [50, -5],
+      [45, -4],
+      [26, 0],
+      [0, 8],
+      [-216, 0],
+    ],
+    0,
+    H - 5,
+    [1, 1],
+    "F",
+    true
+  );
+
+  // =========================================================
+  // SAUVEGARDE
+  // =========================================================
 
   const numero =
     facture.numero_facture?.replace(
