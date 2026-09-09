@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabaseServer";
+import BoutonPdf from "./BoutonPdf";
 
 type Lang = "fr" | "en" | "es";
 
@@ -11,22 +12,28 @@ type ProfileRow = {
 type FactureRow = {
   id: string;
   numero_facture: string | null;
+  cq_id: string | null;
+
   client_nom: string | null;
   client_courriel: string | null;
   client_adresse: string | null;
   client_ville: string | null;
   client_province: string | null;
   client_code_postal: string | null;
+
   description: string | null;
   quantite: number | null;
   prix_unitaire: number | null;
+
   sous_total: number | null;
   tps: number | null;
   tvq: number | null;
   total: number | null;
+
   statut: string | null;
   montant_paye: number | null;
   mode_paiement: string | null;
+
   date_facture: string | null;
 };
 
@@ -35,6 +42,7 @@ const COPY = {
     back: "← Retour aux factures",
     invoice: "FACTURE",
     invoiceNumber: "No de facture",
+    clientNumber: "No client",
     date: "Date",
     billedTo: "FACTURÉ À",
     description: "DESCRIPTION",
@@ -57,6 +65,7 @@ const COPY = {
     back: "← Back to invoices",
     invoice: "INVOICE",
     invoiceNumber: "Invoice no.",
+    clientNumber: "Client no.",
     date: "Date",
     billedTo: "BILLED TO",
     description: "DESCRIPTION",
@@ -79,6 +88,7 @@ const COPY = {
     back: "← Volver a las facturas",
     invoice: "FACTURA",
     invoiceNumber: "N.º de factura",
+    clientNumber: "N.º de cliente",
     date: "Fecha",
     billedTo: "FACTURADO A",
     description: "DESCRIPCIÓN",
@@ -94,7 +104,8 @@ const COPY = {
     paid: "PAGADA",
     unpaid: "POR PAGAR",
     thankYou: "¡Gracias por su confianza!",
-    tagline: "IMPUESTOS • CONTABILIDAD • SERVICIOS PARA EMPRESAS",
+    tagline:
+      "IMPUESTOS • TENEDURÍA DE LIBROS • SERVICIOS PARA EMPRESAS",
   },
 } as const;
 
@@ -116,6 +127,7 @@ type PageProps = {
   params: Promise<{
     id: string;
   }>;
+
   searchParams?: Promise<{
     lang?: string;
   }>;
@@ -175,20 +187,49 @@ export default async function FacturePage({
     <main className="min-h-screen bg-slate-100 px-4 py-8 md:px-8">
       <div className="mx-auto max-w-4xl">
 
-        <div className="mb-5">
+        {/* RETOUR + PDF */}
+        <div className="mb-5 flex items-center justify-between gap-4">
           <Link
             href={`/admin/factures?lang=${lang}`}
             className="font-semibold text-blue-700 hover:underline"
           >
             {L.back}
           </Link>
+
+          <BoutonPdf
+            lang={lang}
+            facture={{
+              numero_facture: facture.numero_facture,
+              cq_id: facture.cq_id,
+
+              client_nom: facture.client_nom ?? "",
+              client_courriel: facture.client_courriel,
+              client_adresse: facture.client_adresse,
+              client_ville: facture.client_ville,
+              client_province: facture.client_province,
+              client_code_postal: facture.client_code_postal,
+
+              description: facture.description,
+              quantite: facture.quantite,
+              prix_unitaire: facture.prix_unitaire,
+
+              sous_total: facture.sous_total,
+              tps: facture.tps,
+              tvq: facture.tvq,
+              total: facture.total,
+
+              statut: facture.statut,
+              mode_paiement: facture.mode_paiement,
+              date_facture: facture.date_facture,
+            }}
+          />
         </div>
 
         <article className="overflow-hidden rounded-2xl bg-white shadow-lg">
 
-          {/* HAUT */}
           <div className="border-t-8 border-blue-800 p-8 md:p-12">
 
+            {/* ENTREPRISE + FACTURE */}
             <div className="flex flex-col justify-between gap-8 md:flex-row">
 
               <div>
@@ -214,6 +255,7 @@ export default async function FacturePage({
                 </h1>
 
                 <div className="mt-5 space-y-2 text-sm">
+
                   <div>
                     <span className="font-semibold text-slate-500">
                       {L.invoiceNumber} :
@@ -223,6 +265,17 @@ export default async function FacturePage({
                     </span>
                   </div>
 
+                  {facture.cq_id && (
+                    <div>
+                      <span className="font-semibold text-slate-500">
+                        {L.clientNumber} :
+                      </span>{" "}
+                      <span className="font-bold text-slate-900">
+                        {facture.cq_id}
+                      </span>
+                    </div>
+                  )}
+
                   <div>
                     <span className="font-semibold text-slate-500">
                       {L.date} :
@@ -231,9 +284,9 @@ export default async function FacturePage({
                       {facture.date_facture ?? "—"}
                     </span>
                   </div>
+
                 </div>
               </div>
-
             </div>
 
             {/* CLIENT */}
@@ -259,7 +312,7 @@ export default async function FacturePage({
               )}
             </div>
 
-            {/* TABLE */}
+            {/* TABLEAU */}
             <div className="mt-10 overflow-hidden rounded-xl border border-slate-200">
               <table className="w-full text-sm">
 
