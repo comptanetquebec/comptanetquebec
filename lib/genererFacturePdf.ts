@@ -23,7 +23,6 @@ export type FacturePdf = {
 
   statut: string | null;
   mode_paiement?: string | null;
-
   date_facture: string | null;
 };
 
@@ -43,9 +42,10 @@ const COPY = {
     subtotal: "Sous-total",
     gst: "TPS (5 %)",
     qst: "TVQ (9,975 %)",
-    total: "TOTAL À PAYER",
-    payment: "PAIEMENT",
+    total: "TOTAL",
+    payment: "MODE DE PAIEMENT",
     interac: "Virement Interac",
+    stripe: "Paiement en ligne",
     paid: "PAYÉE",
     unpaid: "À PAYER",
     thanks: "Merci de votre confiance !",
@@ -65,9 +65,10 @@ const COPY = {
     subtotal: "Subtotal",
     gst: "GST (5%)",
     qst: "QST (9.975%)",
-    total: "TOTAL DUE",
-    payment: "PAYMENT",
+    total: "TOTAL",
+    payment: "PAYMENT METHOD",
     interac: "Interac e-Transfer",
+    stripe: "Online payment",
     paid: "PAID",
     unpaid: "AMOUNT DUE",
     thanks: "Thank you for your trust!",
@@ -87,21 +88,28 @@ const COPY = {
     subtotal: "Subtotal",
     gst: "GST/TPS (5 %)",
     qst: "QST/TVQ (9,975 %)",
-    total: "TOTAL A PAGAR",
-    payment: "PAGO",
+    total: "TOTAL",
+    payment: "MÉTODO DE PAGO",
     interac: "Transferencia Interac",
+    stripe: "Pago en línea",
     paid: "PAGADA",
     unpaid: "POR PAGAR",
     thanks: "¡Gracias por su confianza!",
-    tagline: "IMPUESTOS • TENEDURÍA DE LIBROS • SERVICIOS PARA EMPRESAS",
+    tagline:
+      "IMPUESTOS • TENEDURÍA DE LIBROS • SERVICIOS PARA EMPRESAS",
   },
 } as const;
 
-function argent(value: number | null | undefined, lang: Lang) {
+function money(
+  value: number | null | undefined,
+  lang: Lang
+) {
   const locale =
-    lang === "fr" ? "fr-CA" :
-    lang === "es" ? "es-CA" :
-    "en-CA";
+    lang === "fr"
+      ? "fr-CA"
+      : lang === "es"
+      ? "es-CA"
+      : "en-CA";
 
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -109,17 +117,24 @@ function argent(value: number | null | undefined, lang: Lang) {
   }).format(Number(value ?? 0));
 }
 
-function dateFormat(date: string | null, lang: Lang) {
-  if (!date) return "—";
+function formatDate(
+  value: string | null,
+  lang: Lang
+) {
+  if (!value) return "—";
 
   const locale =
-    lang === "fr" ? "fr-CA" :
-    lang === "es" ? "es-CA" :
-    "en-CA";
+    lang === "fr"
+      ? "fr-CA"
+      : lang === "es"
+      ? "es-CA"
+      : "en-CA";
 
-  return new Intl.DateTimeFormat(locale).format(
-    new Date(`${date}T12:00:00`)
-  );
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(`${value}T12:00:00`));
 }
 
 export function genererFacturePdf(
@@ -134,87 +149,185 @@ export function genererFacturePdf(
     format: "letter",
   });
 
-  const bleu = [22, 55, 112] as const;
-  const bleuPale = [239, 246, 255] as const;
-  const gris = [71, 85, 105] as const;
+  // COULEURS
+  const navy: [number, number, number] = [24, 58, 112];
+  const dark: [number, number, number] = [30, 41, 59];
+  const grey: [number, number, number] = [100, 116, 139];
+  const lightBlue: [number, number, number] = [239, 246, 255];
+  const veryLight: [number, number, number] = [248, 250, 252];
+  const green: [number, number, number] = [22, 101, 52];
+  const greenLight: [number, number, number] = [220, 252, 231];
+  const amber: [number, number, number] = [146, 64, 14];
+  const amberLight: [number, number, number] = [254, 249, 195];
 
-  // Ligne supérieure
-  doc.setFillColor(...bleu);
-  doc.rect(0, 0, 216, 5, "F");
+  const pageWidth = 215.9;
 
-  // Entreprise
-  doc.setTextColor(...bleu);
+  // =====================================================
+  // BANDE SUPÉRIEURE
+  // =====================================================
+
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, pageWidth, 7, "F");
+
+  // =====================================================
+  // ENTREPRISE
+  // =====================================================
+
+  doc.setTextColor(...navy);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(21);
-  doc.text("ComptaNet Québec", 18, 24);
+  doc.setFontSize(22);
+  doc.text("ComptaNet Québec", 18, 25);
+
+  doc.setTextColor(...grey);
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "bold");
+  doc.text(L.tagline, 18, 32);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...gris);
-  doc.text(L.tagline, 18, 31);
-
   doc.setFontSize(9);
-  doc.text("849, boulevard Pie XII", 18, 41);
-  doc.text("Québec (Québec) G1X 3T2", 18, 46);
-  doc.text("581-985-2599", 18, 51);
-  doc.text("comptanetquebec@gmail.com", 18, 56);
 
-  // FACTURE
-  doc.setTextColor(...bleu);
+  doc.text("849, boulevard Pie-XII", 18, 43);
+  doc.text("Québec (Québec) G1X 3T2", 18, 48);
+  doc.text("581-985-2599", 18, 53);
+  doc.text("comptanetquebec@gmail.com", 18, 58);
+
+  // =====================================================
+  // TITRE FACTURE
+  // =====================================================
+
+  doc.setTextColor(...navy);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(25);
-  doc.text(L.invoice, 198, 25, { align: "right" });
+  doc.setFontSize(27);
+
+  doc.text(L.invoice, 198, 25, {
+    align: "right",
+  });
 
   doc.setFontSize(9);
-  doc.setTextColor(...gris);
+
+  doc.setTextColor(...grey);
+  doc.setFont("helvetica", "normal");
 
   doc.text(
-    `${L.invoiceNumber}: ${facture.numero_facture ?? "—"}`,
-    198,
-    36,
-    { align: "right" }
+    `${L.invoiceNumber}:`,
+    150,
+    38
   );
+
+  doc.setTextColor(...dark);
+  doc.setFont("helvetica", "bold");
+
+  doc.text(
+    facture.numero_facture ?? "—",
+    198,
+    38,
+    {
+      align: "right",
+    }
+  );
+
+  let detailY = 45;
 
   if (facture.cq_id) {
+    doc.setTextColor(...grey);
+    doc.setFont("helvetica", "normal");
+
     doc.text(
-      `${L.clientNumber}: ${facture.cq_id}`,
-      198,
-      42,
-      { align: "right" }
+      `${L.clientNumber}:`,
+      150,
+      detailY
     );
+
+    doc.setTextColor(...dark);
+    doc.setFont("helvetica", "bold");
+
+    doc.text(
+      facture.cq_id,
+      198,
+      detailY,
+      {
+        align: "right",
+      }
+    );
+
+    detailY += 7;
   }
 
+  doc.setTextColor(...grey);
+  doc.setFont("helvetica", "normal");
+
   doc.text(
-    `${L.date}: ${dateFormat(facture.date_facture, lang)}`,
-    198,
-    facture.cq_id ? 48 : 42,
-    { align: "right" }
+    `${L.date}:`,
+    150,
+    detailY
   );
 
-  // Client
-  doc.setFillColor(...bleuPale);
-  doc.roundedRect(18, 68, 180, 38, 3, 3, "F");
-
+  doc.setTextColor(...dark);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...bleu);
-  doc.setFontSize(9);
-  doc.text(L.billedTo, 25, 78);
 
-  doc.setFontSize(11);
-  doc.text(facture.client_nom || "—", 25, 86);
+  doc.text(
+    formatDate(facture.date_facture, lang),
+    198,
+    detailY,
+    {
+      align: "right",
+    }
+  );
+
+  // =====================================================
+  // SÉPARATEUR
+  // =====================================================
+
+  doc.setDrawColor(220, 228, 238);
+  doc.line(18, 68, 198, 68);
+
+  // =====================================================
+  // CLIENT
+  // =====================================================
+
+  doc.setFillColor(...lightBlue);
+  doc.roundedRect(
+    18,
+    77,
+    180,
+    42,
+    3,
+    3,
+    "F"
+  );
+
+  doc.setTextColor(...navy);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+
+  doc.text(L.billedTo, 25, 87);
+
+  doc.setTextColor(...dark);
+  doc.setFontSize(13);
+
+  doc.text(
+    facture.client_nom || "—",
+    25,
+    96
+  );
 
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gris);
   doc.setFontSize(9);
+  doc.setTextColor(...grey);
 
-  let clientY = 92;
+  let clientY = 103;
 
   if (facture.client_adresse) {
-    doc.text(facture.client_adresse, 25, clientY);
+    doc.text(
+      facture.client_adresse,
+      25,
+      clientY
+    );
+
     clientY += 5;
   }
 
-  const ville = [
+  const cityLine = [
     facture.client_ville,
     facture.client_province,
     facture.client_code_postal,
@@ -222,170 +335,372 @@ export function genererFacturePdf(
     .filter(Boolean)
     .join(", ");
 
-  if (ville) {
-    doc.text(ville, 25, clientY);
+  if (cityLine) {
+    doc.text(
+      cityLine,
+      25,
+      clientY
+    );
+
     clientY += 5;
   }
 
   if (facture.client_courriel) {
-    doc.text(facture.client_courriel, 25, clientY);
+    doc.text(
+      facture.client_courriel,
+      120,
+      103
+    );
   }
 
-  // Tableau
-  const qty = Number(facture.quantite ?? 1);
-  const prix = Number(facture.prix_unitaire ?? 0);
+  // =====================================================
+  // TABLEAU
+  // =====================================================
+
+  const qty = Number(
+    facture.quantite ?? 1
+  );
+
+  const unitPrice = Number(
+    facture.prix_unitaire ?? 0
+  );
 
   autoTable(doc, {
-    startY: 116,
+    startY: 130,
 
-    head: [[
-      L.description,
-      L.quantity,
-      L.price,
-      L.amount,
-    ]],
+    head: [
+      [
+        L.description,
+        L.quantity,
+        L.price,
+        L.amount,
+      ],
+    ],
 
-    body: [[
-      facture.description ?? "",
-      String(qty),
-      argent(prix, lang),
-      argent(prix * qty, lang),
-    ]],
+    body: [
+      [
+        facture.description || "—",
+        String(qty),
+        money(unitPrice, lang),
+        money(
+          facture.sous_total ??
+            unitPrice * qty,
+          lang
+        ),
+      ],
+    ],
 
     theme: "plain",
-
-    styles: {
-      font: "helvetica",
-      fontSize: 9,
-      cellPadding: 4,
-    },
-
-    headStyles: {
-      fillColor: [22, 55, 112],
-      textColor: [255, 255, 255],
-      fontStyle: "bold",
-    },
-
-    columnStyles: {
-      0: { cellWidth: 90 },
-      1: { cellWidth: 20, halign: "center" },
-      2: { cellWidth: 35, halign: "right" },
-      3: { cellWidth: 35, halign: "right" },
-    },
 
     margin: {
       left: 18,
       right: 18,
     },
+
+    styles: {
+      font: "helvetica",
+      fontSize: 9,
+      cellPadding: 5,
+      textColor: dark,
+    },
+
+    headStyles: {
+      fillColor: navy,
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+
+    bodyStyles: {
+      fillColor: veryLight,
+    },
+
+    columnStyles: {
+      0: {
+        cellWidth: 90,
+      },
+
+      1: {
+        cellWidth: 20,
+        halign: "center",
+      },
+
+      2: {
+        cellWidth: 35,
+        halign: "right",
+      },
+
+      3: {
+        cellWidth: 35,
+        halign: "right",
+      },
+    },
   });
 
-  // Totaux
-  const y = 158;
+  // =====================================================
+  // TOTAUX
+  // =====================================================
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...gris);
+  const totalsX = 118;
+  const valuesX = 198;
+  const totalsY = 170;
 
-  doc.text(L.subtotal, 130, y);
-  doc.text(
-    argent(facture.sous_total, lang),
-    198,
-    y,
-    { align: "right" }
-  );
-
-  doc.text(L.gst, 130, y + 8);
-  doc.text(
-    argent(facture.tps, lang),
-    198,
-    y + 8,
-    { align: "right" }
-  );
-
-  doc.text(L.qst, 130, y + 16);
-  doc.text(
-    argent(facture.tvq, lang),
-    198,
-    y + 16,
-    { align: "right" }
-  );
-
-  doc.setDrawColor(...bleu);
-  doc.line(130, y + 23, 198, y + 23);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(15, 23, 42);
-
-  doc.text(L.total, 130, y + 33);
-
-  doc.setFontSize(16);
-  doc.setTextColor(...bleu);
-  doc.text(
-    argent(facture.total, lang),
-    198,
-    y + 33,
-    { align: "right" }
-  );
-
-  // Paiement
-  doc.setFillColor(239, 246, 255);
-  doc.roundedRect(18, 205, 84, 34, 3, 3, "F");
-
-  doc.setTextColor(...bleu);
-  doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text(L.payment, 24, 215);
-
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gris);
-  doc.text(L.interac, 24, 223);
-  doc.text("comptanetquebec@gmail.com", 24, 230);
+  doc.setTextColor(...grey);
 
-  // Statut
-  const payee = facture.statut === "paid";
+  doc.text(
+    L.subtotal,
+    totalsX,
+    totalsY
+  );
 
-  if (payee) {
-    doc.setFillColor(236, 253, 245);
-  } else {
-    doc.setFillColor(254, 249, 195);
-  }
+  doc.text(
+    money(facture.sous_total, lang),
+    valuesX,
+    totalsY,
+    {
+      align: "right",
+    }
+  );
 
-  doc.roundedRect(114, 205, 84, 34, 3, 3, "F");
+  doc.text(
+    L.gst,
+    totalsX,
+    totalsY + 8
+  );
+
+  doc.text(
+    money(facture.tps, lang),
+    valuesX,
+    totalsY + 8,
+    {
+      align: "right",
+    }
+  );
+
+  doc.text(
+    L.qst,
+    totalsX,
+    totalsY + 16
+  );
+
+  doc.text(
+    money(facture.tvq, lang),
+    valuesX,
+    totalsY + 16,
+    {
+      align: "right",
+    }
+  );
+
+  doc.setDrawColor(...navy);
+
+  doc.line(
+    totalsX,
+    totalsY + 23,
+    valuesX,
+    totalsY + 23
+  );
+
+  // TOTAL ENCADRÉ
+
+  doc.setFillColor(...lightBlue);
+
+  doc.roundedRect(
+    113,
+    totalsY + 28,
+    85,
+    21,
+    3,
+    3,
+    "F"
+  );
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setTextColor(...dark);
+  doc.setFontSize(10);
 
-  if (payee) {
-    doc.setTextColor(22, 101, 52);
-    doc.text(L.paid, 156, 224, { align: "center" });
-  } else {
-    doc.setTextColor(146, 64, 14);
-    doc.text(L.unpaid, 156, 224, { align: "center" });
-  }
+  doc.text(
+    L.total,
+    120,
+    totalsY + 41
+  );
 
-  // Numéros de taxes
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gris);
+  doc.setTextColor(...navy);
+  doc.setFontSize(17);
+
+  doc.text(
+    money(facture.total, lang),
+    192,
+    totalsY + 41,
+    {
+      align: "right",
+    }
+  );
+
+  // =====================================================
+  // PAIEMENT
+  // =====================================================
+
+  const boxY = 228;
+
+  doc.setFillColor(...lightBlue);
+
+  doc.roundedRect(
+    18,
+    boxY,
+    84,
+    37,
+    4,
+    4,
+    "F"
+  );
+
+  doc.setTextColor(...navy);
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
 
-  doc.text("TPS : 701807737", 18, 254);
-  doc.text("TVQ : 1227932399", 18, 259);
+  doc.text(
+    L.payment,
+    25,
+    boxY + 10
+  );
 
-  // Merci
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...grey);
+  doc.setFontSize(9);
+
+  const mode =
+    facture.mode_paiement === "stripe"
+      ? L.stripe
+      : L.interac;
+
+  doc.text(
+    mode,
+    25,
+    boxY + 19
+  );
+
+  if (
+    !facture.mode_paiement ||
+    facture.mode_paiement === "interac"
+  ) {
+    doc.setTextColor(...dark);
+    doc.setFontSize(8);
+
+    doc.text(
+      "comptanetquebec@gmail.com",
+      25,
+      boxY + 27
+    );
+  }
+
+  // =====================================================
+  // STATUT
+  // =====================================================
+
+  const isPaid =
+    facture.statut === "paid";
+
+  if (isPaid) {
+    doc.setFillColor(...greenLight);
+  } else {
+    doc.setFillColor(...amberLight);
+  }
+
+  doc.roundedRect(
+    111,
+    boxY,
+    87,
+    37,
+    4,
+    4,
+    "F"
+  );
+
+  if (isPaid) {
+    doc.setTextColor(...green);
+  } else {
+    doc.setTextColor(...amber);
+  }
+
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+
+  doc.text(
+    isPaid
+      ? `✓ ${L.paid}`
+      : L.unpaid,
+    154.5,
+    boxY + 22,
+    {
+      align: "center",
+    }
+  );
+
+  // =====================================================
+  // PIED DE PAGE
+  // =====================================================
+
+  doc.setDrawColor(220, 228, 238);
+
+  doc.line(
+    18,
+    277,
+    198,
+    277
+  );
+
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...grey);
+  doc.setFontSize(7.5);
+
+  doc.text(
+    "TPS : 701807737",
+    18,
+    285
+  );
+
+  doc.text(
+    "TVQ : 1227932399",
+    18,
+    290
+  );
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...navy);
   doc.setFontSize(11);
-  doc.setTextColor(15, 23, 42);
-  doc.text(L.thanks, 108, 270, { align: "center" });
 
-  // Ligne inférieure
-  doc.setFillColor(...bleu);
-  doc.rect(0, 274, 216, 5, "F");
+  doc.text(
+    L.thanks,
+    198,
+    287,
+    {
+      align: "right",
+    }
+  );
 
-  // Téléchargement
+  // BANDE INFÉRIEURE
+
+  doc.setFillColor(...navy);
+
+  doc.rect(
+    0,
+    272.4,
+    pageWidth,
+    7,
+    "F"
+  );
+
+  // =====================================================
+  // ENREGISTRER
+  // =====================================================
+
   const numero =
-    facture.numero_facture?.replace(/[^a-zA-Z0-9-_]/g, "_") ??
-    "facture";
+    facture.numero_facture?.replace(
+      /[^a-zA-Z0-9-_]/g,
+      "_"
+    ) || "facture";
 
   doc.save(`${numero}.pdf`);
 }
