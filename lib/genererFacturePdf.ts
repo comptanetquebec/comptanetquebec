@@ -778,127 +778,159 @@ export async function genererFacturePdf(
     Icônes volontairement simples et propres.
     On évite les anciens dessins improvisés.
   */
-  function drawContact() {
-    doc.setDrawColor(
-      ...blue
-    );
+ function drawContact() {
+  doc.setDrawColor(...blue);
+  doc.setFillColor(...blue);
 
-    doc.setFillColor(
-      ...blue
-    );
+  // ==========================================
+  // ADRESSE — épingle plus propre
+  // ==========================================
 
-    doc.setLineWidth(0.45);
+  doc.setLineWidth(0.6);
 
-    // Adresse : petit marqueur propre
-    doc.circle(
-      14,
-      50,
-      2.1,
-      "S"
-    );
+  // cercle extérieur
+  doc.circle(
+    14,
+    50,
+    2.1,
+    "S"
+  );
 
-    doc.circle(
-      14,
-      50,
-      0.65,
-      "F"
-    );
+  // point intérieur
+  doc.circle(
+    14,
+    50,
+    0.65,
+    "F"
+  );
 
-    doc.triangle(
-      12.6,
-      51.2,
-      15.4,
-      51.2,
-      14,
-      54,
-      "F"
-    );
+  // pointe de l'épingle
+  doc.line(
+    12.7,
+    51.5,
+    14,
+    54
+  );
 
-    // Téléphone : combiné simplifié
-    doc.setLineWidth(1);
+  doc.line(
+    15.3,
+    51.5,
+    14,
+    54
+  );
 
-    doc.line(
-      12,
-      62,
-      13.4,
-      64
-    );
+  // ==========================================
+  // TÉLÉPHONE — combiné plus propre
+  // ==========================================
 
-    doc.line(
-      13.4,
-      64,
-      15.6,
-      65.5
-    );
+  doc.setLineWidth(1.3);
+  doc.setLineCap("round");
 
-    doc.line(
-      15.6,
-      65.5,
-      17,
-      64
-    );
+  doc.line(
+    11.8,
+    61.5,
+    13.2,
+    63.5
+  );
 
-    // Courriel
-    doc.setLineWidth(0.45);
+  doc.line(
+    13.2,
+    63.5,
+    15.3,
+    65.2
+  );
 
-    doc.rect(
-      11,
-      71,
-      7,
-      5,
-      "S"
-    );
+  doc.line(
+    15.3,
+    65.2,
+    17.2,
+    63.8
+  );
 
-    doc.line(
-      11,
-      71,
-      14.5,
-      73.7
-    );
+  // extrémité supérieure du combiné
+  doc.setLineWidth(1.8);
 
-    doc.line(
-      18,
-      71,
-      14.5,
-      73.7
-    );
+  doc.line(
+    11.5,
+    61.2,
+    13,
+    60.6
+  );
 
-    doc.setTextColor(
-      ...dark
-    );
+  // extrémité inférieure
+  doc.line(
+    16.8,
+    63.6,
+    17.8,
+    65
+  );
 
-    doc.setFont(
-      "helvetica",
-      "normal"
-    );
+  // ==========================================
+  // COURRIEL — ON GARDE EXACTEMENT L'ACTUEL
+  // ==========================================
 
-    doc.setFontSize(8.4);
+  doc.setLineCap("butt");
+  doc.setLineWidth(0.45);
 
-    doc.text(
-      "849, boulevard Pie XII",
-      22,
-      49.5
-    );
+  doc.rect(
+    11,
+    71,
+    7,
+    5,
+    "S"
+  );
 
-    doc.text(
-      "Québec, Québec  G1X 3T2",
-      22,
-      55.5
-    );
+  doc.line(
+    11,
+    71,
+    14.5,
+    73.7
+  );
 
-    doc.text(
-      "581-985-2599",
-      22,
-      64.5
-    );
+  doc.line(
+    18,
+    71,
+    14.5,
+    73.7
+  );
 
-    doc.text(
-      "comptanetquebec@gmail.com",
-      22,
-      74
-    );
-  }
+  // ==========================================
+  // TEXTE — INCHANGÉ
+  // ==========================================
 
+  doc.setTextColor(...dark);
+
+  doc.setFont(
+    "helvetica",
+    "normal"
+  );
+
+  doc.setFontSize(8.4);
+
+  doc.text(
+    "849, boulevard Pie XII",
+    22,
+    49.5
+  );
+
+  doc.text(
+    "Québec, Québec  G1X 3T2",
+    22,
+    55.5
+  );
+
+  doc.text(
+    "581-985-2599",
+    22,
+    64.5
+  );
+
+  doc.text(
+    "comptanetquebec@gmail.com",
+    22,
+    74
+  );
+}
   function drawInvoiceHeader() {
     doc.setTextColor(
       ...navy
