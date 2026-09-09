@@ -31,13 +31,13 @@ type Lang = "fr" | "en" | "es";
 const COPY = {
   fr: {
     invoice: "FACTURE",
-    invoiceNumber: "No de facture",
-    clientNumber: "No client",
-    date: "Date",
+    invoiceNo: "N° DE FACTURE",
+    clientNo: "N° CLIENT",
+    date: "DATE",
     billedTo: "FACTURÉ À",
     description: "DESCRIPTION",
     quantity: "QTÉ",
-    price: "PRIX",
+    unitPrice: "PRIX UNITAIRE",
     amount: "MONTANT",
     subtotal: "Sous-total",
     gst: "TPS (5 %)",
@@ -48,19 +48,19 @@ const COPY = {
     stripe: "Paiement en ligne",
     paid: "PAYÉE",
     unpaid: "À PAYER",
-    thanks: "Merci de votre confiance !",
-    tagline: "IMPÔTS • TENUE DE LIVRES • SERVICES AUX ENTREPRISES",
+    thanks: "MERCI DE VOTRE CONFIANCE",
+    tagline: "IMPÔTS  •  TENUE DE LIVRES  •  SERVICES AUX ENTREPRISES",
   },
 
   en: {
     invoice: "INVOICE",
-    invoiceNumber: "Invoice no.",
-    clientNumber: "Client no.",
-    date: "Date",
+    invoiceNo: "INVOICE NO.",
+    clientNo: "CLIENT NO.",
+    date: "DATE",
     billedTo: "BILLED TO",
     description: "DESCRIPTION",
     quantity: "QTY",
-    price: "PRICE",
+    unitPrice: "UNIT PRICE",
     amount: "AMOUNT",
     subtotal: "Subtotal",
     gst: "GST (5%)",
@@ -71,19 +71,19 @@ const COPY = {
     stripe: "Online payment",
     paid: "PAID",
     unpaid: "AMOUNT DUE",
-    thanks: "Thank you for your trust!",
-    tagline: "TAXES • BOOKKEEPING • BUSINESS SERVICES",
+    thanks: "THANK YOU FOR YOUR TRUST",
+    tagline: "TAXES  •  BOOKKEEPING  •  BUSINESS SERVICES",
   },
 
   es: {
     invoice: "FACTURA",
-    invoiceNumber: "N.º de factura",
-    clientNumber: "N.º de cliente",
-    date: "Fecha",
+    invoiceNo: "N.º DE FACTURA",
+    clientNo: "N.º DE CLIENTE",
+    date: "FECHA",
     billedTo: "FACTURADO A",
     description: "DESCRIPCIÓN",
     quantity: "CANT.",
-    price: "PRECIO",
+    unitPrice: "PRECIO UNITARIO",
     amount: "IMPORTE",
     subtotal: "Subtotal",
     gst: "GST/TPS (5 %)",
@@ -94,9 +94,9 @@ const COPY = {
     stripe: "Pago en línea",
     paid: "PAGADA",
     unpaid: "POR PAGAR",
-    thanks: "¡Gracias por su confianza!",
+    thanks: "GRACIAS POR SU CONFIANZA",
     tagline:
-      "IMPUESTOS • TENEDURÍA DE LIBROS • SERVICIOS PARA EMPRESAS",
+      "IMPUESTOS  •  TENEDURÍA DE LIBROS  •  SERVICIOS PARA EMPRESAS",
   },
 } as const;
 
@@ -149,185 +149,195 @@ export function genererFacturePdf(
     format: "letter",
   });
 
-  // COULEURS
-  const navy: [number, number, number] = [24, 58, 112];
+  const W = 215.9;
+  const H = 279.4;
+
+  // Couleurs ComptaNet
+  const navy: [number, number, number] = [18, 52, 100];
+  const blue: [number, number, number] = [36, 99, 170];
+  const lightBlue: [number, number, number] = [234, 244, 253];
+  const paleBlue: [number, number, number] = [246, 250, 254];
   const dark: [number, number, number] = [30, 41, 59];
   const grey: [number, number, number] = [100, 116, 139];
-  const lightBlue: [number, number, number] = [239, 246, 255];
-  const veryLight: [number, number, number] = [248, 250, 252];
-  const green: [number, number, number] = [22, 101, 52];
-  const greenLight: [number, number, number] = [220, 252, 231];
-  const amber: [number, number, number] = [146, 64, 14];
-  const amberLight: [number, number, number] = [254, 249, 195];
+  const line: [number, number, number] = [218, 228, 238];
 
-  const pageWidth = 215.9;
+  const green: [number, number, number] = [22, 101, 52];
+  const greenBg: [number, number, number] = [220, 252, 231];
+
+  const amber: [number, number, number] = [146, 64, 14];
+  const amberBg: [number, number, number] = [254, 249, 195];
+
+  const isPaid = facture.statut === "paid";
 
   // =====================================================
-  // BANDE SUPÉRIEURE
+  // GRAND EN-TÊTE BLEU
   // =====================================================
 
   doc.setFillColor(...navy);
-  doc.rect(0, 0, pageWidth, 7, "F");
+  doc.rect(0, 0, W, 55, "F");
 
-  // =====================================================
-  // ENTREPRISE
-  // =====================================================
+  // Petit accent bleu
+  doc.setFillColor(...blue);
+  doc.rect(0, 55, W, 3, "F");
 
-  doc.setTextColor(...navy);
+  // Marque
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text("ComptaNet Québec", 18, 25);
+  doc.setFontSize(24);
+  doc.text("ComptaNet", 18, 23);
 
-  doc.setTextColor(...grey);
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.text(L.tagline, 18, 32);
+  doc.setTextColor(156, 211, 255);
+  doc.text("Québec", 18, 32);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(7.5);
+  doc.setTextColor(220, 235, 250);
+  doc.text(L.tagline, 18, 42);
 
-  doc.text("849, boulevard Pie-XII", 18, 43);
-  doc.text("Québec (Québec) G1X 3T2", 18, 48);
-  doc.text("581-985-2599", 18, 53);
-  doc.text("comptanetquebec@gmail.com", 18, 58);
-
-  // =====================================================
-  // TITRE FACTURE
-  // =====================================================
-
-  doc.setTextColor(...navy);
+  // FACTURE à droite
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(27);
-
-  doc.text(L.invoice, 198, 25, {
+  doc.setFontSize(28);
+  doc.text(L.invoice, 198, 24, {
     align: "right",
   });
 
-  doc.setFontSize(9);
-
-  doc.setTextColor(...grey);
-  doc.setFont("helvetica", "normal");
-
-  doc.text(
-    `${L.invoiceNumber}:`,
-    150,
-    38
-  );
-
-  doc.setTextColor(...dark);
-  doc.setFont("helvetica", "bold");
-
+  doc.setFontSize(11);
+  doc.setTextColor(190, 220, 245);
   doc.text(
     facture.numero_facture ?? "—",
     198,
-    38,
-    {
-      align: "right",
-    }
+    34,
+    { align: "right" }
   );
 
-  let detailY = 45;
+  // =====================================================
+  // CARTES INFOS FACTURE
+  // =====================================================
 
-  if (facture.cq_id) {
+  const cardY = 68;
+  const cardW = facture.cq_id ? 54 : 83;
+
+  function infoCard(
+    x: number,
+    title: string,
+    value: string
+  ) {
+    doc.setFillColor(...paleBlue);
+    doc.roundedRect(
+      x,
+      cardY,
+      cardW,
+      25,
+      3,
+      3,
+      "F"
+    );
+
     doc.setTextColor(...grey);
-    doc.setFont("helvetica", "normal");
-
-    doc.text(
-      `${L.clientNumber}:`,
-      150,
-      detailY
-    );
-
-    doc.setTextColor(...dark);
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text(title, x + 6, cardY + 8);
 
-    doc.text(
-      facture.cq_id,
-      198,
-      detailY,
-      {
-        align: "right",
-      }
-    );
-
-    detailY += 7;
+    doc.setTextColor(...navy);
+    doc.setFontSize(10);
+    doc.text(value, x + 6, cardY + 17);
   }
 
-  doc.setTextColor(...grey);
-  doc.setFont("helvetica", "normal");
+  if (facture.cq_id) {
+    infoCard(
+      18,
+      L.invoiceNo,
+      facture.numero_facture ?? "—"
+    );
 
-  doc.text(
-    `${L.date}:`,
-    150,
-    detailY
-  );
+    infoCard(
+      80,
+      L.clientNo,
+      facture.cq_id
+    );
 
-  doc.setTextColor(...dark);
-  doc.setFont("helvetica", "bold");
+    infoCard(
+      142,
+      L.date,
+      formatDate(facture.date_facture, lang)
+    );
+  } else {
+    infoCard(
+      18,
+      L.invoiceNo,
+      facture.numero_facture ?? "—"
+    );
 
-  doc.text(
-    formatDate(facture.date_facture, lang),
-    198,
-    detailY,
-    {
-      align: "right",
-    }
-  );
-
-  // =====================================================
-  // SÉPARATEUR
-  // =====================================================
-
-  doc.setDrawColor(220, 228, 238);
-  doc.line(18, 68, 198, 68);
+    infoCard(
+      115,
+      L.date,
+      formatDate(facture.date_facture, lang)
+    );
+  }
 
   // =====================================================
   // CLIENT
   // =====================================================
 
+  const clientY = 104;
+
   doc.setFillColor(...lightBlue);
   doc.roundedRect(
     18,
-    77,
+    clientY,
     180,
-    42,
-    3,
-    3,
+    48,
+    4,
+    4,
     "F"
   );
 
-  doc.setTextColor(...navy);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
+  // Accent vertical
+  doc.setFillColor(...blue);
+  doc.roundedRect(
+    18,
+    clientY,
+    4,
+    48,
+    2,
+    2,
+    "F"
+  );
 
-  doc.text(L.billedTo, 25, 87);
+  doc.setTextColor(...blue);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text(
+    L.billedTo,
+    29,
+    clientY + 11
+  );
 
   doc.setTextColor(...dark);
-  doc.setFontSize(13);
-
+  doc.setFontSize(14);
   doc.text(
     facture.client_nom || "—",
-    25,
-    96
+    29,
+    clientY + 22
   );
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(...grey);
 
-  let clientY = 103;
+  let addressY = clientY + 31;
 
   if (facture.client_adresse) {
     doc.text(
       facture.client_adresse,
-      25,
-      clientY
+      29,
+      addressY
     );
-
-    clientY += 5;
+    addressY += 5;
   }
 
-  const cityLine = [
+  const city = [
     facture.client_ville,
     facture.client_province,
     facture.client_code_postal,
@@ -335,67 +345,57 @@ export function genererFacturePdf(
     .filter(Boolean)
     .join(", ");
 
-  if (cityLine) {
-    doc.text(
-      cityLine,
-      25,
-      clientY
-    );
-
-    clientY += 5;
+  if (city) {
+    doc.text(city, 29, addressY);
   }
 
   if (facture.client_courriel) {
+    doc.setTextColor(...navy);
+    doc.setFont("helvetica", "bold");
     doc.text(
       facture.client_courriel,
-      120,
-      103
+      190,
+      clientY + 30,
+      { align: "right" }
     );
   }
 
   // =====================================================
-  // TABLEAU
+  // TABLEAU SERVICE
   // =====================================================
 
-  const qty = Number(
-    facture.quantite ?? 1
-  );
-
-  const unitPrice = Number(
+  const qty = Number(facture.quantite ?? 1);
+  const price = Number(
     facture.prix_unitaire ?? 0
   );
 
   autoTable(doc, {
-    startY: 130,
+    startY: 164,
 
-    head: [
-      [
-        L.description,
-        L.quantity,
-        L.price,
-        L.amount,
-      ],
-    ],
+    head: [[
+      L.description,
+      L.quantity,
+      L.unitPrice,
+      L.amount,
+    ]],
 
-    body: [
-      [
-        facture.description || "—",
-        String(qty),
-        money(unitPrice, lang),
-        money(
-          facture.sous_total ??
-            unitPrice * qty,
-          lang
-        ),
-      ],
-    ],
-
-    theme: "plain",
+    body: [[
+      facture.description || "—",
+      String(qty),
+      money(price, lang),
+      money(
+        facture.sous_total ??
+          qty * price,
+        lang
+      ),
+    ]],
 
     margin: {
       left: 18,
       right: 18,
     },
+
+    theme: "plain",
 
     styles: {
       font: "helvetica",
@@ -408,292 +408,270 @@ export function genererFacturePdf(
       fillColor: navy,
       textColor: [255, 255, 255],
       fontStyle: "bold",
+      minCellHeight: 12,
     },
 
     bodyStyles: {
-      fillColor: veryLight,
+      fillColor: [250, 252, 254],
+      minCellHeight: 17,
     },
 
     columnStyles: {
       0: {
-        cellWidth: 90,
+        cellWidth: 86,
       },
-
       1: {
-        cellWidth: 20,
+        cellWidth: 22,
         halign: "center",
       },
-
       2: {
-        cellWidth: 35,
+        cellWidth: 36,
         halign: "right",
       },
-
       3: {
-        cellWidth: 35,
+        cellWidth: 36,
         halign: "right",
+        fontStyle: "bold",
       },
     },
   });
 
   // =====================================================
-  // TOTAUX
+  // ZONE PAIEMENT À GAUCHE
   // =====================================================
 
-  const totalsX = 118;
-  const valuesX = 198;
-  const totalsY = 170;
+  const paymentY = 205;
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...grey);
-
-  doc.text(
-    L.subtotal,
-    totalsX,
-    totalsY
-  );
-
-  doc.text(
-    money(facture.sous_total, lang),
-    valuesX,
-    totalsY,
-    {
-      align: "right",
-    }
-  );
-
-  doc.text(
-    L.gst,
-    totalsX,
-    totalsY + 8
-  );
-
-  doc.text(
-    money(facture.tps, lang),
-    valuesX,
-    totalsY + 8,
-    {
-      align: "right",
-    }
-  );
-
-  doc.text(
-    L.qst,
-    totalsX,
-    totalsY + 16
-  );
-
-  doc.text(
-    money(facture.tvq, lang),
-    valuesX,
-    totalsY + 16,
-    {
-      align: "right",
-    }
-  );
-
-  doc.setDrawColor(...navy);
-
-  doc.line(
-    totalsX,
-    totalsY + 23,
-    valuesX,
-    totalsY + 23
-  );
-
-  // TOTAL ENCADRÉ
-
-  doc.setFillColor(...lightBlue);
-
-  doc.roundedRect(
-    113,
-    totalsY + 28,
-    85,
-    21,
-    3,
-    3,
-    "F"
-  );
-
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...dark);
-  doc.setFontSize(10);
-
-  doc.text(
-    L.total,
-    120,
-    totalsY + 41
-  );
-
-  doc.setTextColor(...navy);
-  doc.setFontSize(17);
-
-  doc.text(
-    money(facture.total, lang),
-    192,
-    totalsY + 41,
-    {
-      align: "right",
-    }
-  );
-
-  // =====================================================
-  // PAIEMENT
-  // =====================================================
-
-  const boxY = 228;
-
-  doc.setFillColor(...lightBlue);
-
+  doc.setFillColor(...paleBlue);
   doc.roundedRect(
     18,
-    boxY,
-    84,
-    37,
+    paymentY,
+    82,
+    44,
     4,
     4,
     "F"
   );
 
-  doc.setTextColor(...navy);
+  doc.setTextColor(...blue);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-
+  doc.setFontSize(7);
   doc.text(
     L.payment,
-    25,
-    boxY + 10
+    26,
+    paymentY + 10
   );
-
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...grey);
-  doc.setFontSize(9);
 
   const mode =
     facture.mode_paiement === "stripe"
       ? L.stripe
       : L.interac;
 
+  doc.setTextColor(...dark);
+  doc.setFontSize(11);
   doc.text(
     mode,
-    25,
-    boxY + 19
+    26,
+    paymentY + 21
   );
 
   if (
     !facture.mode_paiement ||
     facture.mode_paiement === "interac"
   ) {
-    doc.setTextColor(...dark);
-    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...grey);
+    doc.setFontSize(7.5);
 
     doc.text(
       "comptanetquebec@gmail.com",
-      25,
-      boxY + 27
+      26,
+      paymentY + 30
     );
   }
 
-  // =====================================================
-  // STATUT
-  // =====================================================
-
-  const isPaid =
-    facture.statut === "paid";
-
+  // Statut comme sceau
   if (isPaid) {
-    doc.setFillColor(...greenLight);
-  } else {
-    doc.setFillColor(...amberLight);
-  }
-
-  doc.roundedRect(
-    111,
-    boxY,
-    87,
-    37,
-    4,
-    4,
-    "F"
-  );
-
-  if (isPaid) {
+    doc.setFillColor(...greenBg);
     doc.setTextColor(...green);
   } else {
+    doc.setFillColor(...amberBg);
     doc.setTextColor(...amber);
   }
 
+  doc.roundedRect(
+    26,
+    paymentY + 34,
+    65,
+    7,
+    3,
+    3,
+    "F"
+  );
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
+  doc.setFontSize(7.5);
 
   doc.text(
     isPaid
-      ? `✓ ${L.paid}`
+      ? L.paid
       : L.unpaid,
-    154.5,
-    boxY + 22,
+    58.5,
+    paymentY + 39,
     {
       align: "center",
     }
   );
 
   // =====================================================
-  // PIED DE PAGE
+  // TOTAUX À DROITE
   // =====================================================
 
-  doc.setDrawColor(220, 228, 238);
-
-  doc.line(
-    18,
-    277,
-    198,
-    277
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...line);
+  doc.roundedRect(
+    109,
+    paymentY,
+    89,
+    44,
+    4,
+    4,
+    "FD"
   );
+
+  const labelX = 118;
+  const amountX = 190;
 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...grey);
-  doc.setFontSize(7.5);
+  doc.setFontSize(8.5);
 
   doc.text(
-    "TPS : 701807737",
-    18,
-    285
+    L.subtotal,
+    labelX,
+    paymentY + 10
   );
 
   doc.text(
-    "TVQ : 1227932399",
-    18,
-    290
+    money(facture.sous_total, lang),
+    amountX,
+    paymentY + 10,
+    { align: "right" }
   );
 
+  doc.text(
+    L.gst,
+    labelX,
+    paymentY + 18
+  );
+
+  doc.text(
+    money(facture.tps, lang),
+    amountX,
+    paymentY + 18,
+    { align: "right" }
+  );
+
+  doc.text(
+    L.qst,
+    labelX,
+    paymentY + 26
+  );
+
+  doc.text(
+    money(facture.tvq, lang),
+    amountX,
+    paymentY + 26,
+    { align: "right" }
+  );
+
+  // Total bleu foncé
+  doc.setFillColor(...navy);
+  doc.roundedRect(
+    113,
+    paymentY + 31,
+    81,
+    10,
+    2,
+    2,
+    "F"
+  );
+
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...navy);
-  doc.setFontSize(11);
+  doc.setFontSize(8);
 
   doc.text(
-    L.thanks,
-    198,
-    287,
+    L.total,
+    119,
+    paymentY + 37.5
+  );
+
+  doc.setFontSize(12);
+
+  doc.text(
+    money(facture.total, lang),
+    189,
+    paymentY + 37.5,
     {
       align: "right",
     }
   );
 
-  // BANDE INFÉRIEURE
+  // =====================================================
+  // CONTACT / NUMÉROS DE TAXES
+  // =====================================================
 
-  doc.setFillColor(...navy);
+  doc.setDrawColor(...line);
+  doc.line(18, 258, 198, 258);
 
-  doc.rect(
-    0,
-    272.4,
-    pageWidth,
-    7,
-    "F"
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...grey);
+
+  doc.text(
+    "849, boulevard Pie-XII • Québec (Québec) G1X 3T2",
+    18,
+    266
+  );
+
+  doc.text(
+    "581-985-2599 • comptanetquebec@gmail.com",
+    18,
+    271
+  );
+
+  doc.text(
+    "TPS : 701807737   •   TVQ : 1227932399",
+    198,
+    266,
+    {
+      align: "right",
+    }
   );
 
   // =====================================================
-  // ENREGISTRER
+  // BANDEAU MERCI
+  // =====================================================
+
+  doc.setFillColor(...navy);
+  doc.rect(0, H - 8, W, 8, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+
+  doc.text(
+    L.thanks,
+    W / 2,
+    H - 3,
+    {
+      align: "center",
+    }
+  );
+
+  // =====================================================
+  // TÉLÉCHARGEMENT
   // =====================================================
 
   const numero =
