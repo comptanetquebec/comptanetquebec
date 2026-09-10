@@ -4,7 +4,12 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
-export type DossierStatus = "recu" | "en_cours" | "attente_client" | "termine";
+export type DossierStatus =
+  | "recu"
+  | "en_cours"
+  | "attente_client"
+  | "termine";
+
 export type PaymentStatus = "unpaid" | "paid";
 
 export type AdminDossierRow = {
@@ -28,8 +33,13 @@ export type AdminDossierRow = {
   docs_count: number;
 };
 
-type TabKey = "todo" | "waiting" | "done";
-type SortKey = "created_desc" | "created_asc" | "updated_desc" | "cq_asc";
+type TabKey = "all" | "todo" | "waiting" | "done";
+
+type SortKey =
+  | "created_desc"
+  | "created_asc"
+  | "updated_desc"
+  | "cq_asc";
 
 const LABEL: Record<DossierStatus, string> = {
   recu: "Reçu",
@@ -39,10 +49,10 @@ const LABEL: Record<DossierStatus, string> = {
 };
 
 const BADGE_CLASS: Record<DossierStatus, string> = {
-  recu: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  en_cours: "bg-blue-100 text-blue-800 border-blue-200",
-  attente_client: "bg-orange-100 text-orange-800 border-orange-200",
-  termine: "bg-green-100 text-green-800 border-green-200",
+  recu: "border-amber-200 bg-amber-50 text-amber-800",
+  en_cours: "border-blue-200 bg-blue-50 text-blue-800",
+  attente_client: "border-orange-200 bg-orange-50 text-orange-800",
+  termine: "border-emerald-200 bg-emerald-50 text-emerald-800",
 };
 
 const PAY_LABEL: Record<PaymentStatus, string> = {
@@ -51,17 +61,11 @@ const PAY_LABEL: Record<PaymentStatus, string> = {
 };
 
 const PAY_BADGE_CLASS: Record<PaymentStatus, string> = {
-  unpaid: "bg-gray-100 text-gray-700 border-gray-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
+  unpaid: "border-slate-200 bg-slate-50 text-slate-600",
+  paid: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
-function tabTitle(key: TabKey) {
-  if (key === "todo") return "À faire";
-  if (key === "waiting") return "En attente client";
-  return "Terminé";
-}
-
-function rowTab(status: DossierStatus): TabKey {
+function rowTab(status: DossierStatus): Exclude<TabKey, "all"> {
   if (status === "attente_client") return "waiting";
   if (status === "termine") return "done";
   return "todo";
@@ -69,86 +73,149 @@ function rowTab(status: DossierStatus): TabKey {
 
 function toDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
+
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function formatDate(iso: string | null | undefined) {
   const d = toDate(iso);
-  if (!d) return null;
-  return d.toLocaleString("fr-CA", {
+
+  if (!d) return "—";
+
+  return d.toLocaleDateString("fr-CA", {
     year: "numeric",
     month: "short",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
   });
 }
 
-function normalizeSearch(s: string) {
-  return s.trim().toLowerCase();
+function normalizeSearch(value: string) {
+  return value.trim().toLowerCase();
 }
 
-function safeInt(v: unknown, fallback = 0) {
-  const n = typeof v === "number" ? v : Number(v);
+function safeInt(value: unknown, fallback = 0) {
+  const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function safePaymentStatus(v: unknown): PaymentStatus {
-  return v === "paid" ? "paid" : "unpaid";
+function safePaymentStatus(value: unknown): PaymentStatus {
+  return value === "paid" ? "paid" : "unpaid";
 }
 
 function normalizeRows(input: AdminDossierRow[]): AdminDossierRow[] {
-  return (input ?? []).map((r) => ({
-    ...r,
-    form_filled: Boolean(r.form_filled),
-    docs_count: safeInt(r.docs_count, 0),
-    payment_status: r.payment_status ? safePaymentStatus(r.payment_status) : null,
+  return (input ?? []).map((row) => ({
+    ...row,
+    form_filled: Boolean(row.form_filled),
+    docs_count: safeInt(row.docs_count, 0),
+    payment_status: row.payment_status
+      ? safePaymentStatus(row.payment_status)
+      : null,
   }));
 }
 
-function rowSearchText(r: AdminDossierRow) {
-  const parts = [
-    r.client_name ?? "",
-    r.client_email ?? "",
-    r.client_phone ?? "",
-    r.cq_id ?? "",
-    r.formulaire_id ?? "",
-    r.form_type ?? "",
-    r.tax_year != null ? String(r.tax_year) : "",
-    r.payment_status ?? "",
-    r.status ?? "",
-    r.form_filled ? "formulaire_rempli" : "formulaire_vide",
-    String(safeInt(r.docs_count, 0)),
-  ];
-
-  return normalizeSearch(parts.join(" "));
+function rowSearchText(row: AdminDossierRow) {
+  return normalizeSearch(
+    [
+      row.client_name ?? "",
+      row.client_email ?? "",
+      row.client_phone ?? "",
+      row.cq_id ?? "",
+      row.formulaire_id ?? "",
+      row.form_type ?? "",
+      row.tax_year != null ? String(row.tax_year) : "",
+      row.payment_status ?? "",
+      row.status ?? "",
+      String(row.docs_count ?? 0),
+    ].join(" ")
+  );
 }
 
-export default function AdminDossiersClient({ initialRows }: { initialRows: AdminDossierRow[] }) {
-  const normalizedInitial = useMemo(() => normalizeRows(initialRows), [initialRows]);
-  const [rows, setRows] = useState<AdminDossierRow[]>(() => normalizedInitial);
+function StatCard({
+  icon,
+  title,
+  value,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: number;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-2xl border p-5 text-left transition ${
+        active
+          ? "border-blue-300 bg-blue-50 shadow-sm"
+          : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm"
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-2xl">
+          {icon}
+        </div>
 
-  const [tab, setTab] = useState<TabKey>("todo");
+        <div>
+          <div className="text-sm font-medium text-slate-500">{title}</div>
+          <div className="mt-1 text-2xl font-bold text-slate-900">{value}</div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+export default function AdminDossiersClient({
+  initialRows,
+}: {
+  initialRows: AdminDossierRow[];
+}) {
+  const normalizedInitial = useMemo(
+    () => normalizeRows(initialRows),
+    [initialRows]
+  );
+
+  const [rows, setRows] =
+    useState<AdminDossierRow[]>(normalizedInitial);
+
+  const [tab, setTab] = useState<TabKey>("all");
   const [savingId, setSavingId] = useState<string | null>(null);
-
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_desc");
 
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = { todo: 0, waiting: 0, done: 0 };
-    for (const r of rows) c[rowTab(r.status)]++;
-    return c;
+    const result = {
+      all: rows.length,
+      todo: 0,
+      waiting: 0,
+      done: 0,
+    };
+
+    for (const row of rows) {
+      result[rowTab(row.status)]++;
+    }
+
+    return result;
   }, [rows]);
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(query);
-    const base = rows.filter((r) => rowTab(r.status) === tab);
 
-    const searched = q.length === 0 ? base : base.filter((r) => rowSearchText(r).includes(q));
+    let result =
+      tab === "all"
+        ? rows
+        : rows.filter((row) => rowTab(row.status) === tab);
 
-    const sorted = [...searched].sort((a, b) => {
+    if (q) {
+      result = result.filter((row) =>
+        rowSearchText(row).includes(q)
+      );
+    }
+
+    return [...result].sort((a, b) => {
       const ac = toDate(a.created_at)?.getTime() ?? 0;
       const bc = toDate(b.created_at)?.getTime() ?? 0;
 
@@ -159,212 +226,436 @@ export default function AdminDossiersClient({ initialRows }: { initialRows: Admi
       if (sort === "created_asc") return ac - bc;
       if (sort === "updated_desc") return bu - au;
 
-      const as = (a.client_name ?? a.cq_id ?? "").toLowerCase();
-      const bs = (b.client_name ?? b.cq_id ?? "").toLowerCase();
+      const as = (
+        a.client_name ??
+        a.cq_id ??
+        ""
+      ).toLowerCase();
+
+      const bs = (
+        b.client_name ??
+        b.cq_id ??
+        ""
+      ).toLowerCase();
+
       return as.localeCompare(bs);
     });
-
-    return sorted;
   }, [rows, tab, query, sort]);
 
-  async function updateStatus(formulaire_id: string, status: DossierStatus) {
-    const prev = rows.map((r) => ({ ...r }));
+  async function updateStatus(
+    formulaire_id: string,
+    status: DossierStatus
+  ) {
+    const previousRows = rows.map((row) => ({ ...row }));
 
-    setRows((p) => p.map((r) => (r.formulaire_id === formulaire_id ? { ...r, status } : r)));
+    setRows((current) =>
+      current.map((row) =>
+        row.formulaire_id === formulaire_id
+          ? {
+              ...row,
+              status,
+              updated_at: new Date().toISOString(),
+            }
+          : row
+      )
+    );
+
     setSavingId(formulaire_id);
 
     const { error } = await supabase
       .from("dossier_statuses")
-      .upsert({ formulaire_id, status, updated_at: new Date().toISOString() }, { onConflict: "formulaire_id" });
+      .upsert(
+        {
+          formulaire_id,
+          status,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "formulaire_id",
+        }
+      );
 
     setSavingId(null);
 
     if (error) {
-      setRows(prev);
+      setRows(previousRows);
       alert("Erreur sauvegarde statut: " + error.message);
     }
   }
 
+  function resetFilters() {
+    setQuery("");
+    setSort("created_desc");
+    setTab("all");
+  }
+
   return (
-    <div className="w-full px-6 py-6">
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Admin – Dossiers</h1>
-          <div className="text-sm text-gray-500">{savingId ? "Sauvegarde en cours…" : " "}</div>
-        </div>
+    <div className="min-h-screen bg-slate-50">
+      {/* HEADER */}
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 lg:px-8">
+          <div>
+            <div className="text-xl font-extrabold text-blue-700">
+              🍁 ComptaNet Québec
+            </div>
 
-        <div className="flex items-center gap-2">
-          <Link href="/admin" className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium">
-            FORMULAIRE PRÉSENTIEL
-          </Link>
+            <div className="text-xs text-slate-500">
+              Impôts · Tenue de livres · Simplicité
+            </div>
+          </div>
+
+          <nav className="hidden items-center gap-2 lg:flex">
+            <Link
+              href="/admin/dossiers"
+              className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+            >
+              📁 Dossiers
+            </Link>
+
+            <Link
+              href="/admin/factures"
+              className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              🧾 Factures
+            </Link>
+          </nav>
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+            AD
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-lg border bg-white p-4">
-          <div className="text-sm text-gray-500">À faire</div>
-          <div className="text-2xl font-semibold">{counts.todo}</div>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <div className="text-sm text-gray-500">En attente client</div>
-          <div className="text-2xl font-semibold">{counts.waiting}</div>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <div className="text-sm text-gray-500">Terminé</div>
-          <div className="text-2xl font-semibold">{counts.done}</div>
-        </div>
-      </div>
+      <main className="mx-auto max-w-[1600px] px-5 py-7 lg:px-8">
+        {/* TITLE */}
+        <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
+                📁
+              </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {(["todo", "waiting", "done"] as TabKey[]).map((k) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={`px-3 py-2 rounded border text-sm ${tab === k ? "bg-black text-white" : "bg-white"}`}
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+                  Admin – Dossiers
+                </h1>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Gérez tous les dossiers de vos clients au même endroit.
+                </p>
+              </div>
+            </div>
+
+            {savingId && (
+              <div className="mt-2 text-xs font-medium text-blue-600">
+                Sauvegarde en cours…
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* STAT CARDS */}
+        <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            icon="📂"
+            title="À faire"
+            value={counts.todo}
+            active={tab === "todo"}
+            onClick={() => setTab("todo")}
+          />
+
+          <StatCard
+            icon="⏱️"
+            title="En attente client"
+            value={counts.waiting}
+            active={tab === "waiting"}
+            onClick={() => setTab("waiting")}
+          />
+
+          <StatCard
+            icon="✓"
+            title="Terminé"
+            value={counts.done}
+            active={tab === "done"}
+            onClick={() => setTab("done")}
+          />
+
+          <StatCard
+            icon="👥"
+            title="Total dossiers"
+            value={counts.all}
+            active={tab === "all"}
+            onClick={() => setTab("all")}
+          />
+        </div>
+
+        {/* TABS + SORT */}
+        <div className="mb-4 flex flex-col justify-between gap-3 xl:flex-row xl:items-center">
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["all", "Tous", counts.all],
+              ["todo", "À faire", counts.todo],
+              ["waiting", "En attente client", counts.waiting],
+              ["done", "Terminé", counts.done],
+            ].map(([key, label, count]) => (
+              <button
+                key={String(key)}
+                type="button"
+                onClick={() => setTab(key as TabKey)}
+                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  tab === key
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-300"
+                }`}
+              >
+                {label} ({count})
+              </button>
+            ))}
+          </div>
+
+          <select
+            value={sort}
+            onChange={(e) =>
+              setSort(e.target.value as SortKey)
+            }
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-400"
           >
-            {tabTitle(k)} ({counts[k]})
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center mb-4">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher (nom, courriel, téléphone, CQ, année)…"
-          className="border rounded px-3 py-2 text-sm w-full sm:max-w-md"
-        />
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          className="border rounded px-3 py-2 text-sm w-full sm:w-auto"
-        >
-          <option value="created_desc">Tri: Création (récent)</option>
-          <option value="created_asc">Tri: Création (ancien)</option>
-          <option value="updated_desc">Tri: Dernière maj (récent)</option>
-          <option value="cq_asc">Tri: Nom / CQ (A→Z)</option>
-        </select>
-      </div>
-
-      <div className="rounded-lg border bg-white">
-        <div className="hidden md:grid grid-cols-[1fr_420px_170px] gap-4 px-4 py-3 border-b text-sm text-gray-500">
-          <div>Dossier</div>
-          <div>Statuts</div>
-          <div className="text-right">Action</div>
+            <option value="created_desc">
+              Tri : Création (récent)
+            </option>
+            <option value="created_asc">
+              Tri : Création (ancien)
+            </option>
+            <option value="updated_desc">
+              Tri : Dernière maj
+            </option>
+            <option value="cq_asc">
+              Tri : Nom / CQ (A→Z)
+            </option>
+          </select>
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="p-6 text-gray-500 min-h-[260px] flex items-center">Aucun dossier.</div>
-        ) : (
-          <ul className="divide-y">
-            {filtered.map((r) => {
-              const created = formatDate(r.created_at);
-              const updated = formatDate(r.updated_at);
-              const mainRight = created ? ` • ${created}` : "";
+        {/* SEARCH */}
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <div className="relative flex-1">
+              <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                🔎
+              </div>
 
-              const mainLeftNode = r.client_name ? (
-                <span>
-                  {r.client_name}
-                  {r.cq_id && <span className="text-gray-500 font-normal"> • {r.cq_id}</span>}
-                </span>
-              ) : r.cq_id ? (
-                <span>{r.cq_id}</span>
-              ) : (
-                <span className="text-gray-400">Client sans nom</span>
-              );
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Rechercher par nom, courriel, téléphone, CQ, année…"
+                className="w-full rounded-xl border border-slate-200 py-3 pl-12 pr-4 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
 
-              const formBadgeClass = r.form_filled
-                ? "bg-green-100 text-green-800 border-green-200"
-                : "bg-gray-100 text-gray-700 border-gray-200";
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-xl border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              ↻ Réinitialiser
+            </button>
+          </div>
+        </div>
 
-              const pay: PaymentStatus = r.payment_status ?? "unpaid";
-              const docsCountSafe = safeInt(r.docs_count, 0);
+        {/* TABLE */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="hidden grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_170px] gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500 xl:grid">
+            <div>Client</div>
+            <div>Contact</div>
+            <div>Dossier</div>
+            <div>Année</div>
+            <div>Type</div>
+            <div>Statut</div>
+            <div className="text-right">Actions</div>
+          </div>
 
-              return (
-                <li key={r.formulaire_id} className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_420px_170px] gap-4 items-start">
-                    <div className="min-w-0">
-                      <div className="font-semibold truncate">
-                        {mainLeftNode}
-                      </div>
+          {filtered.length === 0 ? (
+            <div className="flex min-h-[330px] flex-col items-center justify-center px-6 text-center">
+              <div className="mb-4 text-6xl">📂</div>
 
-                      <div className="text-sm font-semibold text-black">
-                        Dossier : {r.cq_id ?? "—"}
-                      </div>
+              <div className="text-lg font-bold text-slate-800">
+                Aucun dossier
+              </div>
 
-                      {r.client_email && <div className="text-sm text-gray-500 truncate">{r.client_email}</div>}
+              <div className="mt-1 max-w-md text-sm text-slate-500">
+                {query
+                  ? "Aucun dossier ne correspond à votre recherche."
+                  : tab === "all"
+                  ? "Aucun dossier n'est disponible."
+                  : "Aucun dossier dans cette catégorie."}
+              </div>
+            </div>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {filtered.map((row) => {
+                const pay: PaymentStatus =
+                  row.payment_status ?? "unpaid";
 
-                      {r.client_phone && <div className="text-sm text-gray-500 truncate">{r.client_phone}</div>}
+                const docsCount = safeInt(
+                  row.docs_count,
+                  0
+                );
 
-                      <div className="text-xs text-gray-400 truncate">ID technique : {r.formulaire_id}</div>
-
-                      {(r.form_type || r.tax_year != null) && (
-                        <div className="text-sm text-gray-500">
-                          {r.form_type ? `Type: ${r.form_type}` : null}
-                          {r.form_type && r.tax_year != null ? " • " : null}
-                          {r.tax_year != null ? `Année: ${r.tax_year}` : null}
+                return (
+                  <li
+                    key={row.formulaire_id}
+                    className="px-5 py-5 transition hover:bg-slate-50/70"
+                  >
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_170px] xl:items-center xl:gap-3">
+                      {/* CLIENT */}
+                      <div className="min-w-0">
+                        <div className="truncate font-bold text-slate-900">
+                          {row.client_name ||
+                            "Client sans nom"}
                         </div>
-                      )}
 
-                      {updated && <div className="text-sm text-gray-500">Maj: {updated}</div>}
+                        <div className="mt-1 text-xs text-slate-400">
+                          Créé le {formatDate(row.created_at)}
+                        </div>
+                      </div>
+
+                      {/* CONTACT */}
+                      <div className="min-w-0 text-sm">
+                        {row.client_email && (
+                          <div className="truncate text-slate-700">
+                            {row.client_email}
+                          </div>
+                        )}
+
+                        {row.client_phone && (
+                          <div className="truncate text-slate-500">
+                            {row.client_phone}
+                          </div>
+                        )}
+
+                        {!row.client_email &&
+                          !row.client_phone && (
+                            <span className="text-slate-400">
+                              —
+                            </span>
+                          )}
+                      </div>
+
+                      {/* DOSSIER */}
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">
+                          {row.cq_id ?? "—"}
+                        </div>
+
+                        <div className="mt-1 text-xs text-slate-400">
+                          {docsCount} doc
+                          {docsCount !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+
+                      {/* YEAR */}
+                      <div className="text-sm font-semibold text-slate-700">
+                        {row.tax_year ?? "—"}
+                      </div>
+
+                      {/* TYPE */}
+                      <div>
+                        <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                          {row.form_type ?? "—"}
+                        </span>
+
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span
+                            className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
+                              row.form_filled
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-50 text-slate-500"
+                            }`}
+                          >
+                            {row.form_filled
+                              ? "Formulaire OK"
+                              : "Formulaire vide"}
+                          </span>
+
+                          <span
+                            className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${PAY_BADGE_CLASS[pay]}`}
+                          >
+                            {PAY_LABEL[pay]}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* STATUS */}
+                      <div>
+                        <span
+                          className={`mb-2 inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${BADGE_CLASS[row.status]}`}
+                        >
+                          {LABEL[row.status]}
+                        </span>
+
+                        <select
+                          value={row.status}
+                          onChange={(e) =>
+                            updateStatus(
+                              row.formulaire_id,
+                              e.target
+                                .value as DossierStatus
+                            )
+                          }
+                          disabled={
+                            savingId ===
+                            row.formulaire_id
+                          }
+                          className="block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                        >
+                          <option value="recu">
+                            Reçu
+                          </option>
+                          <option value="en_cours">
+                            En cours
+                          </option>
+                          <option value="attente_client">
+                            En attente client
+                          </option>
+                          <option value="termine">
+                            Terminé
+                          </option>
+                        </select>
+                      </div>
+
+                      {/* ACTIONS */}
+                      <div className="flex gap-2 xl:justify-end">
+                        <Link
+                          href={`/admin/dossiers/${encodeURIComponent(
+                            row.formulaire_id
+                          )}`}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                        >
+                          Ouvrir
+                        </Link>
+
+                        <Link
+                          href={`/admin/dossiers/docs?fid=${encodeURIComponent(
+                            row.formulaire_id
+                          )}`}
+                          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          📄 Docs
+                        </Link>
+                      </div>
                     </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className={`px-2 py-1 rounded border text-sm ${PAY_BADGE_CLASS[pay]}`} title="Paiement">
-                        {PAY_LABEL[pay]}
-                      </span>
-
-                      <span className={`px-2 py-1 rounded border text-sm ${BADGE_CLASS[r.status]}`} title="Statut de travail">
-                        {LABEL[r.status]}
-                      </span>
-
-                      <span className={`px-2 py-1 rounded border text-sm ${formBadgeClass}`} title="Formulaire rempli">
-                        {r.form_filled ? "Formulaire: OK" : "Formulaire: vide"}
-                      </span>
-
-                      <span
-                        className="px-2 py-1 rounded border text-sm bg-slate-100 text-slate-700 border-slate-200"
-                        title="Documents déposés"
-                      >
-                        Docs: {docsCountSafe}
-                      </span>
-
-                      <select
-                        value={r.status}
-                        onChange={(e) => updateStatus(r.formulaire_id, e.target.value as DossierStatus)}
-                        className="border rounded px-2 py-1 text-sm"
-                        disabled={savingId === r.formulaire_id}
-                      >
-                        <option value="recu">Reçu</option>
-                        <option value="en_cours">En cours</option>
-                        <option value="attente_client">En attente client</option>
-                        <option value="termine">Terminé</option>
-                      </select>
-                    </div>
-
-                    <div className="md:text-right flex md:flex-col gap-2 md:items-end">
-                      <Link
-                        href={`/admin/dossiers/${encodeURIComponent(r.formulaire_id)}`}
-                        className="text-blue-700 hover:underline text-sm"
-                      >
-                        Ouvrir
-                      </Link>
-
-                      <Link
-                        href={`/admin/dossiers/docs?fid=${encodeURIComponent(r.formulaire_id)}`}
-                        className="text-blue-700 hover:underline text-sm"
-                        title="Voir / ouvrir les documents du dossier"
-                      >
-                        Docs
-                      </Link>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+        <div className="mt-3 text-right text-xs text-slate-400">
+          {filtered.length} dossier
+          {filtered.length !== 1 ? "s" : ""} affiché
+          {filtered.length !== 1 ? "s" : ""}
+        </div>
+      </main>
     </div>
   );
 }
