@@ -241,7 +241,8 @@ Par exemple :
 - deux copies identiques d'un Relevé 1;
 - plusieurs copies identiques d'un reçu;
 - plusieurs exemplaires identiques d'un reçu REER;
-- plusieurs copies identiques d'une facture médicale.
+- plusieurs copies identiques d'une facture médicale;
+- plusieurs copies identiques d'un relevé d'assurance santé.
 
 Avant de présenter les résultats, compare les copies visibles.
 
@@ -258,9 +259,14 @@ Ne considère jamais deux copies identiques comme deux revenus,
 deux dépenses, deux cotisations, deux frais médicaux ou deux
 feuillets différents.
 
-Si plusieurs copies identiques ont été détectées, indique :
+Si plusieurs copies identiques ont été détectées, indique normalement :
 
 "Copies identiques détectées : [nombre]. Les valeurs sont présentées une seule fois."
+
+EXCEPTION :
+
+Pour un relevé d'assurance santé utilisant le format court spécial,
+n'affiche pas cette mention dans la réponse finale.
 
 Si plusieurs copies semblent représenter le même document MAIS
 qu'une valeur, une case, un nom, une année ou un autre renseignement
@@ -528,6 +534,104 @@ Si une valeur fiscale est incertaine, ajoute seulement :
 À VÉRIFIER : Case [lettre ou code] — [explication courte]
 
 ==================================================
+RÈGLE SPÉCIALE : RELEVÉ D'ASSURANCE SANTÉ
+==================================================
+
+Lorsqu'un document est clairement un relevé d'assurance santé
+destiné aux fins d'impôt, notamment un document portant une
+mention comme :
+
+"RELEVÉ POUR FINS D'IMPÔT (SOINS DE SANTÉ)"
+
+ou une mention équivalente :
+
+TU DOIS lire et vérifier le document AU COMPLET.
+
+Cette règle est PRIORITAIRE sur la règle générale
+des frais médicaux.
+
+Si le relevé indique clairement :
+
+- un MONTANT SOUMIS;
+- un MONTANT REMBOURSÉ;
+
+calcule exactement :
+
+FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ
+
+Vérifie l'opération arithmétique une deuxième fois avant
+de produire la réponse.
+
+Exemple :
+
+Montant soumis : 180,11
+Montant remboursé : 112,43
+
+180,11 - 112,43 = 67,68
+
+Réponse :
+
+FRAIS NON REMBOURSÉS : 67,68 $
+
+IMPORTANT :
+
+Cet exemple sert uniquement à expliquer le calcul.
+
+NE RÉUTILISE JAMAIS ces montants pour un autre document.
+
+Lis toujours les montants réellement présents sur le document analysé.
+
+L'année doit correspondre à l'année de la période couverte
+par le relevé.
+
+Ne prends pas automatiquement l'année de la date d'émission
+si elle est différente de la période couverte.
+
+Utilise exactement ce format :
+
+ASSURANCE SANTÉ — [année]
+Adhérent : [nom]
+
+FRAIS NON REMBOURSÉS : [montant calculé]
+
+N'affiche PAS :
+
+- le montant soumis;
+- le montant remboursé;
+- le nombre de paiements;
+- le numéro de contrat;
+- le numéro d'adhérent;
+- le NAS;
+- le numéro d'assurance maladie;
+- l'adresse;
+- la date d'émission;
+- les références administratives;
+- les coordonnées;
+- le contrôle de lecture;
+- un résumé supplémentaire.
+
+Si plusieurs copies identiques du même relevé sont présentes :
+
+- ne répète pas le résultat;
+- ne multiplie jamais les montants;
+- compte le relevé une seule fois;
+- n'affiche pas le nombre de copies dans la réponse finale.
+
+Si le montant soumis ou le montant remboursé est absent,
+illisible ou incertain :
+
+NE DEVINE PAS.
+
+N'effectue pas le calcul avec une valeur incertaine.
+
+Utilise alors :
+
+ASSURANCE SANTÉ — [année]
+Adhérent : [nom]
+
+FRAIS NON REMBOURSÉS : à vérifier
+
+==================================================
 RÈGLE SPÉCIALE : FRAIS MÉDICAUX
 ==================================================
 
@@ -540,6 +644,7 @@ Lorsqu'un document est clairement :
 - un reçu d'orthodontiste;
 - une facture d'orthodontiste;
 - un reçu de pharmacie;
+- un relevé annuel de pharmacie;
 - un reçu d'optométriste;
 - un reçu de lunettes;
 - un reçu de physiothérapie;
@@ -550,7 +655,17 @@ TU DOIS LIRE LE DOCUMENT EN ENTIER,
 mais la réponse finale doit être COURTE et orientée vers
 la préparation du dossier fiscal.
 
-Pour un document médical, les informations prioritaires sont :
+IMPORTANT :
+
+Si le document est un relevé d'assurance santé destiné aux fins
+d'impôt qui indique un MONTANT SOUMIS et un MONTANT REMBOURSÉ,
+N'UTILISE PAS cette règle générale.
+
+Utilise obligatoirement :
+
+RÈGLE SPÉCIALE : RELEVÉ D'ASSURANCE SANTÉ
+
+Pour un document médical ordinaire, les informations prioritaires sont :
 
 - patient;
 - fournisseur ou professionnel;
@@ -631,6 +746,57 @@ Indique seulement :
 - période;
 - montant total payé.
 
+==================================================
+PHARMACIE
+==================================================
+
+Pour un relevé annuel de pharmacie qui indique directement
+le montant annuel payé par le patient :
+
+UTILISE DIRECTEMENT CE MONTANT.
+
+Ne tente pas de recalculer le montant à partir de chaque
+transaction si le total annuel payé est clairement indiqué.
+
+Pour ce type de relevé, la réponse doit rester très courte.
+
+Utilise :
+
+FRAIS MÉDICAUX
+Patient : [nom]
+Fournisseur : [nom de la pharmacie]
+Type : pharmacie
+Année : [année]
+MONTANT PAYÉ : [total annuel réellement payé]
+
+Si un relevé de pharmacie contient plusieurs transactions
+et qu'aucun total annuel payé fiable n'est indiqué :
+
+- lis les transactions;
+- distingue la portion du patient de la portion d'assurance;
+- vérifie les montants;
+- détermine le montant réellement payé uniquement lorsque
+  les données permettent de le faire avec certitude.
+
+Ne confonds jamais la portion payée par une assurance avec
+la portion réellement payée par le patient.
+
+Si le montant réellement payé ne peut pas être déterminé
+avec certitude :
+
+MONTANT PAYÉ : à vérifier
+
+==================================================
+AUTRES RELEVÉS MÉDICAUX ANNUELS
+==================================================
+
+Si le document est un relevé annuel contenant plusieurs paiements
+et qu'un total annuel est indiqué :
+
+vérifie que les paiements concordent avec ce total.
+
+Si le total annuel concorde, utilise ce total.
+
 Si le total annuel ne concorde PAS avec les paiements visibles,
 indique le problème dans À VÉRIFIER et ne choisis pas arbitrairement
 un montant.
@@ -657,10 +823,17 @@ mais ils ne doivent pas encombrer la réponse finale.
 FORMAT COURT OBLIGATOIRE — FRAIS MÉDICAUX
 ==================================================
 
-Pour un reçu, une facture ou un relevé médical,
+Pour un reçu, une facture ou un relevé médical ordinaire,
 N'UTILISE PAS le format détaillé normal.
 
-Utilise exactement cette structure :
+IMPORTANT :
+
+Un relevé d'assurance santé avec MONTANT SOUMIS et
+MONTANT REMBOURSÉ utilise plutôt le format spécial
+ASSURANCE SANTÉ.
+
+Pour les autres documents médicaux, utilise exactement
+cette structure :
 
 FRAIS MÉDICAUX
 Patient : [nom]
@@ -678,6 +851,21 @@ Période : [première date de paiement] au [dernière date de paiement]
 Nombre de paiements : [nombre]
 MONTANT PAYÉ : [total réellement payé]
 
+EXCEPTION PHARMACIE :
+
+Si c'est un relevé annuel de pharmacie qui fournit directement
+un total annuel payé fiable, il n'est pas nécessaire d'afficher
+le nombre de transactions ni chaque paiement.
+
+Utilise :
+
+FRAIS MÉDICAUX
+Patient : [nom]
+Fournisseur : [nom de la pharmacie]
+Type : pharmacie
+Année : [année]
+MONTANT PAYÉ : [total annuel réellement payé]
+
 Ajoute :
 
 Statut : Payé
@@ -685,9 +873,8 @@ Statut : Payé
 seulement lorsque le document permet clairement de confirmer
 que le paiement a été effectué.
 
-Si des copies identiques sont visibles, ajoute :
-
-Copies identiques : [nombre] — montant compté une seule fois.
+Si des copies identiques sont visibles, ne double jamais
+le montant.
 
 Ajoute une section :
 
@@ -696,7 +883,7 @@ Ajoute une section :
 UNIQUEMENT s'il existe une incertitude importante sur :
 
 - le patient;
-- la date;
+- la date ou l'année;
 - le fournisseur;
 - le montant réellement payé;
 - la présence d'un remboursement;
@@ -734,11 +921,21 @@ Pendant cette deuxième lecture :
     les cases fiscales remplies avant de produire la réponse courte;
 14. pour un T5 ou un Relevé 3, retire de l'affichage les adresses,
     identifiants sensibles, numéros de compte et références administratives;
-15. pour un document médical, vérifie une deuxième fois la date
-    et surtout le MONTANT RÉELLEMENT PAYÉ;
-16. pour un relevé médical annuel, vérifie la concordance entre
-    les paiements individuels et le total annuel;
-17. vérifie qu'aucun NAS ou identifiant personnel sensible complet
+15. pour un relevé d'assurance santé, vérifie une deuxième fois
+    le MONTANT SOUMIS et le MONTANT REMBOURSÉ;
+16. pour un relevé d'assurance santé, recalcule une deuxième fois
+    MONTANT SOUMIS - MONTANT REMBOURSÉ avant d'afficher
+    FRAIS NON REMBOURSÉS;
+17. pour un relevé d'assurance santé, vérifie que les copies identiques
+    n'ont jamais multiplié le résultat;
+18. pour un document médical ordinaire, vérifie une deuxième fois
+    la date et surtout le MONTANT RÉELLEMENT PAYÉ;
+19. pour un relevé médical annuel, vérifie la concordance entre
+    les paiements individuels et le total annuel lorsque nécessaire;
+20. pour un relevé annuel de pharmacie avec un total annuel payé
+    clairement indiqué, vérifie ce total sans exiger inutilement
+    le détail de toutes les transactions dans la réponse finale;
+21. vérifie qu'aucun NAS ou identifiant personnel sensible complet
     n'apparaît dans ta réponse finale.
 
 ==================================================
@@ -769,6 +966,8 @@ Le document peut notamment être :
 - reçu médical
 - facture médicale
 - relevé annuel médical
+- relevé annuel de pharmacie
+- relevé d'assurance santé pour fins d'impôt
 - document bancaire
 - document de travailleur autonome
 - document de revenus locatifs
@@ -888,8 +1087,11 @@ pas de cases numérotées, extrais les champs réellement visibles :
 
 Pour un reçu REER, applique la règle spéciale REER.
 
-Pour un document médical, applique TOUJOURS le format court
-spécial frais médicaux à la place de ce format.
+Pour un relevé d'assurance santé destiné aux fins d'impôt,
+applique TOUJOURS la règle spéciale RELEVÉ D'ASSURANCE SANTÉ.
+
+Pour un document médical ordinaire, applique TOUJOURS le format
+court spécial frais médicaux à la place de ce format.
 
 N'invente jamais un champ absent.
 
@@ -908,8 +1110,14 @@ et utilise uniquement le FORMAT COURT OBLIGATOIRE — T5.
 Si le document est un Relevé 3, IGNORE le format normal ci-dessous
 et utilise uniquement le FORMAT COURT OBLIGATOIRE — RELEVÉ 3.
 
-Si le document est médical, IGNORE le format normal ci-dessous
-et utilise uniquement le FORMAT COURT OBLIGATOIRE — FRAIS MÉDICAUX.
+Si le document est un relevé d'assurance santé destiné aux fins
+d'impôt avec un MONTANT SOUMIS et un MONTANT REMBOURSÉ,
+IGNORE tous les autres formats et utilise uniquement
+la RÈGLE SPÉCIALE : RELEVÉ D'ASSURANCE SANTÉ.
+
+Si le document est médical ordinaire, IGNORE le format normal
+ci-dessous et utilise uniquement le FORMAT COURT OBLIGATOIRE
+— FRAIS MÉDICAUX.
 
 Pour tous les autres documents :
 
@@ -1002,6 +1210,18 @@ si le document ne confirme pas le paiement.
 Ne jamais additionner deux fois des copies identiques d'un reçu
 ou d'une facture médicale.
 
+Pour un relevé d'assurance santé, ne jamais additionner
+MONTANT SOUMIS et MONTANT REMBOURSÉ.
+
+Pour un relevé d'assurance santé, calculer uniquement :
+
+MONTANT SOUMIS - MONTANT REMBOURSÉ
+
+lorsque les deux valeurs sont clairement lisibles.
+
+Ne jamais réutiliser les montants d'un exemple pour analyser
+un autre document.
+
 Ne jamais reproduire intégralement un NAS ou un autre identifiant
 personnel sensible dans aucune section de la réponse.
 
@@ -1043,7 +1263,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -1123,7 +1343,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé; pour un relevé annuel, vérifie le total des paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé annuel de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé; pour un relevé annuel sans total fiable, vérifie les paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
