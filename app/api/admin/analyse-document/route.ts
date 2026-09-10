@@ -1061,9 +1061,83 @@ qu'il provient des États-Unis.
 Lis le document AU COMPLET et détermine la nature du revenu uniquement à partir
 du titre, des codes, libellés et renseignements réellement présents.
 
-Pour un 1042-S, utilise notamment le Income Code réellement inscrit pour
-identifier la nature du revenu lorsqu'il permet de le faire avec certitude.
-Ne mets jamais un code ou une interprétation en dur pour tous les documents.
+Pour un Form 1042-S, lis OBLIGATOIREMENT la case 1 "Income Code"
+et reproduis exactement le code réellement inscrit.
+
+IMPORTANT :
+Ne devine JAMAIS la signification d'un Income Code.
+
+Pour les codes du Form 1042-S, utilise uniquement la signification fiscale
+officielle correspondant au code réellement lu sur le formulaire.
+
+En particulier :
+- Income Code 15 correspond à la catégorie pensions, annuities, alimony
+  and/or insurance premiums.
+- Income Code 16 correspond à scholarship or fellowship grants.
+
+NE CONFONDS JAMAIS le code 15 avec le code 16.
+
+Si Income Code = 15, ne présente JAMAIS automatiquement le revenu comme
+une bourse d'études ou de recherche.
+
+Pour Income Code 15, examine également le nom du payeur, le document et
+les autres renseignements visibles afin de déterminer si le revenu peut
+être identifié plus précisément comme pension ou rente.
+
+Si le document et le contexte visible permettent clairement d'identifier
+une pension ou une rente, utilise :
+
+PENSION ÉTRANGÈRE — ÉTATS-UNIS — [année]
+
+Si Income Code = 15 mais que le document ne permet pas de déterminer avec
+certitude s'il s'agit d'une pension, d'une rente ou d'une autre catégorie
+comprise dans le code 15, utilise :
+
+REVENU ÉTRANGER — ÉTATS-UNIS — [année]
+Type : Code 15 — pension/rente/autre catégorie du code 15 à vérifier
+
+Pour tout autre Income Code, utilise sa signification uniquement lorsque
+celle-ci peut être déterminée avec certitude. Sinon, affiche :
+
+Type : Income Code [code] — à vérifier
+
+Dans la réponse finale d'un 1042-S, affiche également :
+
+Income Code : [code exact]
+
+==================================================
+VÉRIFICATION OBLIGATOIRE DES MONTANTS — DOCUMENTS USA
+==================================================
+
+Chaque montant fiscal américain doit être lu et vérifié DEUX FOIS
+directement sur le document avant d'être affiché.
+
+Pour un 1042-S, vérifie notamment séparément :
+- le revenu brut / Gross Income;
+- l'impôt fédéral américain retenu / Federal Tax Withheld;
+- le Total Withholding Credit lorsqu'il est présent;
+- l'Income Code.
+
+Compare chiffre par chiffre la deuxième lecture avec la première.
+
+Exemple :
+7 385 ne doit jamais devenir 7 335.
+
+Ne corrige, n'arrondis et ne reconstruis jamais un montant à partir
+d'une autre case.
+
+Si les deux lectures d'un montant ne concordent pas ou si un chiffre
+est visuellement incertain, NE CHOISIS PAS arbitrairement une valeur.
+
+Affiche plutôt :
+
+Revenu brut : à vérifier
+
+ou :
+
+Impôt américain retenu : à vérifier
+
+selon le montant concerné.
 
 Si la nature du revenu est clairement une pension, une rente, un revenu de
 retraite ou une prestation de Social Security, utilise un titre court approprié,
