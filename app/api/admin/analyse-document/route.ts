@@ -461,7 +461,251 @@ associé à un Relevé 10 de FTQ ou Fondaction.
 RÈGLE SPÉCIALE : REÇUS REER
 ==================================================
 
-Lorsqu'un document est un reçu de cotisation REER / RRSP :
+Lorsqu'un document contient un ou plusieurs reçus de cotisation
+REER / RRSP :
+
+TU DOIS lire et vérifier CHAQUE reçu AU COMPLET.
+
+Chaque reçu doit d'abord être identifié individuellement avant
+d'effectuer toute déduplication.
+
+Pour chaque reçu, vérifie notamment lorsqu'ils sont visibles :
+
+- l'année d'imposition;
+- la période;
+- le montant exact de la cotisation;
+- le numéro de reçu;
+- le numéro de référence;
+- le numéro de transaction;
+- l'émetteur;
+- le fonds ou l'institution;
+- le nom du rentier;
+- les autres renseignements permettant de distinguer un reçu
+  d'un autre.
+
+IMPORTANT :
+
+Deux reçus peuvent avoir EXACTEMENT LE MÊME MONTANT et être
+deux cotisations différentes.
+
+NE CONSIDÈRE JAMAIS deux reçus comme des copies identiques
+uniquement parce que leur montant est identique.
+
+Par exemple :
+
+- même montant + numéro de reçu différent = reçus différents;
+- même montant + numéro de référence différent = reçus différents;
+- même montant + transaction différente = reçus différents;
+- même montant + période différente = reçus différents;
+- même montant + date différente et document clairement distinct
+  = reçus différents;
+- même montant + autre identifiant de reçu différent
+  = reçus différents.
+
+Dans tous ces cas :
+
+NE FUSIONNE PAS LES REÇUS.
+
+NE SUPPRIME PAS UN DES REÇUS.
+
+NE CONSIDÈRE PAS LE DEUXIÈME COMME UN DOUBLON.
+
+Chaque reçu réellement différent doit être conservé et présenté
+séparément.
+
+==================================================
+DÉTECTION DES VRAIES COPIES IDENTIQUES
+==================================================
+
+Considère plusieurs exemplaires comme des COPIES IDENTIQUES
+uniquement lorsqu'ils représentent clairement le MÊME reçu.
+
+Pour conclure qu'il s'agit du même reçu, compare l'ensemble
+des renseignements visibles, notamment :
+
+- numéro de reçu;
+- numéro de référence;
+- numéro de transaction;
+- année;
+- période;
+- montant;
+- émetteur;
+- nom du rentier;
+- autres identifiants non sensibles du document.
+
+Si le numéro de reçu ou une autre référence unique est visible :
+
+UTILISE CETTE INFORMATION EN PRIORITÉ pour distinguer les reçus.
+
+Deux reçus ayant des numéros de reçu différents doivent être
+considérés comme DEUX REÇUS DISTINCTS, même si :
+
+- le montant est identique;
+- l'année est identique;
+- la période est identique;
+- le rentier est identique;
+- l'émetteur est identique.
+
+Si plusieurs exemplaires ont le MÊME numéro de reçu et que les
+autres renseignements concordent également, ils peuvent être
+considérés comme des copies identiques.
+
+Si aucun numéro de reçu ou identifiant unique n'est visible :
+
+NE DÉDUPLIQUE PAS uniquement sur la base du montant.
+
+Compare les autres renseignements visibles.
+
+S'il reste un doute sur le fait qu'il s'agit d'une copie ou
+d'un reçu distinct :
+
+NE SUPPRIME PAS LE REÇU.
+
+Indique plutôt l'incertitude.
+
+==================================================
+EXCEPTION PRIORITAIRE : REER FTQ / FONDACTION
+==================================================
+
+Vérifie si chaque reçu est clairement associé à :
+
+- Fonds de solidarité FTQ;
+- Fonds de solidarité des travailleurs du Québec;
+- FTQ;
+- Fondaction;
+- Fondaction CSN.
+
+Cette exception s'applique avec OU sans Relevé 10.
+
+Si le reçu est clairement associé au Fonds de solidarité FTQ,
+utilise le format court :
+
+REER FTQ — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période courte]
+
+Si le reçu est clairement associé à Fondaction,
+utilise le format court :
+
+REER FONDACTION — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période courte]
+
+NE METS JAMAIS FTQ OU FONDACTION EN DUR.
+
+Le fonds doit être identifié à partir du reçu réellement analysé.
+
+Si le fonds ne peut pas être déterminé avec certitude,
+utilise la règle REER générale plus bas.
+
+==================================================
+PLUSIEURS REER FTQ / FONDACTION
+==================================================
+
+Un même fichier peut contenir plusieurs reçus REER FTQ ou
+FONDACTION réellement différents.
+
+Il peut y avoir :
+
+- un seul reçu;
+- plusieurs reçus avec des montants différents;
+- plusieurs reçus avec exactement le même montant;
+- plusieurs reçus pour des périodes différentes;
+- plusieurs reçus ayant la même année et la même période;
+- plusieurs reçus du même fonds.
+
+Analyse CHAQUE reçu individuellement.
+
+Si deux reçus ont le même montant mais des numéros de reçu
+différents :
+
+CE SONT DEUX REÇUS DISTINCTS.
+
+Affiche les deux.
+
+Ne les fusionne pas.
+
+Ne les additionne pas automatiquement.
+
+Pour chaque reçu distinct, affiche séparément :
+
+REER FTQ — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période courte]
+
+ou :
+
+REER FONDACTION — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période courte]
+
+Il n'y a AUCUNE limite au nombre de reçus distincts à afficher.
+
+==================================================
+PÉRIODE REER FTQ / FONDACTION
+==================================================
+
+Si le reçu indique clairement une période correspondant aux
+60 premiers jours de l'année suivant l'année d'imposition :
+
+Période : 60 premiers jours de [année]
+
+Si le reçu indique clairement le reste de l'année d'imposition :
+
+Période : reste de l'année [année]
+
+Si une autre période est clairement indiquée :
+
+reproduis cette période sous une forme courte et fidèle.
+
+Si la période est absente, illisible ou ambiguë :
+
+Période : à vérifier
+
+==================================================
+AFFICHAGE COURT FTQ / FONDACTION
+==================================================
+
+Même si tu utilises le numéro de reçu, la référence ou la
+transaction pour distinguer les reçus en arrière-plan :
+
+NE LES AFFICHE PAS dans la réponse finale.
+
+Pour chaque REER FTQ ou FONDACTION, n'affiche que :
+
+- le type;
+- l'année d'imposition;
+- la cotisation;
+- la période.
+
+N'affiche PAS :
+
+- nom du rentier;
+- nom du cotisant;
+- NAS;
+- numéro de compte;
+- numéro de reçu;
+- numéro de référence;
+- numéro de transaction;
+- émetteur;
+- fiduciaire;
+- adresse;
+- date d'émission;
+- références administratives;
+- copies identiques détectées;
+- CASES REMPLIES;
+- AUTRES INFORMATIONS;
+- CONTRÔLE DE LECTURE;
+- RÉSUMÉ POUR LE DOSSIER.
+
+ÉLÉMENTS À VÉRIFIER doit apparaître uniquement lorsqu'une
+incertitude importante existe.
+
+==================================================
+REER GÉNÉRAL — AUTRES REÇUS REER / RRSP
+==================================================
+
+Si le reçu N'EST PAS un REER FTQ ou FONDACTION :
 
 Identifie et reproduis exactement, lorsqu'ils sont visibles :
 
@@ -484,12 +728,6 @@ indique clairement :
 Conserve TOUJOURS également la période originale exactement
 comme elle apparaît sur le reçu.
 
-Exemple :
-
-Année d'imposition : 2025
-Période originale du reçu : JAN-FEV 26
-Période REER : 60 premiers jours de 2026
-
 Si le reçu correspond clairement au reste de l'année plutôt
 qu'aux 60 premiers jours, indique :
 
@@ -511,7 +749,10 @@ Ne décide jamais automatiquement de l'année de déduction.
 Ne donne jamais automatiquement une déduction fiscale.
 
 Si plusieurs exemplaires identiques du même reçu REER sont visibles,
-le montant de cotisation doit être présenté UNE SEULE FOIS.
+présente le montant UNE SEULE FOIS.
+
+Mais deux reçus ayant le même montant ne doivent JAMAIS être
+considérés comme identiques sur la seule base de ce montant.
 
 ==================================================
 RÈGLE SPÉCIALE : RELEVÉ 31
