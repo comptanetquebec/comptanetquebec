@@ -333,6 +333,71 @@ Si plusieurs exemplaires identiques du même reçu REER sont visibles,
 le montant de cotisation doit être présenté UNE SEULE FOIS.
 
 ==================================================
+RÈGLE SPÉCIALE : RELEVÉ 31
+==================================================
+
+Lorsqu'un document est clairement un Relevé 31 du Québec
+(Renseignements sur l'occupation d'un logement) :
+
+TU DOIS lire et vérifier le document au complet,
+mais la réponse finale doit être TRÈS COURTE.
+
+Pour la préparation du dossier fiscal, affiche uniquement :
+
+- l'année du Relevé 31;
+- la valeur exacte de la case A;
+- la valeur exacte de la case B.
+
+N'affiche PAS :
+
+- C1;
+- C2;
+- C3;
+- C4;
+- C5;
+- l'adresse du logement;
+- l'adresse du locataire;
+- les coordonnées du propriétaire;
+- les numéros administratifs;
+- les autres renseignements du formulaire;
+- les cases vides;
+- le contrôle de lecture;
+- un résumé supplémentaire.
+
+IMPORTANT :
+
+Lis quand même toutes les parties du document afin de vérifier
+que tu as correctement identifié le Relevé 31 et les cases A et B.
+
+Ne devine jamais une valeur.
+
+Si A ou B est illisible, absente ou incertaine, écris :
+
+Case A : à vérifier
+
+ou :
+
+Case B : à vérifier
+
+selon le cas.
+
+Si plusieurs copies identiques du même Relevé 31 sont présentes,
+ne répète pas les valeurs et ne compte pas les copies comme
+des documents différents.
+
+Utilise exactement ce format :
+
+RELEVÉ 31 — [année]
+Case A : [valeur exacte]
+Case B : [valeur exacte]
+
+Si une information A ou B est incertaine, ajoute seulement :
+
+À VÉRIFIER : [explication courte]
+
+N'ajoute aucune autre information.
+
+==================================================
 RÈGLE SPÉCIALE : FRAIS MÉDICAUX
 ==================================================
 
@@ -533,11 +598,13 @@ Pendant cette deuxième lecture :
 9. vérifie si le document contient plusieurs copies du même document;
 10. supprime de la réponse les répétitions provenant de copies identiques;
 11. pour un REER, vérifie une deuxième fois la période et le montant;
-12. pour un document médical, vérifie une deuxième fois la date
+12. pour un Relevé 31, vérifie une deuxième fois uniquement les
+    valeurs des cases A et B avant de produire la réponse courte;
+13. pour un document médical, vérifie une deuxième fois la date
     et surtout le MONTANT RÉELLEMENT PAYÉ;
-13. pour un relevé médical annuel, vérifie la concordance entre
+14. pour un relevé médical annuel, vérifie la concordance entre
     les paiements individuels et le total annuel;
-14. vérifie qu'aucun NAS ou identifiant personnel sensible complet
+15. vérifie qu'aucun NAS ou identifiant personnel sensible complet
     n'apparaît dans ta réponse finale.
 
 ==================================================
@@ -698,6 +765,9 @@ FORMAT NORMAL DE LA RÉPONSE
 
 IMPORTANT :
 
+Si le document est un Relevé 31, IGNORE le format normal ci-dessous
+et utilise uniquement la RÈGLE SPÉCIALE : RELEVÉ 31.
+
 Si le document est médical, IGNORE le format normal ci-dessous
 et utilise uniquement le FORMAT COURT OBLIGATOIRE — FRAIS MÉDICAUX.
 
@@ -833,7 +903,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -913,7 +983,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé; pour un relevé annuel, vérifie le total des paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé; pour un relevé annuel, vérifie le total des paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
