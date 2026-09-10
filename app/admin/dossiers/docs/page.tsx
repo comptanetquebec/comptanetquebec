@@ -28,6 +28,12 @@ type AnalyseResponse = {
   error?: string;
 };
 
+type SyntheseResponse = {
+  ok?: boolean;
+  synthese?: string;
+  error?: string;
+};
+
 function formatDate(iso: string | null): string {
   if (!iso) return "";
 
@@ -146,6 +152,15 @@ export default function AdminDossierDocsPage() {
   const [analysingAll, setAnalysingAll] =
     useState(false);
 
+  const [synthesizing, setSynthesizing] =
+    useState(false);
+
+  const [synthese, setSynthese] =
+    useState<string | null>(null);
+
+  const [syntheseError, setSyntheseError] =
+    useState<string | null>(null);
+
   const loadToken = useRef(0);
 
   // ==========================================
@@ -190,6 +205,8 @@ export default function AdminDossierDocsPage() {
     setMsg(null);
     setAnalyses({});
     setAnalyseErrors({});
+    setSynthese(null);
+    setSyntheseError(null);
 
     if (!fid) return;
 
@@ -726,6 +743,81 @@ export default function AdminDossierDocsPage() {
   );
 
   // ==========================================
+  // SYNTHÈSE FINALE DU DOSSIER
+  // ==========================================
+
+  const syntheseFinale = useCallback(async () => {
+    if (synthesizing || analysingAll) return;
+
+    const documents = docs
+      .map((doc) => ({
+        id: doc.id,
+        fileName: doc.original_name,
+        analyse: analyses[doc.id] ?? "",
+        error: analyseErrors[doc.id] ?? "",
+      }))
+      .filter((item) => item.analyse || item.error);
+
+    if (documents.length === 0) {
+      setSyntheseError(
+        "Analysez d'abord les documents du dossier avant de produire la synthèse finale."
+      );
+      return;
+    }
+
+    setSynthesizing(true);
+    setSyntheseError(null);
+    setSynthese(null);
+
+    try {
+      const response = await fetch(
+        "/api/admin/synthese-dossier",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fid, documents }),
+        }
+      );
+
+      let result: SyntheseResponse;
+
+      try {
+        result = (await response.json()) as SyntheseResponse;
+      } catch {
+        throw new Error(
+          "Réponse invalide du serveur pour la synthèse."
+        );
+      }
+
+      if (!response.ok || !result.ok || !result.synthese) {
+        throw new Error(
+          result.error ??
+            "Impossible de produire la synthèse finale."
+        );
+      }
+
+      setSynthese(result.synthese);
+    } catch (error: unknown) {
+      setSyntheseError(
+        error instanceof Error
+          ? error.message
+          : "Erreur pendant la synthèse finale."
+      );
+    } finally {
+      setSynthesizing(false);
+    }
+  }, [
+    fid,
+    docs,
+    analyses,
+    analyseErrors,
+    synthesizing,
+    analysingAll,
+  ]);
+
+  // ==========================================
   // FID MANQUANT
   // ==========================================
 
@@ -790,6 +882,7 @@ export default function AdminDossierDocsPage() {
         </div>
 
         {analysableCount > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             type="button"
             onClick={() =>
@@ -821,6 +914,34 @@ export default function AdminDossierDocsPage() {
               ? "Analyse en cours…"
               : `✨ Analyser tous (${analysableCount})`}
           </button>
+
+          <button
+            type="button"
+            onClick={() => void syntheseFinale()}
+            disabled={
+              analysingAll ||
+              synthesizing ||
+              Object.keys(analyses).length === 0
+            }
+            style={{
+              padding: "10px 16px",
+              borderRadius: 10,
+              border: "1px solid #047857",
+              background: synthesizing ? "#d1fae5" : "#059669",
+              color: synthesizing ? "#065f46" : "white",
+              fontWeight: 700,
+              cursor:
+                analysingAll || synthesizing || Object.keys(analyses).length === 0
+                  ? "not-allowed"
+                  : "pointer",
+              opacity: Object.keys(analyses).length === 0 ? 0.55 : 1,
+            }}
+          >
+            {synthesizing
+              ? "Synthèse en cours…"
+              : "🧾 Synthèse finale"}
+          </button>
+          </div>
         )}
       </div>
 
@@ -837,6 +958,68 @@ export default function AdminDossierDocsPage() {
           }}
         >
           {msg}
+        </div>
+      )}
+
+      {/* SYNTHÈSE FINALE */}
+
+      {syntheseError && (
+        <div
+          style={{
+            padding: 14,
+            border: "1px solid #fecaca",
+            background: "#fef2f2",
+            color: "#b91c1c",
+            borderRadius: 10,
+            marginBottom: 14,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          ❌ {syntheseError}
+        </div>
+      )}
+
+      {synthese && (
+        <div
+          style={{
+            padding: 18,
+            border: "2px solid #10b981",
+            background: "#f0fdf4",
+            borderRadius: 12,
+            marginBottom: 18,
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 800,
+              fontSize: 18,
+              color: "#065f46",
+              marginBottom: 12,
+            }}
+          >
+            🧾 Synthèse finale du dossier
+          </div>
+
+          <div
+            style={{
+              whiteSpace: "pre-wrap",
+              lineHeight: 1.65,
+              fontSize: 14,
+              color: "#1f2937",
+            }}
+          >
+            {synthese}
+          </div>
+
+          <div
+            style={{
+              marginTop: 14,
+              fontSize: 11,
+              color: "#64748b",
+            }}
+          >
+            Synthèse de travail à valider avant la production de la déclaration fiscale.
+          </div>
         </div>
       )}
 
