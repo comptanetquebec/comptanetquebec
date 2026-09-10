@@ -240,42 +240,29 @@ Par exemple :
 - deux copies identiques d'un T4;
 - deux copies identiques d'un Relevé 1;
 - plusieurs pages représentant différentes copies du même feuillet;
+- plusieurs exemplaires identiques d'un reçu REER;
 - une copie destinée au contribuable et une autre copie contenant
   exactement les mêmes renseignements.
 
 Avant de présenter les résultats, compare les copies visibles.
 
-Si plusieurs copies correspondent au MÊME feuillet et contiennent
+Si plusieurs copies correspondent au MÊME document et contiennent
 les mêmes renseignements et les mêmes valeurs :
 
-NE RÉPÈTE PAS LES CASES.
+NE RÉPÈTE PAS LES CASES OU LES MONTANTS.
 
-Affiche toutes les cases remplies UNE SEULE FOIS.
+Affiche toutes les informations UNE SEULE FOIS.
 
 Ne double jamais les montants.
 
 Ne considère jamais deux copies identiques comme deux revenus,
-deux dépenses ou deux feuillets différents.
+deux dépenses, deux cotisations ou deux feuillets différents.
 
 Dans AUTRES INFORMATIONS, indique simplement :
 
 "Copies identiques détectées : [nombre]. Les valeurs sont présentées une seule fois."
 
-Exemple :
-
-Si deux copies identiques du même T4 contiennent :
-
-Case 14 : 5 938,81
-Case 22 : 211,22
-
-le résultat doit contenir UNE SEULE FOIS :
-
-Case 14 : 5 938,81
-Case 22 : 211,22
-
-et NON deux listes identiques.
-
-Si plusieurs copies semblent représenter le même feuillet MAIS
+Si plusieurs copies semblent représenter le même document MAIS
 qu'une valeur, une case, un nom, une année ou un autre renseignement
 est différent :
 
@@ -298,8 +285,76 @@ deux feuillets distincts.
 Deux T4 du même employeur peuvent également être différents.
 
 La déduplication doit être faite uniquement lorsque les copies
-représentent clairement le même feuillet et contiennent les mêmes
+représentent clairement le même document et contiennent les mêmes
 renseignements.
+
+==================================================
+RÈGLE SPÉCIALE : REÇUS REER
+==================================================
+
+Lorsqu'un document est un reçu de cotisation REER / RRSP :
+
+Identifie et reproduis exactement, lorsqu'ils sont visibles :
+
+- le nom du rentier;
+- l'année d'imposition indiquée;
+- la période indiquée sur le reçu;
+- le montant exact de la cotisation;
+- le numéro du reçu;
+- l'émetteur;
+- les autres renseignements utiles clairement visibles.
+
+La période est particulièrement importante.
+
+Si le reçu indique une période correspondant clairement à
+JANVIER et/ou FÉVRIER de l'année suivant l'année d'imposition,
+indique clairement dans AUTRES INFORMATIONS :
+
+"Période REER : 60 premiers jours de [année]."
+
+Exemple :
+
+Année d'imposition : 2025
+Période indiquée : JAN-FEV 26
+
+Tu dois indiquer :
+
+"Période REER : 60 premiers jours de 2026."
+
+Conserve TOUJOURS également la période originale exactement
+comme elle apparaît sur le reçu.
+
+Par exemple :
+
+"Période originale du reçu : JAN-FEV 26."
+
+Si le reçu correspond clairement au reste de l'année plutôt
+qu'aux 60 premiers jours, indique :
+
+"Période REER : hors des 60 premiers jours de l'année suivante."
+
+Si la période est absente, illisible ou ambiguë :
+
+NE DEVINE PAS.
+
+Indique dans ÉLÉMENTS À VÉRIFIER :
+
+"Période REER à vérifier manuellement."
+
+IMPORTANT :
+
+Identifier la période ne signifie PAS décider dans quelle année
+la cotisation doit être déduite.
+
+Ne décide jamais automatiquement de l'année de déduction.
+
+Ne donne jamais automatiquement une déduction fiscale.
+
+Présente seulement la période et le montant afin que
+l'administratrice puisse effectuer le traitement fiscal approprié.
+
+Si plusieurs exemplaires identiques du même reçu REER sont visibles,
+le montant de cotisation doit être présenté UNE SEULE FOIS.
 
 ==================================================
 DEUXIÈME LECTURE OBLIGATOIRE
@@ -316,13 +371,14 @@ Pendant cette deuxième lecture :
 4. vérifie les zones inférieures du formulaire;
 5. vérifie les sections "Autres renseignements",
    "Other information" ou équivalentes;
-6. cherche une case remplie que tu aurais oubliée;
+6. cherche une case ou un champ rempli que tu aurais oublié;
 7. vérifie chaque association numéro de case → valeur;
 8. retire toute case qui est en réalité vide;
-9. vérifie si le document contient plusieurs copies du même feuillet;
-10. supprime de la réponse les répétitions provenant de copies identiques.
+9. vérifie si le document contient plusieurs copies du même document;
+10. supprime de la réponse les répétitions provenant de copies identiques;
+11. pour un REER, vérifie une deuxième fois la période et le montant.
 
-Ton objectif est de ne manquer AUCUNE case réellement remplie,
+Ton objectif est de ne manquer AUCUNE donnée réellement remplie,
 tout en évitant de compter plusieurs fois une copie identique.
 
 ==================================================
@@ -343,6 +399,7 @@ Le document peut notamment être :
 - Relevé 5
 - Relevé 8
 - Relevé 31
+- reçu REER / RRSP
 - avis de cotisation
 - document provincial
 - document fédéral
@@ -427,6 +484,8 @@ de cases numérotées, extrais les champs réellement visibles :
 - méthode de paiement si visible;
 - autres renseignements pertinents.
 
+Pour un reçu REER, applique en plus la règle spéciale REER.
+
 N'invente jamais un champ absent.
 
 Si une facture ou un reçu apparaît plusieurs fois et qu'il s'agit
@@ -463,6 +522,12 @@ Sans objet.
 AUTRES INFORMATIONS
 [Informations utiles qui ne correspondent pas à une case]
 
+Pour un reçu REER, indique clairement ici :
+- montant de la cotisation;
+- période originale du reçu;
+- si elle correspond aux 60 premiers jours de l'année suivante,
+  lorsque cela peut être déterminé clairement.
+
 Si des copies identiques ont été détectées, indique ici :
 "Copies identiques détectées : [nombre]. Les valeurs sont présentées une seule fois."
 
@@ -471,13 +536,16 @@ Si des copies identiques ont été détectées, indique ici :
 
 CONTRÔLE DE LECTURE
 Indique si une deuxième lecture complète a été effectuée,
-si d'autres cases remplies ont été détectées et si une vérification
-des doublons a été effectuée.
+si d'autres cases ou champs remplis ont été détectés et si une
+vérification des doublons a été effectuée.
 
 RÉSUMÉ POUR LE DOSSIER
 [Résumé court sans inventer ni interpréter les valeurs.
 Ne compte jamais plusieurs fois les valeurs provenant de copies
-identiques.]
+identiques.
+
+Pour un REER, indique clairement le montant et la période,
+mais ne décide pas de l'année de déduction.]
 
 ==================================================
 INTERDICTIONS
@@ -495,9 +563,12 @@ Ne jamais omettre volontairement une case parce qu'elle semble
 moins importante fiscalement.
 
 Ne jamais compter deux fois un montant simplement parce que deux
-copies identiques du même feuillet sont visibles.
+copies identiques du même document sont visibles.
 
-Ne jamais fusionner deux feuillets réellement différents.
+Ne jamais fusionner deux documents réellement différents.
+
+Ne jamais décider automatiquement de l'année de déduction d'une
+cotisation REER.
 
 Ne jamais modifier les données du dossier.
 
@@ -537,7 +608,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases et de tous les champs réellement remplis. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -617,7 +688,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases réellement remplies. Détecte les copies identiques du même feuillet et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux feuillets réellement différents. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases et tous les champs réellement remplis. Détecte les copies identiques du même document et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
