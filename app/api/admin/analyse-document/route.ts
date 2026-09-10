@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+
 import OpenAI from "openai";
+import mammoth from "mammoth";
+import * as XLSX from "xlsx";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 
@@ -10,6 +12,7 @@ export const dynamic = "force-dynamic";
 type Body = {
   fileUrl?: string;
   fileName?: string;
+  fileType?: string;
 };
 
 type ProfileRow = {
@@ -99,22 +102,41 @@ export async function POST(req: Request) {
     // ==========================================
 
     const lowerName = fileName.toLowerCase();
+    const lowerType = (body.fileType || "").toLowerCase();
 
     const isImage =
       lowerName.endsWith(".jpg") ||
       lowerName.endsWith(".jpeg") ||
       lowerName.endsWith(".png") ||
-      lowerName.endsWith(".webp");
+      lowerName.endsWith(".webp") ||
+      lowerType.startsWith("image/");
 
     const isPdf =
-      lowerName.endsWith(".pdf");
+      lowerName.endsWith(".pdf") ||
+      lowerType === "application/pdf";
 
-    if (!isImage && !isPdf) {
+    const isDocx =
+      lowerName.endsWith(".docx") ||
+      lowerType ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    const isXlsx =
+      lowerName.endsWith(".xlsx") ||
+      lowerType ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+    const isXls =
+      lowerName.endsWith(".xls") ||
+      lowerType === "application/vnd.ms-excel";
+
+    const isSpreadsheet = isXlsx || isXls;
+
+    if (!isImage && !isPdf && !isDocx && !isSpreadsheet) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Format non pris en charge. Formats acceptés : JPG, JPEG, PNG, WEBP et PDF.",
+            "Format non pris en charge. Formats acceptés : JPG, JPEG, PNG, WEBP, PDF, DOCX, XLSX et XLS.",
         },
         { status: 400 }
       );
@@ -2809,7 +2831,202 @@ Nom du fichier : ${fileName}
 `.trim();
 
     // ==========================================
-    // 7. IMAGE
+    // 7. DOCX / XLSX / XLS
+    // ==========================================
+
+    if (isDocx || isSpreadsheet) {
+      const sourceResponse = await fetch(fileUrl);
+
+      if (!sourceResponse.ok) {
+        throw new Error(
+          `Impossible de télécharger le fichier ${fileName}.`
+        );
+      }
+
+      const sourceBuffer = Buffer.from(
+        await sourceResponse.arrayBuffer()
+      );
+
+      let extractedText = "";
+
+      // ------------------------------------------
+      // DOCX
+      // ------------------------------------------
+      if (isDocx) {
+        const result = await mammoth.extractRawText({
+          buffer: sourceBuffer,
+        });
+
+        extractedText = result.value?.trim() || "";
+
+        if (!extractedText) {
+          throw new Error(
+            "Le DOCX ne contient aucun texte exploitable."
+          );
+        }
+
+        if (result.messages?.length) {
+          console.warn(
+            "Avertissements extraction DOCX:",
+            result.messages
+          );
+        }
+      }
+
+      // ------------------------------------------
+      // XLSX / XLS
+      // ------------------------------------------
+      if (isSpreadsheet) {
+        let workbook: XLSX.WorkBook;
+
+        try {
+          workbook = XLSX.read(sourceBuffer, {
+            type: "buffer",
+            cellDates: true,
+            cellNF: true,
+            cellText: true,
+          });
+        } catch (error) {
+          console.error("Erreur lecture Excel:", error);
+          throw new Error(
+            "Impossible de lire le fichier Excel."
+          );
+        }
+
+        const sections: string[] = [];
+
+        for (const sheetName of workbook.SheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+
+          if (!sheet) {
+            continue;
+          }
+
+          const rows = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+            raw: false,
+            defval: "",
+            blankrows: false,
+          }) as unknown[][];
+
+          sections.push(
+            `===== FEUILLE : ${sheetName} =====`
+          );
+
+          if (rows.length === 0) {
+            sections.push("[Feuille vide]");
+            continue;
+          }
+
+          for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+            const row = rows[rowIndex];
+
+            const cells = row.map((value, columnIndex) => {
+              const address = XLSX.utils.encode_cell({
+                r: rowIndex,
+                c: columnIndex,
+              });
+
+              const valueText =
+                value === null ||
+                value === undefined ||
+                value === ""
+                  ? ""
+                  : String(value);
+
+              return `${address}=${valueText}`;
+            });
+
+            const nonEmptyCells = cells.filter(
+              (cell) => !cell.endsWith("=")
+            );
+
+            if (nonEmptyCells.length > 0) {
+              sections.push(nonEmptyCells.join(" | "));
+            }
+          }
+        }
+
+        extractedText = sections.join("\n").trim();
+
+        if (!extractedText) {
+          throw new Error(
+            "Le fichier Excel ne contient aucune donnée exploitable."
+          );
+        }
+      }
+
+      const documentInstructions = `
+Le fichier source est un ${isDocx ? "document DOCX" : "fichier Excel XLS/XLSX"}.
+
+IMPORTANT :
+- Analyse TOUT le contenu fourni ci-dessous.
+- Pour un DOCX, considère tout le texte extrait comme faisant partie du document.
+- Pour un fichier Excel, chaque feuille doit être analysée séparément.
+- Les références de cellules (A1, B2, etc.) servent à préserver l'emplacement réel des données.
+- Ne considère jamais les premières lignes comme les seules importantes.
+- Parcours toutes les feuilles, toutes les lignes et toutes les cellules contenant réellement une valeur.
+- Ignore les cellules réellement vides.
+- Ne crée jamais une valeur qui n'existe pas.
+- Ne transforme jamais une cellule voisine en une autre cellule.
+- Si plusieurs lignes ou feuilles contiennent exactement une copie du même document, applique les règles de déduplication déjà définies dans les instructions générales.
+- Si des documents fiscalement distincts sont présents dans le même fichier, garde-les séparés.
+- Si une valeur est présente mais que son association fiscale est incertaine, place-la dans ÉLÉMENTS À VÉRIFIER au lieu de deviner.
+- Les règles fiscales et les formats courts contenus dans les instructions générales restent prioritaires.
+- Ne reproduis jamais intégralement un NAS, un numéro de compte bancaire ou un autre identifiant personnel sensible.
+
+CONTENU EXTRAIT DU FICHIER :
+----------------------------------------
+${extractedText}
+----------------------------------------
+
+Effectue ensuite une deuxième lecture complète du contenu extrait avant de répondre.
+`;
+
+      const response =
+        await openai.responses.create({
+          model: "gpt-5.6-sol",
+          input: [
+            {
+              role: "system",
+              content: [
+                {
+                  type: "input_text",
+                  text: instructions,
+                },
+              ],
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "input_text",
+                  text: documentInstructions,
+                },
+              ],
+            },
+          ],
+        });
+
+      const analyse =
+        response.output_text?.trim();
+
+      if (!analyse) {
+        throw new Error(
+          "Aucune analyse retournée par l'IA."
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        fileName,
+        type: isDocx ? "docx" : "spreadsheet",
+        analyse,
+      });
+    }
+
+    // ==========================================
+    // 8. IMAGE
     // ==========================================
 
     if (isImage) {
@@ -2863,7 +3080,7 @@ Nom du fichier : ${fileName}
     }
 
     // ==========================================
-    // 8. PDF
+    // 9. PDF
     // ==========================================
 
     if (isPdf) {
