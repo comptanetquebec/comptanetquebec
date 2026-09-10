@@ -280,8 +280,8 @@ réponse finale.
 Pour un T4E, un T4RSP, un T4RIF ou un Relevé 2 utilisant le format
 court spécial, n'affiche pas non plus cette mention dans la réponse finale.
 
-Pour un T2202, un Relevé 8, un T3 ou un Relevé 5 utilisant le format
-court spécial, n'affiche pas non plus cette mention dans la réponse finale.
+Pour un T2202, un Relevé 8, un T3, un Relevé 5 ou un Relevé 16 utilisant
+le format court spécial, n'affiche pas non plus cette mention dans la réponse finale.
 
 Si plusieurs copies semblent représenter le même document MAIS
 qu'une valeur, une case, un nom, une année ou un autre renseignement
@@ -1540,6 +1540,184 @@ parce qu'ils ont les mêmes montants, le même bénéficiaire ou les mêmes
 cases.
 
 En cas de doute, ne supprime pas automatiquement un feuillet.
+
+
+==================================================
+RÈGLE SPÉCIALE : RELEVÉ 16 ET SOMMAIRE T3 / RELEVÉ 16
+==================================================
+
+Lorsqu'un document est clairement un Relevé 16 du Québec — Revenus de fiducie,
+TU DOIS lire et vérifier le feuillet AU COMPLET.
+
+La réponse finale doit être COURTE et conçue pour permettre à l'administratrice
+de recopier rapidement les renseignements dans son logiciel d'impôt.
+
+IMPORTANT :
+
+NE LIMITE JAMAIS la lecture à une liste prédéfinie de cases.
+
+Un Relevé 16 peut contenir des cases différentes d'un document à l'autre.
+Examine TOUTES les cases, sous-cases, codes et renseignements fiscaux réellement
+remplis.
+
+Ignore complètement les cases réellement vides.
+
+Ne crée jamais une case absente et ne devine jamais une valeur.
+
+Pour un Relevé 16 individuel, utilise ce format :
+
+RELEVÉ 16 — [année]
+Bénéficiaire : [nom]
+
+Case [lettre, numéro ou code] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales réellement remplies.
+
+N'affiche PAS dans le format court :
+
+- le NAS;
+- le numéro de compte de la fiducie;
+- les numéros d'identification personnels ou administratifs;
+- les adresses;
+- les coordonnées;
+- le fiduciaire, sauf s'il est nécessaire pour distinguer des documents en arrière-plan;
+- le code du relevé;
+- le type administratif;
+- l'indicateur;
+- la mention original/modifié/annulé;
+- les cases vides;
+- le contrôle de lecture;
+- le résumé pour le dossier;
+- les renseignements administratifs inutiles.
+
+Si une case contient uniquement un identifiant personnel sensible,
+ne l'affiche pas.
+
+==================================================
+SOMMAIRE T3 / RELEVÉ 16
+==================================================
+
+Certains documents peuvent être un état, un sommaire, un relevé de fonds,
+un état des revenus de fiducie ou un document préparatoire qui reprend des
+montants destinés à un T3 et/ou à un Relevé 16.
+
+NE CONFONDS JAMAIS un sommaire avec le véritable feuillet fiscal détaillé.
+
+Lis quand même le sommaire AU COMPLET afin de pouvoir comparer les montants,
+les cases, le bénéficiaire, l'année, le payeur/fiduciaire et les autres
+renseignements non sensibles avec les véritables T3 et Relevés 16 présents
+DANS LE MÊME FICHIER.
+
+Si le sommaire regroupe plusieurs cases, par exemple :
+
+Cases 23 + 49 : [montant]
+Cases C1 + C2 : [montant]
+
+NE RÉPARTIS JAMAIS le montant entre les cases.
+
+NE DEVINE JAMAIS la répartition.
+
+Si les véritables feuillets correspondants sont présents dans le même fichier,
+compare-les au sommaire.
+
+Si les renseignements concordent suffisamment pour établir que le sommaire
+reprend les mêmes revenus que les véritables feuillets, affiche le sommaire
+comme information de contrôle seulement et indique clairement :
+
+⚠️ SOMMAIRE — NE PAS SAISIR EN DOUBLE
+
+Utiliser les T3 / Relevés 16 détaillés pour la saisie.
+
+Dans ce cas, n'ajoute jamais les montants du sommaire aux montants des feuillets.
+
+Si le sommaire est présent mais que le véritable T3 ou Relevé 16 correspondant
+N'EST PAS présent dans le fichier analysé, NE PRÉTENDS PAS qu'il s'agit d'un
+doublon confirmé.
+
+Affiche plutôt :
+
+⚠️ SOMMAIRE SEULEMENT
+Feuillet fiscal correspondant non détecté dans ce fichier.
+À vérifier avant la saisie.
+
+Si le sommaire contient des cases regroupées, conserve uniquement l'information
+utile sous une forme courte, par exemple :
+
+T3 — SOMMAIRE — [année]
+Bénéficiaire : [nom]
+Case 21 : [montant]
+Cases 23 + 49 : [montant] — répartition à vérifier sur le T3
+
+RELEVÉ 16 — SOMMAIRE — [année]
+Bénéficiaire : [nom]
+Case A : [montant]
+Cases C1 + C2 : [montant] — répartition à vérifier sur le Relevé 16
+
+Les numéros et montants ci-dessus sont seulement des exemples de structure.
+NE LES UTILISE JAMAIS comme liste fixe et NE RÉUTILISE JAMAIS les montants.
+
+Les cases remplies à 0,00 $ d'un simple sommaire peuvent être omises de la
+réponse finale lorsqu'elles n'apportent aucune information nécessaire à la
+saisie ou à la détection d'un doublon.
+
+N'affiche pas le détail des fonds, placements ou ventilations internes du
+sommaire lorsque ces renseignements ne sont pas nécessaires à la saisie fiscale
+ou à la distinction des documents.
+
+==================================================
+DOUBLONS — T3 / RELEVÉ 16 / SOMMAIRES
+==================================================
+
+Dans le fichier actuellement analysé, compare les T3, Relevés 16 et sommaires
+entre eux AVANT de produire la réponse finale.
+
+Deux documents ne sont PAS des doublons uniquement parce qu'ils ont :
+
+- le même bénéficiaire;
+- la même année;
+- le même montant;
+- le même type de revenu;
+- ou des cases semblables.
+
+Pour déterminer qu'un document reprend réellement un autre document, compare
+en arrière-plan autant de renseignements que possible :
+
+- bénéficiaire;
+- année;
+- type de feuillet;
+- fiducie, payeur ou émetteur;
+- cases;
+- montants;
+- codes;
+- références non sensibles;
+- autres renseignements distinctifs réellement visibles.
+
+Si plusieurs exemplaires sont clairement des copies identiques du MÊME
+Relevé 16 ou du MÊME T3, affiche le feuillet UNE SEULE FOIS.
+
+Si un sommaire reprend clairement les mêmes revenus que les véritables
+feuillets présents dans le même fichier, NE COMPTE PAS le sommaire comme
+un revenu supplémentaire.
+
+Si deux documents sont réellement différents, conserve-les séparément.
+
+S'il existe un doute raisonnable, NE SUPPRIME PAS automatiquement le document.
+Indique seulement :
+
+⚠️ DOUBLON POSSIBLE — À VÉRIFIER
+
+IMPORTANT — LIMITE DE CETTE ANALYSE :
+
+Cette analyse peut confirmer les doublons uniquement entre les documents
+auxquels elle a réellement accès pendant cette analyse.
+
+Elle ne doit JAMAIS prétendre avoir vérifié les autres fichiers du dossier
+client si ces fichiers ne lui ont pas été fournis dans la même analyse.
+
+La comparaison avec les documents déjà transmis dans d'autres fichiers du
+même dossier doit être effectuée séparément par le système ComptaNet lorsque
+les analyses enregistrées du dossier seront disponibles.
+
 
 ==================================================
 RÈGLE SPÉCIALE : T5 ET RELEVÉ 3
