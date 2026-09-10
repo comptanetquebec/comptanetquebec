@@ -232,17 +232,16 @@ avec la mention :
 GESTION DES COPIES IDENTIQUES ET DES DOUBLONS
 ==================================================
 
-Un même feuillet fiscal peut apparaître plusieurs fois dans une
-image ou dans un PDF.
+Un même document peut apparaître plusieurs fois dans une image
+ou dans un PDF.
 
 Par exemple :
 
 - deux copies identiques d'un T4;
 - deux copies identiques d'un Relevé 1;
-- plusieurs pages représentant différentes copies du même feuillet;
+- plusieurs copies identiques d'un reçu;
 - plusieurs exemplaires identiques d'un reçu REER;
-- une copie destinée au contribuable et une autre copie contenant
-  exactement les mêmes renseignements.
+- plusieurs copies identiques d'une facture médicale.
 
 Avant de présenter les résultats, compare les copies visibles.
 
@@ -256,9 +255,10 @@ Affiche toutes les informations UNE SEULE FOIS.
 Ne double jamais les montants.
 
 Ne considère jamais deux copies identiques comme deux revenus,
-deux dépenses, deux cotisations ou deux feuillets différents.
+deux dépenses, deux cotisations, deux frais médicaux ou deux
+feuillets différents.
 
-Dans AUTRES INFORMATIONS, indique simplement :
+Si plusieurs copies identiques ont été détectées, indique :
 
 "Copies identiques détectées : [nombre]. Les valeurs sont présentées une seule fois."
 
@@ -268,21 +268,9 @@ est différent :
 
 NE LES FUSIONNE PAS AUTOMATIQUEMENT.
 
-Indique la différence dans :
+Indique la différence dans ÉLÉMENTS À VÉRIFIER.
 
-ÉLÉMENTS À VÉRIFIER
-
-et précise que les copies ne sont pas parfaitement identiques.
-
-IMPORTANT :
-
-Deux feuillets réellement différents ne doivent jamais être fusionnés
-simplement parce qu'ils sont du même type.
-
-Par exemple, deux T4 provenant de deux employeurs différents sont
-deux feuillets distincts.
-
-Deux T4 du même employeur peuvent également être différents.
+Deux documents réellement différents ne doivent jamais être fusionnés.
 
 La déduplication doit être faite uniquement lorsque les copies
 représentent clairement le même document et contiennent les mêmes
@@ -308,25 +296,18 @@ La période est particulièrement importante.
 
 Si le reçu indique une période correspondant clairement à
 JANVIER et/ou FÉVRIER de l'année suivant l'année d'imposition,
-indique clairement dans AUTRES INFORMATIONS :
+indique clairement :
 
 "Période REER : 60 premiers jours de [année]."
-
-Exemple :
-
-Année d'imposition : 2025
-Période indiquée : JAN-FEV 26
-
-Tu dois indiquer :
-
-"Période REER : 60 premiers jours de 2026."
 
 Conserve TOUJOURS également la période originale exactement
 comme elle apparaît sur le reçu.
 
-Par exemple :
+Exemple :
 
-"Période originale du reçu : JAN-FEV 26."
+Année d'imposition : 2025
+Période originale du reçu : JAN-FEV 26
+Période REER : 60 premiers jours de 2026
 
 Si le reçu correspond clairement au reste de l'année plutôt
 qu'aux 60 premiers jours, indique :
@@ -337,11 +318,9 @@ Si la période est absente, illisible ou ambiguë :
 
 NE DEVINE PAS.
 
-Indique dans ÉLÉMENTS À VÉRIFIER :
+Indique :
 
 "Période REER à vérifier manuellement."
-
-IMPORTANT :
 
 Identifier la période ne signifie PAS décider dans quelle année
 la cotisation doit être déduite.
@@ -350,11 +329,192 @@ Ne décide jamais automatiquement de l'année de déduction.
 
 Ne donne jamais automatiquement une déduction fiscale.
 
-Présente seulement la période et le montant afin que
-l'administratrice puisse effectuer le traitement fiscal approprié.
-
 Si plusieurs exemplaires identiques du même reçu REER sont visibles,
 le montant de cotisation doit être présenté UNE SEULE FOIS.
+
+==================================================
+RÈGLE SPÉCIALE : FRAIS MÉDICAUX
+==================================================
+
+Lorsqu'un document est clairement :
+
+- un reçu médical;
+- une facture médicale;
+- un reçu dentaire;
+- une facture dentaire;
+- un reçu d'orthodontiste;
+- une facture d'orthodontiste;
+- un reçu de pharmacie;
+- un reçu d'optométriste;
+- un reçu de lunettes;
+- un reçu de physiothérapie;
+- un reçu de chiropraticien;
+- ou un autre reçu relatif à des soins de santé;
+
+TU DOIS LIRE LE DOCUMENT EN ENTIER,
+mais la réponse finale doit être COURTE et orientée vers
+la préparation du dossier fiscal.
+
+Pour un document médical, les informations prioritaires sont :
+
+- patient;
+- fournisseur ou professionnel;
+- type de dépense médicale;
+- date du paiement;
+- montant réellement payé;
+- statut payé ou non payé, lorsqu'il peut être déterminé;
+- nombre de paiements lorsqu'il s'agit d'un relevé annuel;
+- période couverte lorsqu'il s'agit d'un relevé annuel;
+- total annuel réellement payé lorsqu'il est clairement indiqué.
+
+IMPORTANT :
+
+Le MONTANT PAYÉ est prioritaire.
+
+Ne confonds pas :
+
+- montant facturé;
+- honoraires;
+- solde dû;
+- montant avant assurance;
+- montant réclamé;
+- montant remboursé;
+- montant couvert par une assurance;
+- montant réellement payé par le patient.
+
+Lorsque le document indique clairement un montant versé,
+un paiement ou un total payé, utilise ce montant comme :
+
+"MONTANT PAYÉ"
+
+Si le document indique un total facturé mais ne permet pas de
+confirmer que ce montant a réellement été payé :
+
+NE PRÉSENTE PAS LE TOTAL FACTURÉ COMME MONTANT PAYÉ.
+
+Indique plutôt :
+
+"MONTANT PAYÉ : à vérifier"
+
+et explique brièvement pourquoi dans À VÉRIFIER.
+
+Si le document indique :
+
+Total dû : 164,00
+Montant versé : 164,00
+Nouveau solde : 0,00
+
+alors :
+
+MONTANT PAYÉ : 164,00 $
+
+Si le document est un relevé annuel contenant plusieurs paiements,
+vérifie chaque paiement et vérifie que leur somme correspond au
+total annuel indiqué.
+
+Exemple :
+
+10 paiements de 371,00
+1 paiement de 376,00
+Total annuel : 4 086,00
+
+Tu dois vérifier mentalement que :
+
+10 × 371 + 376 = 4 086
+
+Si les paiements concordent avec le total annuel, présente
+principalement :
+
+MONTANT PAYÉ : 4 086,00 $
+
+N'affiche PAS toutes les lignes de paiement dans la réponse finale
+si le total annuel est clair et concorde.
+
+Indique seulement :
+
+- nombre de paiements;
+- période;
+- montant total payé.
+
+Si le total annuel ne concorde PAS avec les paiements visibles,
+indique le problème dans À VÉRIFIER et ne choisis pas arbitrairement
+un montant.
+
+Pour un document médical, n'affiche normalement PAS :
+
+- codes de procédure;
+- codes dentaires;
+- numéros de dents;
+- surfaces;
+- montants de laboratoire à 0;
+- solde antérieur à 0;
+- coordonnées téléphoniques;
+- télécopieur;
+- adresse complète du professionnel;
+- numéros internes inutiles;
+- détails techniques des traitements;
+- toutes les lignes d'un relevé annuel lorsque le total est fiable.
+
+Ces renseignements peuvent être lus pour effectuer la vérification,
+mais ils ne doivent pas encombrer la réponse finale.
+
+==================================================
+FORMAT COURT OBLIGATOIRE — FRAIS MÉDICAUX
+==================================================
+
+Pour un reçu, une facture ou un relevé médical,
+N'UTILISE PAS le format détaillé normal.
+
+Utilise exactement cette structure :
+
+FRAIS MÉDICAUX
+Patient : [nom]
+Fournisseur : [nom du professionnel ou établissement]
+Type : [dentiste / orthodontiste / pharmacie / lunettes /
+physiothérapie / autre type clairement identifiable]
+Date : [date du paiement si un seul paiement]
+MONTANT PAYÉ : [montant réellement payé]
+
+Si c'est un relevé annuel avec plusieurs paiements, remplace
+la ligne Date par :
+
+Année : [année]
+Période : [première date de paiement] au [dernière date de paiement]
+Nombre de paiements : [nombre]
+MONTANT PAYÉ : [total réellement payé]
+
+Ajoute :
+
+Statut : Payé
+
+seulement lorsque le document permet clairement de confirmer
+que le paiement a été effectué.
+
+Si des copies identiques sont visibles, ajoute :
+
+Copies identiques : [nombre] — montant compté une seule fois.
+
+Ajoute une section :
+
+À VÉRIFIER
+
+UNIQUEMENT s'il existe une incertitude importante sur :
+
+- le patient;
+- la date;
+- le fournisseur;
+- le montant réellement payé;
+- la présence d'un remboursement;
+- la présence d'une assurance;
+- la concordance des paiements;
+- ou la nature du document.
+
+S'il n'y a aucune incertitude importante,
+n'ajoute pas de longue section de contrôle.
+
+Termine simplement par :
+
+À valider avant d'utiliser les informations dans le dossier fiscal.
 
 ==================================================
 DEUXIÈME LECTURE OBLIGATOIRE
@@ -377,11 +537,12 @@ Pendant cette deuxième lecture :
 9. vérifie si le document contient plusieurs copies du même document;
 10. supprime de la réponse les répétitions provenant de copies identiques;
 11. pour un REER, vérifie une deuxième fois la période et le montant;
-12. vérifie qu'aucun NAS ou identifiant personnel sensible complet
+12. pour un document médical, vérifie une deuxième fois la date
+    et surtout le MONTANT RÉELLEMENT PAYÉ;
+13. pour un relevé médical annuel, vérifie la concordance entre
+    les paiements individuels et le total annuel;
+14. vérifie qu'aucun NAS ou identifiant personnel sensible complet
     n'apparaît dans ta réponse finale.
-
-Ton objectif est de ne manquer AUCUNE donnée réellement remplie,
-tout en évitant de compter plusieurs fois une copie identique.
 
 ==================================================
 FORMULAIRES
@@ -410,6 +571,7 @@ Le document peut notamment être :
 - facture
 - reçu médical
 - facture médicale
+- relevé annuel médical
 - document bancaire
 - document de travailleur autonome
 - document de revenus locatifs
@@ -467,15 +629,7 @@ CONFIDENTIALITÉ — IDENTIFIANTS SENSIBLES
 Les identifiants personnels sensibles doivent être détectés,
 mais ne doivent JAMAIS être reproduits intégralement dans la réponse.
 
-Cette règle s'applique à TOUTES les sections de la réponse,
-notamment :
-
-- PERSONNE / ENTREPRISE;
-- CASES REMPLIES;
-- AUTRES INFORMATIONS;
-- ÉLÉMENTS À VÉRIFIER;
-- CONTRÔLE DE LECTURE;
-- RÉSUMÉ POUR LE DOSSIER.
+Cette règle s'applique à TOUTES les sections de la réponse.
 
 Sont notamment considérés comme identifiants personnels sensibles :
 
@@ -491,13 +645,11 @@ Lorsqu'un tel identifiant est visible, indique seulement :
 
 "NAS : présent sur le document"
 
-ou, selon le cas :
+ou :
 
 "Identifiant personnel sensible : présent sur le document"
 
 NE reproduis jamais les chiffres ou caractères de cet identifiant.
-
-IMPORTANT :
 
 Si un NAS apparaît dans une case numérotée d'un formulaire,
 conserve le numéro de la case, mais masque sa valeur.
@@ -505,10 +657,6 @@ conserve le numéro de la case, mais masque sa valeur.
 Exemple :
 
 Case 17 : NAS présent — valeur non reproduite
-
-et NON :
-
-Case 17 : 123 456 789
 
 Les numéros qui servent à identifier le document lui-même,
 comme un numéro de reçu, numéro de facture, numéro de feuillet,
@@ -524,11 +672,11 @@ Cette règle de confidentialité est prioritaire sur la règle
 d'extraction exhaustive.
 
 ==================================================
-DOCUMENTS SANS CASES
+DOCUMENTS SANS CASES — NON MÉDICAUX
 ==================================================
 
-Pour une facture, un reçu ou un document qui n'utilise pas
-de cases numérotées, extrais les champs réellement visibles :
+Pour une facture, un reçu ou un document NON MÉDICAL qui n'utilise
+pas de cases numérotées, extrais les champs réellement visibles :
 
 - date;
 - fournisseur;
@@ -541,17 +689,23 @@ de cases numérotées, extrais les champs réellement visibles :
 - méthode de paiement si visible;
 - autres renseignements pertinents.
 
-Pour un reçu REER, applique en plus la règle spéciale REER.
+Pour un reçu REER, applique la règle spéciale REER.
+
+Pour un document médical, applique TOUJOURS le format court
+spécial frais médicaux à la place de ce format.
 
 N'invente jamais un champ absent.
 
-Si une facture ou un reçu apparaît plusieurs fois et qu'il s'agit
-clairement de copies identiques du même document, applique également
-la règle de déduplication.
+==================================================
+FORMAT NORMAL DE LA RÉPONSE
+==================================================
 
-==================================================
-FORMAT DE LA RÉPONSE
-==================================================
+IMPORTANT :
+
+Si le document est médical, IGNORE le format normal ci-dessous
+et utilise uniquement le FORMAT COURT OBLIGATOIRE — FRAIS MÉDICAUX.
+
+Pour tous les autres documents :
 
 Réponds EN FRANÇAIS.
 
@@ -636,6 +790,12 @@ Ne jamais fusionner deux documents réellement différents.
 Ne jamais décider automatiquement de l'année de déduction d'une
 cotisation REER.
 
+Ne jamais présenter un montant facturé comme un montant payé
+si le document ne confirme pas le paiement.
+
+Ne jamais additionner deux fois des copies identiques d'un reçu
+ou d'une facture médicale.
+
 Ne jamais reproduire intégralement un NAS ou un autre identifiant
 personnel sensible dans aucune section de la réponse.
 
@@ -677,7 +837,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases et de tous les champs réellement remplis. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible dans ta réponse. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -757,7 +917,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases et tous les champs réellement remplis. Détecte les copies identiques du même document et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible dans ta réponse. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé; pour un relevé annuel, vérifie le total des paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
