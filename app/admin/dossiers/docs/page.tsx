@@ -263,9 +263,24 @@ function pairSyntheseBlocks(blocks: SyntheseBlock[]): Array<{
   }
 
   blocks.forEach((block, index) => {
-    if (!used.has(index)) {
-      rows.push({ single: block });
+    if (used.has(index)) {
+      return;
     }
+
+    // Même lorsqu'un T4 ou un Relevé 1 n'a pas son double,
+    // il reste dans sa bonne colonne :
+    // FÉDÉRAL à gauche, QUÉBEC à droite.
+    if (isFederalT4Block(block.title)) {
+      rows.push({ federal: block });
+      return;
+    }
+
+    if (isQuebecBlock(block.title)) {
+      rows.push({ quebec: block });
+      return;
+    }
+
+    rows.push({ single: block });
   });
 
   return rows;
