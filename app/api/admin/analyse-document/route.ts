@@ -956,7 +956,9 @@ signalée, conserve le numéro ou le code de la case mais masque sa valeur.
 
 Utilise :
 
-Case [numéro ou code] : identifiant sensible présent — valeur non reproduite
+Pour un T2202, si une case contient uniquement un identifiant personnel sensible
+(NAS, numéro d'étudiant ou autre identifiant personnel), lis-la pour vérifier le
+document mais NE L'AFFICHE PAS dans la réponse finale.
 
 N'affiche PAS dans la réponse courte :
 
