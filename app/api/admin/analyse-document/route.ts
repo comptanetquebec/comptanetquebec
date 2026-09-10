@@ -110,7 +110,7 @@ export async function POST(req: Request) {
         {
           ok: false,
           error:
-            "Ce type de fichier n'est pas encore pris en charge par l'analyse IA. Formats acceptés : JPG, JPEG, PNG, WEBP et PDF.",
+            "Ce type de fichier n'est pas encore pris en charge. Formats acceptés : JPG, JPEG, PNG, WEBP et PDF.",
         },
         { status: 400 }
       );
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
     });
 
     const instructions = `
-Tu es l'assistant privé de ComptaNet Québec.
+Tu es l'assistant IA privé de ComptaNet Québec.
 
 Tu travailles uniquement pour l'administratrice de ComptaNet Québec.
 
@@ -134,22 +134,28 @@ de la préparation de dossiers fiscaux et de tenue de livres.
 
 RÈGLES IMPORTANTES :
 
-- Extrais uniquement les informations réellement présentes.
+- Extrais uniquement les informations réellement présentes dans le document.
 - N'invente jamais une donnée.
-- Si une information est illisible, indique "illisible".
-- Si tu n'es pas certain, indique clairement "à vérifier".
+- Si une information est illisible, écris "illisible".
+- Si une information semble incertaine, écris "à vérifier".
 - Ne prends aucune décision fiscale automatiquement.
 - Ne modifie aucune donnée du dossier.
-- Ton rôle est d'assister l'administratrice qui effectuera la validation.
+- Ne suppose jamais un montant absent.
+- Distingue clairement les montants des différentes cases d'un feuillet.
+- Ton rôle est d'assister l'administratrice, qui effectuera la validation finale.
 
 IDENTIFIE SI POSSIBLE :
 
 - type de document;
-- année;
+- année fiscale;
 - nom de la personne;
 - nom de l'entreprise ou de l'émetteur;
-- numéros de feuillets ou cases importantes;
+- numéro du feuillet;
+- numéro et contenu des cases importantes;
 - revenus;
+- revenus d'emploi;
+- revenus d'entreprise;
+- revenus de location;
 - impôts retenus;
 - cotisations;
 - taxes;
@@ -164,22 +170,22 @@ IDENTIFIE SI POSSIBLE :
 
 DOCUMENTS POSSIBLES :
 
-T4
-Relevé 1
-T4A
-T5
-T3
-Relevé 3
-Relevé 31
-avis de cotisation
-facture
-reçu
-dépense
-revenu de travailleur autonome
-revenu de location
-document gouvernemental
-document bancaire
-autre pièce justificative
+- T4
+- Relevé 1
+- T4A
+- T5
+- T3
+- Relevé 3
+- Relevé 31
+- avis de cotisation
+- facture
+- reçu
+- dépense
+- revenu de travailleur autonome
+- revenu de location
+- document gouvernemental
+- document bancaire
+- autre pièce justificative
 
 Réponds EN FRANÇAIS.
 
@@ -227,7 +233,6 @@ Le fichier analysé s'appelle : ${fileName}
               },
             ],
           },
-
           {
             role: "user",
             content: [
@@ -262,6 +267,7 @@ Le fichier analysé s'appelle : ${fileName}
     // ==========================================
 
     if (isPdf) {
+      // Télécharger le PDF depuis le lien signé Supabase
       const pdfResponse = await fetch(fileUrl);
 
       if (!pdfResponse.ok) {
@@ -270,20 +276,21 @@ Le fichier analysé s'appelle : ${fileName}
         );
       }
 
-      const pdfBuffer =
-        Buffer.from(await pdfResponse.arrayBuffer());
+      const pdfBuffer = Buffer.from(
+        await pdfResponse.arrayBuffer()
+      );
 
-      const uploadedFile =
-        await openai.files.create({
-          file: new File(
-            [pdfBuffer],
-            fileName,
-            {
-              type: "application/pdf",
-            }
-          ),
-          purpose: "user_data",
-        });
+      // Envoyer temporairement le PDF à OpenAI
+      const uploadedFile = await openai.files.create({
+        file: new File(
+          [pdfBuffer],
+          fileName,
+          {
+            type: "application/pdf",
+          }
+        ),
+        purpose: "user_data",
+      });
 
       try {
         const response =
@@ -300,7 +307,6 @@ Le fichier analysé s'appelle : ${fileName}
                   },
                 ],
               },
-
               {
                 role: "user",
                 content: [
@@ -311,7 +317,7 @@ Le fichier analysé s'appelle : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse ce document selon les instructions.",
+                      "Analyse ce document selon les instructions fournies.",
                   },
                 ],
               },
@@ -334,9 +340,12 @@ Le fichier analysé s'appelle : ${fileName}
           analyse,
         });
       } finally {
-        // Le PDF n'a pas besoin de rester chez OpenAI
+        // ==========================================
+        // SUPPRIMER LE PDF TEMPORAIRE CHEZ OPENAI
+        // ==========================================
+
         try {
-          await openai.files.delete(
+          await openai.files.del(
             uploadedFile.id
           );
         } catch (deleteError) {
