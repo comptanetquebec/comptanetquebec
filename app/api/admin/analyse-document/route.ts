@@ -398,6 +398,136 @@ Si une information A ou B est incertaine, ajoute seulement :
 N'ajoute aucune autre information.
 
 ==================================================
+RÈGLE SPÉCIALE : T5 ET RELEVÉ 3
+==================================================
+
+Lorsqu'un document est clairement :
+
+- un T5 — État des revenus de placement;
+- ou un Relevé 3 — Revenus de placement;
+
+TU DOIS lire et vérifier le feuillet AU COMPLET.
+
+La réponse finale doit toutefois être COURTE et conçue pour
+permettre à l'administratrice d'entrer rapidement les renseignements
+dans le logiciel d'impôt.
+
+IMPORTANT :
+
+NE LIMITE JAMAIS la lecture à une liste prédéfinie de cases.
+
+Les exemples de T5 ou de Relevé 3 analysés précédemment ne doivent
+JAMAIS servir de liste fixe.
+
+Un autre T5 ou Relevé 3 peut contenir d'autres cases remplies.
+
+Tu dois examiner TOUTES les cases du feuillet et identifier
+TOUTES les cases fiscales réellement remplies.
+
+Pour le T5 :
+
+- conserve toutes les cases fiscales remplies utiles à la préparation
+  de la déclaration;
+- les cases peuvent varier d'un T5 à l'autre;
+- ne suppose jamais que seule la case 13 est importante;
+- n'ignore jamais une autre case fiscale remplie simplement parce
+  qu'elle n'était pas présente dans un exemple précédent.
+
+Pour le Relevé 3 :
+
+- conserve toutes les cases fiscales remplies utiles à la préparation
+  de la déclaration;
+- les cases peuvent être A1, A2, B, C, D, E, F, G, H, I, J, K
+  ou toute autre case réellement présente sur le formulaire;
+- cette liste est uniquement illustrative et ne doit JAMAIS limiter
+  l'extraction;
+- n'ignore jamais une autre case fiscale remplie.
+
+N'AFFICHE PAS dans la réponse courte :
+
+- l'adresse du bénéficiaire;
+- l'adresse du payeur;
+- le NAS;
+- la valeur du NAS;
+- le numéro de compte bancaire;
+- la valeur du numéro de compte bancaire;
+- les numéros de succursale;
+- les numéros de référence administratifs;
+- le numéro du dernier relevé transmis;
+- les références internes;
+- les coordonnées;
+- la mention de l'exemplaire;
+- les cases vides;
+- la liste des cases vides;
+- le contrôle de lecture;
+- un long résumé;
+- les informations administratives qui ne servent pas à entrer
+  les données fiscales dans la déclaration.
+
+Les identifiants sensibles doivent quand même être détectés
+pendant la lecture afin d'éviter de les reproduire, mais ils
+ne doivent PAS être affichés dans le format court T5 / Relevé 3.
+
+==================================================
+FORMAT COURT OBLIGATOIRE — T5
+==================================================
+
+Utilise exactement cette structure :
+
+T5 — [année]
+Bénéficiaire : [nom]
+
+Case [numéro] : [valeur]
+Case [numéro] : [valeur]
+Case [numéro] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales
+réellement remplies et pertinentes.
+
+NE CRÉE PAS de case absente.
+
+NE SUPPRIME PAS une case fiscale remplie simplement pour raccourcir
+la réponse.
+
+Si une case contient uniquement un identifiant personnel sensible,
+ne l'affiche pas.
+
+Si une case contient uniquement un numéro de compte bancaire,
+ne l'affiche pas.
+
+Si une valeur fiscale est incertaine, ajoute seulement :
+
+À VÉRIFIER : Case [numéro] — [explication courte]
+
+==================================================
+FORMAT COURT OBLIGATOIRE — RELEVÉ 3
+==================================================
+
+Utilise exactement cette structure :
+
+RELEVÉ 3 — [année]
+Bénéficiaire : [nom]
+
+Case [lettre ou code] : [valeur]
+Case [lettre ou code] : [valeur]
+Case [lettre ou code] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales
+réellement remplies et pertinentes.
+
+NE CRÉE PAS de case absente.
+
+NE SUPPRIME PAS une case fiscale remplie simplement pour raccourcir
+la réponse.
+
+Ne présente pas comme case fiscale un numéro de succursale,
+un numéro administratif ou une référence interne.
+
+Si une valeur fiscale est incertaine, ajoute seulement :
+
+À VÉRIFIER : Case [lettre ou code] — [explication courte]
+
+==================================================
 RÈGLE SPÉCIALE : FRAIS MÉDICAUX
 ==================================================
 
@@ -600,11 +730,15 @@ Pendant cette deuxième lecture :
 11. pour un REER, vérifie une deuxième fois la période et le montant;
 12. pour un Relevé 31, vérifie une deuxième fois uniquement les
     valeurs des cases A et B avant de produire la réponse courte;
-13. pour un document médical, vérifie une deuxième fois la date
+13. pour un T5 ou un Relevé 3, vérifie une deuxième fois TOUTES
+    les cases fiscales remplies avant de produire la réponse courte;
+14. pour un T5 ou un Relevé 3, retire de l'affichage les adresses,
+    identifiants sensibles, numéros de compte et références administratives;
+15. pour un document médical, vérifie une deuxième fois la date
     et surtout le MONTANT RÉELLEMENT PAYÉ;
-14. pour un relevé médical annuel, vérifie la concordance entre
+16. pour un relevé médical annuel, vérifie la concordance entre
     les paiements individuels et le total annuel;
-15. vérifie qu'aucun NAS ou identifiant personnel sensible complet
+17. vérifie qu'aucun NAS ou identifiant personnel sensible complet
     n'apparaît dans ta réponse finale.
 
 ==================================================
@@ -768,6 +902,12 @@ IMPORTANT :
 Si le document est un Relevé 31, IGNORE le format normal ci-dessous
 et utilise uniquement la RÈGLE SPÉCIALE : RELEVÉ 31.
 
+Si le document est un T5, IGNORE le format normal ci-dessous
+et utilise uniquement le FORMAT COURT OBLIGATOIRE — T5.
+
+Si le document est un Relevé 3, IGNORE le format normal ci-dessous
+et utilise uniquement le FORMAT COURT OBLIGATOIRE — RELEVÉ 3.
+
 Si le document est médical, IGNORE le format normal ci-dessous
 et utilise uniquement le FORMAT COURT OBLIGATOIRE — FRAIS MÉDICAUX.
 
@@ -903,7 +1043,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -983,7 +1123,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé; pour un relevé annuel, vérifie le total des paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un document médical, utilise obligatoirement le format court médical et privilégie la date et le montant réellement payé; pour un relevé annuel, vérifie le total des paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
