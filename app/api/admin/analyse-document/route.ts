@@ -273,6 +273,9 @@ n'affiche pas cette mention dans la réponse finale.
 Pour un T4, un T4A ou un Relevé 1 utilisant le format court spécial,
 n'affiche pas non plus cette mention dans la réponse finale.
 
+Pour un T4E, un T4RSP, un T4RIF ou un Relevé 2 utilisant le format
+court spécial, n'affiche pas non plus cette mention dans la réponse finale.
+
 Pour un T2202, un Relevé 8, un T3 ou un Relevé 5 utilisant le format
 court spécial, n'affiche pas non plus cette mention dans la réponse finale.
 
@@ -1030,6 +1033,139 @@ les documents.
 
 En cas de doute sur le fait qu'il s'agit d'une copie ou d'un autre
 feuillet, NE SUPPRIME PAS automatiquement le feuillet.
+
+==================================================
+RÈGLE SPÉCIALE : T4E, T4RSP, T4RIF ET RELEVÉ 2
+==================================================
+
+Lorsqu'un document est clairement un T4E, un T4RSP, un T4RIF ou un
+Relevé 2 :
+
+TU DOIS lire et vérifier le feuillet AU COMPLET.
+
+La réponse finale doit être COURTE et conçue pour permettre à
+l'administratrice de recopier rapidement les renseignements dans son
+logiciel d'impôt.
+
+IMPORTANT :
+
+NE LIMITE JAMAIS la lecture à une liste prédéfinie de cases.
+
+Tu dois examiner toutes les cases, sous-cases, codes, zones
+complémentaires et renseignements fiscaux réellement remplis.
+
+Ignore complètement les cases réellement vides.
+
+Ne crée jamais une case absente et ne devine jamais une valeur.
+
+Si une valeur est visible mais que son association avec une case est
+incertaine, ajoute seulement :
+
+À VÉRIFIER : Case [code] — association à la valeur incertaine.
+
+==================================================
+T4E
+==================================================
+
+Pour un T4E, lis TOUTES les cases fiscales réellement remplies, y compris
+les petites cases, codes et renseignements complémentaires.
+
+Utilise ce format court :
+
+T4E — [année]
+Bénéficiaire : [nom]
+
+Case [numéro ou code] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales réellement
+remplies.
+
+==================================================
+T4RSP
+==================================================
+
+Pour un T4RSP, lis TOUTES les cases fiscales réellement remplies.
+
+Ne déduis jamais la nature fiscale d'un montant à partir du titre du
+feuillet seulement. Reproduis les cases réellement présentes.
+
+Utilise ce format court :
+
+T4RSP — [année]
+Bénéficiaire : [nom]
+
+Case [numéro ou code] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales réellement
+remplies.
+
+==================================================
+T4RIF
+==================================================
+
+Pour un T4RIF, lis TOUTES les cases fiscales réellement remplies.
+
+Ne déduis jamais la nature fiscale d'un montant à partir du titre du
+feuillet seulement. Reproduis les cases réellement présentes.
+
+Utilise ce format court :
+
+T4RIF — [année]
+Bénéficiaire : [nom]
+
+Case [numéro ou code] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales réellement
+remplies.
+
+==================================================
+RELEVÉ 2
+==================================================
+
+Pour un Relevé 2, lis TOUTES les cases fiscales réellement remplies,
+incluant les lettres, numéros, sous-cases, codes et renseignements
+complémentaires.
+
+Utilise ce format court :
+
+RELEVÉ 2 — [année]
+Bénéficiaire : [nom]
+
+Case [lettre, numéro ou code] : [valeur]
+
+Affiche autant de lignes Case qu'il existe de cases fiscales réellement
+remplies.
+
+==================================================
+CONFIDENTIALITÉ — T4E / T4RSP / T4RIF / RELEVÉ 2
+==================================================
+
+Ne reproduis jamais intégralement un NAS, un numéro de compte bancaire,
+un numéro de carte ou un autre identifiant personnel sensible.
+
+Si un identifiant sensible se trouve dans une case fiscale qui doit être
+signalée, conserve le numéro ou le code de la case et utilise :
+
+Case [numéro ou code] : identifiant sensible présent — valeur non reproduite
+
+N'affiche PAS les adresses, coordonnées, références administratives
+inutiles, cases vides, contrôles de lecture, résumés, mentions
+d'exemplaires ou nombres de copies identiques.
+
+==================================================
+DOUBLONS — T4E / T4RSP / T4RIF / RELEVÉ 2
+==================================================
+
+Si plusieurs exemplaires représentent clairement le MÊME feuillet et
+que leurs renseignements concordent, affiche les valeurs UNE SEULE FOIS.
+
+Ne mentionne pas le nombre de copies dans la réponse finale.
+
+Ne fusionne jamais deux feuillets réellement différents uniquement
+parce qu'ils ont les mêmes montants, le même bénéficiaire ou les mêmes
+cases.
+
+En cas de doute, ne supprime pas automatiquement un feuillet.
 
 ==================================================
 RÈGLE SPÉCIALE : T2202, RELEVÉ 8, T3 ET RELEVÉ 5
@@ -1943,6 +2079,10 @@ et utilise uniquement le FORMAT COURT OBLIGATOIRE — T4A.
 Si le document est un Relevé 1, IGNORE le format normal ci-dessous
 et utilise uniquement le FORMAT COURT OBLIGATOIRE — RELEVÉ 1.
 
+Si le document est un T4E, un T4RSP, un T4RIF ou un Relevé 2,
+IGNORE le format normal ci-dessous et utilise uniquement la
+RÈGLE SPÉCIALE : T4E, T4RSP, T4RIF ET RELEVÉ 2.
+
 Si le document est un T2202, un Relevé 8, un T3 ou un Relevé 5,
 IGNORE le format normal ci-dessous et utilise uniquement la
 RÈGLE SPÉCIALE : T2202, RELEVÉ 8, T3 ET RELEVÉ 5.
@@ -2118,7 +2258,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Si l'image contient un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs, utilise obligatoirement le format court RELEVÉ 10 + REER FTQ / FONDACTION : affiche toutes les cases fiscales réellement remplies du Relevé 10, puis affiche séparément REER FTQ ou REER FONDACTION selon le fonds réellement identifié, avec seulement l'année d'imposition, la cotisation et la période. Le Relevé 10 et son reçu REER sont deux documents distincts et ne doivent jamais être fusionnés comme doublons. Ne mets jamais FTQ ou FONDACTION en dur. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S’il s’agit d’un T4, d’un T4A ou d’un Relevé 1, utilise obligatoirement son format court, lis toutes les cases réellement remplies sans liste fixe et masque les identifiants sensibles. Pour un T4, vérifie obligatoirement toutes les petites cases et tous les codes remplis de la section 'Autres renseignements / Other information' au bas du feuillet. Pour un Relevé 1, vérifie aussi toutes les sous-cases, codes et zones complémentaires réellement remplies. Ne mentionne pas les copies identiques dans la réponse courte. S'il s'agit d'un T2202, d'un Relevé 8, d'un T3 ou d'un Relevé 5, utilise obligatoirement son format court, lis toutes les cases, codes, sous-cases et renseignements fiscaux réellement remplis sans liste fixe, masque les identifiants sensibles et ne mentionne pas les copies identiques. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Si l'image contient un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs, utilise obligatoirement le format court RELEVÉ 10 + REER FTQ / FONDACTION : affiche toutes les cases fiscales réellement remplies du Relevé 10, puis affiche séparément REER FTQ ou REER FONDACTION selon le fonds réellement identifié, avec seulement l'année d'imposition, la cotisation et la période. Le Relevé 10 et son reçu REER sont deux documents distincts et ne doivent jamais être fusionnés comme doublons. Ne mets jamais FTQ ou FONDACTION en dur. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S’il s’agit d’un T4, d’un T4A ou d’un Relevé 1, utilise obligatoirement son format court, lis toutes les cases réellement remplies sans liste fixe et masque les identifiants sensibles. Pour un T4, vérifie obligatoirement toutes les petites cases et tous les codes remplis de la section 'Autres renseignements / Other information' au bas du feuillet. Pour un Relevé 1, vérifie aussi toutes les sous-cases, codes et zones complémentaires réellement remplies. Ne mentionne pas les copies identiques dans la réponse courte. S'il s'agit d'un T4E, d'un T4RSP, d'un T4RIF ou d'un Relevé 2, utilise obligatoirement son format court, lis toutes les cases, codes, sous-cases et renseignements fiscaux réellement remplis sans liste fixe, masque les identifiants sensibles et ne mentionne pas les copies identiques. S'il s'agit d'un T2202, d'un Relevé 8, d'un T3 ou d'un Relevé 5, utilise obligatoirement son format court, lis toutes les cases, codes, sous-cases et renseignements fiscaux réellement remplis sans liste fixe, masque les identifiants sensibles et ne mentionne pas les copies identiques. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -2198,7 +2338,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. Si le PDF contient un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs, utilise obligatoirement le format court RELEVÉ 10 + REER FTQ / FONDACTION : affiche toutes les cases fiscales réellement remplies du Relevé 10, puis affiche séparément REER FTQ ou REER FONDACTION selon le fonds réellement identifié, avec seulement l'année d'imposition, la cotisation et la période. Le Relevé 10 et son reçu REER sont deux documents fiscaux distincts et ne doivent jamais être fusionnés comme doublons. Les copies identiques du reçu REER doivent être dédupliquées. Ne mets jamais FTQ ou FONDACTION en dur. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S’il s’agit d’un T4, d’un T4A ou d’un Relevé 1, utilise obligatoirement son format court, lis toutes les cases réellement remplies sans liste fixe et masque les identifiants sensibles. Pour un T4, vérifie obligatoirement toutes les petites cases et tous les codes remplis de la section 'Autres renseignements / Other information' au bas du feuillet. Pour un Relevé 1, vérifie aussi toutes les sous-cases, codes et zones complémentaires réellement remplies. Ne mentionne pas les copies identiques dans la réponse courte. S'il s'agit d'un T2202, d'un Relevé 8, d'un T3 ou d'un Relevé 5, utilise obligatoirement son format court, lis toutes les cases, codes, sous-cases et renseignements fiscaux réellement remplis sans liste fixe, masque les identifiants sensibles et ne mentionne pas les copies identiques. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé annuel de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé; pour un relevé annuel sans total fiable, vérifie les paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. Si le PDF contient un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs, utilise obligatoirement le format court RELEVÉ 10 + REER FTQ / FONDACTION : affiche toutes les cases fiscales réellement remplies du Relevé 10, puis affiche séparément REER FTQ ou REER FONDACTION selon le fonds réellement identifié, avec seulement l'année d'imposition, la cotisation et la période. Le Relevé 10 et son reçu REER sont deux documents fiscaux distincts et ne doivent jamais être fusionnés comme doublons. Les copies identiques du reçu REER doivent être dédupliquées. Ne mets jamais FTQ ou FONDACTION en dur. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S’il s’agit d’un T4, d’un T4A ou d’un Relevé 1, utilise obligatoirement son format court, lis toutes les cases réellement remplies sans liste fixe et masque les identifiants sensibles. Pour un T4, vérifie obligatoirement toutes les petites cases et tous les codes remplis de la section 'Autres renseignements / Other information' au bas du feuillet. Pour un Relevé 1, vérifie aussi toutes les sous-cases, codes et zones complémentaires réellement remplies. Ne mentionne pas les copies identiques dans la réponse courte. S'il s'agit d'un T4E, d'un T4RSP, d'un T4RIF ou d'un Relevé 2, utilise obligatoirement son format court, lis toutes les cases, codes, sous-cases et renseignements fiscaux réellement remplis sans liste fixe, masque les identifiants sensibles et ne mentionne pas les copies identiques. S'il s'agit d'un T2202, d'un Relevé 8, d'un T3 ou d'un Relevé 5, utilise obligatoirement son format court, lis toutes les cases, codes, sous-cases et renseignements fiscaux réellement remplis sans liste fixe, masque les identifiants sensibles et ne mentionne pas les copies identiques. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé annuel de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé; pour un relevé annuel sans total fiable, vérifie les paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
