@@ -1,4 +1,4 @@
-
+import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
