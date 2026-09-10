@@ -512,10 +512,6 @@ UNIQUEMENT s'il existe une incertitude importante sur :
 S'il n'y a aucune incertitude importante,
 n'ajoute pas de longue section de contrôle.
 
-Termine simplement par :
-
-À valider avant d'utiliser les informations dans le dossier fiscal.
-
 ==================================================
 DEUXIÈME LECTURE OBLIGATOIRE
 ==================================================
