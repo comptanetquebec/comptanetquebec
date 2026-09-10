@@ -422,8 +422,8 @@ Nom du fichier : ${fileName}
     if (isImage) {
       const response =
         await openai.responses.create({
-          model: "gpt-4o-mini",
-
+         model: "gpt-5.6-sol",
+          
           input: [
             {
               role: "system",
@@ -502,7 +502,7 @@ Nom du fichier : ${fileName}
       try {
         const response =
           await openai.responses.create({
-            model: "gpt-4o-mini",
+            model: "gpt-5.6-sol",
 
             input: [
               {
