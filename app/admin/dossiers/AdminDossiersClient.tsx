@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
@@ -294,35 +294,29 @@ export default function AdminDossiersClient({
       {/* HEADER */}
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 lg:px-8">
-          <div>
-            <div className="text-xl font-extrabold text-blue-700">
-              🍁 ComptaNet Québec
-            </div>
+          <Link href="/admin/dossiers" className="flex shrink-0 items-center">
+            <img
+              src="/logo-cq.png"
+              alt="ComptaNet Québec"
+              className="h-16 w-auto object-contain"
+            />
+          </Link>
 
-            <div className="text-xs text-slate-500">
-              Impôts · Tenue de livres · Simplicité
-            </div>
-          </div>
-
-          <nav className="hidden items-center gap-2 lg:flex">
+          <nav className="flex items-center gap-3 sm:gap-5">
             <Link
               href="/admin/dossiers"
-              className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+              className="rounded-2xl bg-blue-50 px-6 py-3 text-base font-bold text-blue-700 transition hover:bg-blue-100 sm:text-lg"
             >
               📁 Dossiers
             </Link>
 
             <Link
               href="/admin/factures"
-              className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="rounded-2xl px-6 py-3 text-base font-bold text-slate-700 transition hover:bg-slate-100 sm:text-lg"
             >
               🧾 Factures
             </Link>
           </nav>
-
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-            AD
-          </div>
         </div>
       </div>
 
