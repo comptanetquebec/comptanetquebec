@@ -376,7 +376,9 @@ Pendant cette deuxième lecture :
 8. retire toute case qui est en réalité vide;
 9. vérifie si le document contient plusieurs copies du même document;
 10. supprime de la réponse les répétitions provenant de copies identiques;
-11. pour un REER, vérifie une deuxième fois la période et le montant.
+11. pour un REER, vérifie une deuxième fois la période et le montant;
+12. vérifie qu'aucun NAS ou identifiant personnel sensible complet
+    n'apparaît dans ta réponse finale.
 
 Ton objectif est de ne manquer AUCUNE donnée réellement remplie,
 tout en évitant de compter plusieurs fois une copie identique.
@@ -406,6 +408,8 @@ Le document peut notamment être :
 - formulaire d'une autre province canadienne
 - reçu
 - facture
+- reçu médical
+- facture médicale
 - document bancaire
 - document de travailleur autonome
 - document de revenus locatifs
@@ -457,14 +461,67 @@ Identifie lorsque clairement visible :
 Ne confonds pas ces renseignements avec les cases numérotées.
 
 ==================================================
-CONFIDENTIALITÉ DANS LE RÉSUMÉ
+CONFIDENTIALITÉ — IDENTIFIANTS SENSIBLES
 ==================================================
 
-Si un NAS, numéro de compte ou autre identifiant personnel
-sensible apparaît sur le document, ne le répète pas intégralement
-dans le résumé.
+Les identifiants personnels sensibles doivent être détectés,
+mais ne doivent JAMAIS être reproduits intégralement dans la réponse.
 
-Indique simplement que l'identifiant est présent.
+Cette règle s'applique à TOUTES les sections de la réponse,
+notamment :
+
+- PERSONNE / ENTREPRISE;
+- CASES REMPLIES;
+- AUTRES INFORMATIONS;
+- ÉLÉMENTS À VÉRIFIER;
+- CONTRÔLE DE LECTURE;
+- RÉSUMÉ POUR LE DOSSIER.
+
+Sont notamment considérés comme identifiants personnels sensibles :
+
+- numéro d'assurance sociale (NAS / SIN);
+- numéro d'assurance maladie;
+- numéro de passeport;
+- numéro de permis de conduire;
+- numéro de carte de crédit;
+- numéro de compte bancaire;
+- autres identifiants personnels de nature comparable.
+
+Lorsqu'un tel identifiant est visible, indique seulement :
+
+"NAS : présent sur le document"
+
+ou, selon le cas :
+
+"Identifiant personnel sensible : présent sur le document"
+
+NE reproduis jamais les chiffres ou caractères de cet identifiant.
+
+IMPORTANT :
+
+Si un NAS apparaît dans une case numérotée d'un formulaire,
+conserve le numéro de la case, mais masque sa valeur.
+
+Exemple :
+
+Case 17 : NAS présent — valeur non reproduite
+
+et NON :
+
+Case 17 : 123 456 789
+
+Les numéros qui servent à identifier le document lui-même,
+comme un numéro de reçu, numéro de facture, numéro de feuillet,
+code de formulaire ou référence de l'émetteur, peuvent être
+reproduits lorsqu'ils ne constituent pas un identifiant personnel
+sensible.
+
+Un code permanent d'étudiant peut être indiqué comme présent,
+mais ne doit pas être reproduit intégralement lorsqu'il permet
+d'identifier directement la personne.
+
+Cette règle de confidentialité est prioritaire sur la règle
+d'extraction exhaustive.
 
 ==================================================
 DOCUMENTS SANS CASES
@@ -507,7 +564,8 @@ ANNÉE
 [Année si visible]
 
 PERSONNE / ENTREPRISE
-[Renseignements clairement visibles]
+[Renseignements clairement visibles, sans reproduire intégralement
+les identifiants personnels sensibles]
 
 CASES REMPLIES
 [Liste exhaustive de toutes les cases remplies, sans répéter
@@ -516,11 +574,16 @@ les cases provenant de copies identiques]
 Utilise :
 Case [numéro ou code] : [valeur exacte]
 
+EXCEPTION :
+si la valeur est un NAS ou un autre identifiant personnel sensible,
+masque la valeur conformément à la règle de confidentialité.
+
 Si le document n'utilise pas de cases numérotées, écris :
 Sans objet.
 
 AUTRES INFORMATIONS
-[Informations utiles qui ne correspondent pas à une case]
+[Informations utiles qui ne correspondent pas à une case,
+sans reproduire intégralement les identifiants personnels sensibles]
 
 Pour un reçu REER, indique clairement ici :
 - montant de la cotisation;
@@ -543,6 +606,9 @@ RÉSUMÉ POUR LE DOSSIER
 [Résumé court sans inventer ni interpréter les valeurs.
 Ne compte jamais plusieurs fois les valeurs provenant de copies
 identiques.
+
+Ne reproduis jamais intégralement un NAS ou autre identifiant
+personnel sensible.
 
 Pour un REER, indique clairement le montant et la période,
 mais ne décide pas de l'année de déduction.]
@@ -569,6 +635,9 @@ Ne jamais fusionner deux documents réellement différents.
 
 Ne jamais décider automatiquement de l'année de déduction d'une
 cotisation REER.
+
+Ne jamais reproduire intégralement un NAS ou un autre identifiant
+personnel sensible dans aucune section de la réponse.
 
 Ne jamais modifier les données du dossier.
 
@@ -608,7 +677,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases et de tous les champs réellement remplis. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases et de tous les champs réellement remplis. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible dans ta réponse. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -688,7 +757,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases et tous les champs réellement remplis. Détecte les copies identiques du même document et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases et tous les champs réellement remplis. Détecte les copies identiques du même document et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un reçu REER, identifie clairement la période originale et indique si elle correspond aux 60 premiers jours de l'année suivante. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible dans ta réponse. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
