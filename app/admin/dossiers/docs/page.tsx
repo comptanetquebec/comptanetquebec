@@ -20,6 +20,8 @@ type DocRow = {
   original_name: string;
   storage_path: string;
   created_at: string | null;
+  analyse_ia: string | null;
+  analyse_ia_updated_at: string | null;
 };
 
 type AnalyseResponse = {
@@ -178,7 +180,7 @@ export default function AdminDossierDocsPage() {
     const { data, error } = await supabase
       .from(DOCS_TABLE)
       .select(
-        "id, original_name, storage_path, created_at"
+        "id, original_name, storage_path, created_at, analyse_ia, analyse_ia_updated_at"
       )
       .eq("formulaire_id", fid)
       .order("created_at", {
@@ -197,7 +199,20 @@ export default function AdminDossierDocsPage() {
       return;
     }
 
-    setDocs((data ?? []) as DocRow[]);
+    const loadedDocs = (data ?? []) as DocRow[];
+
+    setDocs(loadedDocs);
+
+    // Recharger les analyses IA sauvegardées.
+    const savedAnalyses: Record<string, string> = {};
+
+    for (const doc of loadedDocs) {
+      if (doc.analyse_ia?.trim()) {
+        savedAnalyses[doc.id] = doc.analyse_ia;
+      }
+    }
+
+    setAnalyses(savedAnalyses);
   }, [fid]);
 
   useEffect(() => {
@@ -654,10 +669,40 @@ export default function AdminDossierDocsPage() {
             );
         }
 
+        // Sauvegarder l'analyse dans Supabase pour qu'elle survive à F5.
+        const analysedAt = new Date().toISOString();
+
+        const { error: saveError } = await supabase
+          .from(DOCS_TABLE)
+          .update({
+            analyse_ia: analyse,
+            analyse_ia_updated_at: analysedAt,
+          })
+          .eq("id", doc.id)
+          .eq("formulaire_id", fid);
+
+        if (saveError) {
+          throw new Error(
+            `Analyse terminée, mais impossible de la sauvegarder : ${saveError.message}`
+          );
+        }
+
         setAnalyses((prev) => ({
           ...prev,
           [doc.id]: analyse,
         }));
+
+        setDocs((prev) =>
+          prev.map((item) =>
+            item.id === doc.id
+              ? {
+                  ...item,
+                  analyse_ia: analyse,
+                  analyse_ia_updated_at: analysedAt,
+                }
+              : item
+          )
+        );
 
         return true;
       } catch (error: unknown) {
@@ -680,6 +725,7 @@ export default function AdminDossierDocsPage() {
       }
     },
     [
+      fid,
       analyseDirectFile,
       analyseZip,
     ]
