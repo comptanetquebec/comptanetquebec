@@ -56,7 +56,10 @@ function isDirectlyAnalysable(fileName: string): boolean {
     name.endsWith(".jpeg") ||
     name.endsWith(".png") ||
     name.endsWith(".webp") ||
-    name.endsWith(".pdf")
+    name.endsWith(".pdf") ||
+    name.endsWith(".docx") ||
+    name.endsWith(".xlsx") ||
+    name.endsWith(".xls")
   );
 }
 
@@ -92,6 +95,18 @@ function mimeTypeFromName(fileName: string): string {
 
   if (name.endsWith(".webp")) {
     return "image/webp";
+  }
+
+  if (name.endsWith(".docx")) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+
+  if (name.endsWith(".xlsx")) {
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }
+
+  if (name.endsWith(".xls")) {
+    return "application/vnd.ms-excel";
   }
 
   return "application/octet-stream";
@@ -258,6 +273,7 @@ export default function AdminDossierDocsPage() {
           body: JSON.stringify({
             fileUrl,
             fileName,
+            fileType: mimeTypeFromName(fileName),
           }),
         }
       );
@@ -351,7 +367,7 @@ export default function AdminDossierDocsPage() {
       }
 
       /*
-       * 3. Chercher les PDF/images analysables.
+       * 3. Chercher les PDF/images/DOCX/Excel analysables.
        */
       const entries =
         Object.values(zip.files).filter(
@@ -388,7 +404,7 @@ export default function AdminDossierDocsPage() {
 
       if (entries.length === 0) {
         throw new Error(
-          "Ce ZIP ne contient aucun PDF ou image compatible avec l'analyse IA."
+          "Ce ZIP ne contient aucun PDF, image, DOCX ou fichier Excel compatible avec l'analyse IA."
         );
       }
 
@@ -669,7 +685,7 @@ export default function AdminDossierDocsPage() {
 
       if (analysables.length === 0) {
         setMsg(
-          "Aucun JPG, PNG, WEBP, PDF ou ZIP à analyser."
+          "Aucun JPG, PNG, WEBP, PDF, DOCX, XLS, XLSX ou ZIP à analyser."
         );
         return;
       }
