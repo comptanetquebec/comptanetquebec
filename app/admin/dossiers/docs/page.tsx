@@ -125,6 +125,152 @@ function cleanZipEntryName(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
+
+type SyntheseBlock = {
+  title: string;
+  body: string;
+};
+
+function parseSyntheseBlocks(text: string): {
+  heading: string;
+  blocks: SyntheseBlock[];
+} {
+  const normalized = text.replace(/\r\n/g, "\n").trim();
+  const lines = normalized.split("\n");
+  let heading = "SYNTHÈSE FINALE — T1";
+
+  if (lines[0]?.trim().toUpperCase().startsWith("SYNTHÈSE FINALE")) {
+    heading = lines.shift()!.trim();
+  }
+
+  const blocks: SyntheseBlock[] = [];
+  let currentTitle = "";
+  let currentLines: string[] = [];
+
+  const flush = () => {
+    if (!currentTitle && currentLines.length === 0) return;
+
+    blocks.push({
+      title: currentTitle || "AUTRES INFORMATIONS",
+      body: currentLines.join("\n").trim(),
+    });
+
+    currentTitle = "";
+    currentLines = [];
+  };
+
+  const isTitle = (line: string) => {
+    const value = line.trim();
+    if (!value) return false;
+
+    const upper = value.toUpperCase();
+
+    if (
+      upper === "À VÉRIFIER" ||
+      upper === "DOCUMENTS NON ANALYSÉS" ||
+      upper === "DOCUMENTS MANQUANTS"
+    ) {
+      return true;
+    }
+
+    // Les titres générés par la synthèse ont normalement la forme
+    // "T4 — 2025", "RELEVÉ 1 — 2025", "REER — 2025", etc.
+    return (
+      value.includes("—") &&
+      !upper.startsWith("CASE ") &&
+      !upper.startsWith("COTISATION ") &&
+      !upper.startsWith("PÉRIODE ") &&
+      !upper.startsWith("REVENUS ") &&
+      !upper.startsWith("DÉPENSES ") &&
+      !upper.startsWith("TOTAL ") &&
+      !upper.startsWith("RÉSULTAT ")
+    );
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+
+    if (isTitle(line)) {
+      flush();
+      currentTitle = line.trim();
+      continue;
+    }
+
+    if (line.trim() || currentLines.length > 0) {
+      currentLines.push(line);
+    }
+  }
+
+  flush();
+
+  return { heading, blocks };
+}
+
+function isQuebecBlock(title: string): boolean {
+  const upper = title.toUpperCase();
+
+  return (
+    upper.includes("RELEVÉ 1") ||
+    upper.includes("RELEVE 1") ||
+    upper.includes("RL-1") ||
+    upper.includes("RL1")
+  );
+}
+
+function isFederalT4Block(title: string): boolean {
+  return /\bT4\b/i.test(title) && !isQuebecBlock(title);
+}
+
+function pairSyntheseBlocks(blocks: SyntheseBlock[]): Array<{
+  federal?: SyntheseBlock;
+  quebec?: SyntheseBlock;
+  single?: SyntheseBlock;
+}> {
+  const rows: Array<{
+    federal?: SyntheseBlock;
+    quebec?: SyntheseBlock;
+    single?: SyntheseBlock;
+  }> = [];
+
+  const used = new Set<number>();
+
+  // Paire sécuritaire actuellement connue : T4 <-> Relevé 1.
+  // On ne force jamais une paire si les quantités ne correspondent pas.
+  const t4Indexes = blocks
+    .map((block, index) => ({ block, index }))
+    .filter(({ block }) => isFederalT4Block(block.title));
+
+  const rl1Indexes = blocks
+    .map((block, index) => ({ block, index }))
+    .filter(({ block }) => isQuebecBlock(block.title));
+
+  if (
+    t4Indexes.length > 0 &&
+    t4Indexes.length === rl1Indexes.length
+  ) {
+    for (let i = 0; i < t4Indexes.length; i++) {
+      const federal = t4Indexes[i];
+      const quebec = rl1Indexes[i];
+
+      used.add(federal.index);
+      used.add(quebec.index);
+
+      rows.push({
+        federal: federal.block,
+        quebec: quebec.block,
+      });
+    }
+  }
+
+  blocks.forEach((block, index) => {
+    if (!used.has(index)) {
+      rows.push({ single: block });
+    }
+  });
+
+  return rows;
+}
+
 export default function AdminDossierDocsPage() {
   const sp = useSearchParams();
 
@@ -163,7 +309,38 @@ export default function AdminDossierDocsPage() {
   const [syntheseError, setSyntheseError] =
     useState<string | null>(null);
 
+  const [copiedSynthese, setCopiedSynthese] =
+    useState(false);
+
   const loadToken = useRef(0);
+
+  const parsedSynthese = useMemo(
+    () => (synthese ? parseSyntheseBlocks(synthese) : null),
+    [synthese]
+  );
+
+  const syntheseRows = useMemo(
+    () =>
+      parsedSynthese
+        ? pairSyntheseBlocks(parsedSynthese.blocks)
+        : [],
+    [parsedSynthese]
+  );
+
+  const copySynthese = useCallback(async () => {
+    if (!synthese) return;
+
+    try {
+      await navigator.clipboard.writeText(synthese);
+      setCopiedSynthese(true);
+
+      window.setTimeout(() => {
+        setCopiedSynthese(false);
+      }, 1800);
+    } catch {
+      setMsg("❌ Impossible de copier la synthèse.");
+    }
+  }, [synthese]);
 
   // ==========================================
   // CHARGER LES DOCUMENTS
@@ -1025,7 +1202,7 @@ export default function AdminDossierDocsPage() {
         </div>
       )}
 
-      {synthese && (
+      {synthese && parsedSynthese && (
         <div
           style={{
             padding: 18,
@@ -1037,24 +1214,228 @@ export default function AdminDossierDocsPage() {
         >
           <div
             style={{
-              fontWeight: 800,
-              fontSize: 18,
-              color: "#065f46",
-              marginBottom: 12,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 14,
             }}
           >
-            🧾 Synthèse finale du dossier
+            <div>
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: "#065f46",
+                }}
+              >
+                🧾 {parsedSynthese.heading}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 12,
+                  color: "#047857",
+                }}
+              >
+                Les paires fédéral / Québec reconnues sont placées côte à côte.
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void copySynthese()}
+              style={{
+                padding: "9px 13px",
+                borderRadius: 8,
+                border: "1px solid #047857",
+                background: "white",
+                color: "#047857",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {copiedSynthese
+                ? "✓ Copiée"
+                : "📋 Copier toute la synthèse"}
+            </button>
           </div>
 
           <div
             style={{
-              whiteSpace: "pre-wrap",
-              lineHeight: 1.65,
-              fontSize: 14,
-              color: "#1f2937",
+              display: "grid",
+              gap: 14,
             }}
           >
-            {synthese}
+            {syntheseRows.map((row, rowIndex) => {
+              if (row.federal || row.quebec) {
+                return (
+                  <div
+                    key={`pair-${rowIndex}`}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(320px, 1fr))",
+                      gap: 12,
+                      alignItems: "stretch",
+                    }}
+                  >
+                    {row.federal && (
+                      <div
+                        style={{
+                          border: "2px solid #2563eb",
+                          background: "#eff6ff",
+                          borderRadius: 10,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "8px 12px",
+                            background: "#dbeafe",
+                            color: "#1e3a8a",
+                            fontSize: 12,
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          FÉDÉRAL
+                        </div>
+
+                        <div style={{ padding: 14 }}>
+                          <div
+                            style={{
+                              fontWeight: 900,
+                              fontSize: 17,
+                              color: "#1e3a8a",
+                              marginBottom: 10,
+                            }}
+                          >
+                            {row.federal.title}
+                          </div>
+
+                          <div
+                            style={{
+                              whiteSpace: "pre-wrap",
+                              lineHeight: 1.7,
+                              fontSize: 14,
+                              color: "#111827",
+                              fontFamily:
+                                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+                            }}
+                          >
+                            {row.federal.body}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {row.quebec && (
+                      <div
+                        style={{
+                          border: "2px solid #059669",
+                          background: "#f0fdf4",
+                          borderRadius: 10,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "8px 12px",
+                            background: "#d1fae5",
+                            color: "#065f46",
+                            fontSize: 12,
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          QUÉBEC
+                        </div>
+
+                        <div style={{ padding: 14 }}>
+                          <div
+                            style={{
+                              fontWeight: 900,
+                              fontSize: 17,
+                              color: "#065f46",
+                              marginBottom: 10,
+                            }}
+                          >
+                            {row.quebec.title}
+                          </div>
+
+                          <div
+                            style={{
+                              whiteSpace: "pre-wrap",
+                              lineHeight: 1.7,
+                              fontSize: 14,
+                              color: "#111827",
+                              fontFamily:
+                                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+                            }}
+                          >
+                            {row.quebec.body}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              const block = row.single;
+              if (!block) return null;
+
+              const warning =
+                block.title.toUpperCase() === "À VÉRIFIER" ||
+                block.title
+                  .toUpperCase()
+                  .includes("NON ANALYS");
+
+              return (
+                <div
+                  key={`single-${rowIndex}`}
+                  style={{
+                    border: warning
+                      ? "1px solid #f59e0b"
+                      : "1px solid #cbd5e1",
+                    background: warning
+                      ? "#fffbeb"
+                      : "white",
+                    borderRadius: 10,
+                    padding: 14,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 900,
+                      fontSize: 16,
+                      color: warning
+                        ? "#92400e"
+                        : "#334155",
+                      marginBottom: 9,
+                    }}
+                  >
+                    {block.title}
+                  </div>
+
+                  <div
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      lineHeight: 1.7,
+                      fontSize: 14,
+                      color: "#1f2937",
+                      fontFamily:
+                        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+                    }}
+                  >
+                    {block.body}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div
