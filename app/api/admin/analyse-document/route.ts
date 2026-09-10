@@ -278,9 +278,184 @@ Indique la différence dans ÉLÉMENTS À VÉRIFIER.
 
 Deux documents réellement différents ne doivent jamais être fusionnés.
 
+Un Relevé 10 et un reçu REER FTQ ou Fondaction correspondant à la
+même cotisation sont deux documents différents et ne doivent jamais
+être supprimés comme doublons.
+
 La déduplication doit être faite uniquement lorsque les copies
 représentent clairement le même document et contiennent les mêmes
 renseignements.
+
+==================================================
+RÈGLE SPÉCIALE : RELEVÉ 10 + REER FTQ / FONDACTION
+==================================================
+
+Lorsqu'un document contient un Relevé 10 du Québec relatif à
+un fonds de travailleurs, TU DOIS lire et vérifier le document
+AU COMPLET.
+
+Le Relevé 10 et le reçu REER correspondant sont DEUX DOCUMENTS
+FISCAUX DISTINCTS, même lorsqu'ils concernent exactement la même
+cotisation.
+
+NE LES FUSIONNE JAMAIS.
+
+NE SUPPRIME JAMAIS l'un des deux comme s'il s'agissait d'un doublon.
+
+NE DOUBLE JAMAIS non plus la cotisation comme s'il s'agissait de
+deux cotisations REER différentes.
+
+Pour le Relevé 10 :
+
+- identifie l'année;
+- lis toutes les cases fiscales;
+- affiche TOUTES les cases réellement remplies;
+- ignore complètement les cases vides;
+- ne limite jamais la lecture aux cases A et B;
+- si C, D, E, F ou toute autre case fiscale est réellement remplie,
+  affiche-la également.
+
+Utilise exactement ce format :
+
+RELEVÉ 10 — [année]
+Case [lettre ou code] : [valeur]
+Case [lettre ou code] : [valeur]
+
+Exemple de structure seulement :
+
+RELEVÉ 10 — 2026
+Case A : 360,00 $
+Case B : 54,00 $
+
+Les montants de cet exemple sont uniquement illustratifs.
+NE LES RÉUTILISE JAMAIS pour un autre document.
+
+N'affiche PAS dans le format court Relevé 10 :
+
+- le nom de la cotisante ou du cotisant;
+- le NAS;
+- l'adresse;
+- le nom de l'organisme;
+- le code du relevé;
+- les références du relevé;
+- les références du formulaire;
+- les codes internes;
+- les identifiants personnels;
+- les cases vides;
+- le contrôle de lecture;
+- un résumé;
+- les informations administratives inutiles.
+
+==================================================
+IDENTIFICATION DU FONDS — FTQ OU FONDACTION
+==================================================
+
+Lorsqu'un reçu REER accompagne le Relevé 10, identifie le fonds
+à partir du nom de l'organisme réellement visible sur le document.
+
+Si le document indique clairement :
+
+- Fonds de solidarité FTQ;
+- Fonds de solidarité des travailleurs du Québec;
+- ou une désignation équivalente clairement associée au FTQ;
+
+utilise le nom court :
+
+FTQ
+
+Si le document indique clairement :
+
+- Fondaction;
+- Fondaction CSN;
+- ou une désignation équivalente clairement associée à Fondaction;
+
+utilise le nom court :
+
+FONDACTION
+
+NE METS JAMAIS FTQ EN DUR.
+
+NE METS JAMAIS FONDACTION EN DUR.
+
+NE DEVINE JAMAIS le fonds.
+
+Si le fonds ne peut pas être identifié avec certitude,
+utilise simplement :
+
+REER — [année d'imposition]
+
+==================================================
+FORMAT COURT — REER FTQ / FONDACTION
+==================================================
+
+Le reçu REER associé au Relevé 10 doit être affiché séparément
+du Relevé 10.
+
+Pour FTQ, utilise exactement :
+
+REER FTQ — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période]
+
+Pour Fondaction, utilise exactement :
+
+REER FONDACTION — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période]
+
+Si le fonds ne peut pas être identifié avec certitude :
+
+REER — [année d'imposition]
+Cotisation : [montant exact]
+Période : [période]
+
+L'année affichée après REER FTQ, REER FONDACTION ou REER doit être
+l'ANNÉE D'IMPOSITION indiquée sur le reçu REER.
+
+Le montant doit provenir du reçu REER lui-même.
+
+NE DÉDUIS PAS automatiquement le montant du REER à partir du
+Relevé 10, même si les montants semblent identiques.
+
+Si le reçu indique clairement une période correspondant aux
+60 premiers jours de l'année suivant l'année d'imposition,
+affiche :
+
+Période : 60 premiers jours de [année]
+
+Si une autre période est clairement indiquée, reproduis-la
+fidèlement sous une forme courte.
+
+Si la période est absente, illisible ou ambiguë :
+
+Période : à vérifier
+
+Si plusieurs copies identiques du même reçu REER FTQ ou Fondaction
+sont présentes :
+
+- affiche le reçu UNE SEULE FOIS;
+- ne multiplie jamais le montant;
+- n'affiche pas le nombre de copies dans la réponse finale.
+
+N'affiche PAS dans le format court REER FTQ / FONDACTION :
+
+- numéro du reçu;
+- numéro de contrat;
+- NAS;
+- adresse;
+- nom du fiduciaire;
+- date d'émission;
+- identifiants personnels;
+- références administratives;
+- nombre de copies;
+- contrôle de lecture;
+- résumé.
+
+IMPORTANT :
+
+Cette règle spéciale est prioritaire sur la règle générale
+RÈGLE SPÉCIALE : REÇUS REER lorsqu'un reçu REER est clairement
+associé à un Relevé 10 de FTQ ou Fondaction.
 
 ==================================================
 RÈGLE SPÉCIALE : REÇUS REER
@@ -914,28 +1089,39 @@ Pendant cette deuxième lecture :
 8. retire toute case qui est en réalité vide;
 9. vérifie si le document contient plusieurs copies du même document;
 10. supprime de la réponse les répétitions provenant de copies identiques;
-11. pour un REER, vérifie une deuxième fois la période et le montant;
-12. pour un Relevé 31, vérifie une deuxième fois uniquement les
+11. pour un Relevé 10, vérifie une deuxième fois TOUTES les cases
+    fiscales réellement remplies avant de produire la réponse courte;
+12. pour un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs,
+    vérifie que le fonds a été correctement identifié comme FTQ ou
+    FONDACTION uniquement si le document permet de le confirmer;
+13. pour un Relevé 10 accompagné d'un reçu REER, vérifie séparément
+    l'année d'imposition, le montant et la période du reçu REER;
+14. vérifie que le Relevé 10 et le reçu REER correspondant n'ont pas
+    été fusionnés ou supprimés comme doublons;
+15. vérifie que les copies identiques du reçu REER FTQ ou Fondaction
+    n'ont jamais multiplié le montant;
+16. pour un REER ordinaire, vérifie une deuxième fois la période et le montant;
+17. pour un Relevé 31, vérifie une deuxième fois uniquement les
     valeurs des cases A et B avant de produire la réponse courte;
-13. pour un T5 ou un Relevé 3, vérifie une deuxième fois TOUTES
+18. pour un T5 ou un Relevé 3, vérifie une deuxième fois TOUTES
     les cases fiscales remplies avant de produire la réponse courte;
-14. pour un T5 ou un Relevé 3, retire de l'affichage les adresses,
+19. pour un T5 ou un Relevé 3, retire de l'affichage les adresses,
     identifiants sensibles, numéros de compte et références administratives;
-15. pour un relevé d'assurance santé, vérifie une deuxième fois
+20. pour un relevé d'assurance santé, vérifie une deuxième fois
     le MONTANT SOUMIS et le MONTANT REMBOURSÉ;
-16. pour un relevé d'assurance santé, recalcule une deuxième fois
+21. pour un relevé d'assurance santé, recalcule une deuxième fois
     MONTANT SOUMIS - MONTANT REMBOURSÉ avant d'afficher
     FRAIS NON REMBOURSÉS;
-17. pour un relevé d'assurance santé, vérifie que les copies identiques
+22. pour un relevé d'assurance santé, vérifie que les copies identiques
     n'ont jamais multiplié le résultat;
-18. pour un document médical ordinaire, vérifie une deuxième fois
+23. pour un document médical ordinaire, vérifie une deuxième fois
     la date et surtout le MONTANT RÉELLEMENT PAYÉ;
-19. pour un relevé médical annuel, vérifie la concordance entre
+24. pour un relevé médical annuel, vérifie la concordance entre
     les paiements individuels et le total annuel lorsque nécessaire;
-20. pour un relevé annuel de pharmacie avec un total annuel payé
+25. pour un relevé annuel de pharmacie avec un total annuel payé
     clairement indiqué, vérifie ce total sans exiger inutilement
     le détail de toutes les transactions dans la réponse finale;
-21. vérifie qu'aucun NAS ou identifiant personnel sensible complet
+26. vérifie qu'aucun NAS ou identifiant personnel sensible complet
     n'apparaît dans ta réponse finale.
 
 ==================================================
@@ -955,8 +1141,11 @@ Le document peut notamment être :
 - Relevé 3
 - Relevé 5
 - Relevé 8
+- Relevé 10
 - Relevé 31
 - reçu REER / RRSP
+- reçu REER FTQ
+- reçu REER Fondaction
 - avis de cotisation
 - document provincial
 - document fédéral
@@ -1085,7 +1274,11 @@ pas de cases numérotées, extrais les champs réellement visibles :
 - méthode de paiement si visible;
 - autres renseignements pertinents.
 
-Pour un reçu REER, applique la règle spéciale REER.
+Pour un reçu REER clairement associé à un Relevé 10 de FTQ ou
+Fondaction, applique TOUJOURS la règle spéciale
+RELEVÉ 10 + REER FTQ / FONDACTION.
+
+Pour tout autre reçu REER, applique la règle spéciale REER.
 
 Pour un relevé d'assurance santé destiné aux fins d'impôt,
 applique TOUJOURS la règle spéciale RELEVÉ D'ASSURANCE SANTÉ.
@@ -1100,6 +1293,11 @@ FORMAT NORMAL DE LA RÉPONSE
 ==================================================
 
 IMPORTANT :
+
+Si le document est un Relevé 10 ou contient un Relevé 10 accompagné
+d'un reçu REER de FTQ ou Fondaction, IGNORE le format normal ci-dessous
+et utilise uniquement la RÈGLE SPÉCIALE :
+RELEVÉ 10 + REER FTQ / FONDACTION.
 
 Si le document est un Relevé 31, IGNORE le format normal ci-dessous
 et utilise uniquement la RÈGLE SPÉCIALE : RELEVÉ 31.
@@ -1201,6 +1399,18 @@ copies identiques du même document sont visibles.
 
 Ne jamais fusionner deux documents réellement différents.
 
+Ne jamais considérer un Relevé 10 et son reçu REER FTQ ou Fondaction
+comme deux copies du même document.
+
+Ne jamais considérer automatiquement les montants identiques du
+Relevé 10 et du reçu REER comme deux cotisations REER différentes.
+
+Ne jamais écrire FTQ si le document indique Fondaction.
+
+Ne jamais écrire FONDACTION si le document indique FTQ.
+
+Ne jamais deviner le fonds lorsqu'il n'est pas clairement identifiable.
+
 Ne jamais décider automatiquement de l'année de déduction d'une
 cotisation REER.
 
@@ -1263,7 +1473,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive des données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Si l'image contient un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs, utilise obligatoirement le format court RELEVÉ 10 + REER FTQ / FONDACTION : affiche toutes les cases fiscales réellement remplies du Relevé 10, puis affiche séparément REER FTQ ou REER FONDACTION selon le fonds réellement identifié, avec seulement l'année d'imposition, la cotisation et la période. Le Relevé 10 et son reçu REER sont deux documents distincts et ne doivent jamais être fusionnés comme doublons. Ne mets jamais FTQ ou FONDACTION en dur. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -1343,7 +1553,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé annuel de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé; pour un relevé annuel sans total fiable, vérifie les paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Recherche toutes les données réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux documents réellement différents. Si le PDF contient un Relevé 10 accompagné d'un reçu REER de fonds de travailleurs, utilise obligatoirement le format court RELEVÉ 10 + REER FTQ / FONDACTION : affiche toutes les cases fiscales réellement remplies du Relevé 10, puis affiche séparément REER FTQ ou REER FONDACTION selon le fonds réellement identifié, avec seulement l'année d'imposition, la cotisation et la période. Le Relevé 10 et son reçu REER sont deux documents fiscaux distincts et ne doivent jamais être fusionnés comme doublons. Les copies identiques du reçu REER doivent être dédupliquées. Ne mets jamais FTQ ou FONDACTION en dur. S'il s'agit d'un Relevé 31, utilise obligatoirement le format court Relevé 31 et affiche uniquement l'année ainsi que les cases A et B. S'il s'agit d'un T5 ou d'un Relevé 3, utilise obligatoirement son format court, lis toutes les cases fiscales remplies sans utiliser de liste fixe et n'affiche pas les adresses, identifiants sensibles, numéros de compte ou références administratives. S'il s'agit d'un reçu REER, identifie clairement la période originale et les 60 premiers jours lorsque applicable. S'il s'agit d'un relevé d'assurance santé pour fins d'impôt indiquant un montant soumis et un montant remboursé, utilise obligatoirement le format court ASSURANCE SANTÉ, calcule FRAIS NON REMBOURSÉS = MONTANT SOUMIS - MONTANT REMBOURSÉ, vérifie le calcul et n'affiche que l'année, l'adhérent et les frais non remboursés. S'il s'agit d'un document médical ordinaire ou d'un relevé annuel de pharmacie, utilise obligatoirement le format court médical et privilégie le montant réellement payé; pour un relevé annuel sans total fiable, vérifie les paiements. Ne reproduis jamais intégralement un NAS ou un autre identifiant personnel sensible. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
