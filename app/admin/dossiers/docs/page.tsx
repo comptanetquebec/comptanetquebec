@@ -9,6 +9,7 @@ import React, {
 } from "react";
 
 import { useSearchParams } from "next/navigation";
+import JSZip from "jszip";
 import { supabase } from "@/lib/supabaseClient";
 
 const STORAGE_BUCKET = "client-documents";
@@ -39,7 +40,15 @@ function formatDate(iso: string | null): string {
   return d.toLocaleString("fr-CA");
 }
 
-function canAnalyse(fileName: string): boolean {
+/* =========================================================
+   FORMATS
+========================================================= */
+
+function isZip(fileName: string): boolean {
+  return fileName.toLowerCase().endsWith(".zip");
+}
+
+function isDirectlyAnalysable(fileName: string): boolean {
   const name = fileName.toLowerCase();
 
   return (
@@ -51,6 +60,48 @@ function canAnalyse(fileName: string): boolean {
   );
 }
 
+/*
+ * Pour l'interface :
+ * un ZIP est maintenant considéré comme analysable,
+ * puisqu'on va extraire ses documents avant l'analyse.
+ */
+function canAnalyse(fileName: string): boolean {
+  return (
+    isDirectlyAnalysable(fileName) ||
+    isZip(fileName)
+  );
+}
+
+function mimeTypeFromName(fileName: string): string {
+  const name = fileName.toLowerCase();
+
+  if (name.endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  if (
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg")
+  ) {
+    return "image/jpeg";
+  }
+
+  if (name.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (name.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  return "application/octet-stream";
+}
+
+function cleanZipEntryName(path: string): string {
+  const parts = path.split("/");
+  return parts[parts.length - 1] || path;
+}
+
 export default function AdminDossierDocsPage() {
   const sp = useSearchParams();
 
@@ -59,9 +110,11 @@ export default function AdminDossierDocsPage() {
     [sp]
   );
 
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] =
+    useState<string | null>(null);
 
-  const [docs, setDocs] = useState<DocRow[]>([]);
+  const [docs, setDocs] =
+    useState<DocRow[]>([]);
 
   const [loading, setLoading] =
     useState(false);
@@ -184,6 +237,351 @@ export default function AdminDossierDocsPage() {
   );
 
   // ==========================================
+  // APPELER L'API IA POUR UN DOCUMENT
+  // ==========================================
+
+  const callAnalyseApi = useCallback(
+    async (
+      fileUrl: string,
+      fileName: string
+    ): Promise<string> => {
+      const response = await fetch(
+        "/api/admin/analyse-document",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            fileUrl,
+            fileName,
+          }),
+        }
+      );
+
+      let result: AnalyseResponse;
+
+      try {
+        result =
+          (await response.json()) as AnalyseResponse;
+      } catch {
+        throw new Error(
+          "Réponse invalide du serveur IA."
+        );
+      }
+
+      if (
+        !response.ok ||
+        !result.ok ||
+        !result.analyse
+      ) {
+        throw new Error(
+          result.error ??
+            "Impossible d'analyser ce document."
+        );
+      }
+
+      return result.analyse;
+    },
+    []
+  );
+
+  // ==========================================
+  // ANALYSER UN FICHIER NORMAL
+  // ==========================================
+
+  const analyseDirectFile = useCallback(
+    async (doc: DocRow): Promise<string> => {
+      const signedUrl =
+        await getSignedUrl(
+          doc.storage_path
+        );
+
+      return await callAnalyseApi(
+        signedUrl,
+        doc.original_name
+      );
+    },
+    [getSignedUrl, callAnalyseApi]
+  );
+
+  // ==========================================
+  // ANALYSER UN ZIP
+  // ==========================================
+
+  const analyseZip = useCallback(
+    async (doc: DocRow): Promise<string> => {
+      /*
+       * 1. Télécharger le ZIP depuis Supabase.
+       */
+      const signedUrl =
+        await getSignedUrl(
+          doc.storage_path
+        );
+
+      const zipResponse =
+        await fetch(signedUrl);
+
+      if (!zipResponse.ok) {
+        throw new Error(
+          "Impossible de télécharger le fichier ZIP."
+        );
+      }
+
+      const zipBuffer =
+        await zipResponse.arrayBuffer();
+
+      /*
+       * 2. Ouvrir le ZIP.
+       */
+      let zip: JSZip;
+
+      try {
+        zip =
+          await JSZip.loadAsync(
+            zipBuffer
+          );
+      } catch {
+        throw new Error(
+          "Impossible d'ouvrir ce fichier ZIP."
+        );
+      }
+
+      /*
+       * 3. Chercher les PDF/images analysables.
+       */
+      const entries =
+        Object.values(zip.files).filter(
+          (entry) => {
+            if (entry.dir) {
+              return false;
+            }
+
+            if (
+              entry.name.includes(
+                "__MACOSX/"
+              )
+            ) {
+              return false;
+            }
+
+            const name =
+              cleanZipEntryName(
+                entry.name
+              );
+
+            if (
+              name === ".DS_Store" ||
+              name.startsWith("._")
+            ) {
+              return false;
+            }
+
+            return isDirectlyAnalysable(
+              name
+            );
+          }
+        );
+
+      if (entries.length === 0) {
+        throw new Error(
+          "Ce ZIP ne contient aucun PDF ou image compatible avec l'analyse IA."
+        );
+      }
+
+      const results: string[] = [];
+      const errors: string[] = [];
+
+      /*
+       * 4. Analyser chaque document du ZIP.
+       *
+       * On les traite un par un pour éviter
+       * de lancer trop d'appels IA simultanément.
+       */
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+
+        const fileName =
+          cleanZipEntryName(
+            entry.name
+          );
+
+        try {
+          /*
+           * Extraire le fichier.
+           */
+          const blob =
+            await entry.async("blob");
+
+          const typedBlob =
+            new Blob(
+              [blob],
+              {
+                type:
+                  mimeTypeFromName(
+                    fileName
+                  ),
+              }
+            );
+
+          /*
+           * L'API actuelle travaille avec une URL.
+           *
+           * Une blob URL locale n'est pas accessible
+           * par le serveur. On enregistre donc
+           * temporairement le fichier extrait dans
+           * Supabase Storage.
+           */
+          const safeName =
+            fileName.replace(
+              /[^\w.\-()\s]/g,
+              "_"
+            );
+
+          const tempPath =
+            `${fid}/__zip_ai_temp__/` +
+            `${Date.now()}-` +
+            `${Math.random()
+              .toString(36)
+              .slice(2, 8)}-` +
+            `${safeName}`;
+
+          const {
+            data: uploadData,
+            error: uploadError,
+          } = await supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(
+              tempPath,
+              typedBlob,
+              {
+                cacheControl: "3600",
+                upsert: false,
+                contentType:
+                  mimeTypeFromName(
+                    fileName
+                  ),
+              }
+            );
+
+          if (
+            uploadError ||
+            !uploadData?.path
+          ) {
+            throw new Error(
+              uploadError?.message ??
+                "Impossible de préparer ce document pour l'analyse."
+            );
+          }
+
+          try {
+            /*
+             * Créer une URL signée du document extrait.
+             */
+            const extractedUrl =
+              await getSignedUrl(
+                uploadData.path
+              );
+
+            /*
+             * Envoyer à l'API IA existante.
+             */
+            const analyse =
+              await callAnalyseApi(
+                extractedUrl,
+                fileName
+              );
+
+            results.push(
+              [
+                "========================================",
+                `DOCUMENT ${i + 1}/${entries.length}`,
+                fileName,
+                "========================================",
+                "",
+                analyse,
+              ].join("\n")
+            );
+          } finally {
+            /*
+             * Supprimer le fichier temporaire,
+             * même si l'analyse échoue.
+             */
+            await supabase.storage
+              .from(STORAGE_BUCKET)
+              .remove([
+                uploadData.path,
+              ]);
+          }
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Erreur inconnue.";
+
+          errors.push(
+            `${fileName}: ${message}`
+          );
+        }
+      }
+
+      /*
+       * Aucun fichier n'a pu être analysé.
+       */
+      if (results.length === 0) {
+        throw new Error(
+          errors.length > 0
+            ? `Aucun document du ZIP n'a pu être analysé.\n${errors.join(
+                "\n"
+              )}`
+            : "Aucun document du ZIP n'a pu être analysé."
+        );
+      }
+
+      /*
+       * 5. Construire le résultat complet du ZIP.
+       */
+      const header = [
+        `📦 ZIP : ${doc.original_name}`,
+        `Documents compatibles trouvés : ${entries.length}`,
+        `Documents analysés : ${results.length}`,
+      ];
+
+      if (errors.length > 0) {
+        header.push(
+          `Documents en erreur : ${errors.length}`
+        );
+      }
+
+      const output = [
+        header.join("\n"),
+        "",
+        ...results,
+      ];
+
+      if (errors.length > 0) {
+        output.push(
+          "",
+          "========================================",
+          "DOCUMENTS NON ANALYSÉS",
+          "========================================",
+          ...errors
+        );
+      }
+
+      return output.join("\n");
+    },
+    [
+      fid,
+      getSignedUrl,
+      callAnalyseApi,
+    ]
+  );
+
+  // ==========================================
   // ANALYSER UN DOCUMENT
   // ==========================================
 
@@ -211,53 +609,21 @@ export default function AdminDossierDocsPage() {
       });
 
       try {
-        const signedUrl =
-          await getSignedUrl(
-            doc.storage_path
-          );
+        let analyse: string;
 
-        const response = await fetch(
-          "/api/admin/analyse-document",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              fileUrl: signedUrl,
-              fileName: doc.original_name,
-            }),
-          }
-        );
-
-        let result: AnalyseResponse;
-
-        try {
-          result =
-            (await response.json()) as AnalyseResponse;
-        } catch {
-          throw new Error(
-            "Réponse invalide du serveur IA."
-          );
-        }
-
-        if (
-          !response.ok ||
-          !result.ok ||
-          !result.analyse
-        ) {
-          throw new Error(
-            result.error ??
-              "Impossible d'analyser ce document."
-          );
+        if (isZip(doc.original_name)) {
+          analyse =
+            await analyseZip(doc);
+        } else {
+          analyse =
+            await analyseDirectFile(
+              doc
+            );
         }
 
         setAnalyses((prev) => ({
           ...prev,
-          [doc.id]: result.analyse as string,
+          [doc.id]: analyse,
         }));
 
         return true;
@@ -280,7 +646,10 @@ export default function AdminDossierDocsPage() {
         }));
       }
     },
-    [getSignedUrl]
+    [
+      analyseDirectFile,
+      analyseZip,
+    ]
   );
 
   // ==========================================
@@ -293,12 +662,14 @@ export default function AdminDossierDocsPage() {
 
       const analysables =
         docs.filter((doc) =>
-          canAnalyse(doc.original_name)
+          canAnalyse(
+            doc.original_name
+          )
         );
 
       if (analysables.length === 0) {
         setMsg(
-          "Aucun JPG, PNG, WEBP ou PDF à analyser."
+          "Aucun JPG, PNG, WEBP, PDF ou ZIP à analyser."
         );
         return;
       }
@@ -306,22 +677,36 @@ export default function AdminDossierDocsPage() {
       setMsg(null);
       setAnalysingAll(true);
 
+      let successCount = 0;
+
       try {
         /*
-         * On les analyse un par un.
-         * C'est volontaire :
-         * - moins de risque de surcharge;
-         * - plus simple à suivre;
-         * - une erreur n'arrête pas les autres.
+         * Toujours un par un.
+         *
+         * Cela évite de lancer plusieurs
+         * dizaines d'appels IA en même temps.
          */
         for (const doc of analysables) {
-          await analyseDoc(doc);
+          const ok =
+            await analyseDoc(doc);
+
+          if (ok) {
+            successCount++;
+          }
         }
+
+        setMsg(
+          `Analyse terminée : ${successCount}/${analysables.length} document(s) traité(s).`
+        );
       } finally {
         setAnalysingAll(false);
       }
     },
-    [docs, analyseDoc, analysingAll]
+    [
+      docs,
+      analyseDoc,
+      analysingAll,
+    ]
   );
 
   // ==========================================
@@ -359,7 +744,8 @@ export default function AdminDossierDocsPage() {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "flex-start",
           gap: 16,
           flexWrap: "wrap",
@@ -395,19 +781,24 @@ export default function AdminDossierDocsPage() {
             }
             disabled={analysingAll}
             style={{
-              padding: "10px 16px",
+              padding:
+                "10px 16px",
               borderRadius: 10,
-              border: "1px solid #1d4ed8",
-              background: analysingAll
-                ? "#dbeafe"
-                : "#1d4ed8",
-              color: analysingAll
-                ? "#1e40af"
-                : "white",
+              border:
+                "1px solid #1d4ed8",
+              background:
+                analysingAll
+                  ? "#dbeafe"
+                  : "#1d4ed8",
+              color:
+                analysingAll
+                  ? "#1e40af"
+                  : "white",
               fontWeight: 700,
-              cursor: analysingAll
-                ? "wait"
-                : "pointer",
+              cursor:
+                analysingAll
+                  ? "wait"
+                  : "pointer",
             }}
           >
             {analysingAll
@@ -423,7 +814,8 @@ export default function AdminDossierDocsPage() {
         <div
           style={{
             padding: 12,
-            border: "1px solid #ddd",
+            border:
+              "1px solid #ddd",
             borderRadius: 8,
             marginBottom: 12,
           }}
@@ -464,6 +856,11 @@ export default function AdminDossierDocsPage() {
             const analyseError =
               analyseErrors[doc.id];
 
+            const zip =
+              isZip(
+                doc.original_name
+              );
+
             return (
               <div
                 key={doc.id}
@@ -492,7 +889,8 @@ export default function AdminDossierDocsPage() {
                   <div
                     style={{
                       minWidth: 0,
-                      flex: "1 1 400px",
+                      flex:
+                        "1 1 400px",
                     }}
                   >
                     <div
@@ -596,7 +994,9 @@ export default function AdminDossierDocsPage() {
                         }}
                       >
                         {analysing
-                          ? "Analyse…"
+                          ? zip
+                            ? "Décompression et analyse…"
+                            : "Analyse…"
                           : analyse
                           ? "↻ Réanalyser"
                           : "✨ Analyser avec l'IA"}
@@ -611,8 +1011,7 @@ export default function AdminDossierDocsPage() {
                             "#64748b",
                         }}
                       >
-                        IA bientôt pour ce
-                        format
+                        IA bientôt pour ce format
                       </div>
                     )}
                   </div>
@@ -634,6 +1033,8 @@ export default function AdminDossierDocsPage() {
                       color:
                         "#b91c1c",
                       fontSize: 14,
+                      whiteSpace:
+                        "pre-wrap",
                     }}
                   >
                     ❌ {analyseError}
@@ -660,7 +1061,9 @@ export default function AdminDossierDocsPage() {
                         marginBottom: 10,
                       }}
                     >
-                      ✨ Analyse IA
+                      {zip
+                        ? "✨ Analyse IA du ZIP"
+                        : "✨ Analyse IA"}
                     </div>
 
                     <div
