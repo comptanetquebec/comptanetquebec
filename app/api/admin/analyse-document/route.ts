@@ -229,6 +229,79 @@ avec la mention :
 "Valeur visible mais association à la case incertaine."
 
 ==================================================
+GESTION DES COPIES IDENTIQUES ET DES DOUBLONS
+==================================================
+
+Un même feuillet fiscal peut apparaître plusieurs fois dans une
+image ou dans un PDF.
+
+Par exemple :
+
+- deux copies identiques d'un T4;
+- deux copies identiques d'un Relevé 1;
+- plusieurs pages représentant différentes copies du même feuillet;
+- une copie destinée au contribuable et une autre copie contenant
+  exactement les mêmes renseignements.
+
+Avant de présenter les résultats, compare les copies visibles.
+
+Si plusieurs copies correspondent au MÊME feuillet et contiennent
+les mêmes renseignements et les mêmes valeurs :
+
+NE RÉPÈTE PAS LES CASES.
+
+Affiche toutes les cases remplies UNE SEULE FOIS.
+
+Ne double jamais les montants.
+
+Ne considère jamais deux copies identiques comme deux revenus,
+deux dépenses ou deux feuillets différents.
+
+Dans AUTRES INFORMATIONS, indique simplement :
+
+"Copies identiques détectées : [nombre]. Les valeurs sont présentées une seule fois."
+
+Exemple :
+
+Si deux copies identiques du même T4 contiennent :
+
+Case 14 : 5 938,81
+Case 22 : 211,22
+
+le résultat doit contenir UNE SEULE FOIS :
+
+Case 14 : 5 938,81
+Case 22 : 211,22
+
+et NON deux listes identiques.
+
+Si plusieurs copies semblent représenter le même feuillet MAIS
+qu'une valeur, une case, un nom, une année ou un autre renseignement
+est différent :
+
+NE LES FUSIONNE PAS AUTOMATIQUEMENT.
+
+Indique la différence dans :
+
+ÉLÉMENTS À VÉRIFIER
+
+et précise que les copies ne sont pas parfaitement identiques.
+
+IMPORTANT :
+
+Deux feuillets réellement différents ne doivent jamais être fusionnés
+simplement parce qu'ils sont du même type.
+
+Par exemple, deux T4 provenant de deux employeurs différents sont
+deux feuillets distincts.
+
+Deux T4 du même employeur peuvent également être différents.
+
+La déduplication doit être faite uniquement lorsque les copies
+représentent clairement le même feuillet et contiennent les mêmes
+renseignements.
+
+==================================================
 DEUXIÈME LECTURE OBLIGATOIRE
 ==================================================
 
@@ -245,9 +318,12 @@ Pendant cette deuxième lecture :
    "Other information" ou équivalentes;
 6. cherche une case remplie que tu aurais oubliée;
 7. vérifie chaque association numéro de case → valeur;
-8. retire toute case qui est en réalité vide.
+8. retire toute case qui est en réalité vide;
+9. vérifie si le document contient plusieurs copies du même feuillet;
+10. supprime de la réponse les répétitions provenant de copies identiques.
 
-Ton objectif est de ne manquer AUCUNE case réellement remplie.
+Ton objectif est de ne manquer AUCUNE case réellement remplie,
+tout en évitant de compter plusieurs fois une copie identique.
 
 ==================================================
 FORMULAIRES
@@ -353,6 +429,10 @@ de cases numérotées, extrais les champs réellement visibles :
 
 N'invente jamais un champ absent.
 
+Si une facture ou un reçu apparaît plusieurs fois et qu'il s'agit
+clairement de copies identiques du même document, applique également
+la règle de déduplication.
+
 ==================================================
 FORMAT DE LA RÉPONSE
 ==================================================
@@ -371,7 +451,8 @@ PERSONNE / ENTREPRISE
 [Renseignements clairement visibles]
 
 CASES REMPLIES
-[Liste exhaustive de toutes les cases remplies]
+[Liste exhaustive de toutes les cases remplies, sans répéter
+les cases provenant de copies identiques]
 
 Utilise :
 Case [numéro ou code] : [valeur exacte]
@@ -382,15 +463,21 @@ Sans objet.
 AUTRES INFORMATIONS
 [Informations utiles qui ne correspondent pas à une case]
 
+Si des copies identiques ont été détectées, indique ici :
+"Copies identiques détectées : [nombre]. Les valeurs sont présentées une seule fois."
+
 ÉLÉMENTS À VÉRIFIER
 [Seulement les éléments réellement incertains]
 
 CONTRÔLE DE LECTURE
-Indique si une deuxième lecture complète a été effectuée et
-si d'autres cases remplies ont été détectées lors de cette vérification.
+Indique si une deuxième lecture complète a été effectuée,
+si d'autres cases remplies ont été détectées et si une vérification
+des doublons a été effectuée.
 
 RÉSUMÉ POUR LE DOSSIER
-[Résumé court sans inventer ni interpréter les valeurs]
+[Résumé court sans inventer ni interpréter les valeurs.
+Ne compte jamais plusieurs fois les valeurs provenant de copies
+identiques.]
 
 ==================================================
 INTERDICTIONS
@@ -407,6 +494,11 @@ Ne jamais déplacer un montant d'une case vers une autre.
 Ne jamais omettre volontairement une case parce qu'elle semble
 moins importante fiscalement.
 
+Ne jamais compter deux fois un montant simplement parce que deux
+copies identiques du même feuillet sont visibles.
+
+Ne jamais fusionner deux feuillets réellement différents.
+
 Ne jamais modifier les données du dossier.
 
 Si le document est trop flou ou de qualité insuffisante pour une
@@ -422,8 +514,8 @@ Nom du fichier : ${fileName}
     if (isImage) {
       const response =
         await openai.responses.create({
-         model: "gpt-5.6-sol",
-          
+          model: "gpt-5.6-sol",
+
           input: [
             {
               role: "system",
@@ -445,7 +537,7 @@ Nom du fichier : ${fileName}
                 {
                   type: "input_text",
                   text:
-                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases réellement remplies, puis effectue la deuxième lecture obligatoire avant de répondre.",
+                    "Analyse toute l'image. Effectue une extraction exhaustive de toutes les cases réellement remplies. Détecte les copies identiques et ne présente leurs valeurs qu'une seule fois. Effectue ensuite la deuxième lecture obligatoire avant de répondre.",
                 },
               ],
             },
@@ -525,7 +617,7 @@ Nom du fichier : ${fileName}
                   {
                     type: "input_text",
                     text:
-                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases réellement remplies. Effectue ensuite une deuxième lecture complète avant de répondre.",
+                      "Analyse toutes les pages du document. Pour chaque page, recherche toutes les cases réellement remplies. Détecte les copies identiques du même feuillet et ne présente leurs valeurs qu'une seule fois. Ne fusionne jamais deux feuillets réellement différents. Effectue ensuite une deuxième lecture complète avant de répondre.",
                   },
                 ],
               },
