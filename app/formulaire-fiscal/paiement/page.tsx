@@ -118,7 +118,9 @@ export default function PaiementPage() {
           type
         )}&lang=${encodeURIComponent(
           lang
-        )}&cq=${encodeURIComponent(cqId)}&payment=interac_sent`
+        )}&cq=${encodeURIComponent(
+          cqId
+        )}&payment=interac_sent`
       );
     } catch (error: unknown) {
       console.error("Erreur Supabase:", error);
@@ -222,84 +224,7 @@ export default function PaiementPage() {
         </div>
 
         <div className="ff-form">
-          {/* NUMÉRO DE DOSSIER */}
-          <section
-            className="ff-card"
-            style={{
-              marginBottom: 20,
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                marginTop: 0,
-                marginBottom: 8,
-                fontWeight: 700,
-              }}
-            >
-              {t(
-                "Votre numéro de dossier ComptaNet",
-                "Your ComptaNet file number",
-                "Su número de expediente ComptaNet"
-              )}
-            </p>
-
-            <div
-              style={{
-                display: "inline-block",
-                padding: "12px 24px",
-                borderRadius: 12,
-                background: "#f4f8ff",
-                border: "2px solid #d4e4ff",
-                marginTop: 4,
-              }}
-            >
-              <strong
-                style={{
-                  fontSize: 30,
-                  letterSpacing: 1,
-                }}
-              >
-                {cqId || "..."}
-              </strong>
-            </div>
-
-            <p
-              style={{
-                marginTop: 14,
-                marginBottom: 12,
-                color: "#b00020",
-                fontWeight: 800,
-              }}
-            >
-              {t(
-                "Conservez ce numéro. Il permet d’identifier votre dossier et votre paiement.",
-                "Keep this number. It identifies your file and your payment.",
-                "Conserve este número. Permite identificar su expediente y su pago."
-              )}
-            </p>
-
-            <button
-              type="button"
-              className="ff-btn ff-btn-outline"
-              onClick={copyCqId}
-              disabled={!cqId}
-            >
-              {copied
-                ? t(
-                    "Numéro copié !",
-                    "Number copied!",
-                    "¡Número copiado!"
-                  )
-                : t(
-                    "Copier le numéro",
-                    "Copy number",
-                    "Copiar número"
-                  )}
-            </button>
-          </section>
-
-          {/* INTERAC */}
+          {/* VIREMENT INTERAC */}
           <section
             className="ff-card"
             style={{ marginBottom: 20 }}
@@ -320,6 +245,7 @@ export default function PaiementPage() {
               )}
             </p>
 
+            {/* INFORMATIONS DU VIREMENT */}
             <div
               style={{
                 marginTop: 16,
@@ -351,7 +277,7 @@ export default function PaiementPage() {
                 comptanetquebec@gmail.com
               </p>
 
-              <p>
+              <p style={{ marginBottom: 0 }}>
                 <strong>
                   {t(
                     "Dépôt automatique :",
@@ -367,7 +293,7 @@ export default function PaiementPage() {
               </p>
             </div>
 
-            {/* MESSAGE CQ IMPORTANT */}
+            {/* NUMÉRO DE DOSSIER + MESSAGE INTERAC */}
             <div
               style={{
                 marginTop: 16,
@@ -387,22 +313,22 @@ export default function PaiementPage() {
                 }}
               >
                 {t(
-                  "IMPORTANT — Message du virement",
-                  "IMPORTANT — Transfer message",
-                  "IMPORTANTE — Mensaje de la transferencia"
+                  "IMPORTANT — Votre numéro de dossier",
+                  "IMPORTANT — Your file number",
+                  "IMPORTANTE — Su número de expediente"
                 )}
               </p>
 
               <p
                 style={{
                   marginTop: 0,
-                  marginBottom: 10,
+                  marginBottom: 12,
                 }}
               >
                 {t(
-                  "Dans le message de votre virement Interac, inscrivez exactement :",
-                  "In the message of your Interac e-Transfer, enter exactly:",
-                  "En el mensaje de su transferencia Interac, escriba exactamente:"
+                  "Voici votre numéro de dossier ComptaNet Québec :",
+                  "This is your ComptaNet Québec file number:",
+                  "Este es su número de expediente de ComptaNet Québec:"
                 )}
               </p>
 
@@ -413,7 +339,7 @@ export default function PaiementPage() {
                   borderRadius: 10,
                   background: "#ffffff",
                   border: "1px solid #e5c4c4",
-                  fontSize: 26,
+                  fontSize: 28,
                   fontWeight: 800,
                   letterSpacing: 1,
                 }}
@@ -421,28 +347,55 @@ export default function PaiementPage() {
                 {cqId || "..."}
               </div>
 
-              <div style={{ marginTop: 12 }}>
-                <button
-                  type="button"
-                  className="ff-btn ff-btn-outline"
-                  onClick={copyCqId}
-                  disabled={!cqId}
-                >
-                  {copied
-                    ? t(
-                        "Numéro copié !",
-                        "Number copied!",
-                        "¡Número copiado!"
-                      )
-                    : t(
-                        "Copier le numéro",
-                        "Copy number",
-                        "Copiar número"
-                      )}
-                </button>
-              </div>
+              <p
+                style={{
+                  marginTop: 14,
+                  marginBottom: 10,
+                  fontWeight: 700,
+                }}
+              >
+                {t(
+                  "Inscrivez exactement ce numéro dans le message de votre virement Interac.",
+                  "Enter this exact number in the message of your Interac e-Transfer.",
+                  "Escriba exactamente este número en el mensaje de su transferencia Interac."
+                )}
+              </p>
+
+              <p
+                style={{
+                  marginTop: 0,
+                  marginBottom: 12,
+                  fontSize: 14,
+                }}
+              >
+                {t(
+                  "Ce numéro permet à ComptaNet Québec d’identifier votre dossier et d’associer votre paiement au bon compte.",
+                  "This number allows ComptaNet Québec to identify your file and apply your payment to the correct account.",
+                  "Este número permite a ComptaNet Québec identificar su expediente y asociar su pago a la cuenta correcta."
+                )}
+              </p>
+
+              <button
+                type="button"
+                className="ff-btn ff-btn-outline"
+                onClick={copyCqId}
+                disabled={!cqId}
+              >
+                {copied
+                  ? t(
+                      "Numéro copié !",
+                      "Number copied!",
+                      "¡Número copiado!"
+                    )
+                  : t(
+                      "Copier le numéro",
+                      "Copy number",
+                      "Copiar número"
+                    )}
+              </button>
             </div>
 
+            {/* APRÈS LE VIREMENT */}
             <div
               style={{
                 marginTop: 18,
@@ -466,9 +419,9 @@ export default function PaiementPage() {
                 }}
               >
                 {t(
-                  "Revenez ici et cliquez sur « J’ai envoyé le virement ». Votre dossier sera alors indiqué comme virement envoyé, en attente de confirmation par ComptaNet Québec.",
-                  "Return here and click “I sent the transfer”. Your file will then be marked as transfer sent, awaiting confirmation by ComptaNet Québec.",
-                  "Regrese aquí y haga clic en « Ya envié la transferencia ». Su expediente quedará marcado como transferencia enviada, pendiente de confirmación por ComptaNet Québec."
+                  "Cliquez sur « J’ai envoyé le virement Interac ». Votre dossier sera indiqué comme virement envoyé, en attente de confirmation par ComptaNet Québec.",
+                  "Click “I sent the Interac transfer”. Your file will be marked as transfer sent, awaiting confirmation by ComptaNet Québec.",
+                  "Haga clic en « Ya envié la transferencia Interac ». Su expediente quedará marcado como transferencia enviada, pendiente de confirmación por ComptaNet Québec."
                 )}
               </p>
             </div>
