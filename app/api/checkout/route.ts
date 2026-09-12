@@ -19,6 +19,7 @@ type CheckoutBody = {
 
 function normalizeLang(v: unknown): Lang {
   const x = String(v ?? "").toLowerCase();
+
   return x === "fr" || x === "en" || x === "es"
     ? (x as Lang)
     : "fr";
@@ -26,11 +27,15 @@ function normalizeLang(v: unknown): Lang {
 
 function normalizeTaxType(v: unknown): TaxType | null {
   const x = String(v ?? "").toLowerCase();
-  return x === "t1" || x === "t2" ? (x as TaxType) : null;
+
+  return x === "t1" || x === "t2"
+    ? (x as TaxType)
+    : null;
 }
 
 function normalizePayMode(v: unknown): PayMode | null {
   const x = String(v ?? "").toLowerCase();
+
   return x === "acompte" || x === "solde"
     ? (x as PayMode)
     : null;
@@ -38,6 +43,7 @@ function normalizePayMode(v: unknown): PayMode | null {
 
 function parseFid(v: unknown): string | null {
   const s = typeof v === "string" ? v.trim() : "";
+
   return s.length >= 10 ? s : null;
 }
 
@@ -65,7 +71,9 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
   const pid = map[type];
 
   if (!pid) {
-    throw new Error(`Missing Stripe Price ID for ${type}:${mode}`);
+    throw new Error(
+      `Missing Stripe Price ID for ${type}:${mode}`
+    );
   }
 
   return pid;
@@ -78,9 +86,12 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
 async function ensureCqId(fid: string): Promise<string> {
   const supabase = await supabaseServer();
 
-  const { data, error } = await supabase.rpc("ensure_cq_id", {
-    p_fid: fid,
-  });
+  const { data, error } = await supabase.rpc(
+    "ensure_cq_id",
+    {
+      p_fid: fid,
+    }
+  );
 
   if (error) {
     throw new Error(error.message);
@@ -89,7 +100,9 @@ async function ensureCqId(fid: string): Promise<string> {
   const cqId = String(data ?? "").trim();
 
   if (!cqId.startsWith("CQ-")) {
-    throw new Error("ensure_cq_id returned an invalid cq_id");
+    throw new Error(
+      "ensure_cq_id returned an invalid cq_id"
+    );
   }
 
   return cqId;
@@ -101,8 +114,12 @@ export async function POST(req: Request) {
 
     if (!sk) {
       return NextResponse.json(
-        { error: "Missing STRIPE_SECRET_KEY" },
-        { status: 500 }
+        {
+          error: "Missing STRIPE_SECRET_KEY",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
@@ -110,12 +127,18 @@ export async function POST(req: Request) {
 
     if (!origin) {
       return NextResponse.json(
-        { error: "Missing site origin" },
-        { status: 500 }
+        {
+          error: "Missing site origin",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
-    const body = (await req.json().catch(() => ({}))) as CheckoutBody;
+    const body = (await req
+      .json()
+      .catch(() => ({}))) as CheckoutBody;
 
     const taxType = normalizeTaxType(body.type);
     const payMode = normalizePayMode(body.mode);
@@ -124,85 +147,149 @@ export async function POST(req: Request) {
 
     if (!taxType || !payMode) {
       return NextResponse.json(
-        { error: "Invalid type/mode" },
-        { status: 400 }
+        {
+          error: "Invalid type/mode",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
     if (!fid) {
       return NextResponse.json(
-        { error: "Missing fid" },
-        { status: 400 }
+        {
+          error: "Missing fid",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
     // Numéro de dossier CQ garanti par la DB
     const cqId = await ensureCqId(fid);
 
-    const priceId = priceIdFor(taxType, payMode);
+    const priceId = priceIdFor(
+      taxType,
+      payMode
+    );
 
     /*
-     * En mode Embedded Checkout, Stripe revient sur cette page
-     * après un paiement nécessitant une redirection externe.
+     * URL de retour après le paiement.
      */
-    const returnUrl = new URL("/paiement/succes", origin);
+    const returnUrl = new URL(
+      "/paiement/succes",
+      origin
+    );
 
-    returnUrl.searchParams.set("lang", lang);
-    returnUrl.searchParams.set("fid", fid);
-    returnUrl.searchParams.set("type", taxType);
-    returnUrl.searchParams.set("mode", payMode);
+    returnUrl.searchParams.set(
+      "lang",
+      lang
+    );
+
+    returnUrl.searchParams.set(
+      "fid",
+      fid
+    );
+
+    returnUrl.searchParams.set(
+      "type",
+      taxType
+    );
+
+    returnUrl.searchParams.set(
+      "mode",
+      payMode
+    );
 
     const stripe = new Stripe(sk);
 
-    const session = await stripe.checkout.sessions.create({
-      ui_mode: "embedded",
+    const session =
+      await stripe.checkout.sessions.create({
+        /*
+         * Paiement intégré directement
+         * dans ComptaNet Québec.
+         */
+        ui_mode: "embedded",
 
-      mode: "payment",
+        mode: "payment",
 
-      automatic_tax: {
-        enabled: true,
-      },
+        /*
+         * Moyens de paiement autorisés :
+         * - Carte
+         * - Link
+         *
+         * Klarna ne sera plus proposé.
+         */
+        payment_method_types: [
+          "card",
+          "link",
+        ],
 
-      client_reference_id: cqId,
-
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+        automatic_tax: {
+          enabled: true,
         },
-      ],
 
-      return_url: returnUrl.toString(),
+        client_reference_id: cqId,
 
-      metadata: {
-        fid,
-        cq_id: cqId,
-        type: taxType,
-        mode: payMode,
-        lang,
-      },
-    });
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
 
+        return_url:
+          returnUrl.toString(),
+
+        metadata: {
+          fid,
+          cq_id: cqId,
+          type: taxType,
+          mode: payMode,
+          lang,
+        },
+      });
+
+    /*
+     * Embedded Checkout utilise
+     * client_secret et non session.url.
+     */
     if (!session.client_secret) {
       return NextResponse.json(
-        { error: "Stripe session missing client secret" },
-        { status: 500 }
+        {
+          error:
+            "Stripe session missing client secret",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
     return NextResponse.json(
       {
-        clientSecret: session.client_secret,
+        clientSecret:
+          session.client_secret,
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     );
   } catch (e: unknown) {
     const message =
-      e instanceof Error ? e.message : "Checkout error";
+      e instanceof Error
+        ? e.message
+        : "Checkout error";
 
     return NextResponse.json(
-      { error: message },
-      { status: 500 }
+      {
+        error: message,
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
