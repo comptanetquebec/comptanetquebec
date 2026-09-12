@@ -1,4 +1,4 @@
-// app/formulaire-fiscal/page.tsx
+
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,6 +30,7 @@ import type {
   CopieImpots,
   AvisCotisation,
   EtatCivil,
+  T2201Statut,
   Periode,
   Child,
   DocRow,
@@ -324,6 +325,8 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
   const [province, setProvince] = useState<ProvinceCode>("QC");
   const [codePostal, setCodePostal] = useState("");
   const [courriel, setCourriel] = useState("");
+  const [handicap, setHandicap] = useState<boolean | undefined>(undefined);
+  const [t2201Statut, setT2201Statut] = useState<T2201Statut>("");
 
   /* =========================== Conjoint =========================== */
   const [aUnConjoint, setAUnConjoint] = useState(false);
@@ -342,6 +345,8 @@ function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }
   const [provinceConjoint, setProvinceConjoint] = useState<ProvinceCode>("QC");
   const [codePostalConjoint, setCodePostalConjoint] = useState("");
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
+  const [handicapConjoint, setHandicapConjoint] = useState<boolean | undefined>(undefined);
+  const [t2201StatutConjoint, setT2201StatutConjoint] = useState<T2201Statut>("");
 
   /* =========================== Assurance meds =========================== */
   const [assuranceMedsClient, setAssuranceMedsClient] = useState<AssuranceMeds>("");
@@ -360,10 +365,10 @@ const [aucunePersonneACharge, setAucunePersonneACharge] = useState(false);
 
 const ajouterEnfant = useCallback(() => {
   setAucunePersonneACharge(false);
-  setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "" }]);
+  setEnfants((prev) => [...prev, { prenom: "", nom: "", dob: "", nas: "", sexe: "", aTravaille: undefined, revenuTravailEstime: "", handicap: undefined, t2201Statut: "" }]);
 }, []);
 
-const updateEnfant = useCallback((i: number, field: keyof Child, value: string) => {
+const updateEnfant = useCallback((i: number, field: keyof Child, value: string | boolean) => {
   setEnfants((prev) => {
     const copy = [...prev];
     copy[i] = { ...copy[i], [field]: value };
@@ -463,6 +468,8 @@ const draftData: Formdata = useMemo(() => {
         provinceConjoint: adresseConjointeIdentique ? province : provinceConjoint,
         codePostalConjoint: normalizePostal(adresseConjointeIdentique ? codePostal : codePostalConjoint),
         revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
+        handicapConjoint,
+        t2201StatutConjoint: handicapConjoint === true ? t2201StatutConjoint : "",
       }
     : null;
 
@@ -493,6 +500,8 @@ const draftData: Formdata = useMemo(() => {
       province,
       codePostal: normalizePostal(codePostal),
       courriel: courriel.trim().toLowerCase(),
+      handicap,
+      t2201Statut: handicap === true ? t2201Statut : "",
     },
     conjoint: conjointData,
     assuranceMedicamenteuse: medsData,
@@ -502,6 +511,10 @@ const draftData: Formdata = useMemo(() => {
       dob: x.dob.trim(),
       nas: normalizeNAS(x.nas),
       sexe: x.sexe as Sexe,
+      aTravaille: x.aTravaille,
+      revenuTravailEstime: x.aTravaille === true ? (x.revenuTravailEstime ?? "").trim() : "",
+      handicap: x.handicap,
+      t2201Statut: x.handicap === true ? (x.t2201Statut ?? "") : "",
     })),
     travailleurAutonome: {
       actif: taActif,
@@ -553,6 +566,8 @@ const draftData: Formdata = useMemo(() => {
   province,
   codePostal,
   courriel,
+  handicap,
+  t2201Statut,
   aUnConjoint,
   traiterConjoint,
   prenomConjoint,
@@ -569,6 +584,8 @@ const draftData: Formdata = useMemo(() => {
   provinceConjoint,
   codePostalConjoint,
   revenuNetConjoint,
+  handicapConjoint,
+  t2201StatutConjoint,
   assuranceMedsClient,
   assuranceMedsClientPeriodes,
   assuranceMedsConjoint,
@@ -679,6 +696,11 @@ const draftData: Formdata = useMemo(() => {
         );
     }
 
+    if (typeof handicap !== "boolean")
+      errors.push(t("Handicap/déficience : répondez Oui ou Non.", "Disability/impairment: answer Yes or No.", "Discapacidad/deficiencia: responda Sí o No."));
+    if (handicap === true && !t2201Statut)
+      errors.push(t("T2201 : indiquez le statut du formulaire.", "T2201: indicate the form status.", "T2201: indique el estado del formulario."));
+
     if (aUnConjoint) {
       if (!traiterConjoint) {
         if (!revenuNetConjoint.trim())
@@ -721,6 +743,11 @@ const draftData: Formdata = useMemo(() => {
             )
           );
       }
+
+      if (typeof handicapConjoint !== "boolean")
+        errors.push(t("Handicap/déficience (conjoint) : répondez Oui ou Non.", "Spouse disability/impairment: answer Yes or No.", "Discapacidad/deficiencia (cónyuge): responda Sí o No."));
+      if (handicapConjoint === true && !t2201StatutConjoint)
+        errors.push(t("T2201 (conjoint) : indiquez le statut du formulaire.", "Spouse T2201: indicate the form status.", "T2201 (cónyuge): indique el estado del formulario."));
 
       if (!adresseConjointeIdentique) {
         if (!adresseConjoint.trim())
@@ -795,6 +822,8 @@ const draftData: Formdata = useMemo(() => {
     etatCivilChange,
     ancienEtatCivil,
     dateChangementEtatCivil,
+    handicap,
+    t2201Statut,
     aUnConjoint,
     traiterConjoint,
     prenomConjoint,
@@ -809,6 +838,8 @@ const draftData: Formdata = useMemo(() => {
     provinceConjoint,
     codePostalConjoint,
     revenuNetConjoint,
+    handicapConjoint,
+    t2201StatutConjoint,
     assuranceMedsClient,
     assuranceMedsClientPeriodes,
     assuranceMedsConjoint,
@@ -870,7 +901,9 @@ const draftData: Formdata = useMemo(() => {
           nomConjoint.trim() &&
           isValidNAS(nasConjoint) &&
           isValidDateJJMMAAAA(dobConjoint) &&
-          firstNonEmpty(normalizePhone(telConjoint), normalizePhone(telCellConjoint))
+          firstNonEmpty(normalizePhone(telConjoint), normalizePhone(telCellConjoint)) &&
+          typeof handicapConjoint === "boolean" &&
+          (handicapConjoint !== true || !!t2201StatutConjoint)
         ? "ok"
         : "bad";
 
@@ -899,7 +932,9 @@ const draftData: Formdata = useMemo(() => {
       markText(adresse) === "ok" &&
       markText(ville) === "ok" &&
       isValidPostal(codePostal) &&
-      telAnyMark === "ok"
+      telAnyMark === "ok" &&
+      typeof handicap === "boolean" &&
+      (handicap !== true || !!t2201Statut)
         ? "ok"
         : "bad";
 
@@ -927,6 +962,8 @@ const draftData: Formdata = useMemo(() => {
     codePostal,
     tel,
     telCell,
+    handicap,
+    t2201Statut,
     province,
     aUnConjoint,
     traiterConjoint,
@@ -937,6 +974,8 @@ const draftData: Formdata = useMemo(() => {
     dobConjoint,
     telConjoint,
     telCellConjoint,
+    handicapConjoint,
+    t2201StatutConjoint,
     assuranceMedsClient,
     assuranceMedsClientPeriodes,
     assuranceMedsConjoint,
@@ -1129,6 +1168,8 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
     setProvinceConjoint(cj.provinceConjoint ?? "QC");
     setCodePostalConjoint(cj.codePostalConjoint ? formatPostalInput(cj.codePostalConjoint) : "");
     setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
+    setHandicapConjoint(typeof cj.handicapConjoint === "boolean" ? cj.handicapConjoint : undefined);
+    setT2201StatutConjoint(cj.t2201StatutConjoint ?? "");
   } else {
     setTraiterConjoint(true);
     setPrenomConjoint("");
@@ -1145,6 +1186,8 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
     setProvinceConjoint("QC");
     setCodePostalConjoint("");
     setRevenuNetConjoint("");
+    setHandicapConjoint(undefined);
+    setT2201StatutConjoint("");
   }
 
   const meds = form?.assuranceMedicamenteuse ?? null;
@@ -1377,6 +1420,10 @@ return (
           setProvince={setProvince}
           codePostal={codePostal}
           setCodePostal={(v: string) => setCodePostal(formatPostalInput(v))}
+          handicap={handicap}
+          setHandicap={setHandicap}
+          t2201Statut={t2201Statut}
+          setT2201Statut={setT2201Statut}
         />
 
         <SpouseSection
@@ -1414,6 +1461,10 @@ return (
           setProvinceConjoint={setProvinceConjoint}
           codePostalConjoint={codePostalConjoint}
           setCodePostalConjoint={(v: string) => setCodePostalConjoint(formatPostalInput(v))}
+          handicapConjoint={handicapConjoint}
+          setHandicapConjoint={setHandicapConjoint}
+          t2201StatutConjoint={t2201StatutConjoint}
+          setT2201StatutConjoint={setT2201StatutConjoint}
         />
 
         <MedsSection
@@ -1458,8 +1509,8 @@ return (
   aucunePersonneACharge={aucunePersonneACharge}
   ajouterEnfant={ajouterEnfant}
   updateEnfant={(i, field, value) => {
-    if (field === "dob") return updateEnfant(i, field, formatDateInput(value));
-    if (field === "nas") return updateEnfant(i, field, formatNASInput(value));
+    if (field === "dob" && typeof value === "string") return updateEnfant(i, field, formatDateInput(value));
+    if (field === "nas" && typeof value === "string") return updateEnfant(i, field, formatNASInput(value));
     return updateEnfant(i, field, value);
   }}
   removeEnfant={removeEnfant}
