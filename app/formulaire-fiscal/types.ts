@@ -45,6 +45,17 @@ export type EtatCivil =
   | "";
 
 /* ============================================================
+   HANDICAP / DÉFICIENCE
+============================================================ */
+
+export type T2201Statut =
+  | ""
+  | "approuve"
+  | "attente"
+  | "non"
+  | "inconnu";
+
+/* ============================================================
    PÉRIODES
 ============================================================ */
 
@@ -65,11 +76,18 @@ export type Child = {
   sexe: Sexe;
 
   /*
+    Travail / revenu
     Optionnels pour conserver la compatibilité
-    avec les anciens dossiers déjà enregistrés.
+    avec les anciens dossiers.
   */
   aTravaille?: boolean;
   revenuTravailEstime?: string;
+
+  /*
+    Handicap / déficience
+  */
+  handicap?: boolean;
+  t2201Statut?: T2201Statut;
 };
 
 /* ============================================================
@@ -115,6 +133,12 @@ export type FormClientdata = {
   codePostal?: string;
 
   courriel?: string;
+
+  /*
+    Handicap / déficience
+  */
+  handicap?: boolean;
+  t2201Statut?: T2201Statut;
 };
 
 /* ---------------- CONJOINT ---------------- */
@@ -142,6 +166,12 @@ export type FormConjointdata = {
   codePostalConjoint?: string;
 
   revenuNetConjoint?: string;
+
+  /*
+    Handicap / déficience
+  */
+  handicapConjoint?: boolean;
+  t2201StatutConjoint?: T2201Statut;
 };
 
 /* ---------------- ASSURANCE MÉDICAMENTS ---------------- */
@@ -212,10 +242,10 @@ export type Formdata = {
   assuranceMedicamenteuse?: FormMedsdata | null;
 
   /*
-    Chaque personne à charge peut maintenant contenir :
-
-    aTravaille
-    revenuTravailEstime
+    Chaque personne à charge peut contenir :
+    - travail / revenu estimé
+    - handicap / déficience
+    - statut T2201
   */
   personnesACharge?: Child[];
 
