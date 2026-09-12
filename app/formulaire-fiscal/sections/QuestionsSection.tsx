@@ -1,4 +1,3 @@
-// app/formulaire-fiscal/sections/QuestionsSection.tsx
 "use client";
 
 import React, { useMemo } from "react";
@@ -95,6 +94,15 @@ export default function QuestionsSection(props: {
 
   avisCotisation: AvisCotisation;
   setAvisCotisation: (v: AvisCotisation) => void;
+
+  premiereDeclarationARC: YesNo;
+  setPremiereDeclarationARC: (v: YesNo) => void;
+
+  premiereDeclarationQuebec: YesNo;
+  setPremiereDeclarationQuebec: (v: YesNo) => void;
+
+  cryptoactifs: YesNo;
+  setCryptoactifs: (v: YesNo) => void;
 }) {
   const {
     L,
@@ -118,56 +126,13 @@ export default function QuestionsSection(props: {
     setCopieImpots,
     avisCotisation,
     setAvisCotisation,
+    premiereDeclarationARC,
+    setPremiereDeclarationARC,
+    premiereDeclarationQuebec,
+    setPremiereDeclarationQuebec,
+    cryptoactifs,
+    setCryptoactifs,
   } = props;
-
-  /*
-   * Les textes de l'avis de cotisation sont gardés ici pour que cette
-   * section soit immédiatement FR / EN / ES sans changer le contrat
-   * CopyPack ni risquer de casser les autres fichiers.
-   *
-   * On détecte la langue à partir des libellés déjà fournis par copy.ts.
-   */
-  const avisText = useMemo(() => {
-    const sample = [
-      L.sections.questionsTitle,
-      L.sections.questionsDesc,
-      L.questions.taxYear,
-      L.questions.copy,
-      L.questions.copyPortal,
-      L.questions.copyEmail,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    const looksSpanish =
-      /\b(impuesto|impuestos|declaraci[oó]n|correo|cliente|año|año fiscal)\b/.test(sample);
-
-    const looksEnglish =
-      /\b(tax|taxes|return|email|client|year|assessment)\b/.test(sample);
-
-    if (looksSpanish) {
-      return {
-        label: "¿Cómo desea recibir su aviso de liquidación?",
-        mail: "Por correo postal",
-        government: "En línea a través del sitio web del gobierno",
-      };
-    }
-
-    if (looksEnglish) {
-      return {
-        label: "How would you like to receive your notice of assessment?",
-        mail: "By mail",
-        government: "Online through the government website",
-      };
-    }
-
-    return {
-      label: "Comment souhaitez-vous recevoir votre avis de cotisation ?",
-      mail: "Par la poste",
-      government: "En ligne auprès du gouvernement",
-    };
-  }, [L]);
 
   const marks = useMemo(() => {
     const mYear = markYear(anneeImposition);
@@ -180,6 +145,9 @@ export default function QuestionsSection(props: {
     const mTech = markYesNo(appelerTechnicien);
     const mCopy = markSelect(copieImpots);
     const mAvis = markSelect(avisCotisation);
+    const mFirstCRA = markYesNo(premiereDeclarationARC);
+    const mFirstQuebec = markYesNo(premiereDeclarationQuebec);
+    const mCrypto = markYesNo(cryptoactifs);
 
     const blockOk =
       mYear === "ok" &&
@@ -191,7 +159,10 @@ export default function QuestionsSection(props: {
       mHomeTx === "ok" &&
       mTech === "ok" &&
       mCopy === "ok" &&
-      mAvis === "ok";
+      mAvis === "ok" &&
+      mFirstCRA === "ok" &&
+      mFirstQuebec === "ok" &&
+      mCrypto === "ok";
 
     return {
       year: mYear,
@@ -204,6 +175,9 @@ export default function QuestionsSection(props: {
       tech: mTech,
       copy: mCopy,
       avis: mAvis,
+      firstCRA: mFirstCRA,
+      firstQuebec: mFirstQuebec,
+      crypto: mCrypto,
       block: blockOk ? ("ok" as Mark) : ("bad" as Mark),
     };
   }, [
@@ -217,6 +191,9 @@ export default function QuestionsSection(props: {
     appelerTechnicien,
     copieImpots,
     avisCotisation,
+    premiereDeclarationARC,
+    premiereDeclarationQuebec,
+    cryptoactifs,
   ]);
 
   return (
@@ -282,6 +259,32 @@ export default function QuestionsSection(props: {
         />
 
         <YesNoField
+          name="premiereDeclarationARC"
+          label={<LabelWithMark text="Est-ce votre première déclaration de revenus à l’ARC ?" mark={marks.firstCRA} />}
+          value={premiereDeclarationARC}
+          onChange={setPremiereDeclarationARC}
+        />
+
+        <YesNoField
+          name="premiereDeclarationQuebec"
+          label={<LabelWithMark text="Est-ce votre première déclaration de revenus du Québec ?" mark={marks.firstQuebec} />}
+          value={premiereDeclarationQuebec}
+          onChange={setPremiereDeclarationQuebec}
+        />
+
+        <YesNoField
+          name="cryptoactifs"
+          label={
+            <LabelWithMark
+              text="Avez-vous reçu, détenu, vendu, échangé ou donné des cryptoactifs durant l’année ?"
+              mark={marks.crypto}
+            />
+          }
+          value={cryptoactifs}
+          onChange={setCryptoactifs}
+        />
+
+        <YesNoField
           name="appelerTechnicien"
           label={<LabelWithMark text={L.questions.techCall} mark={marks.tech} />}
           value={appelerTechnicien}
@@ -299,15 +302,10 @@ export default function QuestionsSection(props: {
         />
 
         <SelectField<AvisCotisation>
-          label={<LabelWithMark text={avisText.label} mark={marks.avis} />}
+          label={<LabelWithMark text="Comment souhaitez-vous recevoir votre avis de cotisation ?" mark={marks.avis} />}
           value={avisCotisation}
           onChange={setAvisCotisation}
           options={[
-            { value: "poste", label: avisText.mail },
-            { value: "gouvernement", label: avisText.government },
+            { value: "poste", label: "Par la poste" },
+            { value: "gouvernement", label: "Sur le site du gouvernement" },
           ]}
-        />
-      </div>
-    </section>
-  );
-}
