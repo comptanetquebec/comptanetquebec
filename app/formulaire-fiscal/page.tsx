@@ -633,6 +633,11 @@ const draftData: Formdata = useMemo(() => {
     [lang]
   );
 
+  const showEnfantsSection = useMemo(() => {
+    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
+    return nb > 0;
+  }, [nbPersonnesMaison3112]);
+
   /* ===================== Validation (bloquant) ===================== */
   const step1Errors = useMemo(() => {
     const errors: string[] = [];
@@ -920,11 +925,6 @@ const draftData: Formdata = useMemo(() => {
   ]);
 
   const canContinue = step1Errors.length === 0;
-
-  const showEnfantsSection = useMemo(() => {
-    const nb = Number((nbPersonnesMaison3112 || "").trim() || "0");
-    return nb > 0;
-  }, [nbPersonnesMaison3112]);
 
   /* =========================== Status (✅ corrige l’erreur Vercel) =========================== */
   const status = useMemo<BlocksStatus>(() => {
