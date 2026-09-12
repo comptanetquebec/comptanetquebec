@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -404,6 +404,9 @@ const removeEnfant = useCallback((i: number) => {
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
   const [anneeImposition, setAnneeImposition] = useState<string>("");
   const [avisCotisation, setAvisCotisation] = useState<AvisCotisation>("");
+  const [premiereDeclarationARC, setPremiereDeclarationARC] = useState<YesNo>("");
+  const [premiereDeclarationQuebec, setPremiereDeclarationQuebec] = useState<YesNo>("");
+  const [cryptoactifs, setCryptoactifs] = useState<YesNo>("");
 
   /* =========================== Travailleur autonome =========================== */
   const [taActif, setTaActif] = useState(false);
@@ -550,6 +553,9 @@ const draftData: Formdata = useMemo(() => {
       appelerTechnicien: appelerTechnicien as any,
       copieImpots,
       avisCotisation,
+      premiereDeclarationARC: premiereDeclarationARC as any,
+      premiereDeclarationQuebec: premiereDeclarationQuebec as any,
+      cryptoactifs: cryptoactifs as any,
       anneeImposition: anneeImposition.trim(),
       aucunePersonneACharge,
     },
@@ -614,6 +620,9 @@ const draftData: Formdata = useMemo(() => {
   appelerTechnicien,
   copieImpots,
   avisCotisation,
+  premiereDeclarationARC,
+  premiereDeclarationQuebec,
+  cryptoactifs,
   anneeImposition,
   taActif,
   taNomEntreprise,
@@ -850,6 +859,9 @@ const draftData: Formdata = useMemo(() => {
     if (!maisonAcheteeOuVendue) errors.push(t("Question : Achat/vente résidence : obligatoire.", "Question: Bought/sold a residence this year: required.", "Pregunta: Compra/venta de residencia este año: obligatorio."));
     if (!appelerTechnicien) errors.push(t("Question : Appel technicien : obligatoire.", "Question: Do you want a technician to call you: required.", "Pregunta: ¿Desea que un técnico le llame?: obligatorio."));
     if (!copieImpots) errors.push(t("Copie d’impôts : choisissez une option.", "Tax copy: choose an option.", "Copia de impuestos: elija una opción."));
+    if (!premiereDeclarationARC) errors.push(t("Question : Première déclaration à l’ARC : obligatoire.", "Question: First CRA tax return: required.", "Pregunta: Primera declaración ante la CRA: obligatorio."));
+    if (!premiereDeclarationQuebec) errors.push(t("Question : Première déclaration de revenus du Québec : obligatoire.", "Question: First Quebec income tax return: required.", "Pregunta: Primera declaración de ingresos de Quebec: obligatorio."));
+    if (!cryptoactifs) errors.push(t("Question : Cryptoactifs : obligatoire.", "Question: Cryptoassets: required.", "Pregunta: Criptoactivos: obligatorio."));
 
     if (!vExactitude) errors.push(t("Confirmation : ‘Toutes les informations sont exactes’ obligatoire.", "Confirmation: ‘All information is accurate’ is required.", "Confirmación: ‘Toda la información es exacta’ es obligatorio."));
     if (!vDossierComplet) errors.push(t("Confirmation : ‘J’ai fourni toutes les informations requises’ obligatoire.", "Confirmation: ‘I provided all required information’ is required.", "Confirmación: ‘He proporcionado toda la información requerida’ es obligatorio."));
@@ -917,6 +929,9 @@ const draftData: Formdata = useMemo(() => {
     appelerTechnicien,
     copieImpots,
     avisCotisation,
+    premiereDeclarationARC,
+    premiereDeclarationQuebec,
+    cryptoactifs,
     vExactitude,
     vDossierComplet,
     vFraisVariables,
@@ -974,7 +989,10 @@ const draftData: Formdata = useMemo(() => {
       markYesNo(nonResident) === "ok" &&
       markYesNo(maisonAcheteeOuVendue) === "ok" &&
       markYesNo(appelerTechnicien) === "ok" &&
-      !!copieImpots
+      !!copieImpots &&
+      markYesNo(premiereDeclarationARC) === "ok" &&
+      markYesNo(premiereDeclarationQuebec) === "ok" &&
+      markYesNo(cryptoactifs) === "ok"
         ? "ok"
         : "bad";
 
@@ -1068,6 +1086,9 @@ const draftData: Formdata = useMemo(() => {
     maisonAcheteeOuVendue,
     appelerTechnicien,
     copieImpots,
+    premiereDeclarationARC,
+    premiereDeclarationQuebec,
+    cryptoactifs,
     vExactitude,
     vDossierComplet,
     vFraisVariables,
@@ -1306,6 +1327,9 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
   setAppelerTechnicien((q.appelerTechnicien as YesNo) ?? "");
   setCopieImpots(q.copieImpots ?? "");
   setAvisCotisation(q.avisCotisation ?? "");
+  setPremiereDeclarationARC((q.premiereDeclarationARC as YesNo) ?? "");
+  setPremiereDeclarationQuebec((q.premiereDeclarationQuebec as YesNo) ?? "");
+  setCryptoactifs((q.cryptoactifs as YesNo) ?? "");
 
   if (!anneeImposition && q.anneeImposition) {
     setAnneeImposition(q.anneeImposition);
@@ -1622,6 +1646,12 @@ return (
   setCopieImpots={setCopieImpots}
   avisCotisation={avisCotisation}
   setAvisCotisation={setAvisCotisation}
+  premiereDeclarationARC={premiereDeclarationARC}
+  setPremiereDeclarationARC={setPremiereDeclarationARC}
+  premiereDeclarationQuebec={premiereDeclarationQuebec}
+  setPremiereDeclarationQuebec={setPremiereDeclarationQuebec}
+  cryptoactifs={cryptoactifs}
+  setCryptoactifs={setCryptoactifs}
 />
 
 <TravailleurAutonomeSection
