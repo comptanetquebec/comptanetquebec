@@ -1,4 +1,5 @@
 // app/api/checkout/route.ts
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -18,7 +19,9 @@ type CheckoutBody = {
 
 function normalizeLang(v: unknown): Lang {
   const x = String(v ?? "").toLowerCase();
-  return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
+  return x === "fr" || x === "en" || x === "es"
+    ? (x as Lang)
+    : "fr";
 }
 
 function normalizeTaxType(v: unknown): TaxType | null {
@@ -28,7 +31,9 @@ function normalizeTaxType(v: unknown): TaxType | null {
 
 function normalizePayMode(v: unknown): PayMode | null {
   const x = String(v ?? "").toLowerCase();
-  return x === "acompte" || x === "solde" ? (x as PayMode) : null;
+  return x === "acompte" || x === "solde"
+    ? (x as PayMode)
+    : null;
 }
 
 function parseFid(v: unknown): string | null {
@@ -39,7 +44,9 @@ function parseFid(v: unknown): string | null {
 function safeOrigin(req: Request): string {
   const fromHeader = req.headers.get("origin");
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
+
   const origin = (fromHeader || fromEnv || "").trim();
+
   return origin.replace(/\/+$/, "");
 }
 
@@ -56,12 +63,17 @@ function priceIdFor(type: TaxType, mode: PayMode): string {
   };
 
   const pid = map[type];
-  if (!pid) throw new Error(`Missing Stripe Price ID for ${type}:${mode}`);
+
+  if (!pid) {
+    throw new Error(`Missing Stripe Price ID for ${type}:${mode}`);
+  }
+
   return pid;
 }
 
 /**
- * Utilise la fonction DB existante: public.ensure_cq_id(p_fid uuid) returns text
+ * Utilise la fonction DB existante :
+ * public.ensure_cq_id(p_fid uuid) returns text
  */
 async function ensureCqId(fid: string): Promise<string> {
   const supabase = await supabaseServer();
@@ -70,18 +82,23 @@ async function ensureCqId(fid: string): Promise<string> {
     p_fid: fid,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message);
+  }
 
   const cqId = String(data ?? "").trim();
+
   if (!cqId.startsWith("CQ-")) {
     throw new Error("ensure_cq_id returned an invalid cq_id");
   }
+
   return cqId;
 }
 
 export async function POST(req: Request) {
   try {
     const sk = process.env.STRIPE_SECRET_KEY;
+
     if (!sk) {
       return NextResponse.json(
         { error: "Missing STRIPE_SECRET_KEY" },
@@ -90,8 +107,12 @@ export async function POST(req: Request) {
     }
 
     const origin = safeOrigin(req);
+
     if (!origin) {
-      return NextResponse.json({ error: "Missing site origin" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Missing site origin" },
+        { status: 500 }
+      );
     }
 
     const body = (await req.json().catch(() => ({}))) as CheckoutBody;
@@ -102,66 +123,86 @@ export async function POST(req: Request) {
     const fid = parseFid(body.fid);
 
     if (!taxType || !payMode) {
-      return NextResponse.json({ error: "Invalid type/mode" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid type/mode" },
+        { status: 400 }
+      );
     }
+
     if (!fid) {
-      return NextResponse.json({ error: "Missing fid" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing fid" },
+        { status: 400 }
+      );
     }
 
-    // ✅ cq_id pro garanti (DB)
+    // Numéro de dossier CQ garanti par la DB
     const cqId = await ensureCqId(fid);
-
-    const successUrl = new URL("/paiement/succes", origin);
-    successUrl.searchParams.set("lang", lang);
-    successUrl.searchParams.set("fid", fid);
-    successUrl.searchParams.set("type", taxType);
-    successUrl.searchParams.set("mode", payMode);
-
-    const cancelUrl = new URL("/paiement/annule", origin);
-    cancelUrl.searchParams.set("lang", lang);
-    cancelUrl.searchParams.set("fid", fid);
-    cancelUrl.searchParams.set("type", taxType);
-    cancelUrl.searchParams.set("mode", payMode);
 
     const priceId = priceIdFor(taxType, payMode);
 
-    const idempotencyKey = `checkout:${fid}:${taxType}:${payMode}`;
+    /*
+     * En mode Embedded Checkout, Stripe revient sur cette page
+     * après un paiement nécessitant une redirection externe.
+     */
+    const returnUrl = new URL("/paiement/succes", origin);
+
+    returnUrl.searchParams.set("lang", lang);
+    returnUrl.searchParams.set("fid", fid);
+    returnUrl.searchParams.set("type", taxType);
+    returnUrl.searchParams.set("mode", payMode);
 
     const stripe = new Stripe(sk);
 
-const session = await stripe.checkout.sessions.create(
-  {
-    mode: "payment",
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: "embedded",
 
-    automatic_tax: {
-      enabled: true,
-    },
+      mode: "payment",
 
-    client_reference_id: cqId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: successUrl.toString(),
-    cancel_url: cancelUrl.toString(),
-    metadata: {
-      fid,
-      cq_id: cqId,
-      type: taxType,
-      mode: payMode,
-      lang,
-    },
-  },
-  { idempotencyKey }
-);
-    if (!session.url) {
+      automatic_tax: {
+        enabled: true,
+      },
+
+      client_reference_id: cqId,
+
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+
+      return_url: returnUrl.toString(),
+
+      metadata: {
+        fid,
+        cq_id: cqId,
+        type: taxType,
+        mode: payMode,
+        lang,
+      },
+    });
+
+    if (!session.client_secret) {
       return NextResponse.json(
-        { error: "Stripe session missing url" },
+        { error: "Stripe session missing client secret" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ url: session.url }, { status: 200 });
+    return NextResponse.json(
+      {
+        clientSecret: session.client_secret,
+      },
+      { status: 200 }
+    );
   } catch (e: unknown) {
-    // ✅ IMPORTANT: PAS de Stripe.StripeError (ça n'existe pas en TS)
-    const message = e instanceof Error ? e.message : "Checkout error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message =
+      e instanceof Error ? e.message : "Checkout error";
+
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
   }
 }
