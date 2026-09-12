@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -143,10 +142,24 @@ function isValidYear(v: string) {
   return n >= 2000 && n <= 2100;
 }
 function isValidNAS(v: string) {
-  return normalizeNAS(v).length === 9;
+  const sin = normalizeNAS(v);
+  if (!/^\d{9}$/.test(sin)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < sin.length; i++) {
+    let n = Number(sin[i]);
+    if (i % 2 === 1) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+  }
+
+  return sum % 10 === 0;
 }
 function isValidPostal(v: string) {
-  return normalizePostal(v).length === 6;
+  const postal = normalizePostal(v);
+  return /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ]\d[ABCEGHJ-NPRSTVWXYZ]\d$/.test(postal);
 }
 function isValidDateJJMMAAAA(v: string) {
   const s = (v || "").trim();
@@ -779,6 +792,49 @@ const draftData: Formdata = useMemo(() => {
       }
     }
 
+    if (showEnfantsSection) {
+      if (!aucunePersonneACharge && enfants.length === 0) {
+        errors.push(
+          t(
+            "Personnes à charge : ajoutez au moins une personne ou indiquez qu’il n’y en a aucune.",
+            "Dependants: add at least one person or indicate that there are none.",
+            "Personas a cargo: agregue al menos una persona o indique que no hay ninguna."
+          )
+        );
+      }
+
+      enfants.forEach((enfant, index) => {
+        const n = index + 1;
+
+        if (!enfant.prenom.trim())
+          errors.push(t(`Personne à charge ${n} : prénom obligatoire.`, `Dependant ${n}: first name is required.`, `Persona a cargo ${n}: nombre obligatorio.`));
+
+        if (!enfant.nom.trim())
+          errors.push(t(`Personne à charge ${n} : nom obligatoire.`, `Dependant ${n}: last name is required.`, `Persona a cargo ${n}: apellido obligatorio.`));
+
+        if (!isValidDateJJMMAAAA(enfant.dob))
+          errors.push(t(`Personne à charge ${n} : date de naissance invalide.`, `Dependant ${n}: invalid date of birth.`, `Persona a cargo ${n}: fecha de nacimiento inválida.`));
+
+        if (!enfant.sexe)
+          errors.push(t(`Personne à charge ${n} : sexe obligatoire.`, `Dependant ${n}: sex is required.`, `Persona a cargo ${n}: sexo obligatorio.`));
+
+        if (enfant.nas.trim() && !isValidNAS(enfant.nas))
+          errors.push(t(`Personne à charge ${n} : NAS invalide.`, `Dependant ${n}: invalid SIN.`, `Persona a cargo ${n}: NAS/SIN inválido.`));
+
+        if (typeof enfant.aTravaille !== "boolean")
+          errors.push(t(`Personne à charge ${n} : indiquez si elle a travaillé.`, `Dependant ${n}: indicate whether they worked.`, `Persona a cargo ${n}: indique si trabajó.`));
+
+        if (enfant.aTravaille === true && !(enfant.revenuTravailEstime ?? "").trim())
+          errors.push(t(`Personne à charge ${n} : revenu de travail estimé obligatoire.`, `Dependant ${n}: estimated employment income is required.`, `Persona a cargo ${n}: ingreso laboral estimado obligatorio.`));
+
+        if (typeof enfant.handicap !== "boolean")
+          errors.push(t(`Personne à charge ${n} : répondez à la question handicap/déficience.`, `Dependant ${n}: answer the disability/impairment question.`, `Persona a cargo ${n}: responda la pregunta sobre discapacidad/deficiencia.`));
+
+        if (enfant.handicap === true && !enfant.t2201Statut)
+          errors.push(t(`Personne à charge ${n} : indiquez le statut T2201.`, `Dependant ${n}: indicate the T2201 status.`, `Persona a cargo ${n}: indique el estado del T2201.`));
+      });
+    }
+
     if (!habiteSeulTouteAnnee) errors.push(t("Question : Habitez-vous seul(e) toute l’année ? obligatoire.", "Question: Did you live alone all year? required.", "Pregunta: ¿Vivió solo(a) todo el año? obligatorio."));
     if (!nbPersonnesMaison3112.trim()) errors.push(t("Question : Nombre de personnes au 31/12 : obligatoire.", "Question: Number of people living with you on 12/31: required.", "Pregunta: Número de personas que vivían con usted el 31/12: obligatorio."));
 
@@ -846,7 +902,9 @@ const draftData: Formdata = useMemo(() => {
     assuranceMedsConjointPeriodes,
     habiteSeulTouteAnnee,
     nbPersonnesMaison3112,
-    enfants.length,
+    enfants,
+    aucunePersonneACharge,
+    showEnfantsSection,
     biensEtranger100k,
     citoyenCanadien,
     nonResident,
@@ -939,8 +997,29 @@ const draftData: Formdata = useMemo(() => {
         : "bad";
 
     const medsBlock: Mark = medsClientOk === "ok" && medsSpouseOk === "ok" ? "ok" : "bad";
+    const dependantsAreComplete =
+      enfants.length > 0 &&
+      enfants.every(
+        (enfant) =>
+          !!enfant.prenom.trim() &&
+          !!enfant.nom.trim() &&
+          isValidDateJJMMAAAA(enfant.dob) &&
+          !!enfant.sexe &&
+          (!enfant.nas.trim() || isValidNAS(enfant.nas)) &&
+          typeof enfant.aTravaille === "boolean" &&
+          (enfant.aTravaille !== true || !!(enfant.revenuTravailEstime ?? "").trim()) &&
+          typeof enfant.handicap === "boolean" &&
+          (enfant.handicap !== true || !!enfant.t2201Statut)
+      );
+
     const dependantsBlock: Mark =
-  aucunePersonneACharge ? "ok" : enfants.length > 0 ? "ok" : "warn";
+      !showEnfantsSection || aucunePersonneACharge
+        ? "ok"
+        : dependantsAreComplete
+        ? "ok"
+        : enfants.length > 0
+        ? "bad"
+        : "warn";
 
     return {
       client: { block: clientBlock },
@@ -994,7 +1073,7 @@ const draftData: Formdata = useMemo(() => {
     vFraisVariables,
     vDelais,
     vConsentement,
-    enfants.length,
+    enfants,
     aucunePersonneACharge,
     showEnfantsSection,
   ]);
@@ -1148,6 +1227,8 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
   setProvince(client.province ?? "QC");
   setCodePostal(client.codePostal ? formatPostalInput(client.codePostal) : "");
   setCourriel(client.courriel ?? "");
+  setHandicap(typeof client.handicap === "boolean" ? client.handicap : undefined);
+  setT2201Statut(client.t2201Statut ?? "");
 
   const cj = form?.conjoint ?? null;
   setAUnConjoint(!!cj);
@@ -1209,9 +1290,13 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
   }
 
   setEnfants(form?.personnesACharge ?? []);
-  setAucunePersonneACharge((form?.personnesACharge ?? []).length === 0);
 
   const q = form?.questionsGenerales ?? {};
+  setAucunePersonneACharge(
+    typeof q.aucunePersonneACharge === "boolean"
+      ? q.aucunePersonneACharge
+      : (form?.personnesACharge ?? []).length === 0
+  );
   setHabiteSeulTouteAnnee((q.habiteSeulTouteAnnee as YesNo) ?? "");
   setNbPersonnesMaison3112(q.nbPersonnesMaison3112 ?? "");
   setBiensEtranger100k((q.biensEtranger100k as YesNo) ?? "");
