@@ -183,6 +183,8 @@ type FormConjointdata = {
   telConjoint: string;
   telCellConjoint: string;
   courrielConjoint: string;
+  disability?: YesNo;
+  t2201Status?: string;
   revenuNetConjoint: string;
 };
 
@@ -208,6 +210,8 @@ type Formdata = {
     tel?: string;
     telCell?: string;
     courriel?: string;
+    disability?: YesNo;
+    t2201Status?: string;
 
     adresse?: string;
     app?: string;
@@ -308,6 +312,7 @@ function Inner({
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const [formulaireId, setFormulaireId] = useState<string | null>(fidUrl || null);
@@ -329,6 +334,8 @@ function Inner({
   const [tel, setTel] = useState("");
   const [telCell, setTelCell] = useState("");
   const [courriel, setCourriel] = useState("");
+  const [clientDisability, setClientDisability] = useState<YesNo>("");
+  const [clientT2201Status, setClientT2201Status] = useState("");
 
   const [adresse, setAdresse] = useState("");
   const [app, setApp] = useState("");
@@ -347,6 +354,8 @@ function Inner({
   const [telConjoint, setTelConjoint] = useState("");
   const [telCellConjoint, setTelCellConjoint] = useState("");
   const [courrielConjoint, setCourrielConjoint] = useState("");
+  const [spouseDisability, setSpouseDisability] = useState<YesNo>("");
+  const [spouseT2201Status, setSpouseT2201Status] = useState("");
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // ====== Assurance meds (QC)
@@ -400,6 +409,8 @@ function Inner({
           telConjoint: normalizePhone(telConjoint),
           telCellConjoint: normalizePhone(telCellConjoint),
           courrielConjoint: courrielConjoint.trim().toLowerCase(),
+          disability: spouseDisability,
+          t2201Status: spouseDisability === "yes" ? spouseT2201Status : "",
           revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
         }
       : null;
@@ -431,6 +442,8 @@ function Inner({
         tel: normalizePhone(tel),
         telCell: normalizePhone(telCell),
         courriel: courriel.trim().toLowerCase(),
+        disability: clientDisability,
+        t2201Status: clientDisability === "yes" ? clientT2201Status : "",
 
         adresse: adresse.trim(),
         app: app.trim(),
@@ -473,6 +486,8 @@ function Inner({
     tel,
     telCell,
     courriel,
+    clientDisability,
+    clientT2201Status,
     adresse,
     app,
     ville,
@@ -487,6 +502,8 @@ function Inner({
     telConjoint,
     telCellConjoint,
     courrielConjoint,
+    spouseDisability,
+    spouseT2201Status,
     revenuNetConjoint,
     assuranceMedsClient,
     assuranceMedsClientPeriodes,
@@ -557,6 +574,7 @@ if (fid) {
 
   const loadByFid = useCallback(async (fidToLoad: string) => {
     setLoading(true);
+    setHydrated(false);
     hydrating.current = true;
     setMsg(null);
 
@@ -591,6 +609,8 @@ if (fid) {
       setTel(client.tel ? formatPhoneInput(client.tel) : "");
       setTelCell(client.telCell ? formatPhoneInput(client.telCell) : "");
       setCourriel(client.courriel ?? "");
+      setClientDisability(client.disability ?? "");
+      setClientT2201Status(client.t2201Status ?? "");
 
       setAdresse(client.adresse ?? "");
       setApp(client.app ?? "");
@@ -610,6 +630,8 @@ if (fid) {
         setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
         setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
         setCourrielConjoint(cj.courrielConjoint ?? "");
+        setSpouseDisability(cj.disability ?? "");
+        setSpouseT2201Status(cj.t2201Status ?? "");
         setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
       } else {
         setTraiterConjoint(true);
@@ -620,6 +642,8 @@ if (fid) {
         setTelConjoint("");
         setTelCellConjoint("");
         setCourrielConjoint("");
+        setSpouseDisability("");
+        setSpouseT2201Status("");
         setRevenuNetConjoint("");
       }
 
@@ -658,6 +682,7 @@ if (fid) {
       setMsg("❌ Erreur chargement: " + asMsg(e));
     } finally {
       hydrating.current = false;
+      setHydrated(true);
       setLoading(false);
     }
     }, []);
@@ -678,7 +703,10 @@ if (fid) {
         .maybeSingle<FormRow>();
 
       if (error) throw error;
-      if (!row) return;
+      if (!row) {
+        setHydrated(true);
+        return;
+      }
 
       await loadByFid(row.id);
     } catch (e: unknown) {
@@ -701,7 +729,7 @@ useEffect(() => {
 
   // autosave
   useEffect(() => {
-    if (hydrating.current) return;
+    if (!hydrated || hydrating.current) return;
 
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
@@ -711,7 +739,7 @@ useEffect(() => {
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [draftData, lang, saveDraft]);
+  }, [draftData, hydrated, lang, saveDraft]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -871,6 +899,30 @@ useEffect(() => {
             </div>
 
             <div className="ff-mt">
+              <YesNoField
+                name="client-disability"
+                label="Avez-vous une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?"
+                value={clientDisability}
+                onChange={setClientDisability}
+              />
+              {clientDisability === "yes" && (
+                <div className="ff-mt-sm">
+                  <SelectField<string>
+                    label="Statut du formulaire T2201"
+                    value={clientT2201Status}
+                    onChange={setClientT2201Status}
+                    options={[
+                      { value: "approved", label: "T2201 approuvé par l’ARC" },
+                      { value: "pending", label: "T2201 envoyé / en attente" },
+                      { value: "none", label: "Aucun T2201 / pas encore demandé" },
+                      { value: "unknown", label: "Je ne sais pas" },
+                    ]}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="ff-mt">
               <Field label="Adresse" value={adresse} onChange={setAdresse} required />
               <div className="ff-grid4 ff-mt-sm">
                 <Field label="App." value={app} onChange={setApp} placeholder="#201" />
@@ -970,6 +1022,30 @@ useEffect(() => {
                     type="email"
                   />
                   <div />
+                </div>
+
+                <div className="ff-mt">
+                  <YesNoField
+                    name="spouse-disability"
+                    label="Le conjoint a-t-il une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?"
+                    value={spouseDisability}
+                    onChange={setSpouseDisability}
+                  />
+                  {spouseDisability === "yes" && (
+                    <div className="ff-mt-sm">
+                      <SelectField<string>
+                        label="Statut du formulaire T2201 du conjoint"
+                        value={spouseT2201Status}
+                        onChange={setSpouseT2201Status}
+                        options={[
+                          { value: "approved", label: "T2201 approuvé par l’ARC" },
+                          { value: "pending", label: "T2201 envoyé / en attente" },
+                          { value: "none", label: "Aucun T2201 / pas encore demandé" },
+                          { value: "unknown", label: "Je ne sais pas" },
+                        ]}
+                      />
+                    </div>
+                  )}
                 </div>
               </>
             )}
