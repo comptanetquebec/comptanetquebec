@@ -25,6 +25,10 @@ function normalizeLang(v: string | null | undefined): Lang {
   return x === "fr" || x === "en" || x === "es" ? (x as Lang) : "fr";
 }
 
+function tr(lang: Lang, fr: string, en: string, es: string) {
+  return lang === "en" ? en : lang === "es" ? es : fr;
+}
+
 /* ===========================
    Helpers (LOCAL)
 =========================== */
@@ -410,7 +414,7 @@ function Inner({
           telCellConjoint: normalizePhone(telCellConjoint),
           courrielConjoint: courrielConjoint.trim().toLowerCase(),
           disability: spouseDisability,
-          t2201Status: spouseDisability === "yes" ? spouseT2201Status : "",
+          t2201Status: spouseDisability === "oui" ? spouseT2201Status : "",
           revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
         }
       : null;
@@ -443,7 +447,7 @@ function Inner({
         telCell: normalizePhone(telCell),
         courriel: courriel.trim().toLowerCase(),
         disability: clientDisability,
-        t2201Status: clientDisability === "yes" ? clientT2201Status : "",
+        t2201Status: clientDisability === "oui" ? clientT2201Status : "",
 
         adresse: adresse.trim(),
         app: app.trim(),
@@ -901,21 +905,26 @@ useEffect(() => {
             <div className="ff-mt">
               <YesNoField
                 name="client-disability"
-                label="Avez-vous une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?"
+                label={tr(
+                  lang,
+                  "Avez-vous une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?",
+                  "Do you have an impairment or disability that may qualify for a tax credit or deduction?",
+                  "¿Tiene una discapacidad o deficiencia que pueda darle derecho a un crédito o una deducción fiscal?"
+                )}
                 value={clientDisability}
                 onChange={setClientDisability}
               />
-              {clientDisability === "yes" && (
+              {clientDisability === "oui" && (
                 <div className="ff-mt-sm">
                   <SelectField<string>
-                    label="Statut du formulaire T2201"
+                    label={tr(lang, "Statut du formulaire T2201", "T2201 form status", "Estado del formulario T2201")}
                     value={clientT2201Status}
                     onChange={setClientT2201Status}
                     options={[
-                      { value: "approved", label: "T2201 approuvé par l’ARC" },
-                      { value: "pending", label: "T2201 envoyé / en attente" },
-                      { value: "none", label: "Aucun T2201 / pas encore demandé" },
-                      { value: "unknown", label: "Je ne sais pas" },
+                      { value: "approved", label: tr(lang, "T2201 approuvé par l’ARC", "T2201 approved by the CRA", "T2201 aprobado por la CRA") },
+                      { value: "pending", label: tr(lang, "T2201 envoyé / en attente", "T2201 submitted / pending", "T2201 enviado / pendiente") },
+                      { value: "none", label: tr(lang, "Aucun T2201 / pas encore demandé", "No T2201 / not yet requested", "Sin T2201 / aún no solicitado") },
+                      { value: "unknown", label: tr(lang, "Je ne sais pas", "I don't know", "No lo sé") },
                     ]}
                   />
                 </div>
@@ -1027,21 +1036,31 @@ useEffect(() => {
                 <div className="ff-mt">
                   <YesNoField
                     name="spouse-disability"
-                    label="Le conjoint a-t-il une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?"
+                    label={tr(
+                      lang,
+                      "Le conjoint a-t-il une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?",
+                      "Does the spouse have an impairment or disability that may qualify for a tax credit or deduction?",
+                      "¿El cónyuge tiene una discapacidad o deficiencia que pueda darle derecho a un crédito o una deducción fiscal?"
+                    )}
                     value={spouseDisability}
                     onChange={setSpouseDisability}
                   />
-                  {spouseDisability === "yes" && (
+                  {spouseDisability === "oui" && (
                     <div className="ff-mt-sm">
                       <SelectField<string>
-                        label="Statut du formulaire T2201 du conjoint"
+                        label={tr(
+                          lang,
+                          "Statut du formulaire T2201 du conjoint",
+                          "Spouse's T2201 form status",
+                          "Estado del formulario T2201 del cónyuge"
+                        )}
                         value={spouseT2201Status}
                         onChange={setSpouseT2201Status}
                         options={[
-                          { value: "approved", label: "T2201 approuvé par l’ARC" },
-                          { value: "pending", label: "T2201 envoyé / en attente" },
-                          { value: "none", label: "Aucun T2201 / pas encore demandé" },
-                          { value: "unknown", label: "Je ne sais pas" },
+                          { value: "approved", label: tr(lang, "T2201 approuvé par l’ARC", "T2201 approved by the CRA", "T2201 aprobado por la CRA") },
+                          { value: "pending", label: tr(lang, "T2201 envoyé / en attente", "T2201 submitted / pending", "T2201 enviado / pendiente") },
+                          { value: "none", label: tr(lang, "Aucun T2201 / pas encore demandé", "No T2201 / not yet requested", "Sin T2201 / aún no solicitado") },
+                          { value: "unknown", label: tr(lang, "Je ne sais pas", "I don't know", "No lo sé") },
                         ]}
                       />
                     </div>
@@ -1268,21 +1287,36 @@ useEffect(() => {
 
             <YesNoField
               name="premiereDeclarationARC"
-              label="Est-ce votre première déclaration de revenus à l’ARC ?"
+              label={tr(
+                lang,
+                "Est-ce votre première déclaration de revenus à l’ARC ?",
+                "Is this your first income tax return filed with the CRA?",
+                "¿Es esta su primera declaración de impuestos presentada ante la CRA?"
+              )}
               value={premiereDeclarationARC}
               onChange={setPremiereDeclarationARC}
             />
 
             <YesNoField
               name="premiereDeclarationQuebec"
-              label="Est-ce votre première déclaration de revenus du Québec ?"
+              label={tr(
+                lang,
+                "Est-ce votre première déclaration de revenus du Québec ?",
+                "Is this your first Québec income tax return?",
+                "¿Es esta su primera declaración de impuestos de Québec?"
+              )}
               value={premiereDeclarationQuebec}
               onChange={setPremiereDeclarationQuebec}
             />
 
             <YesNoField
               name="cryptoactifs"
-              label="Avez-vous reçu, détenu, vendu, échangé ou donné des cryptoactifs durant l’année ?"
+              label={tr(
+                lang,
+                "Avez-vous reçu, détenu, vendu, échangé ou donné des cryptoactifs durant l’année ?",
+                "Did you receive, hold, sell, exchange, or give cryptoassets during the year?",
+                "¿Recibió, mantuvo, vendió, intercambió o regaló criptoactivos durante el año?"
+              )}
               value={cryptoactifs}
               onChange={setCryptoactifs}
             />
