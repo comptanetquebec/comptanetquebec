@@ -7,9 +7,14 @@ import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
 
-function normalizeLang(v: string | null | undefined): "fr" | "en" | "es" {
+function normalizeLang(
+  v: string | null | undefined
+): "fr" | "en" | "es" {
   const x = (v || "").toLowerCase();
-  return x === "fr" || x === "en" || x === "es" ? x : "fr";
+
+  return x === "fr" || x === "en" || x === "es"
+    ? x
+    : "fr";
 }
 
 export default function PaiementPage() {
@@ -54,12 +59,16 @@ export default function PaiementPage() {
   const copyCqId = async () => {
     if (!cqId) return;
 
-    await navigator.clipboard.writeText(cqId);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(cqId);
+      setCopied(true);
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Erreur copie cq_id:", error);
+    }
   };
 
   const goInterac = async () => {
@@ -87,23 +96,32 @@ export default function PaiementPage() {
         })
         .eq("id", fid);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       router.push(
-  `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(
-    fid
-  )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(
-    lang
-  )}&cq=${encodeURIComponent(cqId || "")}`
-);
-    } catch (error: any) {
+        `/formulaire-fiscal/confirmation?fid=${encodeURIComponent(
+          fid
+        )}&type=${encodeURIComponent(
+          type
+        )}&lang=${encodeURIComponent(
+          lang
+        )}&cq=${encodeURIComponent(cqId || "")}`
+      );
+    } catch (error: unknown) {
       console.error("Erreur Supabase:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : t("inconnue", "unknown", "desconocido");
 
       setErrorMsg(
         t(
-          `Erreur : ${error?.message || "inconnue"}`,
-          `Error: ${error?.message || "unknown"}`,
-          `Error: ${error?.message || "desconocido"}`
+          `Erreur : ${message}`,
+          `Error: ${message}`,
+          `Error: ${message}`
         )
       );
     } finally {
@@ -112,10 +130,23 @@ export default function PaiementPage() {
   };
 
   const goStripe = () => {
+    if (!fid) {
+      setErrorMsg(
+        t(
+          "Numéro de dossier introuvable.",
+          "File ID not found.",
+          "No se encontró el número de expediente."
+        )
+      );
+      return;
+    }
+
     router.push(
       `/formulaire-fiscal/envoyer-dossier?fid=${encodeURIComponent(
         fid
-      )}&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(lang)}`
+      )}&type=${encodeURIComponent(
+        type
+      )}&lang=${encodeURIComponent(lang)}`
     );
   };
 
@@ -130,10 +161,15 @@ export default function PaiementPage() {
               width={120}
               height={40}
               priority
-              style={{ height: 40, width: "auto" }}
+              style={{
+                height: 40,
+                width: "auto",
+              }}
             />
+
             <div className="ff-brand-text">
               <strong>ComptaNet Québec</strong>
+
               <span>
                 {t(
                   "Étape 3/4 — Paiement",
@@ -145,7 +181,12 @@ export default function PaiementPage() {
           </div>
 
           <div className="ff-header-right">
-            <Steps step={3} lang={lang} fid={fid} type={type} />
+            <Steps
+              step={3}
+              lang={lang}
+              fid={fid}
+              type={type}
+            />
           </div>
         </header>
 
@@ -157,6 +198,7 @@ export default function PaiementPage() {
               "Pago de su expediente"
             )}
           </h1>
+
           <p>
             {t(
               "Choisissez votre mode de paiement pour poursuivre.",
@@ -167,11 +209,21 @@ export default function PaiementPage() {
         </div>
 
         <div className="ff-form">
+          {/* NUMÉRO DE DOSSIER */}
           <section
             className="ff-card"
-            style={{ marginBottom: 20, textAlign: "center" }}
+            style={{
+              marginBottom: 20,
+              textAlign: "center",
+            }}
           >
-            <p style={{ marginTop: 0, marginBottom: 8, fontWeight: 700 }}>
+            <p
+              style={{
+                marginTop: 0,
+                marginBottom: 8,
+                fontWeight: 700,
+              }}
+            >
               {t(
                 "Numéro de dossier",
                 "File number",
@@ -179,7 +231,12 @@ export default function PaiementPage() {
               )}
             </p>
 
-            <h2 style={{ margin: 0, fontSize: 28 }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 28,
+              }}
+            >
               {cqId || "..."}
             </h2>
 
@@ -205,12 +262,24 @@ export default function PaiementPage() {
               disabled={!cqId}
             >
               {copied
-                ? t("Copié !", "Copied!", "¡Copiado!")
-                : t("Copier le numéro", "Copy number", "Copiar número")}
+                ? t(
+                    "Copié !",
+                    "Copied!",
+                    "¡Copiado!"
+                  )
+                : t(
+                    "Copier le numéro",
+                    "Copy number",
+                    "Copiar número"
+                  )}
             </button>
           </section>
 
-          <section className="ff-card" style={{ marginBottom: 20 }}>
+          {/* VIREMENT INTERAC */}
+          <section
+            className="ff-card"
+            style={{ marginBottom: 20 }}
+          >
             <h2 style={{ marginTop: 0 }}>
               {t(
                 "Virement Interac (recommandé)",
@@ -228,11 +297,24 @@ export default function PaiementPage() {
             </p>
 
             <p>
-              <strong>{t("Montant :", "Amount:", "Monto:")}</strong> 100 $
+              <strong>
+                {t(
+                  "Montant :",
+                  "Amount:",
+                  "Monto:"
+                )}
+              </strong>{" "}
+              100 $
             </p>
 
             <p>
-              <strong>{t("Courriel :", "Email:", "Correo:")}</strong>{" "}
+              <strong>
+                {t(
+                  "Courriel :",
+                  "Email:",
+                  "Correo:"
+                )}
+              </strong>{" "}
               comptanetquebec@gmail.com
             </p>
 
@@ -278,7 +360,11 @@ export default function PaiementPage() {
                 aria-busy={loadingInterac}
               >
                 {loadingInterac
-                  ? t("Enregistrement...", "Saving...", "Guardando...")
+                  ? t(
+                      "Enregistrement...",
+                      "Saving...",
+                      "Guardando..."
+                    )
                   : t(
                       "J’ai envoyé le virement",
                       "I sent the transfer",
@@ -288,32 +374,40 @@ export default function PaiementPage() {
             </div>
           </section>
 
+          {/* CARTE + LINK */}
           <section className="ff-card">
             <h2 style={{ marginTop: 0 }}>
               {t(
-                "Paiement par carte",
-                "Card payment",
-                "Pago con tarjeta"
+                "Paiement par carte ou Link",
+                "Card or Link payment",
+                "Pago con tarjeta o Link"
               )}
             </h2>
 
             <p>
               {t(
-                "Paiement sécurisé avec Stripe.",
-                "Secure payment with Stripe.",
-                "Pago seguro con Stripe."
+                "Paiement sécurisé directement dans ComptaNet Québec.",
+                "Secure payment directly within ComptaNet Québec.",
+                "Pago seguro directamente en ComptaNet Québec."
               )}
             </p>
 
             <p>
-              <strong>{t("Montant :", "Amount:", "Monto:")}</strong> 100 $
+              <strong>
+                {t(
+                  "Montant :",
+                  "Amount:",
+                  "Monto:"
+                )}
+              </strong>{" "}
+              100 $
             </p>
 
             <p>
               {t(
-                "Vous serez redirigé vers l’étape finale de paiement sécurisé.",
-                "You will be redirected to the final secure payment step.",
-                "Será redirigido al paso final de pago seguro."
+                "Payez par carte ou utilisez Link pour un paiement plus rapide.",
+                "Pay by card or use Link for faster checkout.",
+                "Pague con tarjeta o utilice Link para un pago más rápido."
               )}
             </p>
 
@@ -323,7 +417,11 @@ export default function PaiementPage() {
                 className="ff-btn ff-btn-outline ff-btn-big"
                 onClick={goStripe}
               >
-                {t("Payer par carte", "Pay by card", "Pagar con tarjeta")}
+                {t(
+                  "Payer par carte ou Link",
+                  "Pay by card or Link",
+                  "Pagar con tarjeta o Link"
+                )}
               </button>
             </div>
           </section>
