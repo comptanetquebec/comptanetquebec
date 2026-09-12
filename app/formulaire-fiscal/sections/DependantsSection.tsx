@@ -3,9 +3,16 @@
 
 import React, { useMemo } from "react";
 import { Field, SelectField, YesNoField } from "../ui";
-import type { Child, Sexe } from "../types";
+import type {
+  Child,
+  Sexe,
+  T2201Statut,
+} from "../types";
 import type { CopyPack } from "../copy";
-import { formatDateInput, formatNASInput } from "../formatters";
+import {
+  formatDateInput,
+  formatNASInput,
+} from "../formatters";
 import { normalizeNAS } from "../helpers";
 
 /* ============================================================
@@ -31,7 +38,6 @@ const LOCAL_TEXT = {
     ok: "Valide",
     bad: "À corriger",
     warn: "À compléter",
-
     choose: "Choisir…",
 
     noDependants:
@@ -46,20 +52,41 @@ const LOCAL_TEXT = {
     estimatedIncome:
       "Revenu de travail estimé pour l’année",
 
-    estimatedIncomePlaceholder: "Ex. : 8 500",
+    estimatedIncomePlaceholder:
+      "Ex. : 8 500",
 
     estimatedIncomeHint:
       "Indiquez le revenu de travail approximatif avant impôt.",
 
     sinHint:
       "Laissez le NAS vide si vous ne l’avez pas.",
+
+    disability:
+      "Cette personne à charge a-t-elle une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?",
+
+    t2201:
+      "Statut du formulaire T2201 – Certificat pour le crédit d’impôt pour personnes handicapées",
+
+    t2201Approved:
+      "Approuvé par l’ARC",
+
+    t2201Pending:
+      "En attente d’une décision",
+
+    t2201No:
+      "Non / aucun formulaire T2201",
+
+    t2201Unknown:
+      "Je ne sais pas",
+
+    disabilityHint:
+      "Si oui, indiquez le statut du formulaire T2201 afin que ComptaNet Québec puisse vérifier les crédits applicables.",
   },
 
   en: {
     ok: "Valid",
     bad: "Needs correction",
     warn: "To complete",
-
     choose: "Select…",
 
     noDependants:
@@ -74,20 +101,41 @@ const LOCAL_TEXT = {
     estimatedIncome:
       "Estimated employment income for the year",
 
-    estimatedIncomePlaceholder: "Ex.: 8,500",
+    estimatedIncomePlaceholder:
+      "Ex.: 8,500",
 
     estimatedIncomeHint:
       "Enter the approximate employment income before tax.",
 
     sinHint:
       "Leave the SIN blank if you do not have it.",
+
+    disability:
+      "Does this dependant have an impairment or disability that may qualify for a tax credit or deduction?",
+
+    t2201:
+      "Status of Form T2201 – Disability Tax Credit Certificate",
+
+    t2201Approved:
+      "Approved by the CRA",
+
+    t2201Pending:
+      "Awaiting a decision",
+
+    t2201No:
+      "No / no T2201 form",
+
+    t2201Unknown:
+      "I don't know",
+
+    disabilityHint:
+      "If yes, indicate the status of Form T2201 so ComptaNet Québec can review the applicable tax credits.",
   },
 
   es: {
     ok: "Válido",
     bad: "Debe corregirse",
     warn: "Por completar",
-
     choose: "Seleccionar…",
 
     noDependants:
@@ -102,13 +150,35 @@ const LOCAL_TEXT = {
     estimatedIncome:
       "Ingreso laboral estimado del año",
 
-    estimatedIncomePlaceholder: "Ej.: 8 500",
+    estimatedIncomePlaceholder:
+      "Ej.: 8 500",
 
     estimatedIncomeHint:
       "Indique el ingreso laboral aproximado antes de impuestos.",
 
     sinHint:
       "Deje el NAS en blanco si no lo tiene.",
+
+    disability:
+      "¿Esta persona a cargo tiene una deficiencia o discapacidad que podría dar derecho a un crédito o deducción fiscal?",
+
+    t2201:
+      "Estado del formulario T2201 – Certificado para el crédito fiscal por discapacidad",
+
+    t2201Approved:
+      "Aprobado por la CRA",
+
+    t2201Pending:
+      "En espera de una decisión",
+
+    t2201No:
+      "No / ningún formulario T2201",
+
+    t2201Unknown:
+      "No lo sé",
+
+    disabilityHint:
+      "Si la respuesta es sí, indique el estado del formulario T2201 para que ComptaNet Québec pueda verificar los créditos fiscales aplicables.",
   },
 } as const;
 
@@ -230,7 +300,9 @@ function isFilled(v: string) {
 function isValidDateJJMMAAAA(v: string) {
   const value = (v || "").trim();
 
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+  if (
+    !/^\d{2}\/\d{2}\/\d{4}$/.test(value)
+  ) {
     return false;
   }
 
@@ -263,17 +335,10 @@ function isValidDateJJMMAAAA(v: string) {
   return dd >= 1 && dd <= daysInMonth;
 }
 
-/*
-  NAS facultatif :
-  - vide = accepté
-  - rempli = doit être un NAS valide
-*/
 function isValidSINIfAny(v: string) {
   const sin = normalizeNAS(v);
 
-  if (!sin) {
-    return true;
-  }
+  if (!sin) return true;
 
   if (sin.length !== 9) {
     return false;
@@ -304,9 +369,7 @@ function isValidIncome(v: string) {
     .replace(/\s+/g, "")
     .replace(",", ".");
 
-  if (!value) {
-    return false;
-  }
+  if (!value) return false;
 
   if (!/^\d+(\.\d{1,2})?$/.test(value)) {
     return false;
@@ -371,7 +434,7 @@ export default function DependantsSection(props: {
   const T = LOCAL_TEXT[lang];
 
   /* ==========================================================
-     VALIDATION DU BLOC
+     VALIDATION GLOBALE
   ========================================================== */
 
   const blockMark: Mark = useMemo(() => {
@@ -384,26 +447,14 @@ export default function DependantsSection(props: {
     }
 
     const allOk = enfants.every((e) => {
-      const okPrenom =
-        isFilled(e.prenom);
-
-      const okNom =
-        isFilled(e.nom);
-
+      const okPrenom = isFilled(e.prenom);
+      const okNom = isFilled(e.nom);
       const okDob =
         isValidDateJJMMAAAA(e.dob);
-
-      const okSexe =
-        isFilled(e.sexe);
-
+      const okSexe = isFilled(e.sexe);
       const okNas =
         isValidSINIfAny(e.nas);
 
-      /*
-        Pour les anciens dossiers où aTravaille
-        n'existe pas encore, on considère que
-        la question n'a pas été répondue.
-      */
       const travailRepondu =
         typeof e.aTravaille === "boolean";
 
@@ -414,6 +465,14 @@ export default function DependantsSection(props: {
             )
           : e.aTravaille === false;
 
+      const handicapRepondu =
+        typeof e.handicap === "boolean";
+
+      const t2201Ok =
+        e.handicap === true
+          ? !!e.t2201Statut
+          : e.handicap === false;
+
       return (
         okPrenom &&
         okNom &&
@@ -421,31 +480,24 @@ export default function DependantsSection(props: {
         okSexe &&
         okNas &&
         travailRepondu &&
-        revenuOk
+        revenuOk &&
+        handicapRepondu &&
+        t2201Ok
       );
     });
 
     return allOk ? "ok" : "bad";
-  }, [
-    enfants,
-    aucunePersonneACharge,
-  ]);
+  }, [enfants, aucunePersonneACharge]);
 
-  /*
-    Les hooks sont appelés avant ce return,
-    pour respecter les règles React.
-  */
   if (!show) {
     return null;
   }
 
-  /* ==========================================================
-     AFFICHAGE
-  ========================================================== */
-
   return (
     <section className="ff-card">
-      {/* EN-TÊTE */}
+      {/* ======================================================
+          EN-TÊTE
+      ====================================================== */}
 
       <div className="ff-card-head">
         <div
@@ -470,7 +522,9 @@ export default function DependantsSection(props: {
         </p>
       </div>
 
-      {/* AUCUNE PERSONNE À CHARGE */}
+      {/* ======================================================
+          AUCUNE PERSONNE À CHARGE
+      ====================================================== */}
 
       {aucunePersonneACharge ? (
         <div
@@ -482,9 +536,7 @@ export default function DependantsSection(props: {
             color: "#14532d",
           }}
         >
-          <span>
-            {T.noDependants}
-          </span>
+          <span>{T.noDependants}</span>
 
           <MarkIcon
             mark="ok"
@@ -492,8 +544,6 @@ export default function DependantsSection(props: {
           />
         </div>
       ) : enfants.length === 0 ? (
-        /* AUCUN ENFANT ENCORE AJOUTÉ */
-
         <div
           className="ff-empty"
           style={{
@@ -502,9 +552,7 @@ export default function DependantsSection(props: {
             gap: 10,
           }}
         >
-          <span>
-            {L.dependants.none}
-          </span>
+          <span>{L.dependants.none}</span>
 
           <MarkIcon
             mark="warn"
@@ -512,10 +560,12 @@ export default function DependantsSection(props: {
           />
         </div>
       ) : (
-        /* PERSONNES À CHARGE */
-
         <div className="ff-stack">
           {enfants.map((enf, i) => {
+            /* ================================================
+               VALIDATION DE CETTE PERSONNE
+            ================================================ */
+
             const okPrenom =
               isFilled(enf.prenom);
 
@@ -523,9 +573,7 @@ export default function DependantsSection(props: {
               isFilled(enf.nom);
 
             const okDob =
-              isValidDateJJMMAAAA(
-                enf.dob
-              );
+              isValidDateJJMMAAAA(enf.dob);
 
             const okSexe =
               isFilled(enf.sexe);
@@ -545,6 +593,15 @@ export default function DependantsSection(props: {
                   )
                 : enf.aTravaille === false;
 
+            const handicapRepondu =
+              typeof enf.handicap ===
+              "boolean";
+
+            const t2201Ok =
+              enf.handicap === true
+                ? !!enf.t2201Statut
+                : enf.handicap === false;
+
             const childOk =
               okPrenom &&
               okNom &&
@@ -552,7 +609,9 @@ export default function DependantsSection(props: {
               okSexe &&
               okNas &&
               travailRepondu &&
-              revenuOk;
+              revenuOk &&
+              handicapRepondu &&
+              t2201Ok;
 
             const childMark: Mark =
               childOk ? "ok" : "bad";
@@ -564,12 +623,23 @@ export default function DependantsSection(props: {
                 ? "non"
                 : "";
 
+            const handicapValue: YesNo =
+              enf.handicap === true
+                ? "oui"
+                : enf.handicap === false
+                ? "non"
+                : "";
+
+            /* ================================================
+               AFFICHAGE
+            ================================================ */
+
             return (
               <div
                 key={`enf-${i}`}
                 className="ff-childbox"
               >
-                {/* EN-TÊTE PERSONNE À CHARGE */}
+                {/* EN-TÊTE */}
 
                 <div
                   className="ff-childhead"
@@ -617,7 +687,9 @@ export default function DependantsSection(props: {
                   </button>
                 </div>
 
-                {/* IDENTITÉ */}
+                {/* ============================================
+                    IDENTITÉ
+                ============================================ */}
 
                 <div className="ff-grid2">
                   <Field
@@ -682,16 +754,12 @@ export default function DependantsSection(props: {
                     autoComplete="off"
                   />
 
-                  {/* DATE DE NAISSANCE */}
-
                   <Field
                     label={
                       <LabelWithMark
                         text={L.fields.dob}
                         mark={
-                          okDob
-                            ? "ok"
-                            : "bad"
+                          okDob ? "ok" : "bad"
                         }
                         lang={lang}
                       />
@@ -701,9 +769,7 @@ export default function DependantsSection(props: {
                       updateEnfant(
                         i,
                         "dob",
-                        formatDateInput(
-                          value
-                        )
+                        formatDateInput(value)
                       )
                     }
                     placeholder={
@@ -720,19 +786,14 @@ export default function DependantsSection(props: {
                     autoComplete="off"
                   />
 
-                  {/* NAS FACULTATIF */}
-
                   <Field
                     label={
                       <LabelWithMark
                         text={
-                          L.dependants
-                            .sinIfAny
+                          L.dependants.sinIfAny
                         }
                         mark={
-                          okNas
-                            ? "ok"
-                            : "bad"
+                          okNas ? "ok" : "bad"
                         }
                         lang={lang}
                       />
@@ -742,9 +803,7 @@ export default function DependantsSection(props: {
                       updateEnfant(
                         i,
                         "nas",
-                        formatNASInput(
-                          value
-                        )
+                        formatNASInput(value)
                       )
                     }
                     placeholder={
@@ -818,9 +877,9 @@ export default function DependantsSection(props: {
                   />
                 </div>
 
-                {/* ==================================================
+                {/* ============================================
                     TRAVAIL / REVENU
-                ================================================== */}
+                ============================================ */}
 
                 <div
                   className="ff-mt"
@@ -859,10 +918,6 @@ export default function DependantsSection(props: {
                           false
                         );
 
-                        /*
-                          Si Non, on vide l'ancien
-                          revenu éventuellement entré.
-                        */
                         updateEnfant(
                           i,
                           "revenuTravailEstime",
@@ -881,8 +936,6 @@ export default function DependantsSection(props: {
                         : "invalid"
                     }
                   />
-
-                  {/* REVENU SI OUI */}
 
                   {enf.aTravaille === true ? (
                     <div className="ff-mt-sm">
@@ -931,13 +984,143 @@ export default function DependantsSection(props: {
                     </div>
                   ) : null}
                 </div>
+
+                {/* ============================================
+                    HANDICAP / DÉFICIENCE
+                ============================================ */}
+
+                <div
+                  className="ff-mt"
+                  style={{
+                    paddingTop: 14,
+                    borderTop:
+                      "1px solid rgba(0,0,0,.08)",
+                  }}
+                >
+                  <YesNoField
+                    label={
+                      <LabelWithMark
+                        text={T.disability}
+                        mark={
+                          handicapRepondu
+                            ? "ok"
+                            : "bad"
+                        }
+                        lang={lang}
+                      />
+                    }
+                    value={handicapValue}
+                    onChange={(value) => {
+                      if (value === "oui") {
+                        updateEnfant(
+                          i,
+                          "handicap",
+                          true
+                        );
+                      }
+
+                      if (value === "non") {
+                        updateEnfant(
+                          i,
+                          "handicap",
+                          false
+                        );
+
+                        updateEnfant(
+                          i,
+                          "t2201Statut",
+                          ""
+                        );
+                      }
+                    }}
+                    required
+                    labels={{
+                      yes: T.yes,
+                      no: T.no,
+                    }}
+                    status={
+                      handicapRepondu
+                        ? "valid"
+                        : "invalid"
+                    }
+                  />
+
+                  {/* T2201 SI OUI */}
+
+                  {enf.handicap === true ? (
+                    <div className="ff-mt-sm">
+                      <SelectField<T2201Statut>
+                        label={
+                          <LabelWithMark
+                            text={T.t2201}
+                            mark={
+                              t2201Ok
+                                ? "ok"
+                                : "bad"
+                            }
+                            lang={lang}
+                          />
+                        }
+                        value={
+                          enf.t2201Statut || ""
+                        }
+                        onChange={(value) =>
+                          updateEnfant(
+                            i,
+                            "t2201Statut",
+                            value
+                          )
+                        }
+                        options={[
+                          {
+                            value:
+                              "approuve",
+                            label:
+                              T.t2201Approved,
+                          },
+                          {
+                            value:
+                              "attente",
+                            label:
+                              T.t2201Pending,
+                          },
+                          {
+                            value: "non",
+                            label:
+                              T.t2201No,
+                          },
+                          {
+                            value:
+                              "inconnu",
+                            label:
+                              T.t2201Unknown,
+                          },
+                        ]}
+                        required
+                        placeholderText={
+                          T.choose
+                        }
+                        status={
+                          t2201Ok
+                            ? "valid"
+                            : "invalid"
+                        }
+                        hint={
+                          T.disabilityHint
+                        }
+                      />
+                    </div>
+                  ) : null}
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* AJOUTER UNE PERSONNE À CHARGE */}
+      {/* ======================================================
+          AJOUTER UNE PERSONNE À CHARGE
+      ====================================================== */}
 
       <div className="ff-mt">
         <button
