@@ -1676,6 +1676,7 @@ return (
 
 <ConfirmationsSection
   L={L}
+  lang={lang}
   vExactitude={vExactitude}
   setVExactitude={setVExactitude}
   vDossierComplet={vDossierComplet}
