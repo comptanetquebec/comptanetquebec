@@ -309,10 +309,6 @@ export default function QuestionsSection(props: {
             { value: "poste", label: "Par la poste" },
             { value: "gouvernement", label: "Sur le site du gouvernement" },
           ]}
- options={[
-            { value: "poste", label: "Par la poste" },
-            { value: "gouvernement", label: "Sur le site du gouvernement" },
-          ]}
         />
       </div>
     </section>
