@@ -4,9 +4,22 @@ import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+type PersonneNas = {
+  prenom: string;
+  nom: string;
+  nas: string | null;
+};
+
+type IdentiteNas = {
+  client: string | null;
+  conjoint: string | null;
+  personnesACharge: PersonneNas[];
+};
+
 type AnalyseResponse = {
   ok?: boolean;
   analyse?: string;
+  identiteNas?: IdentiteNas;
   error?: string;
 };
 
@@ -22,6 +35,13 @@ function routeForFormPresentiel(formType: string | null) {
   return "/formulaire-fiscal-presentiel-t1";
 }
 
+function formatNas(nas: string | null | undefined) {
+  const digits = (nas ?? "").replace(/\D+/g, "").slice(0, 9);
+  if (!digits) return "Non fourni";
+  if (digits.length !== 9) return nas ?? "Non fourni";
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 9)}`;
+}
+
 export default function AdminDossierFormulairePage() {
   const sp = useSearchParams();
 
@@ -31,6 +51,7 @@ export default function AdminDossierFormulairePage() {
 
   const [analysing, setAnalysing] = useState(false);
   const [analyse, setAnalyse] = useState<string | null>(null);
+  const [identiteNas, setIdentiteNas] = useState<IdentiteNas | null>(null);
   const [analyseError, setAnalyseError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -69,6 +90,7 @@ export default function AdminDossierFormulairePage() {
       }
 
       setAnalyse(result.analyse);
+      setIdentiteNas(result.identiteNas ?? null);
     } catch (error: unknown) {
       setAnalyseError(
         error instanceof Error
@@ -80,11 +102,38 @@ export default function AdminDossierFormulairePage() {
     }
   }, [fid, analysing]);
 
+  const nasText = useMemo(() => {
+    if (!identiteNas) return "";
+
+    const lines: string[] = [
+      "NAS — INFORMATIONS D'IDENTIFICATION",
+      `Client : ${formatNas(identiteNas.client)}`,
+    ];
+
+    if (identiteNas.conjoint) {
+      lines.push(`Conjoint : ${formatNas(identiteNas.conjoint)}`);
+    }
+
+    identiteNas.personnesACharge.forEach((personne, index) => {
+      if (!personne.nas) return;
+      const nom =
+        [personne.prenom, personne.nom].filter(Boolean).join(" ").trim() ||
+        `Personne à charge ${index + 1}`;
+      lines.push(`${nom} : ${formatNas(personne.nas)}`);
+    });
+
+    return lines.join("\n");
+  }, [identiteNas]);
+
   const copyAnalyse = useCallback(async () => {
     if (!analyse) return;
 
+    const texteComplet = nasText
+      ? `${nasText}\n\n${analyse}`
+      : analyse;
+
     try {
-      await navigator.clipboard.writeText(analyse);
+      await navigator.clipboard.writeText(texteComplet);
       setCopied(true);
 
       window.setTimeout(() => {
@@ -93,7 +142,7 @@ export default function AdminDossierFormulairePage() {
     } catch {
       setAnalyseError("Impossible de copier l'analyse.");
     }
-  }, [analyse]);
+  }, [analyse, nasText]);
 
   if (!fid) {
     return (
@@ -309,6 +358,63 @@ export default function AdminDossierFormulairePage() {
                 {copied ? "✓ Copiée" : "📋 Copier l'analyse"}
               </button>
             </div>
+
+            {identiteNas && (
+              <div
+                style={{
+                  marginBottom: 14,
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "1px solid #cbd5e1",
+                  background: "white",
+                  color: "#111827",
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                }}
+              >
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>
+                  🔒 NAS — affiché depuis le formulaire
+                </div>
+
+                <div>
+                  <strong>Client :</strong> {formatNas(identiteNas.client)}
+                </div>
+
+                {identiteNas.conjoint && (
+                  <div>
+                    <strong>Conjoint :</strong>{" "}
+                    {formatNas(identiteNas.conjoint)}
+                  </div>
+                )}
+
+                {identiteNas.personnesACharge.map((personne, index) => {
+                  if (!personne.nas) return null;
+
+                  const nom =
+                    [personne.prenom, personne.nom]
+                      .filter(Boolean)
+                      .join(" ")
+                      .trim() || `Personne à charge ${index + 1}`;
+
+                  return (
+                    <div key={`${nom}-${index}`}>
+                      <strong>{nom} :</strong> {formatNas(personne.nas)}
+                    </div>
+                  );
+                })}
+
+                <div
+                  style={{
+                    marginTop: 7,
+                    fontSize: 11,
+                    color: "#64748b",
+                  }}
+                >
+                  Ces NAS proviennent directement du formulaire et ne sont pas
+                  envoyés à l'IA.
+                </div>
+              </div>
+            )}
 
             <div
               style={{
