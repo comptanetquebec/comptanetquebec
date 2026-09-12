@@ -85,6 +85,17 @@ export default function PaiementPage() {
       return;
     }
 
+    if (!cqId) {
+      setErrorMsg(
+        t(
+          "Le numéro de dossier n'est pas encore disponible. Veuillez patienter quelques secondes.",
+          "The file number is not available yet. Please wait a few seconds.",
+          "El número de expediente aún no está disponible. Espere unos segundos."
+        )
+      );
+      return;
+    }
+
     try {
       setLoadingInterac(true);
 
@@ -107,7 +118,7 @@ export default function PaiementPage() {
           type
         )}&lang=${encodeURIComponent(
           lang
-        )}&cq=${encodeURIComponent(cqId || "")}`
+        )}&cq=${encodeURIComponent(cqId)}&payment=interac_sent`
       );
     } catch (error: unknown) {
       console.error("Erreur Supabase:", error);
@@ -130,6 +141,8 @@ export default function PaiementPage() {
   };
 
   const goStripe = () => {
+    setErrorMsg("");
+
     if (!fid) {
       setErrorMsg(
         t(
@@ -225,33 +238,44 @@ export default function PaiementPage() {
               }}
             >
               {t(
-                "Numéro de dossier",
-                "File number",
-                "Número de expediente"
+                "Votre numéro de dossier ComptaNet",
+                "Your ComptaNet file number",
+                "Su número de expediente ComptaNet"
               )}
             </p>
 
-            <h2
+            <div
               style={{
-                margin: 0,
-                fontSize: 28,
+                display: "inline-block",
+                padding: "12px 24px",
+                borderRadius: 12,
+                background: "#f4f8ff",
+                border: "2px solid #d4e4ff",
+                marginTop: 4,
               }}
             >
-              {cqId || "..."}
-            </h2>
+              <strong
+                style={{
+                  fontSize: 30,
+                  letterSpacing: 1,
+                }}
+              >
+                {cqId || "..."}
+              </strong>
+            </div>
 
             <p
               style={{
+                marginTop: 14,
+                marginBottom: 12,
                 color: "#b00020",
                 fontWeight: 800,
-                marginTop: 12,
-                marginBottom: 12,
               }}
             >
               {t(
-                "IMPORTANT : inscrivez ce numéro dans le message du virement Interac.",
-                "IMPORTANT: write this number in the Interac transfer message.",
-                "IMPORTANTE: escriba este número en el mensaje de la transferencia Interac."
+                "Conservez ce numéro. Il permet d’identifier votre dossier et votre paiement.",
+                "Keep this number. It identifies your file and your payment.",
+                "Conserve este número. Permite identificar su expediente y su pago."
               )}
             </p>
 
@@ -263,9 +287,9 @@ export default function PaiementPage() {
             >
               {copied
                 ? t(
-                    "Copié !",
-                    "Copied!",
-                    "¡Copiado!"
+                    "Numéro copié !",
+                    "Number copied!",
+                    "¡Número copiado!"
                   )
                 : t(
                     "Copier le numéro",
@@ -275,7 +299,7 @@ export default function PaiementPage() {
             </button>
           </section>
 
-          {/* VIREMENT INTERAC */}
+          {/* INTERAC */}
           <section
             className="ff-card"
             style={{ marginBottom: 20 }}
@@ -290,54 +314,164 @@ export default function PaiementPage() {
 
             <p>
               {t(
-                "Méthode simple et rapide.",
-                "Simple and fast method.",
-                "Método simple y rápido."
+                "Payez votre acompte de 100 $ par virement Interac.",
+                "Pay your $100 deposit by Interac e-Transfer.",
+                "Pague su depósito de $100 mediante transferencia Interac."
               )}
             </p>
 
-            <p>
-              <strong>
-                {t(
-                  "Montant :",
-                  "Amount:",
-                  "Monto:"
-                )}
-              </strong>{" "}
-              100 $
-            </p>
+            <div
+              style={{
+                marginTop: 16,
+                padding: 18,
+                borderRadius: 12,
+                background: "#f7f9fc",
+                border: "1px solid #dde5ef",
+              }}
+            >
+              <p style={{ marginTop: 0 }}>
+                <strong>
+                  {t(
+                    "Montant à envoyer :",
+                    "Amount to send:",
+                    "Monto a enviar:"
+                  )}
+                </strong>{" "}
+                100 $
+              </p>
 
-            <p>
-              <strong>
-                {t(
-                  "Courriel :",
-                  "Email:",
-                  "Correo:"
-                )}
-              </strong>{" "}
-              comptanetquebec@gmail.com
-            </p>
-
-            <p>
-              {t(
-                "Dépôt automatique activé. Aucune question de sécurité requise.",
-                "Autodeposit enabled. No security question required.",
-                "Depósito automático activado. No se requiere pregunta de seguridad."
-              )}
-            </p>
-
-            {cqId ? (
               <p>
                 <strong>
                   {t(
-                    "Message à inscrire :",
-                    "Message to write:",
-                    "Mensaje a escribir:"
+                    "Envoyer à :",
+                    "Send to:",
+                    "Enviar a:"
                   )}
                 </strong>{" "}
-                {cqId}
+                comptanetquebec@gmail.com
               </p>
-            ) : null}
+
+              <p>
+                <strong>
+                  {t(
+                    "Dépôt automatique :",
+                    "Autodeposit:",
+                    "Depósito automático:"
+                  )}
+                </strong>{" "}
+                {t(
+                  "Activé — aucune question de sécurité.",
+                  "Enabled — no security question.",
+                  "Activado — sin pregunta de seguridad."
+                )}
+              </p>
+            </div>
+
+            {/* MESSAGE CQ IMPORTANT */}
+            <div
+              style={{
+                marginTop: 16,
+                padding: 18,
+                borderRadius: 12,
+                border: "2px solid #b00020",
+                background: "#fff8f8",
+                textAlign: "center",
+              }}
+            >
+              <p
+                style={{
+                  marginTop: 0,
+                  marginBottom: 8,
+                  color: "#b00020",
+                  fontWeight: 800,
+                }}
+              >
+                {t(
+                  "IMPORTANT — Message du virement",
+                  "IMPORTANT — Transfer message",
+                  "IMPORTANTE — Mensaje de la transferencia"
+                )}
+              </p>
+
+              <p
+                style={{
+                  marginTop: 0,
+                  marginBottom: 10,
+                }}
+              >
+                {t(
+                  "Dans le message de votre virement Interac, inscrivez exactement :",
+                  "In the message of your Interac e-Transfer, enter exactly:",
+                  "En el mensaje de su transferencia Interac, escriba exactamente:"
+                )}
+              </p>
+
+              <div
+                style={{
+                  display: "inline-block",
+                  padding: "10px 20px",
+                  borderRadius: 10,
+                  background: "#ffffff",
+                  border: "1px solid #e5c4c4",
+                  fontSize: 26,
+                  fontWeight: 800,
+                  letterSpacing: 1,
+                }}
+              >
+                {cqId || "..."}
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="ff-btn ff-btn-outline"
+                  onClick={copyCqId}
+                  disabled={!cqId}
+                >
+                  {copied
+                    ? t(
+                        "Numéro copié !",
+                        "Number copied!",
+                        "¡Número copiado!"
+                      )
+                    : t(
+                        "Copier le numéro",
+                        "Copy number",
+                        "Copiar número"
+                      )}
+                </button>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 18,
+                padding: 14,
+                borderRadius: 10,
+                background: "#f4f8ff",
+              }}
+            >
+              <strong>
+                {t(
+                  "Après avoir effectué votre virement :",
+                  "After sending your transfer:",
+                  "Después de realizar su transferencia:"
+                )}
+              </strong>
+
+              <p
+                style={{
+                  marginBottom: 0,
+                  marginTop: 6,
+                }}
+              >
+                {t(
+                  "Revenez ici et cliquez sur « J’ai envoyé le virement ». Votre dossier sera alors indiqué comme virement envoyé, en attente de confirmation par ComptaNet Québec.",
+                  "Return here and click “I sent the transfer”. Your file will then be marked as transfer sent, awaiting confirmation by ComptaNet Québec.",
+                  "Regrese aquí y haga clic en « Ya envié la transferencia ». Su expediente quedará marcado como transferencia enviada, pendiente de confirmación por ComptaNet Québec."
+                )}
+              </p>
+            </div>
 
             {errorMsg ? (
               <p
@@ -351,12 +485,12 @@ export default function PaiementPage() {
               </p>
             ) : null}
 
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 18 }}>
               <button
                 type="button"
                 className="ff-btn ff-btn-primary ff-btn-big"
                 onClick={goInterac}
-                disabled={loadingInterac}
+                disabled={loadingInterac || !cqId}
                 aria-busy={loadingInterac}
               >
                 {loadingInterac
@@ -366,12 +500,28 @@ export default function PaiementPage() {
                       "Guardando..."
                     )
                   : t(
-                      "J’ai envoyé le virement",
-                      "I sent the transfer",
-                      "Ya envié la transferencia"
+                      "J’ai envoyé le virement Interac",
+                      "I sent the Interac transfer",
+                      "Ya envié la transferencia Interac"
                     )}
               </button>
             </div>
+
+            <p
+              style={{
+                marginTop: 12,
+                marginBottom: 0,
+                fontSize: 14,
+                textAlign: "center",
+                opacity: 0.8,
+              }}
+            >
+              {t(
+                "Ne cliquez sur ce bouton qu’après avoir réellement envoyé le virement.",
+                "Only click this button after you have actually sent the transfer.",
+                "Haga clic en este botón únicamente después de haber enviado realmente la transferencia."
+              )}
+            </p>
           </section>
 
           {/* CARTE + LINK */}
