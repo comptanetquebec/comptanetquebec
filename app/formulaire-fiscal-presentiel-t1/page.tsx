@@ -225,6 +225,9 @@ type Formdata = {
     citoyenCanadien?: YesNo;
     nonResident?: YesNo;
     maisonAcheteeOuVendue?: YesNo;
+    premiereDeclarationARC?: YesNo;
+    premiereDeclarationQuebec?: YesNo;
+    cryptoactifs?: YesNo;
     copieImpots?: CopieImpots;
   };
 };
@@ -375,6 +378,9 @@ function Inner({
   const [citoyenCanadien, setCitoyenCanadien] = useState<YesNo>("");
   const [nonResident, setNonResident] = useState<YesNo>("");
   const [maisonAcheteeOuVendue, setMaisonAcheteeOuVendue] = useState<YesNo>("");
+  const [premiereDeclarationARC, setPremiereDeclarationARC] = useState<YesNo>("");
+  const [premiereDeclarationQuebec, setPremiereDeclarationQuebec] = useState<YesNo>("");
+  const [cryptoactifs, setCryptoactifs] = useState<YesNo>("");
   const [copieImpots, setCopieImpots] = useState<CopieImpots>("");
 
   const draftData: Formdata = useMemo(() => {
@@ -440,6 +446,9 @@ function Inner({
         citoyenCanadien,
         nonResident,
         maisonAcheteeOuVendue,
+        premiereDeclarationARC,
+        premiereDeclarationQuebec,
+        cryptoactifs,
         copieImpots,
       },
     };
@@ -479,6 +488,9 @@ function Inner({
     citoyenCanadien,
     nonResident,
     maisonAcheteeOuVendue,
+    premiereDeclarationARC,
+    premiereDeclarationQuebec,
+    cryptoactifs,
     copieImpots,
   ]);
 
@@ -620,6 +632,9 @@ if (fid) {
       setCitoyenCanadien(q.citoyenCanadien ?? "");
       setNonResident(q.nonResident ?? "");
       setMaisonAcheteeOuVendue(q.maisonAcheteeOuVendue ?? "");
+      setPremiereDeclarationARC(q.premiereDeclarationARC ?? "");
+      setPremiereDeclarationQuebec(q.premiereDeclarationQuebec ?? "");
+      setCryptoactifs(q.cryptoactifs ?? "");
       setCopieImpots((q.copieImpots as CopieImpots) ?? "");
     } catch (e: unknown) {
       setMsg("❌ Erreur chargement: " + asMsg(e));
@@ -1127,6 +1142,27 @@ useEffect(() => {
               label="Achat 1re habitation ou vente résidence principale ?"
               value={maisonAcheteeOuVendue}
               onChange={setMaisonAcheteeOuVendue}
+            />
+
+            <YesNoField
+              name="premiereDeclarationARC"
+              label="Est-ce votre première déclaration de revenus à l’ARC ?"
+              value={premiereDeclarationARC}
+              onChange={setPremiereDeclarationARC}
+            />
+
+            <YesNoField
+              name="premiereDeclarationQuebec"
+              label="Est-ce votre première déclaration de revenus du Québec ?"
+              value={premiereDeclarationQuebec}
+              onChange={setPremiereDeclarationQuebec}
+            />
+
+            <YesNoField
+              name="cryptoactifs"
+              label="Avez-vous reçu, détenu, vendu, échangé ou donné des cryptoactifs durant l’année ?"
+              value={cryptoactifs}
+              onChange={setCryptoactifs}
             />
 
             <SelectField<CopieImpots>
