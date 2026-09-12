@@ -103,6 +103,18 @@ function safePaymentStatus(value: unknown): PaymentStatus {
   return value === "paid" ? "paid" : "unpaid";
 }
 
+function routeForFormPresentiel(formType: string | null | undefined) {
+  const t = (formType ?? "").toLowerCase();
+
+  if (t === "t1" || t.includes("t1")) return "/formulaire-fiscal-presentiel-t1";
+  if (t === "ta" || t.includes("autonome") || t.includes("travailleur")) {
+    return "/formulaire-fiscal-presentiel-ta";
+  }
+  if (t === "t2" || t.includes("t2")) return "/formulaire-fiscal-presentiel-t2";
+
+  return "/formulaire-fiscal-presentiel-t1";
+}
+
 function normalizeRows(input: AdminDossierRow[]): AdminDossierRow[] {
   return (input ?? []).map((row) => ({
     ...row,
@@ -619,9 +631,11 @@ export default function AdminDossiersClient({
                       {/* ACTIONS */}
                       <div className="flex gap-2 xl:justify-end">
                         <Link
-                          href={`/admin/dossiers/${encodeURIComponent(
+                          href={`${routeForFormPresentiel(
+                            row.form_type
+                          )}?fid=${encodeURIComponent(
                             row.formulaire_id
-                          )}`}
+                          )}&lang=fr`}
                           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
                         >
                           Ouvrir
