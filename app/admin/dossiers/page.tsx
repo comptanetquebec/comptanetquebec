@@ -39,10 +39,52 @@ type ClientData = {
     revenus?: string;
     depenses?: string;
   };
+  questionsGenerales?: {
+    anneeImposition?: string | number;
+    annee?: string | number;
+    taxYear?: string | number;
+  };
+  anneeImposition?: string | number;
+  annee?: string | number;
+  taxYear?: string | number;
 };
 
 function safePayment(v: unknown): PaymentStatus {
   return v === "paid" ? "paid" : "unpaid";
+}
+
+function parseTaxYear(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value)) return value;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^\d{4}$/.test(trimmed)) return Number(trimmed);
+  }
+
+  return null;
+}
+
+function resolveTaxYear(form: FormRow, data: ClientData | null): number | null {
+  // Source principale : colonne réelle "annee" de formulaires_fiscaux.
+  const columnYear = parseTaxYear(form.annee);
+  if (columnYear) return columnYear;
+
+  // Repli pour les anciens dossiers si l'année existe déjà dans le JSON.
+  const candidates: unknown[] = [
+    data?.questionsGenerales?.anneeImposition,
+    data?.questionsGenerales?.annee,
+    data?.questionsGenerales?.taxYear,
+    data?.anneeImposition,
+    data?.annee,
+    data?.taxYear,
+  ];
+
+  for (const candidate of candidates) {
+    const year = parseTaxYear(candidate);
+    if (year) return year;
+  }
+
+  return null;
 }
 
 export default async function AdminDossiersPage() {
@@ -66,13 +108,19 @@ export default async function AdminDossiersPage() {
 
   const { data: forms, error: formsErr } = await supabase
     .from("formulaires_fiscaux")
-    .select("id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status")
+    .select(
+      "id, created_at, updated_at, form_type, annee, data, user_id, cq_id, payment_status"
+    )
     .order("created_at", { ascending: false })
     .limit(500)
     .returns<FormRow[]>();
 
   if (formsErr) {
-    return <div className="p-6">Erreur chargement formulaires: {formsErr.message}</div>;
+    return (
+      <div className="p-6">
+        Erreur chargement formulaires: {formsErr.message}
+      </div>
+    );
   }
 
   const list = forms ?? [];
@@ -92,7 +140,10 @@ export default async function AdminDossiersPage() {
 
   if (!docsErr && docsRows) {
     for (const r of docsRows as { formulaire_id: string }[]) {
-      docsMap.set(r.formulaire_id, (docsMap.get(r.formulaire_id) ?? 0) + 1);
+      docsMap.set(
+        r.formulaire_id,
+        (docsMap.get(r.formulaire_id) ?? 0) + 1
+      );
     }
   }
 
@@ -111,14 +162,21 @@ export default async function AdminDossiersPage() {
   }
 
   const rows: AdminDossierRow[] = list.map((f) => {
-    const filled = !!(f.data && typeof f.data === "object" && Object.keys(f.data).length > 0);
-    const st = statusMap.get(f.id);
+    const filled = !!(
+      f.data &&
+      typeof f.data === "object" &&
+      Object.keys(f.data).length > 0
+    );
 
+    const st = statusMap.get(f.id);
     const data = f.data as ClientData | null;
 
-    const client_name = `${data?.client?.prenom ?? ""} ${data?.client?.nom ?? ""}`.trim();
+    const client_name =
+      `${data?.client?.prenom ?? ""} ${data?.client?.nom ?? ""}`.trim();
+
     const client_email = data?.client?.courriel ?? null;
-    const client_phone = data?.client?.telCell || data?.client?.tel || null;
+    const client_phone =
+      data?.client?.telCell || data?.client?.tel || null;
 
     const isTA = !!data?.travailleurAutonome?.actif;
     const formTypeLabel = isTA ? "T1 + TA" : f.form_type ?? null;
@@ -129,12 +187,15 @@ export default async function AdminDossiersPage() {
       client_name: client_name || null,
       client_email,
       client_phone,
-      payment_status: f.payment_status ? safePayment(f.payment_status) : "unpaid",
+      payment_status: f.payment_status
+        ? safePayment(f.payment_status)
+        : "unpaid",
       created_at: f.created_at ?? null,
       status: st?.status ?? "recu",
-      updated_at: st?.updated_at ?? f.updated_at ?? f.created_at ?? null,
+      updated_at:
+        st?.updated_at ?? f.updated_at ?? f.created_at ?? null,
       form_type: formTypeLabel,
-      tax_year: f.annee ?? null,
+      tax_year: resolveTaxYear(f, data),
       form_filled: filled,
       docs_count: docsMap.get(f.id) ?? 0,
     };
