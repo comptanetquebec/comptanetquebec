@@ -35,6 +35,8 @@ export type AdminDossierRow = {
 
 type TabKey = "all" | "todo" | "waiting" | "done";
 
+type YearFilter = "2026" | "2025" | "2024" | "all";
+
 type SortKey =
   | "created_desc"
   | "created_asc"
@@ -181,33 +183,41 @@ export default function AdminDossiersClient({
   const [rows, setRows] =
     useState<AdminDossierRow[]>(normalizedInitial);
 
-  const [tab, setTab] = useState<TabKey>("all");
+  const [tab, setTab] = useState<TabKey>("todo");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_desc");
+  const [yearFilter, setYearFilter] = useState<YearFilter>("2025");
+
+  const yearRows = useMemo(() => {
+    if (yearFilter === "all") return rows;
+
+    const year = Number(yearFilter);
+    return rows.filter((row) => row.tax_year === year);
+  }, [rows, yearFilter]);
 
   const counts = useMemo(() => {
     const result = {
-      all: rows.length,
+      all: yearRows.length,
       todo: 0,
       waiting: 0,
       done: 0,
     };
 
-    for (const row of rows) {
+    for (const row of yearRows) {
       result[rowTab(row.status)]++;
     }
 
     return result;
-  }, [rows]);
+  }, [yearRows]);
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(query);
 
     let result =
       tab === "all"
-        ? rows
-        : rows.filter((row) => rowTab(row.status) === tab);
+        ? yearRows
+        : yearRows.filter((row) => rowTab(row.status) === tab);
 
     if (q) {
       result = result.filter((row) =>
@@ -240,7 +250,7 @@ export default function AdminDossiersClient({
 
       return as.localeCompare(bs);
     });
-  }, [rows, tab, query, sort]);
+  }, [yearRows, tab, query, sort]);
 
   async function updateStatus(
     formulaire_id: string,
@@ -287,7 +297,8 @@ export default function AdminDossiersClient({
   function resetFilters() {
     setQuery("");
     setSort("created_desc");
-    setTab("all");
+    setTab("todo");
+    setYearFilter("2025");
   }
 
   return (
@@ -349,6 +360,38 @@ export default function AdminDossiersClient({
           </div>
         </div>
 
+        {/* YEAR FILTER */}
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-2 text-sm font-bold text-slate-700">
+              Année d’imposition :
+            </span>
+
+            {[
+              ["2025", "2025"],
+              ["2026", "2026"],
+              ["2024", "2024"],
+              ["all", "Toutes"],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  setYearFilter(key as YearFilter);
+                  setTab("todo");
+                }}
+                className={`rounded-xl border px-5 py-2.5 text-sm font-bold transition ${
+                  yearFilter === key
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* STAT CARDS */}
         <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
@@ -388,10 +431,10 @@ export default function AdminDossiersClient({
         <div className="mb-4 flex flex-col justify-between gap-3 xl:flex-row xl:items-center">
           <div className="flex flex-wrap gap-2">
             {[
-              ["all", "Tous", counts.all],
-              ["todo", "À faire", counts.todo],
-              ["waiting", "En attente client", counts.waiting],
-              ["done", "Terminé", counts.done],
+              ["todo", "📥 À faire", counts.todo],
+              ["waiting", "⏱️ En attente client", counts.waiting],
+              ["done", "✅ Terminés", counts.done],
+              ["all", "📚 Tous", counts.all],
             ].map(([key, label, count]) => (
               <button
                 key={String(key)}
