@@ -1,4 +1,4 @@
-// app/formulaire-fiscal/types.ts
+
 
 export type Lang = "fr" | "en" | "es";
 
@@ -208,6 +208,17 @@ export type FormQuestionsdata = {
   copieImpots?: CopieImpots;
 
   avisCotisation?: AvisCotisation;
+
+  /*
+    Nouvelles questions fiscales.
+    Optionnelles pour conserver la compatibilité
+    avec les anciens dossiers déjà enregistrés.
+  */
+  premiereDeclarationARC?: string;
+
+  premiereDeclarationQuebec?: string;
+
+  cryptoactifs?: string;
 
   anneeImposition?: string;
 
