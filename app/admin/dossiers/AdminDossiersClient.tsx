@@ -197,6 +197,11 @@ export default function AdminDossiersClient({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_desc");
+  const [analysingId, setAnalysingId] = useState<string | null>(null);
+  const [analyseResult, setAnalyseResult] = useState<{
+    fid: string;
+    text: string;
+  } | null>(null);
 
   const counts = useMemo(() => {
     const result = {
@@ -292,6 +297,46 @@ export default function AdminDossiersClient({
     if (error) {
       setRows(previousRows);
       alert("Erreur sauvegarde statut: " + error.message);
+    }
+  }
+
+  async function analyseFormulaire(formulaire_id: string) {
+    setAnalysingId(formulaire_id);
+    setAnalyseResult(null);
+
+    try {
+      const response = await fetch("/api/admin/analyse-formulaire", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ fid: formulaire_id }),
+      });
+
+      const result = (await response.json()) as {
+        ok?: boolean;
+        analyse?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !result.ok || !result.analyse) {
+        throw new Error(
+          result.error || "Impossible d'analyser le formulaire."
+        );
+      }
+
+      setAnalyseResult({
+        fid: formulaire_id,
+        text: result.analyse,
+      });
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Erreur pendant l'analyse IA du formulaire."
+      );
+    } finally {
+      setAnalysingId(null);
     }
   }
 
@@ -469,7 +514,7 @@ export default function AdminDossiersClient({
 
         {/* TABLE */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="hidden grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_170px] gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500 xl:grid">
+          <div className="hidden grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_260px] gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500 xl:grid">
             <div>Client</div>
             <div>Contact</div>
             <div>Dossier</div>
@@ -511,7 +556,7 @@ export default function AdminDossiersClient({
                     key={row.formulaire_id}
                     className="px-5 py-5 transition hover:bg-slate-50/70"
                   >
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_170px] xl:items-center xl:gap-3">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_260px] xl:items-center xl:gap-3">
                       {/* CLIENT */}
                       <div className="min-w-0">
                         <div className="truncate font-bold text-slate-900">
@@ -641,6 +686,22 @@ export default function AdminDossiersClient({
                           Ouvrir
                         </Link>
 
+                        <button
+                          type="button"
+                          onClick={() =>
+                            analyseFormulaire(row.formulaire_id)
+                          }
+                          disabled={
+                            analysingId === row.formulaire_id ||
+                            !row.form_filled
+                          }
+                          className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {analysingId === row.formulaire_id
+                            ? "Analyse…"
+                            : "✨ IA"}
+                        </button>
+
                         <Link
                           href={`/admin/dossiers/docs?fid=${encodeURIComponent(
                             row.formulaire_id
@@ -657,6 +718,33 @@ export default function AdminDossiersClient({
             </ul>
           )}
         </div>
+
+        {analyseResult && (
+          <div className="mt-5 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  ✨ Analyse IA du formulaire
+                </h2>
+                <div className="mt-1 text-xs text-slate-400">
+                  Dossier {analyseResult.fid}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAnalyseResult(null)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Fermer
+              </button>
+            </div>
+
+            <pre className="whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-800">
+              {analyseResult.text}
+            </pre>
+          </div>
+        )}
 
         <div className="mt-3 text-right text-xs text-slate-400">
           {filtered.length} dossier
