@@ -1163,6 +1163,7 @@ export default function ClientSection(props: {
         }}
       >
         <YesNoField
+          name="client-disability"
           label={
             <LabelWithMark
               text={T.disability}
