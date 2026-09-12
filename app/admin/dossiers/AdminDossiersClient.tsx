@@ -139,12 +139,14 @@ function StatCard({
   value,
   active,
   onClick,
+  subtitle,
 }: {
   icon: React.ReactNode;
   title: string;
   value: number;
   active?: boolean;
   onClick?: () => void;
+  subtitle?: string;
 }) {
   return (
     <button
@@ -164,6 +166,11 @@ function StatCard({
         <div>
           <div className="text-sm font-medium text-slate-500">{title}</div>
           <div className="mt-1 text-2xl font-bold text-slate-900">{value}</div>
+          {subtitle && (
+            <div className="mt-1 text-xs font-medium text-slate-500">
+              {subtitle}
+            </div>
+          )}
         </div>
       </div>
     </button>
@@ -210,6 +217,29 @@ export default function AdminDossiersClient({
 
     return result;
   }, [yearRows]);
+
+  const globalTodo = useMemo(
+    () => rows.filter((row) => rowTab(row.status) === "todo").length,
+    [rows]
+  );
+
+  const globalTodoByYear = useMemo(() => {
+    const countsByYear = new Map<number, number>();
+
+    for (const row of rows) {
+      if (rowTab(row.status) !== "todo" || row.tax_year == null) continue;
+
+      countsByYear.set(
+        row.tax_year,
+        (countsByYear.get(row.tax_year) ?? 0) + 1
+      );
+    }
+
+    return [2026, 2025, 2024]
+      .filter((year) => (countsByYear.get(year) ?? 0) > 0)
+      .map((year) => `${year}: ${countsByYear.get(year)}`)
+      .join(" · ");
+  }, [rows]);
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(query);
@@ -397,9 +427,13 @@ export default function AdminDossiersClient({
           <StatCard
             icon="📂"
             title="À faire"
-            value={counts.todo}
+            value={globalTodo}
             active={tab === "todo"}
-            onClick={() => setTab("todo")}
+            subtitle={globalTodoByYear || "Aucun dossier à faire"}
+            onClick={() => {
+              setYearFilter("all");
+              setTab("todo");
+            }}
           />
 
           <StatCard
