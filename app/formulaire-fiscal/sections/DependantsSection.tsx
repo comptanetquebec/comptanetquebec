@@ -890,6 +890,7 @@ export default function DependantsSection(props: {
                   }}
                 >
                   <YesNoField
+                    name={`dependant-${i}-worked`}
                     label={
                       <LabelWithMark
                         text={T.worked}
@@ -998,6 +999,7 @@ export default function DependantsSection(props: {
                   }}
                 >
                   <YesNoField
+                    name={`dependant-${i}-disability`}
                     label={
                       <LabelWithMark
                         text={T.disability}
