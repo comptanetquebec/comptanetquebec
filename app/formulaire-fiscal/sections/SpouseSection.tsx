@@ -1344,6 +1344,7 @@ export default function SpouseSection(
             }}
           >
             <YesNoField
+              name="spouse-disability"
               label={
                 <LabelWithMark
                   text={T.disability}
