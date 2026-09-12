@@ -2,20 +2,130 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Field, CheckboxField, SelectField } from "../ui";
-import type { ProvinceCode, EtatCivil } from "../types";
+
+import {
+  Field,
+  CheckboxField,
+  SelectField,
+} from "../ui";
+
+import type {
+  ProvinceCode,
+  EtatCivil,
+} from "../types";
+
 import type { CopyPack } from "../copy";
+
 import {
   formatNASInput,
   formatDateInput,
   formatPhoneInput,
   formatPostalInput,
 } from "../formatters";
-import { firstNonEmpty } from "../helpers";
+
+import {
+  normalizeNAS,
+  normalizePostal,
+  normalizePhone,
+} from "../helpers";
+
+/* ============================================================
+   TYPES
+============================================================ */
 
 type Mark = "ok" | "bad" | "todo";
 
-function MarkIcon({ mark }: { mark: Mark }) {
+type UiLang = "fr" | "en" | "es";
+
+/* ============================================================
+   LANGUE
+============================================================ */
+
+function getUiLang(L: CopyPack): UiLang {
+  if (L.fields.firstName === "First name") return "en";
+  if (L.fields.firstName === "Nombre") return "es";
+  return "fr";
+}
+
+/* ============================================================
+   TEXTES LOCAUX
+============================================================ */
+
+const LOCAL_TEXT = {
+  fr: {
+    ok: "Valide",
+    bad: "À corriger",
+    todo: "À compléter",
+
+    choose: "Choisir…",
+
+    phoneHint:
+      "Au moins un numéro de téléphone valide est requis.",
+
+    marital: {
+      celibataire: "Célibataire",
+      conjointDefait: "Conjoint de fait",
+      marie: "Marié(e)",
+      separe: "Séparé(e)",
+      divorce: "Divorcé(e)",
+      veuf: "Veuf / veuve",
+    },
+  },
+
+  en: {
+    ok: "Valid",
+    bad: "Needs correction",
+    todo: "To complete",
+
+    choose: "Select…",
+
+    phoneHint:
+      "At least one valid phone number is required.",
+
+    marital: {
+      celibataire: "Single",
+      conjointDefait: "Common-law",
+      marie: "Married",
+      separe: "Separated",
+      divorce: "Divorced",
+      veuf: "Widowed",
+    },
+  },
+
+  es: {
+    ok: "Válido",
+    bad: "Debe corregirse",
+    todo: "Por completar",
+
+    choose: "Seleccionar…",
+
+    phoneHint:
+      "Se requiere al menos un número de teléfono válido.",
+
+    marital: {
+      celibataire: "Soltero(a)",
+      conjointDefait: "Unión de hecho",
+      marie: "Casado(a)",
+      separe: "Separado(a)",
+      divorce: "Divorciado(a)",
+      veuf: "Viudo(a)",
+    },
+  },
+} as const;
+
+/* ============================================================
+   ICÔNES DE VALIDATION
+============================================================ */
+
+function MarkIcon({
+  mark,
+  lang,
+}: {
+  mark: Mark;
+  lang: UiLang;
+}) {
+  const T = LOCAL_TEXT[lang];
+
   const cls =
     mark === "ok"
       ? "mark-icon mark-icon--ok"
@@ -24,12 +134,25 @@ function MarkIcon({ mark }: { mark: Mark }) {
       : "mark-icon mark-icon--todo";
 
   const title =
-    mark === "ok" ? "OK" : mark === "bad" ? "À corriger" : "À faire";
+    mark === "ok"
+      ? T.ok
+      : mark === "bad"
+      ? T.bad
+      : T.todo;
 
-  const symbol = mark === "ok" ? "✓" : mark === "bad" ? "✕" : "→";
+  const symbol =
+    mark === "ok"
+      ? "✓"
+      : mark === "bad"
+      ? "✕"
+      : "→";
 
   return (
-    <span className={cls} aria-hidden title={title}>
+    <span
+      className={cls}
+      aria-hidden="true"
+      title={title}
+    >
       {symbol}
     </span>
   );
@@ -38,10 +161,12 @@ function MarkIcon({ mark }: { mark: Mark }) {
 function LabelWithMark({
   text,
   mark,
+  lang,
   required = false,
 }: {
   text: React.ReactNode;
   mark: Mark;
+  lang: UiLang;
   required?: boolean;
 }) {
   return (
@@ -50,12 +175,16 @@ function LabelWithMark({
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
+        minWidth: 0,
       }}
     >
-      <span style={{ minWidth: 0 }}>{text}</span>
+      <span style={{ minWidth: 0 }}>
+        {text}
+      </span>
 
       {required && mark !== "ok" ? (
         <span
+          aria-hidden="true"
           style={{
             color: "#dc2626",
             fontWeight: 800,
@@ -65,36 +194,24 @@ function LabelWithMark({
         </span>
       ) : null}
 
-      <MarkIcon mark={mark} />
+      <MarkIcon
+        mark={mark}
+        lang={lang}
+      />
     </span>
   );
 }
 
-/* ---------- VALIDATION ---------- */
+/* ============================================================
+   VALIDATION
+============================================================ */
 
-function normalizeNAS(v: string) {
-  return (v || "").replace(/\D+/g, "").slice(0, 9);
-}
-
-function normalizePostal(v: string) {
-  return (v || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 6);
-}
-
-function normalizePhone(v: string) {
-  return (v || "").replace(/\D+/g, "").slice(0, 10);
-}
-
-/*
-  Validation complète du NAS canadien.
-  Le NAS doit contenir 9 chiffres et respecter l'algorithme de Luhn.
-*/
 function isValidNAS(v: string) {
   const nas = normalizeNAS(v);
 
-  if (nas.length !== 9) return false;
+  if (nas.length !== 9) {
+    return false;
+  }
 
   let sum = 0;
 
@@ -115,30 +232,29 @@ function isValidNAS(v: string) {
   return sum % 10 === 0;
 }
 
-function isValidPostal(v: string) {
-  return normalizePostal(v).length === 6;
-}
-
 function isValidEmail(v: string) {
-  const s = (v || "").trim();
+  const value = (v || "").trim();
 
-  if (!s) return false;
-
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-}
-
-function isValidDateJJMMAAAA(v: string) {
-  const s = (v || "").trim();
-
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+  if (!value) {
     return false;
   }
 
-  const [ddStr, mmStr, yyyyStr] = s.split("/");
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
 
-  const dd = Number(ddStr);
-  const mm = Number(mmStr);
-  const yyyy = Number(yyyyStr);
+function isValidDateJJMMAAAA(v: string) {
+  const value = (v || "").trim();
+
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    return false;
+  }
+
+  const [ddText, mmText, yyyyText] =
+    value.split("/");
+
+  const dd = Number(ddText);
+  const mm = Number(mmText);
+  const yyyy = Number(yyyyText);
 
   if (
     !Number.isFinite(dd) ||
@@ -148,44 +264,73 @@ function isValidDateJJMMAAAA(v: string) {
     return false;
   }
 
-  if (yyyy < 1900 || yyyy > 2100) return false;
-  if (mm < 1 || mm > 12) return false;
+  if (yyyy < 1900 || yyyy > 2100) {
+    return false;
+  }
 
-  const daysInMonth = new Date(yyyy, mm, 0).getDate();
+  if (mm < 1 || mm > 12) {
+    return false;
+  }
+
+  const daysInMonth =
+    new Date(yyyy, mm, 0).getDate();
 
   return dd >= 1 && dd <= daysInMonth;
 }
 
-function markTextRequired(v: string): Mark {
-  return v.trim() ? "ok" : "bad";
+function isValidPostal(v: string) {
+  const postal = normalizePostal(v);
+
+  /*
+    Format canadien :
+    A1A 1A1
+
+    Les lettres D, F, I, O, Q et U
+    ne sont pas utilisées dans les
+    positions alphabétiques.
+  */
+  return /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ]\d[ABCEGHJ-NPRSTVWXYZ]\d$/.test(
+    postal
+  );
 }
 
-function markEmail(v: string): Mark {
-  return isValidEmail(v) ? "ok" : "bad";
+function isValidPhone(v: string) {
+  return normalizePhone(v).length === 10;
+}
+
+function markRequired(v: string): Mark {
+  return (v || "").trim()
+    ? "ok"
+    : "bad";
 }
 
 function markNAS(v: string): Mark {
-  return isValidNAS(v) ? "ok" : "bad";
+  return isValidNAS(v)
+    ? "ok"
+    : "bad";
 }
 
-function markDOB(v: string): Mark {
-  return isValidDateJJMMAAAA(v) ? "ok" : "bad";
+function markDate(v: string): Mark {
+  return isValidDateJJMMAAAA(v)
+    ? "ok"
+    : "bad";
+}
+
+function markEmail(v: string): Mark {
+  return isValidEmail(v)
+    ? "ok"
+    : "bad";
 }
 
 function markPostal(v: string): Mark {
-  return isValidPostal(v) ? "ok" : "bad";
+  return isValidPostal(v)
+    ? "ok"
+    : "bad";
 }
 
-function markPhoneAny(tel: string, cell: string): Mark {
-  const any = firstNonEmpty(
-    normalizePhone(tel),
-    normalizePhone(cell)
-  );
-
-  return any ? "ok" : "bad";
-}
-
-/* ---------- COMPOSANT ---------- */
+/* ============================================================
+   COMPOSANT
+============================================================ */
 
 export default function ClientSection(props: {
   L: CopyPack;
@@ -296,49 +441,135 @@ export default function ClientSection(props: {
     setCodePostal,
   } = props;
 
+  const lang = getUiLang(L);
+  const T = LOCAL_TEXT[lang];
+
+  const maritalOptions = useMemo(
+    () => [
+      {
+        value: "celibataire" as const,
+        label: T.marital.celibataire,
+      },
+      {
+        value: "conjointDefait" as const,
+        label: T.marital.conjointDefait,
+      },
+      {
+        value: "marie" as const,
+        label: T.marital.marie,
+      },
+      {
+        value: "separe" as const,
+        label: T.marital.separe,
+      },
+      {
+        value: "divorce" as const,
+        label: T.marital.divorce,
+      },
+      {
+        value: "veuf" as const,
+        label: T.marital.veuf,
+      },
+    ],
+    [T]
+  );
+
   const marks = useMemo(() => {
-    const mPrenom = markTextRequired(prenom);
-    const mNom = markTextRequired(nom);
-    const mNAS = markNAS(nas);
-    const mDOB = markDOB(dob);
+    const mPrenom =
+      markRequired(prenom);
 
-    const mEtat = etatCivil
-      ? ("ok" as Mark)
-      : ("bad" as Mark);
+    const mNom =
+      markRequired(nom);
 
-    const mEmail = markEmail(courriel);
+    const mNAS =
+      markNAS(nas);
 
-    const mAdresse = markTextRequired(adresse);
-    const mVille = markTextRequired(ville);
+    const mDOB =
+      markDate(dob);
 
-    const mProvince = province
-      ? ("ok" as Mark)
-      : ("bad" as Mark);
+    const mEtatCivil: Mark =
+      etatCivil ? "ok" : "bad";
 
-    const mPostal = markPostal(codePostal);
+    const mEmail =
+      markEmail(courriel);
 
-    const mPhone = markPhoneAny(tel, telCell);
+    const mAdresse =
+      markRequired(adresse);
 
-    const mPrevEtat = !etatCivilChange
-      ? ("ok" as Mark)
-      : markTextRequired(ancienEtatCivil);
+    const mVille =
+      markRequired(ville);
 
-    const mDateChange = !etatCivilChange
-      ? ("ok" as Mark)
-      : markDOB(dateChangementEtatCivil);
+    const mProvince: Mark =
+      province ? "ok" : "bad";
+
+    const mPostal =
+      markPostal(codePostal);
+
+    /*
+      Un seul numéro est obligatoire.
+
+      Si un numéro est inscrit, il doit
+      cependant contenir 10 chiffres.
+    */
+    const telEntered =
+      normalizePhone(tel).length > 0;
+
+    const cellEntered =
+      normalizePhone(telCell).length > 0;
+
+    const telValid =
+      isValidPhone(tel);
+
+    const cellValid =
+      isValidPhone(telCell);
+
+    const phoneAnyValid =
+      telValid || cellValid;
+
+    const mPhone: Mark =
+      telEntered
+        ? telValid
+          ? "ok"
+          : "bad"
+        : phoneAnyValid
+        ? "todo"
+        : "bad";
+
+    const mMobile: Mark =
+      cellEntered
+        ? cellValid
+          ? "ok"
+          : "bad"
+        : phoneAnyValid
+        ? "todo"
+        : "bad";
+
+    const mPrevEtat: Mark =
+      !etatCivilChange
+        ? "ok"
+        : ancienEtatCivil
+        ? "ok"
+        : "bad";
+
+    const mDateChange: Mark =
+      !etatCivilChange
+        ? "ok"
+        : markDate(
+            dateChangementEtatCivil
+          );
 
     const blockOk =
       mPrenom === "ok" &&
       mNom === "ok" &&
       mNAS === "ok" &&
       mDOB === "ok" &&
-      mEtat === "ok" &&
+      mEtatCivil === "ok" &&
       mEmail === "ok" &&
       mAdresse === "ok" &&
       mVille === "ok" &&
       mProvince === "ok" &&
       mPostal === "ok" &&
-      mPhone === "ok" &&
+      phoneAnyValid &&
       mPrevEtat === "ok" &&
       mDateChange === "ok";
 
@@ -347,15 +578,21 @@ export default function ClientSection(props: {
       nom: mNom,
       nas: mNAS,
       dob: mDOB,
-      etatCivil: mEtat,
+      etatCivil: mEtatCivil,
       etatCivilPrev: mPrevEtat,
       etatCivilDate: mDateChange,
-      phoneAny: mPhone,
+
+      phone: mPhone,
+      mobile: mMobile,
+      phoneAnyValid,
+
       email: mEmail,
+
       adresse: mAdresse,
       ville: mVille,
       province: mProvince,
       postal: mPostal,
+
       block: blockOk
         ? ("ok" as Mark)
         : ("bad" as Mark),
@@ -380,6 +617,10 @@ export default function ClientSection(props: {
 
   return (
     <section className="ff-card">
+      {/* ======================================================
+          EN-TÊTE
+      ====================================================== */}
+
       <div className="ff-card-head">
         <div
           style={{
@@ -393,7 +634,10 @@ export default function ClientSection(props: {
             {L.sections.clientTitle}
           </h2>
 
-          <MarkIcon mark={marks.block} />
+          <MarkIcon
+            mark={marks.block}
+            lang={lang}
+          />
         </div>
 
         <p style={{ marginTop: 8 }}>
@@ -401,7 +645,9 @@ export default function ClientSection(props: {
         </p>
       </div>
 
-      {/* IDENTITÉ */}
+      {/* ======================================================
+          IDENTITÉ
+      ====================================================== */}
 
       <div className="ff-grid2">
         <Field
@@ -409,11 +655,19 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.firstName}
               mark={marks.prenom}
+              lang={lang}
               required
             />
           }
           value={prenom}
           onChange={setPrenom}
+          required
+          status={
+            marks.prenom === "ok"
+              ? "valid"
+              : "invalid"
+          }
+          autoComplete="given-name"
         />
 
         <Field
@@ -421,11 +675,19 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.lastName}
               mark={marks.nom}
+              lang={lang}
               required
             />
           }
           value={nom}
           onChange={setNom}
+          required
+          status={
+            marks.nom === "ok"
+              ? "valid"
+              : "invalid"
+          }
+          autoComplete="family-name"
         />
 
         <Field
@@ -433,6 +695,7 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.sin}
               mark={marks.nas}
+              lang={lang}
               required
             />
           }
@@ -442,6 +705,13 @@ export default function ClientSection(props: {
           inputMode="numeric"
           formatter={formatNASInput}
           maxLength={11}
+          required
+          status={
+            marks.nas === "ok"
+              ? "valid"
+              : "invalid"
+          }
+          autoComplete="off"
         />
 
         <Field
@@ -449,6 +719,7 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.dob}
               mark={marks.dob}
+              lang={lang}
               required
             />
           }
@@ -458,10 +729,19 @@ export default function ClientSection(props: {
           inputMode="numeric"
           formatter={formatDateInput}
           maxLength={10}
+          required
+          status={
+            marks.dob === "ok"
+              ? "valid"
+              : "invalid"
+          }
+          autoComplete="bday"
         />
       </div>
 
-      {/* ÉTAT CIVIL */}
+      {/* ======================================================
+          ÉTAT CIVIL
+      ====================================================== */}
 
       <div className="ff-grid2 ff-mt">
         <SelectField<EtatCivil>
@@ -469,37 +749,20 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.marital}
               mark={marks.etatCivil}
+              lang={lang}
               required
             />
           }
           value={etatCivil}
           onChange={setEtatCivil}
-          options={[
-            {
-              value: "celibataire",
-              label: "Célibataire",
-            },
-            {
-              value: "conjointDefait",
-              label: "Conjoint de fait",
-            },
-            {
-              value: "marie",
-              label: "Marié(e)",
-            },
-            {
-              value: "separe",
-              label: "Séparé(e)",
-            },
-            {
-              value: "divorce",
-              label: "Divorcé(e)",
-            },
-            {
-              value: "veuf",
-              label: "Veuf(ve)",
-            },
-          ]}
+          options={maritalOptions}
+          required
+          placeholderText={T.choose}
+          status={
+            marks.etatCivil === "ok"
+              ? "valid"
+              : "invalid"
+          }
         />
 
         <CheckboxField
@@ -509,46 +772,35 @@ export default function ClientSection(props: {
         />
       </div>
 
-      {/* CHANGEMENT D'ÉTAT CIVIL */}
+      {/* ======================================================
+          CHANGEMENT D'ÉTAT CIVIL
+      ====================================================== */}
 
-      {etatCivilChange && (
+      {etatCivilChange ? (
         <div className="ff-grid2 ff-mt">
           <SelectField<EtatCivil>
             label={
               <LabelWithMark
                 text={L.fields.prevMarital}
                 mark={marks.etatCivilPrev}
+                lang={lang}
                 required
               />
             }
-            value={ancienEtatCivil as EtatCivil}
-            onChange={(v) => setAncienEtatCivil(v)}
-            options={[
-              {
-                value: "celibataire",
-                label: "Célibataire",
-              },
-              {
-                value: "conjointDefait",
-                label: "Conjoint de fait",
-              },
-              {
-                value: "marie",
-                label: "Marié(e)",
-              },
-              {
-                value: "separe",
-                label: "Séparé(e)",
-              },
-              {
-                value: "divorce",
-                label: "Divorcé(e)",
-              },
-              {
-                value: "veuf",
-                label: "Veuf(ve)",
-              },
-            ]}
+            value={
+              ancienEtatCivil as EtatCivil
+            }
+            onChange={(v) =>
+              setAncienEtatCivil(v)
+            }
+            options={maritalOptions}
+            required
+            placeholderText={T.choose}
+            status={
+              marks.etatCivilPrev === "ok"
+                ? "valid"
+                : "invalid"
+            }
           />
 
           <Field
@@ -556,31 +808,43 @@ export default function ClientSection(props: {
               <LabelWithMark
                 text={L.fields.changeDate}
                 mark={marks.etatCivilDate}
+                lang={lang}
                 required
               />
             }
-            value={dateChangementEtatCivil}
-            onChange={setDateChangementEtatCivil}
-            placeholder={L.fields.changeDatePh}
+            value={
+              dateChangementEtatCivil
+            }
+            onChange={
+              setDateChangementEtatCivil
+            }
+            placeholder={
+              L.fields.changeDatePh
+            }
             inputMode="numeric"
             formatter={formatDateInput}
             maxLength={10}
+            required
+            status={
+              marks.etatCivilDate === "ok"
+                ? "valid"
+                : "invalid"
+            }
           />
         </div>
-      )}
+      ) : null}
 
-      {/* TÉLÉPHONE */}
+      {/* ======================================================
+          TÉLÉPHONE
+      ====================================================== */}
 
       <div className="ff-grid2 ff-mt">
         <Field
           label={
             <LabelWithMark
               text={L.fields.phone}
-              mark={
-                normalizePhone(tel)
-                  ? "ok"
-                  : marks.phoneAny
-              }
+              mark={marks.phone}
+              lang={lang}
             />
           }
           value={tel}
@@ -589,17 +853,22 @@ export default function ClientSection(props: {
           inputMode="tel"
           formatter={formatPhoneInput}
           maxLength={14}
+          status={
+            normalizePhone(tel).length > 0
+              ? marks.phone === "ok"
+                ? "valid"
+                : "invalid"
+              : null
+          }
+          autoComplete="tel"
         />
 
         <Field
           label={
             <LabelWithMark
               text={L.fields.mobile}
-              mark={
-                normalizePhone(telCell)
-                  ? "ok"
-                  : marks.phoneAny
-              }
+              mark={marks.mobile}
+              lang={lang}
             />
           }
           value={telCell}
@@ -608,6 +877,14 @@ export default function ClientSection(props: {
           inputMode="tel"
           formatter={formatPhoneInput}
           maxLength={14}
+          status={
+            normalizePhone(telCell).length > 0
+              ? marks.mobile === "ok"
+                ? "valid"
+                : "invalid"
+              : null
+          }
+          autoComplete="tel"
         />
       </div>
 
@@ -619,10 +896,15 @@ export default function ClientSection(props: {
           opacity: 0.75,
         }}
       >
-        Au moins un numéro de téléphone est requis.
+        {marks.phoneAnyValid
+          ? "✓ "
+          : ""}
+        {T.phoneHint}
       </p>
 
-      {/* COURRIEL */}
+      {/* ======================================================
+          COURRIEL
+      ====================================================== */}
 
       <div className="ff-mt">
         <Field
@@ -630,16 +912,26 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.email}
               mark={marks.email}
+              lang={lang}
               required
             />
           }
           value={courriel}
           onChange={setCourriel}
           type="email"
+          required
+          status={
+            marks.email === "ok"
+              ? "valid"
+              : "invalid"
+          }
+          autoComplete="email"
         />
       </div>
 
-      {/* ADRESSE */}
+      {/* ======================================================
+          ADRESSE
+      ====================================================== */}
 
       <div className="ff-mt">
         <Field
@@ -647,11 +939,19 @@ export default function ClientSection(props: {
             <LabelWithMark
               text={L.fields.address}
               mark={marks.adresse}
+              lang={lang}
               required
             />
           }
           value={adresse}
           onChange={setAdresse}
+          required
+          status={
+            marks.adresse === "ok"
+              ? "valid"
+              : "invalid"
+          }
+          autoComplete="street-address"
         />
 
         <div className="ff-grid4 ff-mt-sm">
@@ -660,6 +960,7 @@ export default function ClientSection(props: {
             value={app}
             onChange={setApp}
             placeholder={L.fields.aptPh}
+            autoComplete="address-line2"
           />
 
           <Field
@@ -667,11 +968,19 @@ export default function ClientSection(props: {
               <LabelWithMark
                 text={L.fields.city}
                 mark={marks.ville}
+                lang={lang}
                 required
               />
             }
             value={ville}
             onChange={setVille}
+            required
+            status={
+              marks.ville === "ok"
+                ? "valid"
+                : "invalid"
+            }
+            autoComplete="address-level2"
           />
 
           <SelectField<ProvinceCode>
@@ -679,12 +988,21 @@ export default function ClientSection(props: {
               <LabelWithMark
                 text={L.fields.province}
                 mark={marks.province}
+                lang={lang}
                 required
               />
             }
             value={province}
             onChange={setProvince}
             options={PROVINCES}
+            required
+            placeholderText={T.choose}
+            status={
+              marks.province === "ok"
+                ? "valid"
+                : "invalid"
+            }
+            autoComplete="address-level1"
           />
 
           <Field
@@ -692,6 +1010,7 @@ export default function ClientSection(props: {
               <LabelWithMark
                 text={L.fields.postal}
                 mark={marks.postal}
+                lang={lang}
                 required
               />
             }
@@ -700,6 +1019,12 @@ export default function ClientSection(props: {
             placeholder={L.fields.postalPh}
             formatter={formatPostalInput}
             maxLength={7}
+            required
+            status={
+              marks.postal === "ok"
+                ? "valid"
+                : "invalid"
+            }
             autoComplete="postal-code"
           />
         </div>
