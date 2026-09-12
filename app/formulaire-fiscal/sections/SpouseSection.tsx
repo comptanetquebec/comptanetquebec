@@ -2,8 +2,19 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Field, CheckboxField, SelectField } from "../ui";
-import type { ProvinceCode } from "../types";
+
+import {
+  Field,
+  CheckboxField,
+  SelectField,
+  YesNoField,
+} from "../ui";
+
+import type {
+  ProvinceCode,
+  T2201Statut,
+} from "../types";
+
 import type { CopyPack } from "../copy";
 
 import {
@@ -25,10 +36,15 @@ import {
 
 type Mark = "ok" | "bad" | "todo";
 type UiLang = "fr" | "en" | "es";
+type YesNo = "oui" | "non" | "";
 
 type Props = {
   L: CopyPack;
-  PROVINCES: { value: ProvinceCode; label: string }[];
+
+  PROVINCES: {
+    value: ProvinceCode;
+    label: string;
+  }[];
 
   aUnConjoint: boolean;
   setAUnConjoint: (v: boolean) => void;
@@ -61,7 +77,9 @@ type Props = {
   setCourrielConjoint: (v: string) => void;
 
   adresseConjointeIdentique: boolean;
-  setAdresseConjointeIdentique: (v: boolean) => void;
+  setAdresseConjointeIdentique: (
+    v: boolean
+  ) => void;
 
   adresseConjoint: string;
   setAdresseConjoint: (v: string) => void;
@@ -73,10 +91,28 @@ type Props = {
   setVilleConjoint: (v: string) => void;
 
   provinceConjoint: ProvinceCode;
-  setProvinceConjoint: (v: ProvinceCode) => void;
+  setProvinceConjoint: (
+    v: ProvinceCode
+  ) => void;
 
   codePostalConjoint: string;
-  setCodePostalConjoint: (v: string) => void;
+  setCodePostalConjoint: (
+    v: string
+  ) => void;
+
+  /* HANDICAP / T2201 */
+
+  handicapConjoint: boolean | undefined;
+
+  setHandicapConjoint: (
+    v: boolean | undefined
+  ) => void;
+
+  t2201StatutConjoint: T2201Statut;
+
+  setT2201StatutConjoint: (
+    v: T2201Statut
+  ) => void;
 };
 
 /* ============================================================
@@ -84,37 +120,125 @@ type Props = {
 ============================================================ */
 
 function getUiLang(L: CopyPack): UiLang {
-  if (L.fields.firstName === "First name") return "en";
-  if (L.fields.firstName === "Nombre") return "es";
+  if (L.fields.firstName === "First name") {
+    return "en";
+  }
+
+  if (L.fields.firstName === "Nombre") {
+    return "es";
+  }
+
   return "fr";
 }
+
+/* ============================================================
+   TEXTES LOCAUX
+============================================================ */
 
 const LOCAL_TEXT = {
   fr: {
     ok: "Valide",
     bad: "À corriger",
     todo: "À compléter",
+
     choose: "Choisir…",
+
+    yes: "Oui",
+    no: "Non",
+
     phoneHint:
       "Au moins un numéro de téléphone valide du conjoint est requis.",
+
+    disability:
+      "Votre conjoint a-t-il une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?",
+
+    t2201:
+      "Statut du formulaire T2201 – Certificat pour le crédit d’impôt pour personnes handicapées",
+
+    t2201Approved:
+      "Approuvé par l’ARC",
+
+    t2201Pending:
+      "En attente d’une décision",
+
+    t2201No:
+      "Non / aucun formulaire T2201",
+
+    t2201Unknown:
+      "Je ne sais pas",
+
+    disabilityHint:
+      "Si oui, indiquez le statut du formulaire T2201 afin que ComptaNet Québec puisse vérifier les crédits applicables.",
   },
 
   en: {
     ok: "Valid",
     bad: "Needs correction",
     todo: "To complete",
+
     choose: "Select…",
+
+    yes: "Yes",
+    no: "No",
+
     phoneHint:
       "At least one valid phone number for the spouse is required.",
+
+    disability:
+      "Does your spouse have an impairment or disability that may qualify for a tax credit or deduction?",
+
+    t2201:
+      "Status of Form T2201 – Disability Tax Credit Certificate",
+
+    t2201Approved:
+      "Approved by the CRA",
+
+    t2201Pending:
+      "Awaiting a decision",
+
+    t2201No:
+      "No / no T2201 form",
+
+    t2201Unknown:
+      "I don't know",
+
+    disabilityHint:
+      "If yes, indicate the status of Form T2201 so ComptaNet Québec can review the applicable tax credits.",
   },
 
   es: {
     ok: "Válido",
     bad: "Debe corregirse",
     todo: "Por completar",
+
     choose: "Seleccionar…",
+
+    yes: "Sí",
+    no: "No",
+
     phoneHint:
       "Se requiere al menos un número de teléfono válido del cónyuge.",
+
+    disability:
+      "¿Su cónyuge tiene una deficiencia o discapacidad que podría dar derecho a un crédito o deducción fiscal?",
+
+    t2201:
+      "Estado del formulario T2201 – Certificado para el crédito fiscal por discapacidad",
+
+    t2201Approved:
+      "Aprobado por la CRA",
+
+    t2201Pending:
+      "En espera de una decisión",
+
+    t2201No:
+      "No / ningún formulario T2201",
+
+    t2201Unknown:
+      "No lo sé",
+
+    disabilityHint:
+      "Si la respuesta es sí, indique el estado del formulario T2201 para que ComptaNet Québec pueda verificar los créditos fiscales aplicables.",
   },
 } as const;
 
@@ -146,7 +270,11 @@ function MarkIcon({
       : T.todo;
 
   const symbol =
-    mark === "ok" ? "✓" : mark === "bad" ? "✕" : "→";
+    mark === "ok"
+      ? "✓"
+      : mark === "bad"
+      ? "✕"
+      : "→";
 
   return (
     <span
@@ -179,7 +307,9 @@ function LabelWithMark({
         minWidth: 0,
       }}
     >
-      <span style={{ minWidth: 0 }}>{text}</span>
+      <span style={{ minWidth: 0 }}>
+        {text}
+      </span>
 
       {required && mark !== "ok" ? (
         <span
@@ -193,7 +323,10 @@ function LabelWithMark({
         </span>
       ) : null}
 
-      <MarkIcon mark={mark} lang={lang} />
+      <MarkIcon
+        mark={mark}
+        lang={lang}
+      />
     </span>
   );
 }
@@ -205,7 +338,9 @@ function LabelWithMark({
 function isValidSIN(v: string) {
   const sin = normalizeNAS(v);
 
-  if (sin.length !== 9) return false;
+  if (sin.length !== 9) {
+    return false;
+  }
 
   let sum = 0;
 
@@ -229,19 +364,26 @@ function isValidSIN(v: string) {
 function isValidEmail(v: string) {
   const value = (v || "").trim();
 
-  if (!value) return false;
+  if (!value) {
+    return false;
+  }
 
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    value
+  );
 }
 
 function isValidDateJJMMAAAA(v: string) {
   const value = (v || "").trim();
 
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+  if (
+    !/^\d{2}\/\d{2}\/\d{4}$/.test(value)
+  ) {
     return false;
   }
 
-  const [ddText, mmText, yyyyText] = value.split("/");
+  const [ddText, mmText, yyyyText] =
+    value.split("/");
 
   const dd = Number(ddText);
   const mm = Number(mmText);
@@ -255,10 +397,16 @@ function isValidDateJJMMAAAA(v: string) {
     return false;
   }
 
-  if (yyyy < 1900 || yyyy > 2100) return false;
-  if (mm < 1 || mm > 12) return false;
+  if (yyyy < 1900 || yyyy > 2100) {
+    return false;
+  }
 
-  const daysInMonth = new Date(yyyy, mm, 0).getDate();
+  if (mm < 1 || mm > 12) {
+    return false;
+  }
+
+  const daysInMonth =
+    new Date(yyyy, mm, 0).getDate();
 
   return dd >= 1 && dd <= daysInMonth;
 }
@@ -281,22 +429,33 @@ function isNumericLike(v: string) {
     .replace(/\s+/g, "")
     .replace(",", ".");
 
-  if (!value) return false;
+  if (!value) {
+    return false;
+  }
 
   return /^\d+(\.\d{1,2})?$/.test(value);
 }
 
 function markRequired(v: string): Mark {
-  return (v || "").trim() ? "ok" : "bad";
+  return (v || "").trim()
+    ? "ok"
+    : "bad";
 }
 
 function markSIN(v: string): Mark {
-  if (!normalizeNAS(v)) return "todo";
-  return isValidSIN(v) ? "ok" : "bad";
+  if (!normalizeNAS(v)) {
+    return "todo";
+  }
+
+  return isValidSIN(v)
+    ? "ok"
+    : "bad";
 }
 
 function markDOB(v: string): Mark {
-  if (!(v || "").trim()) return "todo";
+  if (!(v || "").trim()) {
+    return "todo";
+  }
 
   return isValidDateJJMMAAAA(v)
     ? "ok"
@@ -304,7 +463,9 @@ function markDOB(v: string): Mark {
 }
 
 function markEmail(v: string): Mark {
-  if (!(v || "").trim()) return "todo";
+  if (!(v || "").trim()) {
+    return "todo";
+  }
 
   return isValidEmail(v)
     ? "ok"
@@ -312,7 +473,9 @@ function markEmail(v: string): Mark {
 }
 
 function markPostal(v: string): Mark {
-  if (!normalizePostal(v)) return "todo";
+  if (!normalizePostal(v)) {
+    return "todo";
+  }
 
   return isValidPostal(v)
     ? "ok"
@@ -320,7 +483,9 @@ function markPostal(v: string): Mark {
 }
 
 function markNumeric(v: string): Mark {
-  if (!(v || "").trim()) return "todo";
+  if (!(v || "").trim()) {
+    return "todo";
+  }
 
   return isNumericLike(v)
     ? "ok"
@@ -331,7 +496,9 @@ function markNumeric(v: string): Mark {
    COMPOSANT
 ============================================================ */
 
-export default function SpouseSection(props: Props) {
+export default function SpouseSection(
+  props: Props
+) {
   const {
     L,
     PROVINCES,
@@ -383,6 +550,12 @@ export default function SpouseSection(props: Props) {
 
     codePostalConjoint,
     setCodePostalConjoint,
+
+    handicapConjoint,
+    setHandicapConjoint,
+
+    t2201StatutConjoint,
+    setT2201StatutConjoint,
   } = props;
 
   const lang = getUiLang(L);
@@ -395,44 +568,61 @@ export default function SpouseSection(props: Props) {
     aUnConjoint && traiterConjoint;
 
   const showAddrFields =
-    aUnConjoint && !adresseConjointeIdentique;
+    aUnConjoint &&
+    !adresseConjointeIdentique;
 
   /* ==========================================================
      VALIDATION DU BLOC
   ========================================================== */
 
   const marks = useMemo(() => {
-    const mNet: Mark = showNetIncome
-      ? markNumeric(revenuNetConjoint)
-      : "ok";
+    const mNet: Mark =
+      showNetIncome
+        ? markNumeric(
+            revenuNetConjoint
+          )
+        : "ok";
 
-    const mFirstName: Mark = showIncludedFields
-      ? markRequired(prenomConjoint)
-      : "ok";
+    const mFirstName: Mark =
+      showIncludedFields
+        ? markRequired(
+            prenomConjoint
+          )
+        : "ok";
 
-    const mLastName: Mark = showIncludedFields
-      ? markRequired(nomConjoint)
-      : "ok";
+    const mLastName: Mark =
+      showIncludedFields
+        ? markRequired(
+            nomConjoint
+          )
+        : "ok";
 
-    const mSIN: Mark = showIncludedFields
-      ? markSIN(nasConjoint)
-      : "ok";
+    const mSIN: Mark =
+      showIncludedFields
+        ? markSIN(nasConjoint)
+        : "ok";
 
-    const mDOB: Mark = showIncludedFields
-      ? markDOB(dobConjoint)
-      : "ok";
+    const mDOB: Mark =
+      showIncludedFields
+        ? markDOB(dobConjoint)
+        : "ok";
 
     const phoneEntered =
-      normalizePhone(telConjoint).length > 0;
+      normalizePhone(telConjoint)
+        .length > 0;
 
     const mobileEntered =
-      normalizePhone(telCellConjoint).length > 0;
+      normalizePhone(
+        telCellConjoint
+      ).length > 0;
 
     const phoneValid =
       isValidPhone(telConjoint);
 
     const mobileValid =
-      isValidPhone(telCellConjoint);
+      isValidPhone(
+        telCellConjoint
+      );
 
     const phoneAnyValid =
       !showIncludedFields ||
@@ -461,32 +651,74 @@ export default function SpouseSection(props: Props) {
         ? "todo"
         : "bad";
 
-    const mEmail: Mark = showIncludedFields
-      ? markEmail(courrielConjoint)
-      : "ok";
+    const mEmail: Mark =
+      showIncludedFields
+        ? markEmail(
+            courrielConjoint
+          )
+        : "ok";
 
-    const mAddress: Mark = showAddrFields
-      ? markRequired(adresseConjoint)
-      : "ok";
+    const mAddress: Mark =
+      showAddrFields
+        ? markRequired(
+            adresseConjoint
+          )
+        : "ok";
 
-    const mCity: Mark = showAddrFields
-      ? markRequired(villeConjoint)
-      : "ok";
+    const mCity: Mark =
+      showAddrFields
+        ? markRequired(
+            villeConjoint
+          )
+        : "ok";
 
-    const mProvince: Mark = showAddrFields
-      ? provinceConjoint
+    const mProvince: Mark =
+      showAddrFields
+        ? provinceConjoint
+          ? "ok"
+          : "bad"
+        : "ok";
+
+    const mPostal: Mark =
+      showAddrFields
+        ? markPostal(
+            codePostalConjoint
+          )
+        : "ok";
+
+    /*
+      Si le client n'a pas de conjoint,
+      cette question ne s'applique pas.
+
+      S'il a un conjoint, une réponse
+      Oui ou Non est requise.
+    */
+    const mHandicap: Mark =
+      !aUnConjoint
         ? "ok"
-        : "bad"
-      : "ok";
+        : typeof handicapConjoint ===
+          "boolean"
+        ? "ok"
+        : "bad";
 
-    const mPostal: Mark = showAddrFields
-      ? markPostal(codePostalConjoint)
-      : "ok";
+    /*
+      Si handicap = Oui,
+      le statut T2201 est requis.
+    */
+    const mT2201: Mark =
+      !aUnConjoint ||
+      handicapConjoint !== true
+        ? "ok"
+        : t2201StatutConjoint
+        ? "ok"
+        : "bad";
 
     const blockOk =
       !aUnConjoint ||
       (
-        (!showNetIncome || mNet === "ok") &&
+        (!showNetIncome ||
+          mNet === "ok") &&
+
         (
           !showIncludedFields ||
           (
@@ -498,6 +730,7 @@ export default function SpouseSection(props: Props) {
             mEmail === "ok"
           )
         ) &&
+
         (
           !showAddrFields ||
           (
@@ -506,7 +739,10 @@ export default function SpouseSection(props: Props) {
             mProvince === "ok" &&
             mPostal === "ok"
           )
-        )
+        ) &&
+
+        mHandicap === "ok" &&
+        mT2201 === "ok"
       );
 
     return {
@@ -527,6 +763,9 @@ export default function SpouseSection(props: Props) {
       city: mCity,
       province: mProvince,
       postal: mPostal,
+
+      handicap: mHandicap,
+      t2201: mT2201,
 
       block: blockOk
         ? ("ok" as Mark)
@@ -553,7 +792,17 @@ export default function SpouseSection(props: Props) {
     villeConjoint,
     provinceConjoint,
     codePostalConjoint,
+
+    handicapConjoint,
+    t2201StatutConjoint,
   ]);
+
+  const handicapValue: YesNo =
+    handicapConjoint === true
+      ? "oui"
+      : handicapConjoint === false
+      ? "non"
+      : "";
 
   /* ==========================================================
      AFFICHAGE
@@ -568,7 +817,8 @@ export default function SpouseSection(props: Props) {
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             gap: 10,
           }}
         >
@@ -592,7 +842,19 @@ export default function SpouseSection(props: Props) {
       <CheckboxField
         label={L.spouse.hasSpouse}
         checked={aUnConjoint}
-        onChange={setAUnConjoint}
+        onChange={(value) => {
+          setAUnConjoint(value);
+
+          if (!value) {
+            setHandicapConjoint(
+              undefined
+            );
+
+            setT2201StatutConjoint(
+              ""
+            );
+          }
+        }}
       />
 
       {aUnConjoint ? (
@@ -601,28 +863,42 @@ export default function SpouseSection(props: Props) {
 
           <div className="ff-mt">
             <CheckboxField
-              label={L.spouse.includeSpouse}
+              label={
+                L.spouse.includeSpouse
+              }
               checked={traiterConjoint}
-              onChange={setTraiterConjoint}
+              onChange={
+                setTraiterConjoint
+              }
             />
           </div>
 
-          {/* REVENU NET SI ON NE TRAITE PAS LE CONJOINT */}
+          {/* REVENU NET */}
 
           {showNetIncome ? (
             <div className="ff-mt">
               <Field
                 label={
                   <LabelWithMark
-                    text={L.spouse.spouseNetIncome}
+                    text={
+                      L.spouse
+                        .spouseNetIncome
+                    }
                     mark={marks.net}
                     lang={lang}
                     required
                   />
                 }
-                value={revenuNetConjoint}
-                onChange={setRevenuNetConjoint}
-                placeholder={L.spouse.spouseNetIncomePh}
+                value={
+                  revenuNetConjoint
+                }
+                onChange={
+                  setRevenuNetConjoint
+                }
+                placeholder={
+                  L.spouse
+                    .spouseNetIncomePh
+                }
                 inputMode="decimal"
                 required
                 status={
@@ -642,17 +918,27 @@ export default function SpouseSection(props: Props) {
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spouseFirstName}
-                      mark={marks.firstName}
+                      text={
+                        L.spouse
+                          .spouseFirstName
+                      }
+                      mark={
+                        marks.firstName
+                      }
                       lang={lang}
                       required
                     />
                   }
-                  value={prenomConjoint}
-                  onChange={setPrenomConjoint}
+                  value={
+                    prenomConjoint
+                  }
+                  onChange={
+                    setPrenomConjoint
+                  }
                   required
                   status={
-                    marks.firstName === "ok"
+                    marks.firstName ===
+                    "ok"
                       ? "valid"
                       : "invalid"
                   }
@@ -662,17 +948,27 @@ export default function SpouseSection(props: Props) {
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spouseLastName}
-                      mark={marks.lastName}
+                      text={
+                        L.spouse
+                          .spouseLastName
+                      }
+                      mark={
+                        marks.lastName
+                      }
                       lang={lang}
                       required
                     />
                   }
-                  value={nomConjoint}
-                  onChange={setNomConjoint}
+                  value={
+                    nomConjoint
+                  }
+                  onChange={
+                    setNomConjoint
+                  }
                   required
                   status={
-                    marks.lastName === "ok"
+                    marks.lastName ===
+                    "ok"
                       ? "valid"
                       : "invalid"
                   }
@@ -682,17 +978,26 @@ export default function SpouseSection(props: Props) {
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spouseSin}
+                      text={
+                        L.spouse
+                          .spouseSin
+                      }
                       mark={marks.sin}
                       lang={lang}
                       required
                     />
                   }
                   value={nasConjoint}
-                  onChange={setNasConjoint}
-                  placeholder={L.fields.sinPh}
+                  onChange={
+                    setNasConjoint
+                  }
+                  placeholder={
+                    L.fields.sinPh
+                  }
                   inputMode="numeric"
-                  formatter={formatNASInput}
+                  formatter={
+                    formatNASInput
+                  }
                   maxLength={11}
                   required
                   status={
@@ -706,17 +1011,26 @@ export default function SpouseSection(props: Props) {
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spouseDob}
+                      text={
+                        L.spouse
+                          .spouseDob
+                      }
                       mark={marks.dob}
                       lang={lang}
                       required
                     />
                   }
                   value={dobConjoint}
-                  onChange={setDobConjoint}
-                  placeholder={L.fields.dobPh}
+                  onChange={
+                    setDobConjoint
+                  }
+                  placeholder={
+                    L.fields.dobPh
+                  }
                   inputMode="numeric"
-                  formatter={formatDateInput}
+                  formatter={
+                    formatDateInput
+                  }
                   maxLength={10}
                   required
                   status={
@@ -728,26 +1042,40 @@ export default function SpouseSection(props: Props) {
                 />
               </div>
 
-              {/* TÉLÉPHONE / CELLULAIRE */}
+              {/* TÉLÉPHONE */}
 
               <div className="ff-grid2 ff-mt">
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spousePhone}
-                      mark={marks.phone}
+                      text={
+                        L.spouse
+                          .spousePhone
+                      }
+                      mark={
+                        marks.phone
+                      }
                       lang={lang}
                     />
                   }
-                  value={telConjoint}
-                  onChange={setTelConjoint}
+                  value={
+                    telConjoint
+                  }
+                  onChange={
+                    setTelConjoint
+                  }
                   placeholder="(418) 555-1234"
                   inputMode="tel"
-                  formatter={formatPhoneInput}
+                  formatter={
+                    formatPhoneInput
+                  }
                   maxLength={14}
                   status={
-                    normalizePhone(telConjoint).length > 0
-                      ? marks.phone === "ok"
+                    normalizePhone(
+                      telConjoint
+                    ).length > 0
+                      ? marks.phone ===
+                        "ok"
                         ? "valid"
                         : "invalid"
                       : null
@@ -758,20 +1086,34 @@ export default function SpouseSection(props: Props) {
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spouseMobile}
-                      mark={marks.mobile}
+                      text={
+                        L.spouse
+                          .spouseMobile
+                      }
+                      mark={
+                        marks.mobile
+                      }
                       lang={lang}
                     />
                   }
-                  value={telCellConjoint}
-                  onChange={setTelCellConjoint}
+                  value={
+                    telCellConjoint
+                  }
+                  onChange={
+                    setTelCellConjoint
+                  }
                   placeholder="(418) 555-1234"
                   inputMode="tel"
-                  formatter={formatPhoneInput}
+                  formatter={
+                    formatPhoneInput
+                  }
                   maxLength={14}
                   status={
-                    normalizePhone(telCellConjoint).length > 0
-                      ? marks.mobile === "ok"
+                    normalizePhone(
+                      telCellConjoint
+                    ).length > 0
+                      ? marks.mobile ===
+                        "ok"
                         ? "valid"
                         : "invalid"
                       : null
@@ -788,7 +1130,9 @@ export default function SpouseSection(props: Props) {
                   opacity: 0.75,
                 }}
               >
-                {marks.phoneAnyValid ? "✓ " : ""}
+                {marks.phoneAnyValid
+                  ? "✓ "
+                  : ""}
                 {T.phoneHint}
               </p>
 
@@ -798,14 +1142,23 @@ export default function SpouseSection(props: Props) {
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.spouse.spouseEmail}
-                      mark={marks.email}
+                      text={
+                        L.spouse
+                          .spouseEmail
+                      }
+                      mark={
+                        marks.email
+                      }
                       lang={lang}
                       required
                     />
                   }
-                  value={courrielConjoint}
-                  onChange={setCourrielConjoint}
+                  value={
+                    courrielConjoint
+                  }
+                  onChange={
+                    setCourrielConjoint
+                  }
                   type="email"
                   placeholder="nom@exemple.com"
                   required
@@ -824,9 +1177,15 @@ export default function SpouseSection(props: Props) {
 
           <div className="ff-mt">
             <CheckboxField
-              label={L.spouse.sameAddress}
-              checked={adresseConjointeIdentique}
-              onChange={setAdresseConjointeIdentique}
+              label={
+                L.spouse.sameAddress
+              }
+              checked={
+                adresseConjointeIdentique
+              }
+              onChange={
+                setAdresseConjointeIdentique
+              }
             />
           </div>
 
@@ -835,14 +1194,23 @@ export default function SpouseSection(props: Props) {
               <Field
                 label={
                   <LabelWithMark
-                    text={L.spouse.spouseAddress}
-                    mark={marks.address}
+                    text={
+                      L.spouse
+                        .spouseAddress
+                    }
+                    mark={
+                      marks.address
+                    }
                     lang={lang}
                     required
                   />
                 }
-                value={adresseConjoint}
-                onChange={setAdresseConjoint}
+                value={
+                  adresseConjoint
+                }
+                onChange={
+                  setAdresseConjoint
+                }
                 required
                 status={
                   marks.address === "ok"
@@ -855,23 +1223,35 @@ export default function SpouseSection(props: Props) {
               <div className="ff-grid4 ff-mt-sm">
                 <Field
                   label={L.fields.apt}
-                  value={appConjoint}
-                  onChange={setAppConjoint}
-                  placeholder={L.fields.aptPh}
+                  value={
+                    appConjoint
+                  }
+                  onChange={
+                    setAppConjoint
+                  }
+                  placeholder={
+                    L.fields.aptPh
+                  }
                   autoComplete="off"
                 />
 
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.fields.city}
+                      text={
+                        L.fields.city
+                      }
                       mark={marks.city}
                       lang={lang}
                       required
                     />
                   }
-                  value={villeConjoint}
-                  onChange={setVilleConjoint}
+                  value={
+                    villeConjoint
+                  }
+                  onChange={
+                    setVilleConjoint
+                  }
                   required
                   status={
                     marks.city === "ok"
@@ -884,38 +1264,60 @@ export default function SpouseSection(props: Props) {
                 <SelectField<ProvinceCode>
                   label={
                     <LabelWithMark
-                      text={L.fields.province}
-                      mark={marks.province}
+                      text={
+                        L.fields.province
+                      }
+                      mark={
+                        marks.province
+                      }
                       lang={lang}
                       required
                     />
                   }
-                  value={provinceConjoint}
-                  onChange={setProvinceConjoint}
+                  value={
+                    provinceConjoint
+                  }
+                  onChange={
+                    setProvinceConjoint
+                  }
                   options={PROVINCES}
                   required
-                  placeholderText={T.choose}
+                  placeholderText={
+                    T.choose
+                  }
                   status={
-                    marks.province === "ok"
+                    marks.province ===
+                    "ok"
                       ? "valid"
                       : "invalid"
                   }
-                  autoComplete="off"
                 />
 
                 <Field
                   label={
                     <LabelWithMark
-                      text={L.fields.postal}
-                      mark={marks.postal}
+                      text={
+                        L.fields.postal
+                      }
+                      mark={
+                        marks.postal
+                      }
                       lang={lang}
                       required
                     />
                   }
-                  value={codePostalConjoint}
-                  onChange={setCodePostalConjoint}
-                  placeholder={L.fields.postalPh}
-                  formatter={formatPostalInput}
+                  value={
+                    codePostalConjoint
+                  }
+                  onChange={
+                    setCodePostalConjoint
+                  }
+                  placeholder={
+                    L.fields.postalPh
+                  }
+                  formatter={
+                    formatPostalInput
+                  }
                   maxLength={7}
                   required
                   status={
@@ -928,6 +1330,125 @@ export default function SpouseSection(props: Props) {
               </div>
             </div>
           ) : null}
+
+          {/* ================================================
+              HANDICAP / DÉFICIENCE
+          ================================================ */}
+
+          <div
+            className="ff-mt"
+            style={{
+              paddingTop: 16,
+              borderTop:
+                "1px solid rgba(0,0,0,.08)",
+            }}
+          >
+            <YesNoField
+              label={
+                <LabelWithMark
+                  text={T.disability}
+                  mark={
+                    marks.handicap
+                  }
+                  lang={lang}
+                  required
+                />
+              }
+              value={handicapValue}
+              onChange={(value) => {
+                if (
+                  value === "oui"
+                ) {
+                  setHandicapConjoint(
+                    true
+                  );
+                }
+
+                if (
+                  value === "non"
+                ) {
+                  setHandicapConjoint(
+                    false
+                  );
+
+                  setT2201StatutConjoint(
+                    ""
+                  );
+                }
+              }}
+              required
+              labels={{
+                yes: T.yes,
+                no: T.no,
+              }}
+              status={
+                marks.handicap === "ok"
+                  ? "valid"
+                  : "invalid"
+              }
+            />
+
+            {handicapConjoint ===
+            true ? (
+              <div className="ff-mt-sm">
+                <SelectField<T2201Statut>
+                  label={
+                    <LabelWithMark
+                      text={T.t2201}
+                      mark={
+                        marks.t2201
+                      }
+                      lang={lang}
+                      required
+                    />
+                  }
+                  value={
+                    t2201StatutConjoint
+                  }
+                  onChange={
+                    setT2201StatutConjoint
+                  }
+                  options={[
+                    {
+                      value:
+                        "approuve",
+                      label:
+                        T.t2201Approved,
+                    },
+                    {
+                      value:
+                        "attente",
+                      label:
+                        T.t2201Pending,
+                    },
+                    {
+                      value: "non",
+                      label:
+                        T.t2201No,
+                    },
+                    {
+                      value:
+                        "inconnu",
+                      label:
+                        T.t2201Unknown,
+                    },
+                  ]}
+                  required
+                  placeholderText={
+                    T.choose
+                  }
+                  status={
+                    marks.t2201 === "ok"
+                      ? "valid"
+                      : "invalid"
+                  }
+                  hint={
+                    T.disabilityHint
+                  }
+                />
+              </div>
+            ) : null}
+          </div>
         </>
       ) : null}
     </section>
