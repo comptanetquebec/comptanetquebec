@@ -180,6 +180,9 @@ type FormConjointdata = {
   nomConjoint: string;
   nasConjoint: string;
   dobConjoint: string;
+  telConjoint: string;
+  telCellConjoint: string;
+  courrielConjoint: string;
   revenuNetConjoint: string;
 };
 
@@ -341,6 +344,9 @@ function Inner({
   const [nomConjoint, setNomConjoint] = useState("");
   const [nasConjoint, setNasConjoint] = useState("");
   const [dobConjoint, setDobConjoint] = useState("");
+  const [telConjoint, setTelConjoint] = useState("");
+  const [telCellConjoint, setTelCellConjoint] = useState("");
+  const [courrielConjoint, setCourrielConjoint] = useState("");
   const [revenuNetConjoint, setRevenuNetConjoint] = useState("");
 
   // ====== Assurance meds (QC)
@@ -391,6 +397,9 @@ function Inner({
           nomConjoint: nomConjoint.trim(),
           nasConjoint: normalizeNAS(nasConjoint),
           dobConjoint: dobConjoint.trim(),
+          telConjoint: normalizePhone(telConjoint),
+          telCellConjoint: normalizePhone(telCellConjoint),
+          courrielConjoint: courrielConjoint.trim().toLowerCase(),
           revenuNetConjoint: traiterConjoint ? "" : revenuNetConjoint.trim(),
         }
       : null;
@@ -475,6 +484,9 @@ function Inner({
     nomConjoint,
     nasConjoint,
     dobConjoint,
+    telConjoint,
+    telCellConjoint,
+    courrielConjoint,
     revenuNetConjoint,
     assuranceMedsClient,
     assuranceMedsClientPeriodes,
@@ -595,6 +607,9 @@ if (fid) {
         setNomConjoint(cj.nomConjoint ?? "");
         setNasConjoint(cj.nasConjoint ? formatNASInput(cj.nasConjoint) : "");
         setDobConjoint(cj.dobConjoint ?? "");
+        setTelConjoint(cj.telConjoint ? formatPhoneInput(cj.telConjoint) : "");
+        setTelCellConjoint(cj.telCellConjoint ? formatPhoneInput(cj.telCellConjoint) : "");
+        setCourrielConjoint(cj.courrielConjoint ?? "");
         setRevenuNetConjoint(cj.revenuNetConjoint ?? "");
       } else {
         setTraiterConjoint(true);
@@ -602,6 +617,9 @@ if (fid) {
         setNomConjoint("");
         setNasConjoint("");
         setDobConjoint("");
+        setTelConjoint("");
+        setTelCellConjoint("");
+        setCourrielConjoint("");
         setRevenuNetConjoint("");
       }
 
@@ -924,6 +942,34 @@ useEffect(() => {
                     formatter={formatDateInput}
                     maxLength={10}
                   />
+                </div>
+
+                <div className="ff-grid2 ff-mt">
+                  <Field
+                    label="Téléphone"
+                    value={telConjoint}
+                    onChange={setTelConjoint}
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
+                  />
+                  <Field
+                    label="Cellulaire"
+                    value={telCellConjoint}
+                    onChange={setTelCellConjoint}
+                    placeholder="(418) 555-1234"
+                    inputMode="tel"
+                    formatter={formatPhoneInput}
+                    maxLength={14}
+                  />
+                  <Field
+                    label="Courriel"
+                    value={courrielConjoint}
+                    onChange={setCourrielConjoint}
+                    type="email"
+                  />
+                  <div />
                 </div>
               </>
             )}
