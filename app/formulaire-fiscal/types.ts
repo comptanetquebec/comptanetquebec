@@ -18,9 +18,22 @@ export type ProvinceCode =
   | "NU";
 
 export type Sexe = "M" | "F" | "X" | "";
-export type AssuranceMeds = "ramq" | "prive" | "conjoint" | "";
-export type CopieImpots = "espaceClient" | "courriel" | "";
-export type AvisCotisation = "poste" | "gouvernement" | "";
+
+export type AssuranceMeds =
+  | "ramq"
+  | "prive"
+  | "conjoint"
+  | "";
+
+export type CopieImpots =
+  | "espaceClient"
+  | "courriel"
+  | "";
+
+export type AvisCotisation =
+  | "poste"
+  | "gouvernement"
+  | "";
 
 export type EtatCivil =
   | "celibataire"
@@ -31,7 +44,18 @@ export type EtatCivil =
   | "veuf"
   | "";
 
-export type Periode = { debut: string; fin: string };
+/* ============================================================
+   PÉRIODES
+============================================================ */
+
+export type Periode = {
+  debut: string;
+  fin: string;
+};
+
+/* ============================================================
+   PERSONNES À CHARGE
+============================================================ */
 
 export type Child = {
   prenom: string;
@@ -39,7 +63,18 @@ export type Child = {
   dob: string;
   nas: string;
   sexe: Sexe;
+
+  /*
+    Optionnels pour conserver la compatibilité
+    avec les anciens dossiers déjà enregistrés.
+  */
+  aTravaille?: boolean;
+  revenuTravailEstime?: string;
 };
+
+/* ============================================================
+   DOCUMENTS
+============================================================ */
 
 export type DocRow = {
   id: string;
@@ -52,38 +87,54 @@ export type DocRow = {
   created_at: string;
 };
 
-/* ===================== FORM DATA (DB JSON) ===================== */
+/* ============================================================
+   FORM DATA — JSON ENREGISTRÉ EN BASE DE DONNÉES
+============================================================ */
+
+/* ---------------- CLIENT ---------------- */
 
 export type FormClientdata = {
   prenom?: string;
   nom?: string;
   nas?: string;
   dob?: string;
+
   etatCivil?: EtatCivil;
+
   etatCivilChange?: boolean;
   ancienEtatCivil?: string;
   dateChangementEtatCivil?: string;
+
   tel?: string;
   telCell?: string;
+
   adresse?: string;
   app?: string;
   ville?: string;
   province?: ProvinceCode;
   codePostal?: string;
+
   courriel?: string;
 };
 
+/* ---------------- CONJOINT ---------------- */
+
 export type FormConjointdata = {
   traiterConjoint?: boolean;
+
   prenomConjoint?: string;
   nomConjoint?: string;
+
   nasConjoint?: string;
   dobConjoint?: string;
+
   telConjoint?: string;
   telCellConjoint?: string;
+
   courrielConjoint?: string;
 
   adresseConjointeIdentique?: boolean;
+
   adresseConjoint?: string;
   appConjoint?: string;
   villeConjoint?: string;
@@ -93,49 +144,105 @@ export type FormConjointdata = {
   revenuNetConjoint?: string;
 };
 
+/* ---------------- ASSURANCE MÉDICAMENTS ---------------- */
+
 export type FormMedsdata = {
-  client?: { regime?: AssuranceMeds; periodes?: Periode[] };
-  conjoint?: { regime?: AssuranceMeds; periodes?: Periode[] } | null;
+  client?: {
+    regime?: AssuranceMeds;
+    periodes?: Periode[];
+  };
+
+  conjoint?: {
+    regime?: AssuranceMeds;
+    periodes?: Periode[];
+  } | null;
 };
+
+/* ---------------- QUESTIONS GÉNÉRALES ---------------- */
 
 export type FormQuestionsdata = {
   habiteSeulTouteAnnee?: string;
+
   nbPersonnesMaison3112?: string;
+
   biensEtranger100k?: string;
+
   citoyenCanadien?: string;
+
   nonResident?: string;
+
   maisonAcheteeOuVendue?: string;
+
   appelerTechnicien?: string;
+
   copieImpots?: CopieImpots;
+
   avisCotisation?: AvisCotisation;
+
   anneeImposition?: string;
+
   aucunePersonneACharge?: boolean;
 };
 
+/* ---------------- VALIDATIONS CLIENT ---------------- */
+
+export type FormValidationsdata = {
+  exactitudeInfo?: boolean;
+
+  dossierComplet?: boolean;
+
+  fraisVariables?: boolean;
+
+  delaisSiManquant?: boolean;
+
+  consentement?: boolean;
+};
+
+/* ============================================================
+   FORMULAIRE COMPLET
+============================================================ */
+
 export type Formdata = {
   dossierType?: string;
+
   client?: FormClientdata;
+
   conjoint?: FormConjointdata | null;
+
   assuranceMedicamenteuse?: FormMedsdata | null;
+
+  /*
+    Chaque personne à charge peut maintenant contenir :
+
+    aTravaille
+    revenuTravailEstime
+  */
   personnesACharge?: Child[];
+
   questionsGenerales?: FormQuestionsdata;
-  validations?: {
-    exactitudeInfo?: boolean;
-    dossierComplet?: boolean;
-    fraisVariables?: boolean;
-    delaisSiManquant?: boolean;
-    consentement?: boolean;
-  };
+
+  validations?: FormValidationsdata;
 };
+
+/* ============================================================
+   LIGNE FORMULAIRE — BASE DE DONNÉES
+============================================================ */
 
 export type FormRow = {
   id: string;
+
   user_id?: string;
+
   form_type?: string;
+
   lang?: string;
+
   status?: string;
+
   annee?: string | null;
+
   data: Formdata | null;
+
   created_at: string;
 };
 
@@ -143,9 +250,15 @@ export type InsertIdRow = {
   id: string;
 };
 
-/* ===================== UI STATUS (VERT / ROUGE / ORANGE) ===================== */
+/* ============================================================
+   STATUTS UI
+   VERT / ROUGE / ORANGE
+============================================================ */
 
-export type Mark = "ok" | "bad" | "warn";
+export type Mark =
+  | "ok"
+  | "bad"
+  | "warn";
 
 export type BlockMark = {
   mark: Mark;
@@ -154,9 +267,14 @@ export type BlockMark = {
 
 export type FormBlocksStatus = {
   client: BlockMark;
+
   spouse: BlockMark;
+
   meds: BlockMark;
+
   dependants: BlockMark;
+
   questions: BlockMark;
+
   confirms: BlockMark;
 };
