@@ -194,7 +194,7 @@ export default function AdminDossiersClient({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_desc");
-  const [yearFilter, setYearFilter] = useState<YearFilter>("2025");
+  const [yearFilter, setYearFilter] = useState<YearFilter>("2026");
 
   const yearRows = useMemo(() => {
     if (yearFilter === "all") return rows;
