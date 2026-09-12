@@ -16,6 +16,77 @@ type FormRow = {
   data: unknown;
 };
 
+type JsonRecord = Record<string, unknown>;
+
+type IdentiteNas = {
+  client: string | null;
+  conjoint: string | null;
+  personnesACharge: Array<{
+    prenom: string;
+    nom: string;
+    nas: string | null;
+  }>;
+};
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function extractNas(data: unknown): IdentiteNas {
+  const root = isRecord(data) ? data : {};
+  const client = isRecord(root.client) ? root.client : {};
+  const conjoint = isRecord(root.conjoint) ? root.conjoint : null;
+  const personnes = Array.isArray(root.personnesACharge)
+    ? root.personnesACharge
+    : [];
+
+  return {
+    client: asString(client.nas) || null,
+    conjoint: conjoint ? asString(conjoint.nasConjoint) || null : null,
+    personnesACharge: personnes
+      .filter(isRecord)
+      .map((personne) => ({
+        prenom: asString(personne.prenom),
+        nom: asString(personne.nom),
+        nas: asString(personne.nas) || null,
+      })),
+  };
+}
+
+function removeNas(value: unknown, key = ""): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => removeNas(item));
+  }
+
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const result: JsonRecord = {};
+
+  for (const [childKey, childValue] of Object.entries(value)) {
+    const normalizedKey = childKey.toLowerCase();
+
+    // Retire les champs NAS avant tout envoi à l'IA.
+    if (
+      normalizedKey === "nas" ||
+      normalizedKey === "nasconjoint" ||
+      normalizedKey.includes("socialinsurancenumber") ||
+      normalizedKey === "sin"
+    ) {
+      continue;
+    }
+
+    result[childKey] = removeNas(childValue, childKey);
+  }
+
+  return result;
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await supabaseServer();
@@ -89,6 +160,10 @@ export async function POST(request: Request) {
       );
     }
 
+    // Les NAS sont extraits pour l'écran admin, puis retirés de la copie envoyée à l'IA.
+    const identiteNas = extractNas(form.data);
+    const dataForAI = removeNas(form.data);
+
     const instructions = `
 Tu es l'assistant de travail fiscal interne de ComptaNet Québec.
 
@@ -101,11 +176,9 @@ IMPORTANT :
 - N'invente aucune information.
 - Ne calcule aucune donnée qui n'est pas explicitement fournie.
 - Ne donne aucun conseil fiscal.
-- Affiche le NAS complet du client lorsqu'il est présent dans les données.
-- Affiche le NAS complet du conjoint lorsqu'il est présent dans les données.
-- Affiche le NAS complet de chaque personne à charge / enfant lorsqu'il est présent dans les données.
-- N'invente jamais un NAS s'il est absent.
-- Ne reproduis pas les mots de passe, numéros de compte bancaire ou autres identifiants sensibles qui ne sont pas nécessaires à la préparation de la déclaration.
+- Les NAS ont volontairement été retirés avant l'envoi à l'IA.
+- Ne demande pas, ne devine pas et ne reconstitue jamais un NAS.
+- Ne reproduis pas les mots de passe, numéros de compte bancaire ou autres identifiants personnels sensibles.
 - Ignore les champs purement techniques, identifiants internes et valeurs vides.
 - Respecte les réponses Oui/Non du client.
 - Fais ressortir clairement les informations manquantes ou contradictoires dans une courte section À VÉRIFIER.
@@ -121,7 +194,6 @@ Date de naissance : ...
 Adresse : ...
 Téléphone : ...
 Courriel : ...
-NAS : ...
 
 CONJOINT
 [uniquement si applicable et si des données existent]
@@ -180,8 +252,8 @@ RÈGLES :
                 `Dossier : ${fid}\n` +
                 `Type : ${form.form_type ?? "?"}\n` +
                 `Année : ${form.tax_year ?? "?"}\n\n` +
-                `Données du formulaire client :\n` +
-                JSON.stringify(form.data, null, 2),
+                `Données du formulaire client (NAS retirés) :\n` +
+                JSON.stringify(dataForAI, null, 2),
             },
           ],
         },
@@ -200,6 +272,7 @@ RÈGLES :
     return NextResponse.json({
       ok: true,
       analyse,
+      identiteNas,
       fid: form.id,
       formType: form.form_type,
       taxYear: form.tax_year,
