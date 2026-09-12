@@ -7,11 +7,13 @@ import {
   Field,
   CheckboxField,
   SelectField,
+  YesNoField,
 } from "../ui";
 
 import type {
   ProvinceCode,
   EtatCivil,
+  T2201Statut,
 } from "../types";
 
 import type { CopyPack } from "../copy";
@@ -34,8 +36,8 @@ import {
 ============================================================ */
 
 type Mark = "ok" | "bad" | "todo";
-
 type UiLang = "fr" | "en" | "es";
+type YesNo = "oui" | "non" | "";
 
 /* ============================================================
    LANGUE
@@ -59,6 +61,9 @@ const LOCAL_TEXT = {
 
     choose: "Choisir…",
 
+    yes: "Oui",
+    no: "Non",
+
     phoneHint:
       "Au moins un numéro de téléphone valide est requis.",
 
@@ -70,6 +75,27 @@ const LOCAL_TEXT = {
       divorce: "Divorcé(e)",
       veuf: "Veuf / veuve",
     },
+
+    disability:
+      "Avez-vous une déficience ou un handicap pouvant donner droit à un crédit ou à une déduction fiscale ?",
+
+    t2201:
+      "Statut du formulaire T2201 – Certificat pour le crédit d’impôt pour personnes handicapées",
+
+    t2201Approved:
+      "Approuvé par l’ARC",
+
+    t2201Pending:
+      "En attente d’une décision",
+
+    t2201No:
+      "Non / aucun formulaire T2201",
+
+    t2201Unknown:
+      "Je ne sais pas",
+
+    disabilityHint:
+      "Si oui, indiquez le statut du formulaire T2201 afin que ComptaNet Québec puisse vérifier les crédits applicables.",
   },
 
   en: {
@@ -78,6 +104,9 @@ const LOCAL_TEXT = {
     todo: "To complete",
 
     choose: "Select…",
+
+    yes: "Yes",
+    no: "No",
 
     phoneHint:
       "At least one valid phone number is required.",
@@ -90,6 +119,27 @@ const LOCAL_TEXT = {
       divorce: "Divorced",
       veuf: "Widowed",
     },
+
+    disability:
+      "Do you have an impairment or disability that may qualify for a tax credit or deduction?",
+
+    t2201:
+      "Status of Form T2201 – Disability Tax Credit Certificate",
+
+    t2201Approved:
+      "Approved by the CRA",
+
+    t2201Pending:
+      "Awaiting a decision",
+
+    t2201No:
+      "No / no T2201 form",
+
+    t2201Unknown:
+      "I don't know",
+
+    disabilityHint:
+      "If yes, indicate the status of Form T2201 so ComptaNet Québec can review the applicable tax credits.",
   },
 
   es: {
@@ -98,6 +148,9 @@ const LOCAL_TEXT = {
     todo: "Por completar",
 
     choose: "Seleccionar…",
+
+    yes: "Sí",
+    no: "No",
 
     phoneHint:
       "Se requiere al menos un número de teléfono válido.",
@@ -110,11 +163,32 @@ const LOCAL_TEXT = {
       divorce: "Divorciado(a)",
       veuf: "Viudo(a)",
     },
+
+    disability:
+      "¿Tiene una deficiencia o discapacidad que podría dar derecho a un crédito o deducción fiscal?",
+
+    t2201:
+      "Estado del formulario T2201 – Certificado para el crédito fiscal por discapacidad",
+
+    t2201Approved:
+      "Aprobado por la CRA",
+
+    t2201Pending:
+      "En espera de una decisión",
+
+    t2201No:
+      "No / ningún formulario T2201",
+
+    t2201Unknown:
+      "No lo sé",
+
+    disabilityHint:
+      "Si la respuesta es sí, indique el estado del formulario T2201 para que ComptaNet Québec pueda verificar los créditos fiscales aplicables.",
   },
 } as const;
 
 /* ============================================================
-   ICÔNES DE VALIDATION
+   ICÔNES
 ============================================================ */
 
 function MarkIcon({
@@ -203,15 +277,13 @@ function LabelWithMark({
 }
 
 /* ============================================================
-   VALIDATION
+   VALIDATIONS
 ============================================================ */
 
 function isValidNAS(v: string) {
   const nas = normalizeNAS(v);
 
-  if (nas.length !== 9) {
-    return false;
-  }
+  if (nas.length !== 9) return false;
 
   let sum = 0;
 
@@ -235,17 +307,19 @@ function isValidNAS(v: string) {
 function isValidEmail(v: string) {
   const value = (v || "").trim();
 
-  if (!value) {
-    return false;
-  }
+  if (!value) return false;
 
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    value
+  );
 }
 
 function isValidDateJJMMAAAA(v: string) {
   const value = (v || "").trim();
 
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+  if (
+    !/^\d{2}\/\d{2}\/\d{4}$/.test(value)
+  ) {
     return false;
   }
 
@@ -281,14 +355,6 @@ function isValidDateJJMMAAAA(v: string) {
 function isValidPostal(v: string) {
   const postal = normalizePostal(v);
 
-  /*
-    Format canadien :
-    A1A 1A1
-
-    Les lettres D, F, I, O, Q et U
-    ne sont pas utilisées dans les
-    positions alphabétiques.
-  */
   return /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ]\d[ABCEGHJ-NPRSTVWXYZ]\d$/.test(
     postal
   );
@@ -305,9 +371,7 @@ function markRequired(v: string): Mark {
 }
 
 function markNAS(v: string): Mark {
-  return isValidNAS(v)
-    ? "ok"
-    : "bad";
+  return isValidNAS(v) ? "ok" : "bad";
 }
 
 function markDate(v: string): Mark {
@@ -317,15 +381,11 @@ function markDate(v: string): Mark {
 }
 
 function markEmail(v: string): Mark {
-  return isValidEmail(v)
-    ? "ok"
-    : "bad";
+  return isValidEmail(v) ? "ok" : "bad";
 }
 
 function markPostal(v: string): Mark {
-  return isValidPostal(v)
-    ? "ok"
-    : "bad";
+  return isValidPostal(v) ? "ok" : "bad";
 }
 
 /* ============================================================
@@ -362,7 +422,9 @@ export default function ClientSection(props: {
   setAncienEtatCivil: (v: string) => void;
 
   dateChangementEtatCivil: string;
-  setDateChangementEtatCivil: (v: string) => void;
+  setDateChangementEtatCivil: (
+    v: string
+  ) => void;
 
   tel: string;
   setTel: (v: string) => void;
@@ -383,10 +445,23 @@ export default function ClientSection(props: {
   setVille: (v: string) => void;
 
   province: ProvinceCode;
-  setProvince: (v: ProvinceCode) => void;
+  setProvince: (
+    v: ProvinceCode
+  ) => void;
 
   codePostal: string;
   setCodePostal: (v: string) => void;
+
+  /* Handicap / T2201 */
+  handicap: boolean | undefined;
+  setHandicap: (
+    v: boolean | undefined
+  ) => void;
+
+  t2201Statut: T2201Statut;
+  setT2201Statut: (
+    v: T2201Statut
+  ) => void;
 }) {
   const {
     L,
@@ -439,6 +514,12 @@ export default function ClientSection(props: {
 
     codePostal,
     setCodePostal,
+
+    handicap,
+    setHandicap,
+
+    t2201Statut,
+    setT2201Statut,
   } = props;
 
   const lang = getUiLang(L);
@@ -505,12 +586,6 @@ export default function ClientSection(props: {
     const mPostal =
       markPostal(codePostal);
 
-    /*
-      Un seul numéro est obligatoire.
-
-      Si un numéro est inscrit, il doit
-      cependant contenir 10 chiffres.
-    */
     const telEntered =
       normalizePhone(tel).length > 0;
 
@@ -558,6 +633,23 @@ export default function ClientSection(props: {
             dateChangementEtatCivil
           );
 
+    /* Handicap doit avoir une réponse */
+    const mHandicap: Mark =
+      typeof handicap === "boolean"
+        ? "ok"
+        : "bad";
+
+    /*
+      Le statut T2201 est obligatoire
+      seulement si handicap = Oui.
+    */
+    const mT2201: Mark =
+      handicap !== true
+        ? "ok"
+        : t2201Statut
+        ? "ok"
+        : "bad";
+
     const blockOk =
       mPrenom === "ok" &&
       mNom === "ok" &&
@@ -571,13 +663,16 @@ export default function ClientSection(props: {
       mPostal === "ok" &&
       phoneAnyValid &&
       mPrevEtat === "ok" &&
-      mDateChange === "ok";
+      mDateChange === "ok" &&
+      mHandicap === "ok" &&
+      mT2201 === "ok";
 
     return {
       prenom: mPrenom,
       nom: mNom,
       nas: mNAS,
       dob: mDOB,
+
       etatCivil: mEtatCivil,
       etatCivilPrev: mPrevEtat,
       etatCivilDate: mDateChange,
@@ -592,6 +687,9 @@ export default function ClientSection(props: {
       ville: mVille,
       province: mProvince,
       postal: mPostal,
+
+      handicap: mHandicap,
+      t2201: mT2201,
 
       block: blockOk
         ? ("ok" as Mark)
@@ -613,7 +711,16 @@ export default function ClientSection(props: {
     ville,
     province,
     codePostal,
+    handicap,
+    t2201Statut,
   ]);
+
+  const handicapValue: YesNo =
+    handicap === true
+      ? "oui"
+      : handicap === false
+      ? "non"
+      : "";
 
   return (
     <section className="ff-card">
@@ -626,7 +733,8 @@ export default function ClientSection(props: {
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             gap: 10,
           }}
         >
@@ -782,7 +890,9 @@ export default function ClientSection(props: {
             label={
               <LabelWithMark
                 text={L.fields.prevMarital}
-                mark={marks.etatCivilPrev}
+                mark={
+                  marks.etatCivilPrev
+                }
                 lang={lang}
                 required
               />
@@ -806,8 +916,12 @@ export default function ClientSection(props: {
           <Field
             label={
               <LabelWithMark
-                text={L.fields.changeDate}
-                mark={marks.etatCivilDate}
+                text={
+                  L.fields.changeDate
+                }
+                mark={
+                  marks.etatCivilDate
+                }
                 lang={lang}
                 required
               />
@@ -854,7 +968,8 @@ export default function ClientSection(props: {
           formatter={formatPhoneInput}
           maxLength={14}
           status={
-            normalizePhone(tel).length > 0
+            normalizePhone(tel).length >
+            0
               ? marks.phone === "ok"
                 ? "valid"
                 : "invalid"
@@ -878,7 +993,8 @@ export default function ClientSection(props: {
           formatter={formatPhoneInput}
           maxLength={14}
           status={
-            normalizePhone(telCell).length > 0
+            normalizePhone(telCell)
+              .length > 0
               ? marks.mobile === "ok"
                 ? "valid"
                 : "invalid"
@@ -1016,8 +1132,12 @@ export default function ClientSection(props: {
             }
             value={codePostal}
             onChange={setCodePostal}
-            placeholder={L.fields.postalPh}
-            formatter={formatPostalInput}
+            placeholder={
+              L.fields.postalPh
+            }
+            formatter={
+              formatPostalInput
+            }
             maxLength={7}
             required
             status={
@@ -1028,6 +1148,104 @@ export default function ClientSection(props: {
             autoComplete="postal-code"
           />
         </div>
+      </div>
+
+      {/* ======================================================
+          HANDICAP / DÉFICIENCE
+      ====================================================== */}
+
+      <div
+        className="ff-mt"
+        style={{
+          paddingTop: 16,
+          borderTop:
+            "1px solid rgba(0,0,0,.08)",
+        }}
+      >
+        <YesNoField
+          label={
+            <LabelWithMark
+              text={T.disability}
+              mark={marks.handicap}
+              lang={lang}
+              required
+            />
+          }
+          value={handicapValue}
+          onChange={(value) => {
+            if (value === "oui") {
+              setHandicap(true);
+            }
+
+            if (value === "non") {
+              setHandicap(false);
+
+              /*
+                On vide le statut T2201
+                lorsque la réponse devient Non.
+              */
+              setT2201Statut("");
+            }
+          }}
+          required
+          labels={{
+            yes: T.yes,
+            no: T.no,
+          }}
+          status={
+            marks.handicap === "ok"
+              ? "valid"
+              : "invalid"
+          }
+        />
+
+        {handicap === true ? (
+          <div className="ff-mt-sm">
+            <SelectField<T2201Statut>
+              label={
+                <LabelWithMark
+                  text={T.t2201}
+                  mark={marks.t2201}
+                  lang={lang}
+                  required
+                />
+              }
+              value={t2201Statut}
+              onChange={setT2201Statut}
+              options={[
+                {
+                  value: "approuve",
+                  label:
+                    T.t2201Approved,
+                },
+                {
+                  value: "attente",
+                  label:
+                    T.t2201Pending,
+                },
+                {
+                  value: "non",
+                  label: T.t2201No,
+                },
+                {
+                  value: "inconnu",
+                  label:
+                    T.t2201Unknown,
+                },
+              ]}
+              required
+              placeholderText={T.choose}
+              status={
+                marks.t2201 === "ok"
+                  ? "valid"
+                  : "invalid"
+              }
+              hint={
+                T.disabilityHint
+              }
+            />
+          </div>
+        ) : null}
       </div>
     </section>
   );
