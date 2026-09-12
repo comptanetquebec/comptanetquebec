@@ -23,7 +23,9 @@ function MarkIcon({ mark }: { mark: Mark }) {
       ? "mark-icon mark-icon--bad"
       : "mark-icon mark-icon--todo";
 
-  const title = mark === "ok" ? "OK" : mark === "bad" ? "À corriger" : "À faire";
+  const title =
+    mark === "ok" ? "OK" : mark === "bad" ? "À corriger" : "À faire";
+
   const symbol = mark === "ok" ? "✓" : mark === "bad" ? "✕" : "→";
 
   return (
@@ -43,11 +45,24 @@ function LabelWithMark({
   required?: boolean;
 }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
       <span style={{ minWidth: 0 }}>{text}</span>
 
       {required && mark !== "ok" ? (
-        <span style={{ color: "#dc2626", fontWeight: 800 }}>*</span>
+        <span
+          style={{
+            color: "#dc2626",
+            fontWeight: 800,
+          }}
+        >
+          *
+        </span>
       ) : null}
 
       <MarkIcon mark={mark} />
@@ -55,20 +70,49 @@ function LabelWithMark({
   );
 }
 
+/* ---------- VALIDATION ---------- */
+
 function normalizeNAS(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 9);
 }
 
 function normalizePostal(v: string) {
-  return (v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  return (v || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
 }
 
 function normalizePhone(v: string) {
   return (v || "").replace(/\D+/g, "").slice(0, 10);
 }
 
+/*
+  Validation complète du NAS canadien.
+  Le NAS doit contenir 9 chiffres et respecter l'algorithme de Luhn.
+*/
 function isValidNAS(v: string) {
-  return normalizeNAS(v).length === 9;
+  const nas = normalizeNAS(v);
+
+  if (nas.length !== 9) return false;
+
+  let sum = 0;
+
+  for (let i = 0; i < nas.length; i++) {
+    let digit = Number(nas[i]);
+
+    if (i % 2 === 1) {
+      digit *= 2;
+
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+
+    sum += digit;
+  }
+
+  return sum % 10 === 0;
 }
 
 function isValidPostal(v: string) {
@@ -77,24 +121,38 @@ function isValidPostal(v: string) {
 
 function isValidEmail(v: string) {
   const s = (v || "").trim();
+
   if (!s) return false;
+
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
 function isValidDateJJMMAAAA(v: string) {
   const s = (v || "").trim();
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return false;
+
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    return false;
+  }
 
   const [ddStr, mmStr, yyyyStr] = s.split("/");
+
   const dd = Number(ddStr);
   const mm = Number(mmStr);
   const yyyy = Number(yyyyStr);
 
-  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) return false;
+  if (
+    !Number.isFinite(dd) ||
+    !Number.isFinite(mm) ||
+    !Number.isFinite(yyyy)
+  ) {
+    return false;
+  }
+
   if (yyyy < 1900 || yyyy > 2100) return false;
   if (mm < 1 || mm > 12) return false;
 
   const daysInMonth = new Date(yyyy, mm, 0).getDate();
+
   return dd >= 1 && dd <= daysInMonth;
 }
 
@@ -119,83 +177,121 @@ function markPostal(v: string): Mark {
 }
 
 function markPhoneAny(tel: string, cell: string): Mark {
-  const any = firstNonEmpty(normalizePhone(tel), normalizePhone(cell));
+  const any = firstNonEmpty(
+    normalizePhone(tel),
+    normalizePhone(cell)
+  );
+
   return any ? "ok" : "bad";
 }
 
+/* ---------- COMPOSANT ---------- */
+
 export default function ClientSection(props: {
   L: CopyPack;
-  PROVINCES: { value: ProvinceCode; label: string }[];
+
+  PROVINCES: {
+    value: ProvinceCode;
+    label: string;
+  }[];
 
   prenom: string;
   setPrenom: (v: string) => void;
+
   nom: string;
   setNom: (v: string) => void;
+
   nas: string;
   setNas: (v: string) => void;
+
   dob: string;
   setDob: (v: string) => void;
 
   etatCivil: EtatCivil;
   setEtatCivil: (v: EtatCivil) => void;
+
   etatCivilChange: boolean;
   setEtatCivilChange: (v: boolean) => void;
+
   ancienEtatCivil: string;
   setAncienEtatCivil: (v: string) => void;
+
   dateChangementEtatCivil: string;
   setDateChangementEtatCivil: (v: string) => void;
 
   tel: string;
   setTel: (v: string) => void;
+
   telCell: string;
   setTelCell: (v: string) => void;
+
   courriel: string;
   setCourriel: (v: string) => void;
 
   adresse: string;
   setAdresse: (v: string) => void;
+
   app: string;
   setApp: (v: string) => void;
+
   ville: string;
   setVille: (v: string) => void;
+
   province: ProvinceCode;
   setProvince: (v: ProvinceCode) => void;
+
   codePostal: string;
   setCodePostal: (v: string) => void;
 }) {
   const {
     L,
     PROVINCES,
+
     prenom,
     setPrenom,
+
     nom,
     setNom,
+
     nas,
     setNas,
+
     dob,
     setDob,
+
     etatCivil,
     setEtatCivil,
+
     etatCivilChange,
     setEtatCivilChange,
+
     ancienEtatCivil,
     setAncienEtatCivil,
+
     dateChangementEtatCivil,
     setDateChangementEtatCivil,
+
     tel,
     setTel,
+
     telCell,
     setTelCell,
+
     courriel,
     setCourriel,
+
     adresse,
     setAdresse,
+
     app,
     setApp,
+
     ville,
     setVille,
+
     province,
     setProvince,
+
     codePostal,
     setCodePostal,
   } = props;
@@ -205,18 +301,31 @@ export default function ClientSection(props: {
     const mNom = markTextRequired(nom);
     const mNAS = markNAS(nas);
     const mDOB = markDOB(dob);
-    const mEtat = etatCivil ? ("ok" as Mark) : ("bad" as Mark);
+
+    const mEtat = etatCivil
+      ? ("ok" as Mark)
+      : ("bad" as Mark);
+
     const mEmail = markEmail(courriel);
 
     const mAdresse = markTextRequired(adresse);
     const mVille = markTextRequired(ville);
-    const mProvince = province ? ("ok" as Mark) : ("bad" as Mark);
+
+    const mProvince = province
+      ? ("ok" as Mark)
+      : ("bad" as Mark);
+
     const mPostal = markPostal(codePostal);
 
     const mPhone = markPhoneAny(tel, telCell);
 
-    const mPrevEtat = !etatCivilChange ? ("ok" as Mark) : markTextRequired(ancienEtatCivil);
-    const mDateChange = !etatCivilChange ? ("ok" as Mark) : markDOB(dateChangementEtatCivil);
+    const mPrevEtat = !etatCivilChange
+      ? ("ok" as Mark)
+      : markTextRequired(ancienEtatCivil);
+
+    const mDateChange = !etatCivilChange
+      ? ("ok" as Mark)
+      : markDOB(dateChangementEtatCivil);
 
     const blockOk =
       mPrenom === "ok" &&
@@ -247,7 +356,9 @@ export default function ClientSection(props: {
       ville: mVille,
       province: mProvince,
       postal: mPostal,
-      block: blockOk ? ("ok" as Mark) : ("bad" as Mark),
+      block: blockOk
+        ? ("ok" as Mark)
+        : ("bad" as Mark),
     };
   }, [
     prenom,
@@ -278,27 +389,53 @@ export default function ClientSection(props: {
             gap: 10,
           }}
         >
-          <h2 style={{ margin: 0 }}>{L.sections.clientTitle}</h2>
+          <h2 style={{ margin: 0 }}>
+            {L.sections.clientTitle}
+          </h2>
+
           <MarkIcon mark={marks.block} />
         </div>
-        <p style={{ marginTop: 8 }}>{L.sections.clientDesc}</p>
+
+        <p style={{ marginTop: 8 }}>
+          {L.sections.clientDesc}
+        </p>
       </div>
+
+      {/* IDENTITÉ */}
 
       <div className="ff-grid2">
         <Field
-          label={<LabelWithMark text={L.fields.firstName} mark={marks.prenom} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.firstName}
+              mark={marks.prenom}
+              required
+            />
+          }
           value={prenom}
           onChange={setPrenom}
         />
 
         <Field
-          label={<LabelWithMark text={L.fields.lastName} mark={marks.nom} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.lastName}
+              mark={marks.nom}
+              required
+            />
+          }
           value={nom}
           onChange={setNom}
         />
 
         <Field
-          label={<LabelWithMark text={L.fields.sin} mark={marks.nas} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.sin}
+              mark={marks.nas}
+              required
+            />
+          }
           value={nas}
           onChange={setNas}
           placeholder={L.fields.sinPh}
@@ -308,7 +445,13 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={<LabelWithMark text={L.fields.dob} mark={marks.dob} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.dob}
+              mark={marks.dob}
+              required
+            />
+          }
           value={dob}
           onChange={setDob}
           placeholder={L.fields.dobPh}
@@ -318,18 +461,44 @@ export default function ClientSection(props: {
         />
       </div>
 
+      {/* ÉTAT CIVIL */}
+
       <div className="ff-grid2 ff-mt">
         <SelectField<EtatCivil>
-          label={<LabelWithMark text={L.fields.marital} mark={marks.etatCivil} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.marital}
+              mark={marks.etatCivil}
+              required
+            />
+          }
           value={etatCivil}
           onChange={setEtatCivil}
           options={[
-            { value: "celibataire", label: "Célibataire" },
-            { value: "conjointDefait", label: "Conjoint de fait" },
-            { value: "marie", label: "Marié(e)" },
-            { value: "separe", label: "Séparé(e)" },
-            { value: "divorce", label: "Divorcé(e)" },
-            { value: "veuf", label: "Veuf(ve)" },
+            {
+              value: "celibataire",
+              label: "Célibataire",
+            },
+            {
+              value: "conjointDefait",
+              label: "Conjoint de fait",
+            },
+            {
+              value: "marie",
+              label: "Marié(e)",
+            },
+            {
+              value: "separe",
+              label: "Séparé(e)",
+            },
+            {
+              value: "divorce",
+              label: "Divorcé(e)",
+            },
+            {
+              value: "veuf",
+              label: "Veuf(ve)",
+            },
           ]}
         />
 
@@ -340,17 +509,56 @@ export default function ClientSection(props: {
         />
       </div>
 
+      {/* CHANGEMENT D'ÉTAT CIVIL */}
+
       {etatCivilChange && (
         <div className="ff-grid2 ff-mt">
-          <Field
-            label={<LabelWithMark text={L.fields.prevMarital} mark={marks.etatCivilPrev} required />}
-            value={ancienEtatCivil}
-            onChange={setAncienEtatCivil}
-            placeholder={L.fields.prevMaritalPh}
+          <SelectField<EtatCivil>
+            label={
+              <LabelWithMark
+                text={L.fields.prevMarital}
+                mark={marks.etatCivilPrev}
+                required
+              />
+            }
+            value={ancienEtatCivil as EtatCivil}
+            onChange={(v) => setAncienEtatCivil(v)}
+            options={[
+              {
+                value: "celibataire",
+                label: "Célibataire",
+              },
+              {
+                value: "conjointDefait",
+                label: "Conjoint de fait",
+              },
+              {
+                value: "marie",
+                label: "Marié(e)",
+              },
+              {
+                value: "separe",
+                label: "Séparé(e)",
+              },
+              {
+                value: "divorce",
+                label: "Divorcé(e)",
+              },
+              {
+                value: "veuf",
+                label: "Veuf(ve)",
+              },
+            ]}
           />
 
           <Field
-            label={<LabelWithMark text={L.fields.changeDate} mark={marks.etatCivilDate} required />}
+            label={
+              <LabelWithMark
+                text={L.fields.changeDate}
+                mark={marks.etatCivilDate}
+                required
+              />
+            }
             value={dateChangementEtatCivil}
             onChange={setDateChangementEtatCivil}
             placeholder={L.fields.changeDatePh}
@@ -361,9 +569,20 @@ export default function ClientSection(props: {
         </div>
       )}
 
+      {/* TÉLÉPHONE */}
+
       <div className="ff-grid2 ff-mt">
         <Field
-          label={<LabelWithMark text={L.fields.phone} mark={marks.phoneAny} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.phone}
+              mark={
+                normalizePhone(tel)
+                  ? "ok"
+                  : marks.phoneAny
+              }
+            />
+          }
           value={tel}
           onChange={setTel}
           placeholder="(418) 555-1234"
@@ -373,7 +592,16 @@ export default function ClientSection(props: {
         />
 
         <Field
-          label={<LabelWithMark text={L.fields.mobile} mark={marks.phoneAny} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.mobile}
+              mark={
+                normalizePhone(telCell)
+                  ? "ok"
+                  : marks.phoneAny
+              }
+            />
+          }
           value={telCell}
           onChange={setTelCell}
           placeholder="(418) 555-1234"
@@ -381,18 +609,47 @@ export default function ClientSection(props: {
           formatter={formatPhoneInput}
           maxLength={14}
         />
+      </div>
 
+      <p
+        style={{
+          marginTop: 6,
+          marginBottom: 0,
+          fontSize: 13,
+          opacity: 0.75,
+        }}
+      >
+        Au moins un numéro de téléphone est requis.
+      </p>
+
+      {/* COURRIEL */}
+
+      <div className="ff-mt">
         <Field
-          label={<LabelWithMark text={L.fields.email} mark={marks.email} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.email}
+              mark={marks.email}
+              required
+            />
+          }
           value={courriel}
           onChange={setCourriel}
           type="email"
         />
       </div>
 
+      {/* ADRESSE */}
+
       <div className="ff-mt">
         <Field
-          label={<LabelWithMark text={L.fields.address} mark={marks.adresse} required />}
+          label={
+            <LabelWithMark
+              text={L.fields.address}
+              mark={marks.adresse}
+              required
+            />
+          }
           value={adresse}
           onChange={setAdresse}
         />
@@ -406,20 +663,38 @@ export default function ClientSection(props: {
           />
 
           <Field
-            label={<LabelWithMark text={L.fields.city} mark={marks.ville} required />}
+            label={
+              <LabelWithMark
+                text={L.fields.city}
+                mark={marks.ville}
+                required
+              />
+            }
             value={ville}
             onChange={setVille}
           />
 
           <SelectField<ProvinceCode>
-            label={<LabelWithMark text={L.fields.province} mark={marks.province} required />}
+            label={
+              <LabelWithMark
+                text={L.fields.province}
+                mark={marks.province}
+                required
+              />
+            }
             value={province}
             onChange={setProvince}
             options={PROVINCES}
           />
 
           <Field
-            label={<LabelWithMark text={L.fields.postal} mark={marks.postal} required />}
+            label={
+              <LabelWithMark
+                text={L.fields.postal}
+                mark={marks.postal}
+                required
+              />
+            }
             value={codePostal}
             onChange={setCodePostal}
             placeholder={L.fields.postalPh}
