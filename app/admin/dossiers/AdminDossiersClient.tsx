@@ -188,6 +188,7 @@ export default function AdminDossiersClient({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_desc");
   const [yearFilter, setYearFilter] = useState<YearFilter>("2025");
+  const [classifyingYears, setClassifyingYears] = useState(false);
 
   const yearRows = useMemo(() => {
     if (yearFilter === "all") return rows;
@@ -294,6 +295,77 @@ export default function AdminDossiersClient({
   }
 
 
+  async function classifyCurrentYears() {
+    const rowsToUpdate = rows.filter(
+      (row) =>
+        row.tax_year == null ||
+        !Number.isFinite(Number(row.tax_year))
+    );
+
+    if (rowsToUpdate.length === 0) {
+      alert("Tous les dossiers ont déjà une année.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Classer ${rowsToUpdate.length} dossier${
+        rowsToUpdate.length !== 1 ? "s" : ""
+      } sans année : CQ-000109 en 2026 et tous les autres en 2025 ?`
+    );
+
+    if (!confirmed) return;
+
+    setClassifyingYears(true);
+
+    try {
+      for (const row of rowsToUpdate) {
+        const year = row.cq_id === "CQ-000109" ? 2026 : 2025;
+
+        const { error } = await supabase
+          .from("formulaires_fiscaux")
+          .update({
+            tax_year: year,
+          })
+          .eq("id", row.formulaire_id);
+
+        if (error) {
+          throw new Error(
+            `${row.cq_id ?? row.formulaire_id}: ${error.message}`
+          );
+        }
+      }
+
+      setRows((current) =>
+        current.map((row) => {
+          if (
+            row.tax_year != null &&
+            Number.isFinite(Number(row.tax_year))
+          ) {
+            return row;
+          }
+
+          return {
+            ...row,
+            tax_year: row.cq_id === "CQ-000109" ? 2026 : 2025,
+          };
+        })
+      );
+
+      setYearFilter("2025");
+      setTab("todo");
+
+      alert(
+        "Classement terminé : CQ-000109 est en 2026 et les autres dossiers sans année sont en 2025."
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erreur inconnue";
+      alert("Erreur pendant le classement des années : " + message);
+    } finally {
+      setClassifyingYears(false);
+    }
+  }
+
   function resetFilters() {
     setQuery("");
     setSort("created_desc");
@@ -368,8 +440,8 @@ export default function AdminDossiersClient({
             </span>
 
             {[
-              ["2025", "2025"],
               ["2026", "2026"],
+              ["2025", "2025"],
               ["2024", "2024"],
               ["all", "Toutes"],
             ].map(([key, label]) => (
@@ -389,6 +461,22 @@ export default function AdminDossiersClient({
                 {label}
               </button>
             ))}
+            {rows.some(
+              (row) =>
+                row.tax_year == null ||
+                !Number.isFinite(Number(row.tax_year))
+            ) && (
+              <button
+                type="button"
+                onClick={classifyCurrentYears}
+                disabled={classifyingYears}
+                className="ml-auto rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {classifyingYears
+                  ? "Classement en cours…"
+                  : "🗂️ Classer les dossiers sans année"}
+              </button>
+            )}
           </div>
         </div>
 
