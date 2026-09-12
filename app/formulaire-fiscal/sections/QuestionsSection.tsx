@@ -120,6 +120,55 @@ export default function QuestionsSection(props: {
     setAvisCotisation,
   } = props;
 
+  /*
+   * Les textes de l'avis de cotisation sont gardés ici pour que cette
+   * section soit immédiatement FR / EN / ES sans changer le contrat
+   * CopyPack ni risquer de casser les autres fichiers.
+   *
+   * On détecte la langue à partir des libellés déjà fournis par copy.ts.
+   */
+  const avisText = useMemo(() => {
+    const sample = [
+      L.sections.questionsTitle,
+      L.sections.questionsDesc,
+      L.questions.taxYear,
+      L.questions.copy,
+      L.questions.copyPortal,
+      L.questions.copyEmail,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const looksSpanish =
+      /\b(impuesto|impuestos|declaraci[oó]n|correo|cliente|año|año fiscal)\b/.test(sample);
+
+    const looksEnglish =
+      /\b(tax|taxes|return|email|client|year|assessment)\b/.test(sample);
+
+    if (looksSpanish) {
+      return {
+        label: "¿Cómo desea recibir su aviso de liquidación?",
+        mail: "Por correo postal",
+        government: "En línea a través del sitio web del gobierno",
+      };
+    }
+
+    if (looksEnglish) {
+      return {
+        label: "How would you like to receive your notice of assessment?",
+        mail: "By mail",
+        government: "Online through the government website",
+      };
+    }
+
+    return {
+      label: "Comment souhaitez-vous recevoir votre avis de cotisation ?",
+      mail: "Par la poste",
+      government: "En ligne auprès du gouvernement",
+    };
+  }, [L]);
+
   const marks = useMemo(() => {
     const mYear = markYear(anneeImposition);
     const mLived = markYesNo(habiteSeulTouteAnnee);
@@ -250,12 +299,12 @@ export default function QuestionsSection(props: {
         />
 
         <SelectField<AvisCotisation>
-          label={<LabelWithMark text="Comment souhaitez-vous recevoir votre avis de cotisation ?" mark={marks.avis} />}
+          label={<LabelWithMark text={avisText.label} mark={marks.avis} />}
           value={avisCotisation}
           onChange={setAvisCotisation}
           options={[
-            { value: "poste", label: "Par la poste" },
-            { value: "gouvernement", label: "Sur le site du gouvernement" },
+            { value: "poste", label: avisText.mail },
+            { value: "gouvernement", label: avisText.government },
           ]}
         />
       </div>
