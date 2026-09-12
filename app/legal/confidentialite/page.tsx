@@ -272,7 +272,51 @@ export default function ConfidentialitePage() {
 
         {/* 7 */}
         <section style={sectionStyle}>
-          <h2 style={h2Style}>7. Sécurité des renseignements</h2>
+          <h2 style={h2Style}>
+            7. Témoins de connexion (cookies) et technologies similaires
+          </h2>
+
+          <p style={pStyle}>
+            {MARQUE} utilise des témoins de connexion (« cookies ») et des
+            technologies similaires lorsqu'ils sont nécessaires au
+            fonctionnement, à la sécurité et à la protection du site et du
+            portail client.
+          </p>
+
+          <p style={pStyle}>
+            Ces technologies peuvent notamment être utilisées pour maintenir
+            une session utilisateur, permettre l'accès à certaines
+            fonctionnalités, sécuriser les services en ligne et prévenir les
+            accès automatisés ou frauduleux.
+          </p>
+
+          <p style={pStyle}>
+            Le site utilise notamment Google reCAPTCHA afin de contribuer à la
+            détection et à la prévention des accès automatisés, des abus et des
+            tentatives frauduleuses. Dans le cadre de ce service, Google peut
+            utiliser des témoins ou des technologies similaires et traiter
+            certains renseignements techniques conformément à ses propres
+            politiques.
+          </p>
+
+          <p style={pStyle}>
+            Certains fournisseurs technologiques nécessaires au fonctionnement
+            du portail ou au traitement des paiements peuvent également utiliser
+            des témoins ou des technologies similaires nécessaires à la
+            prestation de leurs services.
+          </p>
+
+          <p style={pStyle}>
+            {MARQUE} n'utilise pas ces technologies à des fins de publicité
+            ciblée. Si des technologies de suivi publicitaire ou de mesure
+            nécessitant un consentement sont ajoutées ultérieurement, les
+            mécanismes de consentement requis seront mis en place.
+          </p>
+        </section>
+
+        {/* 8 */}
+        <section style={sectionStyle}>
+          <h2 style={h2Style}>8. Sécurité des renseignements</h2>
 
           <p style={pStyle}>
             {MARQUE} met en place des mesures administratives, techniques et
@@ -294,9 +338,9 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        {/* 8 */}
+        {/* 9 */}
         <section style={sectionStyle}>
-          <h2 style={h2Style}>8. Incidents de confidentialité</h2>
+          <h2 style={h2Style}>9. Incidents de confidentialité</h2>
 
           <p style={pStyle}>
             En cas d'incident de confidentialité impliquant des renseignements
@@ -311,9 +355,9 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        {/* 9 */}
+        {/* 10 */}
         <section style={sectionStyle}>
-          <h2 style={h2Style}>9. Conservation et destruction</h2>
+          <h2 style={h2Style}>10. Conservation et destruction</h2>
 
           <p style={pStyle}>
             Les renseignements personnels sont conservés pendant la période
@@ -329,9 +373,9 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        {/* 10 */}
+        {/* 11 */}
         <section style={sectionStyle}>
-          <h2 style={h2Style}>10. Vos droits</h2>
+          <h2 style={h2Style}>11. Vos droits</h2>
 
           <p style={pStyle}>
             Sous réserve des conditions et exceptions prévues par la loi, vous
@@ -367,10 +411,10 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        {/* 11 */}
+        {/* 12 */}
         <section style={sectionStyle}>
           <h2 style={h2Style}>
-            11. Responsable de la protection des renseignements personnels
+            12. Responsable de la protection des renseignements personnels
           </h2>
 
           <p style={pStyle}>
@@ -396,9 +440,9 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        {/* 12 */}
+        {/* 13 */}
         <section style={sectionStyle}>
-          <h2 style={h2Style}>12. Plaintes et questions</h2>
+          <h2 style={h2Style}>13. Plaintes et questions</h2>
 
           <p style={pStyle}>
             Toute question, préoccupation ou plainte concernant la protection
@@ -414,9 +458,9 @@ export default function ConfidentialitePage() {
           </p>
         </section>
 
-        {/* 13 */}
+        {/* 14 */}
         <section style={sectionStyle}>
-          <h2 style={h2Style}>13. Modification de cette politique</h2>
+          <h2 style={h2Style}>14. Modification de cette politique</h2>
 
           <p style={pStyle}>
             Cette politique peut être modifiée afin de refléter des changements
