@@ -3,24 +3,95 @@ import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://comptanetquebec.com";
+  const lastModified = new Date();
 
   return [
-    { url: base, lastModified: new Date(), priority: 1 },
-    { url: `${base}/declaration-impot-quebec`, lastModified: new Date(), priority: 0.9 },
-    { url: `${base}/calculateur-impot-quebec`, lastModified: new Date(), priority: 0.9 },
-    { url: `${base}/tarifs`, lastModified: new Date(), priority: 0.8 },
-    { url: `${base}/formulaire-fiscal`, lastModified: new Date(), priority: 0.7 },
-    { url: `${base}/formulaire-fiscal-t2`, lastModified: new Date(), priority: 0.7 },
-    { url: `${base}/formulaire-fiscal-ta`, lastModified: new Date(), priority: 0.7 },
-    { url: `${base}/formulaire-fiscal-presentiel`, lastModified: new Date(), priority: 0.6 },
-    { url: `${base}/formulaire-fiscal-presentiel-t1`, lastModified: new Date(), priority: 0.6 },
-    { url: `${base}/formulaire-fiscal-presentiel-t2`, lastModified: new Date(), priority: 0.6 },
-    { url: `${base}/formulaire-fiscal-presentiel-ta`, lastModified: new Date(), priority: 0.6 },
-    { url: `${base}/formulaire`, lastModified: new Date(), priority: 0.6 },
-    { url: `${base}/demande-prise-en-charge`, lastModified: new Date(), priority: 0.7 },
-    { url: `${base}/questionnaire`, lastModified: new Date(), priority: 0.6 },
-    { url: `${base}/aide`, lastModified: new Date(), priority: 0.5 },
-    { url: `${base}/contact`, lastModified: new Date(), priority: 0.5 },
-    { url: `${base}/legal`, lastModified: new Date(), priority: 0.3 },
+    // Pages principales
+    {
+      url: base,
+      lastModified,
+      priority: 1,
+    },
+    {
+      url: `${base}/declaration-impot-quebec`,
+      lastModified,
+      priority: 0.9,
+    },
+    {
+      url: `${base}/calculateur-impot-quebec`,
+      lastModified,
+      priority: 0.9,
+    },
+    {
+      url: `${base}/tarifs`,
+      lastModified,
+      priority: 0.8,
+    },
+
+    // Formulaires publics
+    {
+      url: `${base}/formulaire-fiscal`,
+      lastModified,
+      priority: 0.7,
+    },
+    {
+      url: `${base}/formulaire-fiscal-t2`,
+      lastModified,
+      priority: 0.7,
+    },
+    {
+      url: `${base}/formulaire-fiscal-ta`,
+      lastModified,
+      priority: 0.7,
+    },
+    {
+      url: `${base}/formulaire`,
+      lastModified,
+      priority: 0.6,
+    },
+    {
+      url: `${base}/demande-prise-en-charge`,
+      lastModified,
+      priority: 0.7,
+    },
+    {
+      url: `${base}/questionnaire`,
+      lastModified,
+      priority: 0.6,
+    },
+
+    // Information
+    {
+      url: `${base}/aide`,
+      lastModified,
+      priority: 0.5,
+    },
+    {
+      url: `${base}/contact`,
+      lastModified,
+      priority: 0.5,
+    },
+
+    // Pages légales
+    {
+      url: `${base}/legal`,
+      lastModified,
+      priority: 0.3,
+    },
+    {
+      url: `${base}/legal/avis-legal`,
+      lastModified,
+      priority: 0.3,
+    },
+    {
+      url: `${base}/legal/conditions`,
+      lastModified,
+      priority: 0.3,
+    },
+    {
+      url: `${base}/legal/confidentialite`,
+      lastModified,
+      priority: 0.3,
+    },
   ];
 }
