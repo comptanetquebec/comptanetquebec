@@ -7,6 +7,7 @@ type Lang = "fr" | "en" | "es";
 
 export default function TenueDeLivresPage() {
   const [lang, setLang] = useState<Lang>("fr");
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     try {
@@ -26,7 +27,7 @@ export default function TenueDeLivresPage() {
       title: "Tenue de livres",
       subtitle:
         "Gérez simplement vos revenus, vos dépenses, vos documents et vos taxes au même endroit.",
-      year: "Année 2026",
+      year: `Année ${currentYear}`,
 
       dashboard: "Tableau de bord",
       dashboardDesc:
@@ -69,7 +70,7 @@ export default function TenueDeLivresPage() {
       title: "Bookkeeping",
       subtitle:
         "Manage your business income, expenses, documents and taxes in one place.",
-      year: "Year 2026",
+      year: `Year ${currentYear}`,
 
       dashboard: "Dashboard",
       dashboardDesc:
@@ -112,7 +113,7 @@ export default function TenueDeLivresPage() {
       title: "Contabilidad",
       subtitle:
         "Gestione sus ingresos, gastos, documentos e impuestos en un solo lugar.",
-      year: "Año 2026",
+      year: `Año ${currentYear}`,
 
       dashboard: "Panel",
       dashboardDesc:
