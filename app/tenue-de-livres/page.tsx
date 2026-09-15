@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
+type Plan = "essential" | "tax";
 
 type AccessState =
   | "loading"
   | "not_authenticated"
   | "no_subscription"
+  | "confirming_payment"
   | "checking_business"
   | "ready"
   | "error";
@@ -36,10 +38,17 @@ export default function TenueDeLivresPage() {
     let selected: Lang = "fr";
 
     try {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(
+        window.location.search
+      );
+
       const value = params.get("lang");
 
-      if (value === "fr" || value === "en" || value === "es") {
+      if (
+        value === "fr" ||
+        value === "en" ||
+        value === "es"
+      ) {
         selected = value;
       }
     } catch {
@@ -56,7 +65,7 @@ export default function TenueDeLivresPage() {
       setErrorMessage("");
 
       /*
-       * 1. Vérification de la connexion Supabase
+       * 1. Vérifier la connexion Supabase.
        */
       const {
         data: { user },
@@ -78,44 +87,114 @@ export default function TenueDeLivresPage() {
       }
 
       /*
-       * 2. Vérification de l'abonnement
+       * 2. Vérifier si nous revenons d'un paiement Stripe.
+       *
+       * Stripe peut retourner le client sur ComptaNet
+       * quelques secondes avant que le webhook ait terminé
+       * d'enregistrer l'abonnement dans Supabase.
        */
-      const response = await fetch(
-        "/api/tenue-de-livres/subscription-status",
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
+      const params = new URLSearchParams(
+        window.location.search
       );
 
-      const result =
-        (await response.json().catch(() => ({}))) as SubscriptionResponse;
+      const checkoutSuccess =
+        params.get("checkout") === "success";
 
-      if (response.status === 401 || result.authenticated === false) {
-        setAccessState("not_authenticated");
+      /*
+       * Navigation normale :
+       * une seule vérification.
+       *
+       * Retour Stripe :
+       * jusqu'à 10 vérifications espacées de 1,5 seconde.
+       */
+      const maxAttempts = checkoutSuccess ? 10 : 1;
 
-        const next = encodeURIComponent(
-          `/tenue-de-livres?lang=${selected}`
+      let result: SubscriptionResponse = {};
+      let response: Response | null = null;
+
+      for (
+        let attempt = 1;
+        attempt <= maxAttempts;
+        attempt++
+      ) {
+        response = await fetch(
+          "/api/tenue-de-livres/subscription-status",
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }
         );
 
-        window.location.replace(
-          `/espace-client?lang=${selected}&next=${next}`
-        );
+        result =
+          (await response
+            .json()
+            .catch(() => ({}))) as SubscriptionResponse;
 
-        return;
-      }
+        /*
+         * Session serveur non reconnue.
+         */
+        if (
+          response.status === 401 ||
+          result.authenticated === false
+        ) {
+          setAccessState("not_authenticated");
 
-      if (!response.ok) {
-        throw new Error(
-          result.error || "Impossible de vérifier l’abonnement."
-        );
+          const next = encodeURIComponent(
+            `/tenue-de-livres?lang=${selected}`
+          );
+
+          window.location.replace(
+            `/espace-client?lang=${selected}&next=${next}`
+          );
+
+          return;
+        }
+
+        /*
+         * Erreur de l'API.
+         */
+        if (!response.ok) {
+          throw new Error(
+            result.error ||
+              "Impossible de vérifier l’abonnement."
+          );
+        }
+
+        /*
+         * Le webhook a confirmé l'abonnement.
+         */
+        if (result.active) {
+          break;
+        }
+
+        /*
+         * Ce n'est pas un retour Stripe.
+         *
+         * Aucun abonnement actif :
+         * on peut afficher normalement les forfaits.
+         */
+        if (!checkoutSuccess) {
+          break;
+        }
+
+        /*
+         * Nous revenons de Stripe.
+         *
+         * Ne pas afficher les forfaits immédiatement.
+         * On laisse quelques secondes au webhook.
+         */
+        if (attempt < maxAttempts) {
+          setAccessState("confirming_payment");
+
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 1500);
+          });
+        }
       }
 
       /*
-       * 3. Pas d'abonnement actif
-       *
-       * On affiche l'écran des forfaits.
+       * 3. Aucun abonnement actif confirmé.
        */
       if (!result.active) {
         setAccessState("no_subscription");
@@ -123,16 +202,56 @@ export default function TenueDeLivresPage() {
       }
 
       /*
-       * 4. Abonnement actif.
-       * Vérifier si le client a déjà créé sa compagnie.
+       * 4. L'abonnement est actif.
+       *
+       * Les informations temporaires du paiement
+       * Embedded Checkout ne sont plus nécessaires.
+       */
+      try {
+        sessionStorage.removeItem(
+          "bookkeeping_checkout_client_secret"
+        );
+
+        sessionStorage.removeItem(
+          "bookkeeping_checkout_plan"
+        );
+      } catch {
+        // Rien à faire.
+      }
+
+      /*
+       * Nettoyer checkout=success dans l'adresse
+       * sans recharger la page.
+       */
+      if (checkoutSuccess) {
+        const cleanUrl = new URL(
+          window.location.href
+        );
+
+        cleanUrl.searchParams.delete("checkout");
+
+        window.history.replaceState(
+          {},
+          "",
+          cleanUrl.toString()
+        );
+      }
+
+      /*
+       * 5. Vérifier si la compagnie existe.
        */
       setAccessState("checking_business");
 
-      const { data: business, error: businessError } = await supabase
+      const {
+        data: business,
+        error: businessError,
+      } = await supabase
         .from("bookkeeping_businesses")
         .select("id")
         .eq("owner_id", user.id)
-        .order("created_at", { ascending: true })
+        .order("created_at", {
+          ascending: true,
+        })
         .limit(1)
         .maybeSingle();
 
@@ -141,18 +260,21 @@ export default function TenueDeLivresPage() {
       }
 
       /*
-       * 5. Aucune compagnie :
-       * envoyer vers la configuration.
+       * 6. Première utilisation.
+       *
+       * Abonnement actif, mais aucune compagnie :
+       * envoyer le client vers la configuration.
        */
       if (!business) {
         window.location.replace(
           `/tenue-de-livres/configuration?lang=${selected}`
         );
+
         return;
       }
 
       /*
-       * 6. Abonnement actif + compagnie existante :
+       * 7. Abonnement actif + compagnie existante :
        * afficher le tableau de bord.
        */
       setAccessState("ready");
@@ -172,7 +294,12 @@ export default function TenueDeLivresPage() {
 
     const url = new URL(window.location.href);
     url.searchParams.set("lang", nextLang);
-    window.history.replaceState({}, "", url.toString());
+
+    window.history.replaceState(
+      {},
+      "",
+      url.toString()
+    );
   }
 
   const text = {
@@ -180,6 +307,7 @@ export default function TenueDeLivresPage() {
       title: "Tenue de livres",
       subtitle:
         "Gérez simplement vos revenus, vos dépenses, vos documents et vos taxes au même endroit.",
+
       year: `Année ${currentYear}`,
 
       dashboard: "Tableau de bord",
@@ -220,19 +348,28 @@ export default function TenueDeLivresPage() {
 
       loading: "Vérification de votre accès…",
 
+      confirming:
+        "Paiement reçu. Activation de votre abonnement…",
+
+      confirmingDesc:
+        "Veuillez patienter quelques secondes pendant que nous confirmons votre abonnement.",
+
       plansTitle: "Choisissez votre forfait",
+
       plansIntro:
         "Activez votre tenue de livres ComptaNet Québec. Vous pourrez ensuite créer votre entreprise et accéder à votre tableau de bord.",
 
       essential: "Essentiel",
       essentialPrice: "19,99 $",
       essentialPeriod: "/ mois",
+
       essentialDesc:
         "Pour gérer simplement vos revenus, dépenses et documents.",
 
       taxPlan: "TPS / TVQ",
       taxPrice: "29,99 $",
       taxPeriod: "/ mois",
+
       taxDesc:
         "Pour la tenue de livres avec le suivi de la TPS et de la TVQ.",
 
@@ -241,41 +378,52 @@ export default function TenueDeLivresPage() {
       secure:
         "Paiement sécurisé. Votre abonnement sera lié automatiquement à votre compte ComptaNet Québec.",
 
-      errorTitle: "Impossible de vérifier votre accès",
+      errorTitle:
+        "Impossible de vérifier votre accès",
+
       retry: "Réessayer",
     },
 
     en: {
       title: "Bookkeeping",
+
       subtitle:
         "Manage your business income, expenses, documents and taxes in one place.",
+
       year: `Year ${currentYear}`,
 
       dashboard: "Dashboard",
+
       dashboardDesc:
         "Quickly view the financial activity of your business.",
 
       income: "Income",
+
       incomeDesc:
         "Add and review your business income.",
 
       expenses: "Expenses",
+
       expensesDesc:
         "Add expenses and keep your supporting documents.",
 
       documents: "Documents",
+
       documentsDesc:
         "Upload invoices, receipts, statements and other documents.",
 
       taxes: "GST / QST",
+
       taxesDesc:
         "Track taxes collected and input tax credits on expenses.",
 
       periods: "Periods",
+
       periodsDesc:
         "View monthly, quarterly or annual periods.",
 
       annual: "Annual summary",
+
       annualDesc:
         "Get your income and expense summary for your tax return.",
 
@@ -285,23 +433,33 @@ export default function TenueDeLivresPage() {
       documentsTotal: "Documents",
 
       coming: "To configure",
+
       back: "Back to ComptaNet Québec",
 
       loading: "Checking your access…",
 
+      confirming:
+        "Payment received. Activating your subscription…",
+
+      confirmingDesc:
+        "Please wait a few seconds while we confirm your subscription.",
+
       plansTitle: "Choose your plan",
+
       plansIntro:
         "Activate ComptaNet Québec bookkeeping. You can then create your business profile and access your dashboard.",
 
       essential: "Essential",
       essentialPrice: "$19.99",
       essentialPeriod: "/ month",
+
       essentialDesc:
         "For simple management of your income, expenses and documents.",
 
       taxPlan: "GST / QST",
       taxPrice: "$29.99",
       taxPeriod: "/ month",
+
       taxDesc:
         "For bookkeeping with GST and QST tracking.",
 
@@ -310,41 +468,52 @@ export default function TenueDeLivresPage() {
       secure:
         "Secure payment. Your subscription will automatically be linked to your ComptaNet Québec account.",
 
-      errorTitle: "Unable to verify your access",
+      errorTitle:
+        "Unable to verify your access",
+
       retry: "Try again",
     },
 
     es: {
       title: "Contabilidad",
+
       subtitle:
         "Gestione sus ingresos, gastos, documentos e impuestos en un solo lugar.",
+
       year: `Año ${currentYear}`,
 
       dashboard: "Panel",
+
       dashboardDesc:
         "Consulte rápidamente la actividad financiera de su empresa.",
 
       income: "Ingresos",
+
       incomeDesc:
         "Añada y consulte los ingresos de su empresa.",
 
       expenses: "Gastos",
+
       expensesDesc:
         "Añada sus gastos y conserve sus comprobantes.",
 
       documents: "Documentos",
+
       documentsDesc:
         "Suba facturas, recibos, estados de cuenta y otros documentos.",
 
       taxes: "GST / QST",
+
       taxesDesc:
         "Controle los impuestos cobrados y los créditos fiscales de sus gastos.",
 
       periods: "Períodos",
+
       periodsDesc:
         "Consulte períodos mensuales, trimestrales o anuales.",
 
       annual: "Resumen anual",
+
       annualDesc:
         "Obtenga el resumen de ingresos y gastos para su declaración de impuestos.",
 
@@ -354,23 +523,33 @@ export default function TenueDeLivresPage() {
       documentsTotal: "Documentos",
 
       coming: "Por configurar",
+
       back: "Volver a ComptaNet Québec",
 
       loading: "Verificando su acceso…",
 
+      confirming:
+        "Pago recibido. Activando su suscripción…",
+
+      confirmingDesc:
+        "Espere unos segundos mientras confirmamos su suscripción.",
+
       plansTitle: "Elija su plan",
+
       plansIntro:
         "Active la contabilidad de ComptaNet Québec. Después podrá crear su empresa y acceder a su panel.",
 
       essential: "Esencial",
       essentialPrice: "19,99 $",
       essentialPeriod: "/ mes",
+
       essentialDesc:
         "Para gestionar fácilmente ingresos, gastos y documentos.",
 
       taxPlan: "GST / QST",
       taxPrice: "29,99 $",
       taxPeriod: "/ mes",
+
       taxDesc:
         "Para la contabilidad con seguimiento de GST y QST.",
 
@@ -379,7 +558,9 @@ export default function TenueDeLivresPage() {
       secure:
         "Pago seguro. Su suscripción se vinculará automáticamente a su cuenta ComptaNet Québec.",
 
-      errorTitle: "No se puede verificar su acceso",
+      errorTitle:
+        "No se puede verificar su acceso",
+
       retry: "Intentar de nuevo",
     },
   }[lang];
@@ -424,8 +605,109 @@ export default function TenueDeLivresPage() {
   ];
 
   /*
-   * Pendant les vérifications, on n'affiche jamais
-   * brièvement le tableau de bord.
+   * Retour de Stripe :
+   * écran spécifique pendant que le webhook
+   * confirme l'abonnement.
+   */
+  if (accessState === "confirming_payment") {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background:
+            "linear-gradient(180deg, #f7fbff 0%, #edf6ff 100%)",
+          color: "#0f172a",
+          fontFamily:
+            "Arial, Helvetica, sans-serif",
+          padding: 20,
+        }}
+      >
+        <section
+          style={{
+            width: "100%",
+            maxWidth: 560,
+            background: "#ffffff",
+            border: "1px solid #dbe5f1",
+            borderRadius: 22,
+            padding: "38px 30px",
+            textAlign: "center",
+            boxShadow:
+              "0 14px 40px rgba(15,23,42,.08)",
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              margin: "0 auto 18px",
+              borderRadius: 18,
+              background: "#ecfdf5",
+              display: "grid",
+              placeItems: "center",
+              fontSize: 30,
+            }}
+          >
+            ✓
+          </div>
+
+          <div
+            style={{
+              color: "#004aad",
+              fontWeight: 900,
+              marginBottom: 10,
+            }}
+          >
+            ComptaNet Québec
+          </div>
+
+          <h1
+            style={{
+              margin: "0 0 12px",
+              fontSize: 28,
+            }}
+          >
+            {text.confirming}
+          </h1>
+
+          <p
+            style={{
+              color: "#64748b",
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            {text.confirmingDesc}
+          </p>
+
+          <div
+            style={{
+              margin: "28px auto 0",
+              width: 42,
+              height: 42,
+              borderRadius: "50%",
+              border: "4px solid #dbeafe",
+              borderTopColor: "#004aad",
+              animation:
+                "comptanetSpin .8s linear infinite",
+            }}
+          />
+
+          <style jsx>{`
+            @keyframes comptanetSpin {
+              to {
+                transform: rotate(360deg);
+              }
+            }
+          `}</style>
+        </section>
+      </main>
+    );
+  }
+
+  /*
+   * Vérification normale.
    */
   if (
     accessState === "loading" ||
@@ -440,7 +722,8 @@ export default function TenueDeLivresPage() {
           placeItems: "center",
           background: "#f5f9ff",
           color: "#0f172a",
-          fontFamily: "Arial, Helvetica, sans-serif",
+          fontFamily:
+            "Arial, Helvetica, sans-serif",
           padding: 20,
         }}
       >
@@ -453,10 +736,19 @@ export default function TenueDeLivresPage() {
             width: "100%",
             maxWidth: 500,
             textAlign: "center",
-            boxShadow: "0 8px 24px rgba(15,23,42,.05)",
+            boxShadow:
+              "0 8px 24px rgba(15,23,42,.05)",
           }}
         >
-          <div style={{ fontSize: 34, marginBottom: 12 }}>💼</div>
+          <div
+            style={{
+              fontSize: 34,
+              marginBottom: 12,
+            }}
+          >
+            💼
+          </div>
+
           <strong>{text.loading}</strong>
         </div>
       </main>
@@ -464,7 +756,7 @@ export default function TenueDeLivresPage() {
   }
 
   /*
-   * Erreur technique
+   * Erreur technique.
    */
   if (accessState === "error") {
     return (
@@ -475,7 +767,8 @@ export default function TenueDeLivresPage() {
           placeItems: "center",
           background: "#f5f9ff",
           color: "#0f172a",
-          fontFamily: "Arial, Helvetica, sans-serif",
+          fontFamily:
+            "Arial, Helvetica, sans-serif",
           padding: 20,
         }}
       >
@@ -490,13 +783,19 @@ export default function TenueDeLivresPage() {
             textAlign: "center",
           }}
         >
-          <h1 style={{ marginTop: 0 }}>{text.errorTitle}</h1>
+          <h1 style={{ marginTop: 0 }}>
+            {text.errorTitle}
+          </h1>
 
-          <p style={{ color: "#64748b" }}>{errorMessage}</p>
+          <p style={{ color: "#64748b" }}>
+            {errorMessage}
+          </p>
 
           <button
             type="button"
-            onClick={() => void checkAccess(lang)}
+            onClick={() =>
+              void checkAccess(lang)
+            }
             style={{
               border: 0,
               borderRadius: 10,
@@ -515,8 +814,8 @@ export default function TenueDeLivresPage() {
   }
 
   /*
-   * Pas d'abonnement :
-   * afficher les deux forfaits.
+   * Aucun abonnement actif :
+   * afficher les forfaits.
    */
   if (accessState === "no_subscription") {
     return (
@@ -525,10 +824,14 @@ export default function TenueDeLivresPage() {
           minHeight: "100vh",
           background: "#f5f9ff",
           color: "#0f172a",
-          fontFamily: "Arial, Helvetica, sans-serif",
+          fontFamily:
+            "Arial, Helvetica, sans-serif",
         }}
       >
-        <Header lang={lang} onLanguageChange={changeLang} />
+        <Header
+          lang={lang}
+          onLanguageChange={changeLang}
+        />
 
         <div
           style={{
@@ -555,7 +858,8 @@ export default function TenueDeLivresPage() {
 
             <h1
               style={{
-                fontSize: "clamp(30px, 5vw, 44px)",
+                fontSize:
+                  "clamp(30px, 5vw, 44px)",
                 margin: "0 0 12px",
               }}
             >
@@ -588,7 +892,9 @@ export default function TenueDeLivresPage() {
               title={text.essential}
               price={text.essentialPrice}
               period={text.essentialPeriod}
-              description={text.essentialDesc}
+              description={
+                text.essentialDesc
+              }
               buttonText={text.choose}
               plan="essential"
               lang={lang}
@@ -643,7 +949,7 @@ export default function TenueDeLivresPage() {
 
   /*
    * Abonnement actif + compagnie existante :
-   * tableau de bord original.
+   * tableau de bord.
    */
   return (
     <main
@@ -651,10 +957,14 @@ export default function TenueDeLivresPage() {
         minHeight: "100vh",
         background: "#f5f9ff",
         color: "#0f172a",
-        fontFamily: "Arial, Helvetica, sans-serif",
+        fontFamily:
+          "Arial, Helvetica, sans-serif",
       }}
     >
-      <Header lang={lang} onLanguageChange={changeLang} />
+      <Header
+        lang={lang}
+        onLanguageChange={changeLang}
+      />
 
       <div
         style={{
@@ -663,7 +973,6 @@ export default function TenueDeLivresPage() {
           padding: "32px 20px 60px",
         }}
       >
-        {/* TITRE */}
         <section
           style={{
             background: "#ffffff",
@@ -676,7 +985,8 @@ export default function TenueDeLivresPage() {
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent:
+                "space-between",
               alignItems: "flex-start",
               gap: 20,
               flexWrap: "wrap",
@@ -696,7 +1006,8 @@ export default function TenueDeLivresPage() {
               <h1
                 style={{
                   margin: 0,
-                  fontSize: "clamp(28px, 5vw, 42px)",
+                  fontSize:
+                    "clamp(28px, 5vw, 42px)",
                 }}
               >
                 {text.title}
@@ -717,7 +1028,8 @@ export default function TenueDeLivresPage() {
             <div
               style={{
                 background: "#eef6ff",
-                border: "1px solid #cfe3ff",
+                border:
+                  "1px solid #cfe3ff",
                 color: "#004aad",
                 padding: "10px 14px",
                 borderRadius: 10,
@@ -729,8 +1041,11 @@ export default function TenueDeLivresPage() {
           </div>
         </section>
 
-        {/* RÉSUMÉ */}
-        <section style={{ marginBottom: 28 }}>
+        <section
+          style={{
+            marginBottom: 28,
+          }}
+        >
           <h2
             style={{
               margin: "0 0 14px",
@@ -774,7 +1089,6 @@ export default function TenueDeLivresPage() {
           </div>
         </section>
 
-        {/* MODULES */}
         <section>
           <h2
             style={{
@@ -799,7 +1113,8 @@ export default function TenueDeLivresPage() {
                 href={`${card.href}?lang=${lang}`}
                 style={{
                   background: "#ffffff",
-                  border: "1px solid #e5e7eb",
+                  border:
+                    "1px solid #e5e7eb",
                   borderRadius: 16,
                   padding: 20,
                   textDecoration: "none",
@@ -807,7 +1122,8 @@ export default function TenueDeLivresPage() {
                   minHeight: 155,
                   display: "flex",
                   flexDirection: "column",
-                  boxShadow: "0 4px 14px rgba(15,23,42,.04)",
+                  boxShadow:
+                    "0 4px 14px rgba(15,23,42,.04)",
                 }}
               >
                 <div
@@ -882,13 +1198,16 @@ function Header({
   onLanguageChange,
 }: {
   lang: Lang;
-  onLanguageChange: (lang: Lang) => void;
+  onLanguageChange: (
+    lang: Lang
+  ) => void;
 }) {
   return (
     <header
       style={{
         background: "#ffffff",
-        borderBottom: "1px solid #e5e7eb",
+        borderBottom:
+          "1px solid #e5e7eb",
         position: "sticky",
         top: 0,
         zIndex: 20,
@@ -901,7 +1220,8 @@ function Header({
           padding: "14px 20px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           gap: 16,
           flexWrap: "wrap",
         }}
@@ -925,20 +1245,31 @@ function Header({
             alignItems: "center",
           }}
         >
-          {(["fr", "en", "es"] as const).map((item) => (
+          {(
+            ["fr", "en", "es"] as const
+          ).map((item) => (
             <button
               key={item}
               type="button"
-              onClick={() => onLanguageChange(item)}
+              onClick={() =>
+                onLanguageChange(item)
+              }
               style={{
                 border:
                   lang === item
                     ? "1px solid #004aad"
                     : "1px solid #dbe3ef",
+
                 background:
-                  lang === item ? "#004aad" : "#ffffff",
+                  lang === item
+                    ? "#004aad"
+                    : "#ffffff",
+
                 color:
-                  lang === item ? "#ffffff" : "#334155",
+                  lang === item
+                    ? "#ffffff"
+                    : "#334155",
+
                 borderRadius: 8,
                 padding: "7px 10px",
                 fontWeight: 800,
@@ -969,12 +1300,15 @@ function PlanCard({
   period: string;
   description: string;
   buttonText: string;
-  plan: "essential" | "tax";
+  plan: Plan;
   lang: Lang;
   featured?: boolean;
 }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   async function startCheckout() {
     try {
@@ -985,10 +1319,14 @@ function PlanCard({
         "/api/tenue-de-livres/checkout",
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           credentials: "include",
+
           body: JSON.stringify({
             plan,
             lang,
@@ -996,25 +1334,26 @@ function PlanCard({
         }
       );
 
-      const result = await response.json();
+      const result =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          result?.error || "Checkout error"
+          result?.error ||
+            "Checkout error"
+        );
+      }
+
+      if (!result?.clientSecret) {
+        throw new Error(
+          "Missing Stripe client secret"
         );
       }
 
       /*
-       * La route retourne un clientSecret pour
-       * Stripe Embedded Checkout.
-       *
-       * L'affichage Stripe intégré sera branché
-       * dans l'étape suivante.
+       * Conserver temporairement le clientSecret
+       * pour la page Embedded Checkout.
        */
-      if (!result?.clientSecret) {
-        throw new Error("Missing Stripe client secret");
-      }
-
       sessionStorage.setItem(
         "bookkeeping_checkout_client_secret",
         result.clientSecret
@@ -1025,6 +1364,9 @@ function PlanCard({
         plan
       );
 
+      /*
+       * Stripe reste intégré dans ComptaNet.
+       */
       window.location.href =
         `/tenue-de-livres/paiement?lang=${lang}`;
     } catch (error: unknown) {
@@ -1042,11 +1384,14 @@ function PlanCard({
     <section
       style={{
         background: "#ffffff",
+
         border: featured
           ? "2px solid #004aad"
           : "1px solid #dbe5f1",
+
         borderRadius: 18,
         padding: 26,
+
         boxShadow: featured
           ? "0 10px 30px rgba(0,74,173,.12)"
           : "0 8px 24px rgba(15,23,42,.05)",
@@ -1078,7 +1423,11 @@ function PlanCard({
           {price}
         </strong>
 
-        <span style={{ color: "#64748b" }}>
+        <span
+          style={{
+            color: "#64748b",
+          }}
+        >
           {period}
         </span>
       </div>
@@ -1096,7 +1445,9 @@ function PlanCard({
       <button
         type="button"
         disabled={loading}
-        onClick={() => void startCheckout()}
+        onClick={() =>
+          void startCheckout()
+        }
         style={{
           width: "100%",
           border: 0,
@@ -1105,8 +1456,12 @@ function PlanCard({
           background: "#004aad",
           color: "#ffffff",
           fontWeight: 900,
-          cursor: loading ? "default" : "pointer",
-          opacity: loading ? 0.65 : 1,
+          cursor: loading
+            ? "default"
+            : "pointer",
+          opacity: loading
+            ? 0.65
+            : 1,
           fontSize: 15,
         }}
       >
@@ -1141,7 +1496,8 @@ function SummaryCard({
     <div
       style={{
         background: "#ffffff",
-        border: "1px solid #e5e7eb",
+        border:
+          "1px solid #e5e7eb",
         borderRadius: 14,
         padding: 18,
       }}
@@ -1149,7 +1505,8 @@ function SummaryCard({
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "center",
           marginBottom: 12,
         }}
@@ -1164,7 +1521,13 @@ function SummaryCard({
           {title}
         </span>
 
-        <span style={{ fontSize: 22 }}>{icon}</span>
+        <span
+          style={{
+            fontSize: 22,
+          }}
+        >
+          {icon}
+        </span>
       </div>
 
       <div
