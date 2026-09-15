@@ -336,7 +336,15 @@ export default function RevenusPage() {
                 <tbody>
                   {revenues.map((item) => (
                     <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}>
-                      <Td>{item.date}</Td><Td>{item.source}</Td><Td>{item.description || "—"}</Td><Td>{money(item.subtotal, lang)}</Td><Td>{money(item.gst, lang)}</Td><Td>{money(item.qst, lang)}</Td><Td><strong>{money(item.total, lang)}</strong></Td>
+                     <Td>{item.date.split("-").reverse().join("/")}</Td>
+<Td>{item.source}</Td>
+<Td>{item.description || "—"}</Td>
+<Td>{money(item.subtotal, lang)}</Td>
+<Td>{money(item.gst, lang)}</Td>
+<Td>{money(item.qst, lang)}</Td>
+<Td>
+  <strong>{money(item.total, lang)}</strong>
+</Td>
                       <Td><div style={{ display: "flex", gap: 7 }}><button type="button" onClick={() => edit(item)} style={smallButton}>{copy.modify}</button><button type="button" onClick={() => remove(item.id)} style={{ ...smallButton, color: "#b91c1c", borderColor: "#fecaca" }}>{copy.remove}</button></div></Td>
                     </tr>
                   ))}
