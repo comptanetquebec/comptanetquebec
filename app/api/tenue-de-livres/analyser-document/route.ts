@@ -136,7 +136,7 @@ Masque et n'extrais aucun numéro complet de carte, compte bancaire, NAS ou autr
       total: round(typeof parsed.total === "number" ? parsed.total : null),
     };
 
-    const confidence = typeof extraction.confidence === "number" ? extraction.confidence : 0;
+    const confidence = typeof parsed.confidence === "number" ? parsed.confidence : 0;
     const { error: saveError } = await supabase
       .from("bookkeeping_documents")
       .update({
