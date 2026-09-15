@@ -809,6 +809,10 @@ plans: [
     lang
   )}&next=${encodeURIComponent("/formulaire-fiscal-t2")}`;
 
+  const toBookkeeping = `/espace-client?lang=${encodeURIComponent(
+    lang
+  )}&next=${encodeURIComponent("/tenue-de-livres")}`;
+
   const faqJsonLd = useMemo(() => {
     return {
       "@context": "https://schema.org",
@@ -990,7 +994,7 @@ plans: [
                 {T.nav.client}
               </Link>
               <Link
-                href={`/tenue-de-livres?lang=${encodeURIComponent(lang)}`}
+                href={toBookkeeping}
                 className="btn btn-outline"
                 prefetch
                 onClick={closeMobile}
@@ -1480,6 +1484,3 @@ plans: [
           </div>
         </div>
       </footer>
-    </main>
-  );
-}
