@@ -2,9 +2,19 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
 type TaxMode = "none" | "gst" | "gst_qst";
+type TaxStatus = "not_registered" | "gst_only" | "gst_qst";
+type FilingFrequency = "monthly" | "quarterly" | "annual";
+
+type Business = {
+  id: string;
+  business_name: string;
+  tax_status: TaxStatus;
+  filing_frequency: FilingFrequency;
+};
 
 type Revenue = {
   id: string;
@@ -42,6 +52,14 @@ export default function RevenusPage() {
   const [subtotal, setSubtotal] = useState("");
   const [taxMode, setTaxMode] = useState<TaxMode>("gst_qst");
   const [paymentMethod, setPaymentMethod] = useState("transfer");
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [userId, setUserId] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [taxStatus, setTaxStatus] = useState<TaxStatus>("not_registered");
+  const [filingFrequency, setFilingFrequency] = useState<FilingFrequency>("annual");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   const currentYear = new Date().getFullYear();
   const date =
@@ -52,7 +70,9 @@ export default function RevenusPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const value = params.get("lang");
-    if (value === "fr" || value === "en" || value === "es") setLang(value);
+    const selectedLang: Lang = value === "en" || value === "es" ? value : "fr";
+    setLang(selectedLang);
+    void loadData(selectedLang);
   }, []);
 
   const copy = {
@@ -98,7 +118,22 @@ export default function RevenusPage() {
       count: "Transactions",
       beforeTax: "Avant taxes",
       collected: "Taxes perçues",
-      notice: "La sauvegarde sécurisée dans le compte client sera branchée à Supabase à la prochaine étape.",
+      notice: "Les revenus sont enregistrés de façon sécurisée dans le compte client.",
+      loading: "Chargement…",
+      loginRequired: "Vous devez ouvrir une session pour accéder à la tenue de livres.",
+      databaseError: "Impossible de charger les revenus.",
+      setupTitle: "Configurer votre entreprise",
+      setupText: "Ces renseignements servent à organiser vos périodes de TPS et de TVQ.",
+      businessName: "Nom de l’entreprise",
+      taxStatus: "Inscription aux taxes",
+      notRegistered: "Non inscrit aux taxes",
+      gstRegistered: "TPS seulement",
+      gstQstRegistered: "TPS et TVQ",
+      frequency: "Fréquence de déclaration",
+      monthly: "Mensuelle",
+      quarterly: "Trimestrielle",
+      annual: "Annuelle",
+      createBusiness: "Créer mon dossier",
     },
     en: {
       title: "Income",
@@ -142,7 +177,22 @@ export default function RevenusPage() {
       count: "Transactions",
       beforeTax: "Before tax",
       collected: "Tax collected",
-      notice: "Secure saving to the client account will be connected to Supabase in the next step.",
+      notice: "Income is securely saved in the client account.",
+      loading: "Loading…",
+      loginRequired: "You must sign in to access bookkeeping.",
+      databaseError: "Unable to load income.",
+      setupTitle: "Set up your business",
+      setupText: "This information is used to organize your GST and QST filing periods.",
+      businessName: "Business name",
+      taxStatus: "Tax registration",
+      notRegistered: "Not registered for tax",
+      gstRegistered: "GST only",
+      gstQstRegistered: "GST and QST",
+      frequency: "Filing frequency",
+      monthly: "Monthly",
+      quarterly: "Quarterly",
+      annual: "Annual",
+      createBusiness: "Create my file",
     },
     es: {
       title: "Ingresos",
@@ -186,7 +236,22 @@ export default function RevenusPage() {
       count: "Transacciones",
       beforeTax: "Antes de impuestos",
       collected: "Impuestos cobrados",
-      notice: "El guardado seguro en la cuenta del cliente se conectará a Supabase en el próximo paso.",
+      notice: "Los ingresos se guardan de forma segura en la cuenta del cliente.",
+      loading: "Cargando…",
+      loginRequired: "Debe iniciar sesión para acceder a la contabilidad.",
+      databaseError: "No se pueden cargar los ingresos.",
+      setupTitle: "Configurar su empresa",
+      setupText: "Esta información se utiliza para organizar sus períodos de GST y QST.",
+      businessName: "Nombre de la empresa",
+      taxStatus: "Registro de impuestos",
+      notRegistered: "No registrado para impuestos",
+      gstRegistered: "GST solamente",
+      gstQstRegistered: "GST y QST",
+      frequency: "Frecuencia de declaración",
+      monthly: "Mensual",
+      quarterly: "Trimestral",
+      annual: "Anual",
+      createBusiness: "Crear mi expediente",
     },
   }[lang];
 
@@ -207,6 +272,108 @@ export default function RevenusPage() {
     );
   }, [revenues]);
 
+  function mapRevenue(row: Record<string, unknown>): Revenue {
+    return {
+      id: String(row.id),
+      date: String(row.transaction_date),
+      source: String(row.source),
+      description: row.description ? String(row.description) : "",
+      subtotal: Number(row.subtotal),
+      taxMode: row.tax_mode as TaxMode,
+      gst: Number(row.gst),
+      qst: Number(row.qst),
+      total: Number(row.total),
+      paymentMethod: row.payment_method ? String(row.payment_method) : "other",
+    };
+  }
+
+  async function loadData(selectedLang: Lang) {
+    setLoading(true);
+    setError("");
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const user = authData.user;
+
+    if (authError || !user) {
+      const next = encodeURIComponent(`/tenue-de-livres/revenus?lang=${selectedLang}`);
+      window.location.href = `/espace-client?lang=${selectedLang}&next=${next}`;
+      return;
+    }
+
+    setUserId(user.id);
+
+    const { data: businessData, error: businessError } = await supabase
+      .from("bookkeeping_businesses")
+      .select("id, business_name, tax_status, filing_frequency")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (businessError) {
+      setError(businessError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!businessData) {
+      const suggestedName =
+        String(user.user_metadata?.business_name || user.user_metadata?.full_name || "").trim();
+      setBusinessName(suggestedName);
+      setLoading(false);
+      return;
+    }
+
+    const selectedBusiness = businessData as Business;
+    setBusiness(selectedBusiness);
+    setTaxStatus(selectedBusiness.tax_status);
+    setTaxMode(
+      selectedBusiness.tax_status === "not_registered"
+        ? "none"
+        : selectedBusiness.tax_status === "gst_only"
+          ? "gst"
+          : "gst_qst"
+    );
+
+    const { data: transactionData, error: transactionError } = await supabase
+      .from("bookkeeping_transactions")
+      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method")
+      .eq("business_id", selectedBusiness.id)
+      .eq("entry_type", "income")
+      .order("transaction_date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (transactionError) setError(transactionError.message);
+    else setRevenues((transactionData ?? []).map((row) => mapRevenue(row)));
+
+    setLoading(false);
+  }
+
+  async function createBusiness(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!businessName.trim() || !userId) return;
+
+    setBusy(true);
+    setError("");
+    const { data, error: insertError } = await supabase
+      .from("bookkeeping_businesses")
+      .insert({
+        owner_id: userId,
+        business_name: businessName.trim(),
+        tax_status: taxStatus,
+        filing_frequency: filingFrequency,
+      })
+      .select("id, business_name, tax_status, filing_frequency")
+      .single();
+
+    if (insertError) setError(insertError.message);
+    else {
+      setBusiness(data as Business);
+      setTaxMode(taxStatus === "not_registered" ? "none" : taxStatus === "gst_only" ? "gst" : "gst_qst");
+    }
+    setBusy(false);
+  }
+
   function resetForm() {
     setEditingId(null);
     setDay("");
@@ -215,11 +382,17 @@ export default function RevenusPage() {
     setSource("");
     setDescription("");
     setSubtotal("");
-    setTaxMode("gst_qst");
+    setTaxMode(
+      business?.tax_status === "not_registered"
+        ? "none"
+        : business?.tax_status === "gst_only"
+          ? "gst"
+          : "gst_qst"
+    );
     setPaymentMethod("transfer");
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsedDate = new Date(`${date}T12:00:00`);
     const validDate =
@@ -234,25 +407,43 @@ export default function RevenusPage() {
       return;
     }
 
-    const entry: Revenue = {
-      id: editingId ?? crypto.randomUUID(),
-      date,
+    if (!business) return;
+
+    const payload = {
+      business_id: business.id,
+      entry_type: "income",
+      transaction_date: date,
       source: source.trim(),
-      description: description.trim(),
+      description: description.trim() || null,
       subtotal: roundMoney(amount),
-      taxMode,
+      tax_mode: taxMode,
       gst: calculatedGst,
       qst: calculatedQst,
-      total: calculatedTotal,
-      paymentMethod,
+      payment_method: paymentMethod,
+      status: "confirmed",
+      entered_by: "manual",
     };
 
-    setRevenues((current) =>
-      editingId
-        ? current.map((item) => (item.id === editingId ? entry : item))
-        : [entry, ...current]
-    );
-    resetForm();
+    setBusy(true);
+    setError("");
+    const request = editingId
+      ? supabase.from("bookkeeping_transactions").update(payload).eq("id", editingId)
+      : supabase.from("bookkeeping_transactions").insert(payload);
+    const { data, error: saveError } = await request
+      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method")
+      .single();
+
+    if (saveError) setError(saveError.message);
+    else {
+      const saved = mapRevenue(data as Record<string, unknown>);
+      setRevenues((current) =>
+        editingId
+          ? current.map((item) => (item.id === editingId ? saved : item))
+          : [saved, ...current]
+      );
+      resetForm();
+    }
+    setBusy(false);
   }
 
   function edit(item: Revenue) {
@@ -269,10 +460,20 @@ export default function RevenusPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     if (window.confirm(copy.confirm)) {
-      setRevenues((current) => current.filter((item) => item.id !== id));
-      if (editingId === id) resetForm();
+      setBusy(true);
+      setError("");
+      const { error: deleteError } = await supabase
+        .from("bookkeeping_transactions")
+        .delete()
+        .eq("id", id);
+      if (deleteError) setError(deleteError.message);
+      else {
+        setRevenues((current) => current.filter((item) => item.id !== id));
+        if (editingId === id) resetForm();
+      }
+      setBusy(false);
     }
   }
 
@@ -293,6 +494,33 @@ export default function RevenusPage() {
     color: "#0f172a",
   };
   const label = { display: "grid", gap: 7, fontWeight: 800, fontSize: 14 } as const;
+
+  if (loading) {
+    return (
+      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f5f9ff", fontFamily: "Arial, Helvetica, sans-serif" }}>
+        <div style={{ color: "#004aad", fontSize: 18, fontWeight: 900 }}>{copy.loading}</div>
+      </main>
+    );
+  }
+
+  if (!business) {
+    return (
+      <main style={{ minHeight: "100vh", background: "#f5f9ff", color: "#0f172a", fontFamily: "Arial, Helvetica, sans-serif", padding: "40px 20px" }}>
+        <section style={{ ...panel, maxWidth: 680, margin: "0 auto", padding: 26 }}>
+          <Link href={`/tenue-de-livres?lang=${lang}`} style={{ color: "#004aad", textDecoration: "none", fontWeight: 900 }}>← {copy.back}</Link>
+          <h1 style={{ margin: "24px 0 8px" }}>{copy.setupTitle}</h1>
+          <p style={{ color: "#64748b", lineHeight: 1.5 }}>{copy.setupText}</p>
+          {error && <p style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: 12 }}>{error}</p>}
+          <form onSubmit={createBusiness} style={{ display: "grid", gap: 16, marginTop: 22 }}>
+            <label style={label}>{copy.businessName}<input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} style={input} /></label>
+            <label style={label}>{copy.taxStatus}<select value={taxStatus} onChange={(e) => setTaxStatus(e.target.value as TaxStatus)} style={input}><option value="not_registered">{copy.notRegistered}</option><option value="gst_only">{copy.gstRegistered}</option><option value="gst_qst">{copy.gstQstRegistered}</option></select></label>
+            <label style={label}>{copy.frequency}<select value={filingFrequency} onChange={(e) => setFilingFrequency(e.target.value as FilingFrequency)} style={input}><option value="monthly">{copy.monthly}</option><option value="quarterly">{copy.quarterly}</option><option value="annual">{copy.annual}</option></select></label>
+            <button disabled={busy} type="submit" style={{ border: 0, borderRadius: 10, padding: "12px 18px", background: "#004aad", color: "#fff", fontWeight: 900, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.65 : 1 }}>{copy.createBusiness}</button>
+          </form>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main style={{ minHeight: "100vh", background: "#f5f9ff", color: "#0f172a", fontFamily: "Arial, Helvetica, sans-serif" }}>
@@ -317,9 +545,12 @@ export default function RevenusPage() {
             <div style={{ color: "#004aad", fontWeight: 900, marginBottom: 7 }}>💰 ComptaNet Québec</div>
             <h1 style={{ margin: 0, fontSize: "clamp(30px, 5vw, 44px)" }}>{copy.title}</h1>
             <p style={{ color: "#64748b", marginBottom: 0 }}>{copy.subtitle}</p>
+            <p style={{ color: "#334155", fontWeight: 800, margin: "8px 0 0" }}>{business.business_name}</p>
           </div>
           <div style={{ background: "#eaf3ff", border: "1px solid #bfdbfe", color: "#004aad", borderRadius: 10, padding: "10px 14px", fontWeight: 900 }}>{currentYear}</div>
         </div>
+
+        {error && <p style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: 12 }}>{error}</p>}
 
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14, marginBottom: 22 }}>
           <Summary title={copy.count} value={String(revenues.length)} />
@@ -378,7 +609,7 @@ export default function RevenusPage() {
             </div>
 
             <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-              <button type="submit" style={{ border: 0, borderRadius: 10, padding: "11px 18px", background: "#004aad", color: "#fff", fontWeight: 900, cursor: "pointer" }}>{editingId ? copy.update : copy.save}</button>
+              <button disabled={busy} type="submit" style={{ border: 0, borderRadius: 10, padding: "11px 18px", background: "#004aad", color: "#fff", fontWeight: 900, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.65 : 1 }}>{editingId ? copy.update : copy.save}</button>
               {editingId && <button type="button" onClick={resetForm} style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "11px 18px", background: "#fff", color: "#334155", fontWeight: 800, cursor: "pointer" }}>{copy.cancel}</button>}
             </div>
           </form>
