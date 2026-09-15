@@ -6,12 +6,12 @@ import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
 type Business = { id: string; business_name: string };
-type Extraction = {
-  relevant: boolean;
+type ExtractedTransaction = {
   entry_type: "income" | "expense" | "unknown";
   transaction_date: string | null;
   source: string | null;
   description: string | null;
+  reference: string | null;
   subtotal: number | null;
   gst: number | null;
   qst: number | null;
@@ -19,6 +19,11 @@ type Extraction = {
   payment_method: "transfer" | "card" | "cash" | "cheque" | "platform" | "other" | "unknown";
   confidence: number;
   notes: string[];
+};
+type Extraction = {
+  relevant: boolean;
+  transactions: ExtractedTransaction[];
+  document_notes: string[];
 };
 type Doc = {
   id: string;
@@ -53,9 +58,9 @@ export default function DocumentsTenueLivresPage() {
   const [message, setMessage] = useState("");
 
   const t = {
-    fr: { title: "Documents", subtitle: "Importez une photo ou un PDF. L’IA prépare la transaction, puis vous la vérifiez avant de la confirmer.", back: "Retour à la tenue de livres", upload: "Importer une photo ou un PDF", formats: "PDF, JPG, PNG ou WebP — maximum 20 Mo", loading: "Chargement…", analysing: "Analyse en cours…", analyze: "Analyser", confirm: "Confirmer la transaction", open: "Ouvrir", remove: "Supprimer", empty: "Aucun document pour le moment.", ready: "À vérifier", confirmed: "Confirmé", error: "Erreur", uploaded: "Prêt à analyser", income: "Revenu", expense: "Dépense", unknown: "Type incertain", date: "Date", source: "Source ou fournisseur", subtotal: "Avant taxes", gst: "TPS", qst: "TVQ", total: "Total", confidence: "Confiance IA", notes: "À vérifier", badFile: "Utilisez un PDF, JPG, PNG ou WebP de 20 Mo maximum.", saved: "Transaction confirmée.", needBusiness: "Créez d’abord votre profil d’entreprise dans la page Revenus.", deleteConfirm: "Supprimer ce document?", incomplete: "L’analyse est incomplète. Entrez cette transaction manuellement ou analysez un document plus lisible." },
-    en: { title: "Documents", subtitle: "Upload a photo or PDF. AI prepares the transaction, then you review it before confirming.", back: "Back to bookkeeping", upload: "Upload a photo or PDF", formats: "PDF, JPG, PNG or WebP — maximum 20 MB", loading: "Loading…", analysing: "Analyzing…", analyze: "Analyze", confirm: "Confirm transaction", open: "Open", remove: "Delete", empty: "No documents yet.", ready: "Review", confirmed: "Confirmed", error: "Error", uploaded: "Ready to analyze", income: "Income", expense: "Expense", unknown: "Uncertain type", date: "Date", source: "Source or supplier", subtotal: "Before tax", gst: "GST", qst: "QST", total: "Total", confidence: "AI confidence", notes: "Review", badFile: "Use a PDF, JPG, PNG or WebP file up to 20 MB.", saved: "Transaction confirmed.", needBusiness: "Create your business profile on the Income page first.", deleteConfirm: "Delete this document?", incomplete: "The analysis is incomplete. Enter this transaction manually or analyze a clearer document." },
-    es: { title: "Documentos", subtitle: "Suba una foto o un PDF. La IA prepara la transacción y usted la revisa antes de confirmarla.", back: "Volver a contabilidad", upload: "Subir una foto o un PDF", formats: "PDF, JPG, PNG o WebP — máximo 20 MB", loading: "Cargando…", analysing: "Analizando…", analyze: "Analizar", confirm: "Confirmar transacción", open: "Abrir", remove: "Eliminar", empty: "Todavía no hay documentos.", ready: "Por verificar", confirmed: "Confirmado", error: "Error", uploaded: "Listo para analizar", income: "Ingreso", expense: "Gasto", unknown: "Tipo incierto", date: "Fecha", source: "Fuente o proveedor", subtotal: "Antes de impuestos", gst: "GST", qst: "QST", total: "Total", confidence: "Confianza IA", notes: "Por verificar", badFile: "Use un PDF, JPG, PNG o WebP de hasta 20 MB.", saved: "Transacción confirmada.", needBusiness: "Primero cree su perfil de empresa en la página Ingresos.", deleteConfirm: "¿Eliminar este documento?", incomplete: "El análisis está incompleto. Introduzca la transacción manualmente o analice un documento más claro." },
+    fr: { title: "Documents", subtitle: "Importez une photo ou un PDF. L’IA sépare les transactions, puis vous les vérifiez avant de les confirmer.", back: "Retour à la tenue de livres", upload: "Importer une photo ou un PDF", formats: "PDF, JPG, PNG ou WebP — maximum 20 Mo", loading: "Chargement…", analysing: "Analyse en cours…", analyze: "Analyser", confirm: "Confirmer toutes les transactions", open: "Ouvrir", remove: "Supprimer", empty: "Aucun document pour le moment.", ready: "À vérifier", confirmed: "Confirmé", error: "Erreur", uploaded: "Prêt à analyser", income: "Revenu", expense: "Dépense", unknown: "Type incertain", date: "Date", source: "Source ou fournisseur", subtotal: "Avant taxes", gst: "TPS", qst: "TVQ", total: "Total", confidence: "Confiance IA", notes: "À vérifier", badFile: "Utilisez un PDF, JPG, PNG ou WebP de 20 Mo maximum.", saved: "Toutes les transactions ont été confirmées.", needBusiness: "Créez d’abord votre profil d’entreprise.", deleteConfirm: "Supprimer ce document?", incomplete: "Une ou plusieurs transactions sont incomplètes. Analysez un document plus lisible.", detected: "transactions détectées", transaction: "Transaction" },
+    en: { title: "Documents", subtitle: "Upload a photo or PDF. AI separates the transactions, then you review them before confirming.", back: "Back to bookkeeping", upload: "Upload a photo or PDF", formats: "PDF, JPG, PNG or WebP — maximum 20 MB", loading: "Loading…", analysing: "Analyzing…", analyze: "Analyze", confirm: "Confirm all transactions", open: "Open", remove: "Delete", empty: "No documents yet.", ready: "Review", confirmed: "Confirmed", error: "Error", uploaded: "Ready to analyze", income: "Income", expense: "Expense", unknown: "Uncertain type", date: "Date", source: "Source or supplier", subtotal: "Before tax", gst: "GST", qst: "QST", total: "Total", confidence: "AI confidence", notes: "Review", badFile: "Use a PDF, JPG, PNG or WebP file up to 20 MB.", saved: "All transactions were confirmed.", needBusiness: "Create your business profile first.", deleteConfirm: "Delete this document?", incomplete: "One or more transactions are incomplete. Analyze a clearer document.", detected: "transactions detected", transaction: "Transaction" },
+    es: { title: "Documentos", subtitle: "Suba una foto o un PDF. La IA separa las transacciones y usted las revisa antes de confirmarlas.", back: "Volver a contabilidad", upload: "Subir una foto o un PDF", formats: "PDF, JPG, PNG o WebP — máximo 20 MB", loading: "Cargando…", analysing: "Analizando…", analyze: "Analizar", confirm: "Confirmar todas las transacciones", open: "Abrir", remove: "Eliminar", empty: "Todavía no hay documentos.", ready: "Por verificar", confirmed: "Confirmado", error: "Error", uploaded: "Listo para analizar", income: "Ingreso", expense: "Gasto", unknown: "Tipo incierto", date: "Fecha", source: "Fuente o proveedor", subtotal: "Antes de impuestos", gst: "GST", qst: "QST", total: "Total", confidence: "Confianza IA", notes: "Por verificar", badFile: "Use un PDF, JPG, PNG o WebP de hasta 20 MB.", saved: "Todas las transacciones fueron confirmadas.", needBusiness: "Primero cree su perfil de empresa.", deleteConfirm: "¿Eliminar este documento?", incomplete: "Una o más transacciones están incompletas. Analice un documento más claro.", detected: "transacciones detectadas", transaction: "Transacción" },
   }[lang];
 
   useEffect(() => {
@@ -128,19 +133,40 @@ export default function DocumentsTenueLivresPage() {
 
   async function confirm(doc: Doc) {
     const x = doc.extraction;
-    if (!business || !x || !x.relevant || x.entry_type === "unknown" || !x.transaction_date || !x.source || x.subtotal === null) { setMessage(t.incomplete); return; }
+    const items = x?.transactions ?? [];
+    const complete = items.length > 0 && items.every((item) => item.entry_type !== "unknown" && item.transaction_date && item.source && item.subtotal !== null);
+    if (!business || !x?.relevant || !complete) { setMessage(t.incomplete); return; }
     setBusyId(doc.id);
     setMessage("");
-    const gst = x.gst ?? 0;
-    const qst = x.qst ?? 0;
-    const taxMode = qst > 0 ? "gst_qst" : gst > 0 ? "gst" : "none";
-    const paymentMethod = x.payment_method === "unknown" ? "other" : x.payment_method;
-    const { data: transaction, error } = await supabase.from("bookkeeping_transactions").insert({ business_id: business.id, entry_type: x.entry_type, transaction_date: x.transaction_date, source: x.source, description: x.description, subtotal: x.subtotal, tax_mode: taxMode, gst, qst, payment_method: paymentMethod, status: "confirmed", document_path: doc.storage_path, original_file_name: doc.original_file_name, document_mime_type: doc.mime_type, entered_by: "document_ai", ai_confidence: x.confidence, ai_extraction: x }).select("id").single();
-    if (error || !transaction) setMessage(error?.message ?? t.error);
+    const rows = items.map((item) => {
+      const gst = item.gst ?? 0;
+      const qst = item.qst ?? 0;
+      return {
+        business_id: business.id,
+        entry_type: item.entry_type,
+        transaction_date: item.transaction_date,
+        source: item.source,
+        description: item.description,
+        subtotal: item.subtotal,
+        tax_mode: qst > 0 ? "gst_qst" : gst > 0 ? "gst" : "none",
+        gst,
+        qst,
+        payment_method: item.payment_method === "unknown" ? "other" : item.payment_method,
+        status: "confirmed",
+        document_path: doc.storage_path,
+        original_file_name: doc.original_file_name,
+        document_mime_type: doc.mime_type,
+        entered_by: "document_ai",
+        ai_confidence: item.confidence,
+        ai_extraction: item,
+      };
+    });
+    const { data: transactions, error } = await supabase.from("bookkeeping_transactions").insert(rows).select("id");
+    if (error || !transactions?.length) setMessage(error?.message ?? t.error);
     else {
-      const { error: updateError } = await supabase.from("bookkeeping_documents").update({ status: "confirmed", transaction_id: transaction.id }).eq("id", doc.id);
+      const { error: updateError } = await supabase.from("bookkeeping_documents").update({ status: "confirmed", transaction_id: transactions[0].id }).eq("id", doc.id);
       if (updateError) {
-        await supabase.from("bookkeeping_transactions").delete().eq("id", transaction.id);
+        await supabase.from("bookkeeping_transactions").delete().in("id", transactions.map((item) => item.id));
         setMessage(updateError.message);
       } else setMessage(t.saved);
       await loadDocs(business.id);
@@ -168,7 +194,7 @@ export default function DocumentsTenueLivresPage() {
       <header style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}><div style={{ maxWidth: 1100, margin: "auto", padding: "14px 20px", display: "flex", justifyContent: "space-between", gap: 15, flexWrap: "wrap" }}><Link href={`/tenue-de-livres?lang=${lang}`} style={{ color: "#004aad", textDecoration: "none", fontWeight: 900 }}>← {t.back}</Link><div style={{ display: "flex", gap: 6 }}>{(["fr", "en", "es"] as const).map((x) => <button key={x} onClick={() => setLang(x)} style={{ ...button, background: lang === x ? "#004aad" : "#fff", color: lang === x ? "#fff" : "#004aad" }}>{x.toUpperCase()}</button>)}</div></div></header>
       <div style={{ maxWidth: 1100, margin: "auto", padding: "30px 20px 60px" }}>
         <h1 style={{ marginBottom: 8 }}>{t.title}</h1><p style={{ color: "#64748b", maxWidth: 760 }}>{t.subtitle}</p>
-        {business ? <p style={{ fontWeight: 900 }}>{business.business_name}</p> : <p style={{ background: "#fff7ed", border: "1px solid #fed7aa", padding: 14, borderRadius: 10 }}>{t.needBusiness} <Link href={`/tenue-de-livres/revenus?lang=${lang}`}>→</Link></p>}
+        {business ? <p style={{ fontWeight: 900 }}>{business.business_name}</p> : <p style={{ background: "#fff7ed", border: "1px solid #fed7aa", padding: 14, borderRadius: 10 }}>{t.needBusiness} <Link href={`/tenue-de-livres/configuration?lang=${lang}`}>→</Link></p>}
         {message && <p style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e3a8a", padding: 12, borderRadius: 10 }}>{message}</p>}
         {business && <label style={{ display: "grid", placeItems: "center", background: "#004aad", color: "#fff", padding: 25, borderRadius: 16, fontWeight: 900, cursor: uploading ? "wait" : "pointer", margin: "22px 0" }}><span style={{ fontSize: 30 }}>📷</span><span>{uploading ? t.analysing : t.upload}</span><small style={{ marginTop: 7, opacity: .85 }}>{t.formats}</small><input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={upload} disabled={uploading} hidden /></label>}
         <div style={{ display: "grid", gap: 15 }}>
@@ -176,11 +202,32 @@ export default function DocumentsTenueLivresPage() {
           {docs.map((doc) => {
             const x = doc.extraction;
             const status = doc.status === "ready" ? t.ready : doc.status === "confirmed" ? t.confirmed : doc.status === "error" ? t.error : doc.status === "analyzing" ? t.analysing : t.uploaded;
-            const complete = Boolean(x?.relevant && x.entry_type !== "unknown" && x.transaction_date && x.source && x.subtotal !== null);
+            const items = x?.transactions ?? [];
+            const complete = Boolean(x?.relevant && items.length > 0 && items.every((item) => item.entry_type !== "unknown" && item.transaction_date && item.source && item.subtotal !== null));
             return <article key={doc.id} style={{ background: "#fff", border: "1px solid #dbe5f1", borderRadius: 15, padding: 18 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}><div><strong>{doc.original_file_name}</strong><div style={{ color: "#64748b", fontSize: 13, marginTop: 5 }}>{status}</div></div><div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}><button onClick={() => openDoc(doc.storage_path)} style={button}>{t.open}</button>{doc.status !== "confirmed" && <button disabled={busyId === doc.id} onClick={() => analyze(doc.id)} style={button}>{busyId === doc.id ? t.analysing : t.analyze}</button>}{doc.status !== "confirmed" && <button disabled={busyId === doc.id} onClick={() => remove(doc)} style={{ ...button, color: "#b91c1c" }}>{t.remove}</button>}</div></div>
               {doc.error_message && <p style={{ color: "#b91c1c" }}>{doc.error_message}</p>}
-              {x && <div style={{ marginTop: 15 }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}><Field label="Type" value={x.entry_type === "income" ? t.income : x.entry_type === "expense" ? t.expense : t.unknown} /><Field label={t.date} value={dateDisplay(x.transaction_date)} /><Field label={t.source} value={x.source ?? "—"} /><Field label={t.subtotal} value={currency(x.subtotal, lang)} /><Field label={t.gst} value={currency(x.gst, lang)} /><Field label={t.qst} value={currency(x.qst, lang)} /><Field label={t.total} value={currency(x.total, lang)} /><Field label={t.confidence} value={`${Math.round(x.confidence * 100)} %`} /></div>{x.notes.length > 0 && <p style={{ color: "#92400e" }}><strong>{t.notes} :</strong> {x.notes.join(" • ")}</p>}{doc.status === "ready" && <button disabled={!complete || busyId === doc.id} onClick={() => confirm(doc)} style={{ border: 0, borderRadius: 10, background: complete ? "#15803d" : "#94a3b8", color: "#fff", padding: "11px 16px", fontWeight: 900, cursor: complete ? "pointer" : "not-allowed" }}>{t.confirm}</button>}</div>}
+              {x && <div style={{ marginTop: 15 }}>
+                <p style={{ color: "#004aad", fontWeight: 900 }}>{items.length} {t.detected}</p>
+                {(x.document_notes ?? []).length > 0 && <p style={{ color: "#92400e" }}><strong>{t.notes} :</strong> {(x.document_notes ?? []).join(" • ")}</p>}
+                <div style={{ display: "grid", gap: 12 }}>
+                  {items.map((item, index) => <section key={`${doc.id}-${index}`} style={{ border: "1px solid #dbe5f1", borderRadius: 12, padding: 13 }}>
+                    <h3 style={{ margin: "0 0 10px" }}>{t.transaction} {index + 1}</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+                      <Field label="Type" value={item.entry_type === "income" ? t.income : item.entry_type === "expense" ? t.expense : t.unknown} />
+                      <Field label={t.date} value={dateDisplay(item.transaction_date)} />
+                      <Field label={t.source} value={item.source ?? "—"} />
+                      <Field label={t.subtotal} value={currency(item.subtotal, lang)} />
+                      <Field label={t.gst} value={currency(item.gst, lang)} />
+                      <Field label={t.qst} value={currency(item.qst, lang)} />
+                      <Field label={t.total} value={currency(item.total, lang)} />
+                      <Field label={t.confidence} value={`${Math.round(item.confidence * 100)} %`} />
+                    </div>
+                    {item.notes.length > 0 && <p style={{ color: "#92400e" }}><strong>{t.notes} :</strong> {item.notes.join(" • ")}</p>}
+                  </section>)}
+                </div>
+                {doc.status === "ready" && <button disabled={!complete || busyId === doc.id} onClick={() => confirm(doc)} style={{ border: 0, borderRadius: 10, background: complete ? "#15803d" : "#94a3b8", color: "#fff", padding: "11px 16px", marginTop: 15, fontWeight: 900, cursor: complete ? "pointer" : "not-allowed" }}>{t.confirm}</button>}
+              </div>}
             </article>;
           })}
         </div>
