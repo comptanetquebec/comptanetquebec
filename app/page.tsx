@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -28,6 +28,7 @@ type CopyDict = {
     faq: string;
     contact: string;
     client: string;
+    bookkeeping: string;
     help: string;
     menu: string;
     close: string;
@@ -295,6 +296,7 @@ export default function Home() {
           faq: "FAQ",
           contact: "Contact",
           client: "Espace client",
+          bookkeeping: "Tenue de livres",
           help: "Besoin d’aide ?",
           menu: "Menu",
           close: "Fermer",
@@ -315,7 +317,7 @@ export default function Home() {
 
         trust: [
           { t: "Québec seulement" },
-          { t: "Paiement Stripe" },
+          { t: "Paiement sécurisé" },
           { t: "Portail sécurisé" },
           { t: "Accréditation TED" },
           { t: "Confidentialité" },
@@ -324,7 +326,7 @@ export default function Home() {
 
         chooseType: "Choisissez votre situation",
         t1Title: "👤 Particulier (T1)",
-        t1Desc: "Salarié(e), étudiant(e), retraité(e) ou travailleur autonome.",
+        t1Desc: "Salarié(e), étudiant(e) ou retraité(e).",
         t1Btn: "Commencer maintenant",
 
         autoTitle: "💼 Travailleur autonome / à mon compte",
@@ -472,6 +474,7 @@ plans: [
           faq: "FAQ",
           contact: "Contact",
           client: "Client portal",
+          bookkeeping: "Bookkeeping",
           help: "Need help?",
           menu: "Menu",
           close: "Close",
@@ -491,7 +494,7 @@ plans: [
 
         trust: [
           { t: "Québec only" },
-          { t: "Stripe payment" },
+          { t: "Secure payment" },
           { t: "Secure portal" },
           { t: "TED accredited" },
           { t: "Confidential" },
@@ -500,7 +503,7 @@ plans: [
 
         chooseType: "Choose your situation",
         t1Title: "👤 Individual (T1)",
-        t1Desc: "Employee, student, retiree or self-employed.",
+        t1Desc: "Employee, student or retiree.",
         t1Btn: "Start now",
 
         autoTitle: "💼 Self-employed / business income",
@@ -630,6 +633,7 @@ plans: [
           faq: "FAQ",
           contact: "Contacto",
           client: "Portal del cliente",
+          bookkeeping: "Contabilidad",
           help: "¿Necesitas ayuda?",
           menu: "Menú",
           close: "Cerrar",
@@ -650,7 +654,7 @@ plans: [
 
         trust: [
           { t: "Solo Québec" },
-          { t: "Pago Stripe" },
+          { t: "Pago seguro" },
           { t: "Portal seguro" },
           { t: "TED" },
           { t: "Confidencial" },
@@ -659,7 +663,7 @@ plans: [
 
         chooseType: "Elija su situación",
         t1Title: "👤 Particular (T1)",
-        t1Desc: "Empleado/a, estudiante, jubilado/a o autónomo/a.",
+        t1Desc: "Empleado/a, estudiante o jubilado/a.",
         t1Btn: "Empezar ahora",
 
         autoTitle: "💼 Autónomo / por cuenta propia",
@@ -825,7 +829,7 @@ plans: [
       name: "ComptaNet Québec",
       url: base,
       telephone: "+15819852599",
-      email: "comptanetquebec@gmail.com",
+      email: "info@comptanetquebec.com",
       address: {
         "@type": "PostalAddress",
         streetAddress: "849, boulevard Pie XII",
@@ -984,6 +988,14 @@ plans: [
                 onClick={closeMobile}
               >
                 {T.nav.client}
+              </Link>
+              <Link
+                href={`/travailleur-autonome?lang=${encodeURIComponent(lang)}`}
+                className="btn btn-outline"
+                prefetch
+                onClick={closeMobile}
+              >
+                💼 {T.nav.bookkeeping}
               </Link>
               <Link
                 href={toHelp}
