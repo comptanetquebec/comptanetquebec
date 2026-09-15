@@ -34,7 +34,9 @@ export default function RevenusPage() {
   const [lang, setLang] = useState<Lang>("fr");
   const [revenues, setRevenues] = useState<Revenue[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [date, setDate] = useState("");
+  const [day, setDay] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
   const [source, setSource] = useState("");
   const [description, setDescription] = useState("");
   const [subtotal, setSubtotal] = useState("");
@@ -42,6 +44,10 @@ export default function RevenusPage() {
   const [paymentMethod, setPaymentMethod] = useState("transfer");
 
   const currentYear = new Date().getFullYear();
+  const date =
+    day && month && year
+      ? `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+      : "";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -57,6 +63,9 @@ export default function RevenusPage() {
       add: "Ajouter un revenu",
       edit: "Modifier le revenu",
       date: "Date",
+      day: "Jour",
+      month: "Mois",
+      year: "Année",
       source: "Client ou source",
       sourcePlaceholder: "Ex. Airbnb, client, contrat",
       description: "Description",
@@ -98,6 +107,9 @@ export default function RevenusPage() {
       add: "Add income",
       edit: "Edit income",
       date: "Date",
+      day: "Day",
+      month: "Month",
+      year: "Year",
       source: "Client or source",
       sourcePlaceholder: "E.g. Airbnb, client, contract",
       description: "Description",
@@ -139,6 +151,9 @@ export default function RevenusPage() {
       add: "Añadir un ingreso",
       edit: "Modificar el ingreso",
       date: "Fecha",
+      day: "Día",
+      month: "Mes",
+      year: "Año",
       source: "Cliente o fuente",
       sourcePlaceholder: "Ej. Airbnb, cliente, contrato",
       description: "Descripción",
@@ -194,7 +209,9 @@ export default function RevenusPage() {
 
   function resetForm() {
     setEditingId(null);
-    setDate("");
+    setDay("");
+    setMonth("");
+    setYear("");
     setSource("");
     setDescription("");
     setSubtotal("");
@@ -204,7 +221,15 @@ export default function RevenusPage() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!date || !source.trim() || amount <= 0) {
+    const parsedDate = new Date(`${date}T12:00:00`);
+    const validDate =
+      Boolean(date) &&
+      !Number.isNaN(parsedDate.getTime()) &&
+      parsedDate.getFullYear() === Number(year) &&
+      parsedDate.getMonth() + 1 === Number(month) &&
+      parsedDate.getDate() === Number(day);
+
+    if (!validDate || !source.trim() || amount <= 0) {
       window.alert(copy.required);
       return;
     }
@@ -232,7 +257,10 @@ export default function RevenusPage() {
 
   function edit(item: Revenue) {
     setEditingId(item.id);
-    setDate(item.date);
+    const [savedYear, savedMonth, savedDay] = item.date.split("-");
+    setDay(savedDay);
+    setMonth(savedMonth);
+    setYear(savedYear);
     setSource(item.source);
     setDescription(item.description);
     setSubtotal(item.subtotal.toFixed(2));
@@ -304,7 +332,38 @@ export default function RevenusPage() {
           <h2 style={{ margin: "0 0 18px", fontSize: 22 }}>{editingId ? copy.edit : copy.add}</h2>
           <form onSubmit={submit}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 16 }}>
-              <label style={label}>{copy.date}<input required type="date" value={date} onChange={(e) => setDate(e.target.value)} style={input} /></label>
+              <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+                <legend style={{ fontWeight: 800, fontSize: 14, marginBottom: 7 }}>{copy.date}</legend>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                  <label style={label}>
+                    {copy.day}
+                    <select required value={day} onChange={(e) => setDay(e.target.value)} style={input}>
+                      <option value="">JJ</option>
+                      {Array.from({ length: 31 }, (_, index) => index + 1).map((value) => (
+                        <option key={value} value={String(value).padStart(2, "0")}>{String(value).padStart(2, "0")}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={label}>
+                    {copy.month}
+                    <select required value={month} onChange={(e) => setMonth(e.target.value)} style={input}>
+                      <option value="">MM</option>
+                      {Array.from({ length: 12 }, (_, index) => index + 1).map((value) => (
+                        <option key={value} value={String(value).padStart(2, "0")}>{String(value).padStart(2, "0")}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={label}>
+                    {copy.year}
+                    <select required value={year} onChange={(e) => setYear(e.target.value)} style={input}>
+                      <option value="">AAAA</option>
+                      {Array.from({ length: 8 }, (_, index) => currentYear + 1 - index).map((value) => (
+                        <option key={value} value={String(value)}>{value}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </fieldset>
               <label style={label}>{copy.source}<input required value={source} onChange={(e) => setSource(e.target.value)} placeholder={copy.sourcePlaceholder} style={input} /></label>
               <label style={label}>{copy.description}<input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={copy.descriptionPlaceholder} style={input} /></label>
               <label style={label}>{copy.subtotal}<input required min="0.01" step="0.01" inputMode="decimal" type="number" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} placeholder="0.00" style={input} /></label>
