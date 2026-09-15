@@ -990,7 +990,7 @@ plans: [
                 {T.nav.client}
               </Link>
               <Link
-                href={`/travailleur-autonome?lang=${encodeURIComponent(lang)}`}
+                href={`/tenue-de-livres?lang=${encodeURIComponent(lang)}`}
                 className="btn btn-outline"
                 prefetch
                 onClick={closeMobile}
