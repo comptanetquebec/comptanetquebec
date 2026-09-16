@@ -1169,12 +1169,14 @@ export default function TenueDeLivresPage() {
               title={text.incomeTotal}
               value={money(totals.income)}
               icon="💰"
+              href={`/tenue-de-livres/revenus?lang=${lang}`}
             />
 
             <SummaryCard
               title={text.expensesTotal}
               value={money(totals.expenses)}
               icon="🧾"
+              href={`/tenue-de-livres/depenses?lang=${lang}`}
             />
 
             <SummaryCard
@@ -1187,6 +1189,7 @@ export default function TenueDeLivresPage() {
               title={text.documentsTotal}
               value={String(totals.documents)}
               icon="📁"
+              href={`/tenue-de-livres/documents?lang=${lang}`}
             />
           </div>
         </section>
@@ -1577,12 +1580,14 @@ function SummaryCard({
   title,
   value,
   icon,
+  href,
 }: {
   title: string;
   value: string;
   icon: string;
+  href?: string;
 }) {
-  return (
+  const card = (
     <div
       style={{
         background: "#ffffff",
@@ -1590,6 +1595,9 @@ function SummaryCard({
           "1px solid #e5e7eb",
         borderRadius: 14,
         padding: 18,
+        height: "100%",
+        boxSizing: "border-box",
+        cursor: href ? "pointer" : "default",
       }}
     >
       <div
@@ -1629,5 +1637,23 @@ function SummaryCard({
         {value}
       </div>
     </div>
+  );
+
+  if (!href) {
+    return card;
+  }
+
+  return (
+    <Link
+      href={href}
+      style={{
+        display: "block",
+        height: "100%",
+        color: "#0f172a",
+        textDecoration: "none",
+      }}
+    >
+      {card}
+    </Link>
   );
 }
