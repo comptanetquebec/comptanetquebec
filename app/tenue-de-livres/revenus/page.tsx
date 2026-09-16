@@ -1,13 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
 type TaxMode = "none" | "gst" | "gst_qst";
 type TaxStatus = "not_registered" | "gst_only" | "gst_qst";
 type FilingFrequency = "monthly" | "quarterly" | "annual";
+
+type ExtractedTransaction = {
+  entry_type: "income" | "expense" | "unknown";
+  transaction_date: string | null;
+  source: string | null;
+  description: string | null;
+  reference: string | null;
+  subtotal: number | null;
+  gst: number | null;
+  qst: number | null;
+  total: number | null;
+  payment_method: "transfer" | "card" | "cash" | "cheque" | "platform" | "other" | "unknown";
+  confidence: number;
+  notes: string[];
+};
+
+type Extraction = {
+  relevant: boolean;
+  transactions: ExtractedTransaction[];
+  document_notes: string[];
+};
+
+type Doc = {
+  id: string;
+  storage_path: string;
+  original_file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  status: "uploaded" | "analyzing" | "ready" | "confirmed" | "error";
+  extraction: Extraction | null;
+  error_message: string | null;
+  transaction_id: string | null;
+  created_at: string;
+};
+
+const MAX_SIZE = 20 * 1024 * 1024;
+const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+const safeName = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_");
 
 type Business = {
   id: string;
@@ -60,6 +102,11 @@ export default function RevenusPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [entryMode, setEntryMode] = useState<"manual" | "document">("manual");
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [busyDocId, setBusyDocId] = useState("");
+  const [docMessage, setDocMessage] = useState("");
 
   const currentYear = new Date().getFullYear();
   const date =
@@ -134,6 +181,30 @@ export default function RevenusPage() {
       quarterly: "Trimestrielle",
       annual: "Annuelle",
       createBusiness: "Créer mon dossier",
+      manualTab: "Saisie manuelle",
+      documentTab: "Déposer un document",
+      documentTitle: "Importer un revenu avec l’IA",
+      documentText: "Déposez une facture, un relevé, une preuve de paiement ou une photo. L’IA analyse le document, puis vous vérifiez le revenu avant de le confirmer.",
+      uploadDocument: "Déposer un PDF ou une photo",
+      formats: "PDF, JPG, PNG ou WebP — maximum 20 Mo",
+      analysing: "Analyse en cours…",
+      analyze: "Analyser",
+      open: "Ouvrir",
+      deleteDocument: "Supprimer",
+      confirmIncome: "Confirmer les revenus détectés",
+      detected: "transactions détectées",
+      incomeDetected: "Revenu",
+      expenseDetected: "Dépense",
+      unknownDetected: "Type incertain",
+      confidence: "Confiance IA",
+      review: "À vérifier",
+      documentSaved: "Le ou les revenus ont été confirmés.",
+      badFile: "Utilisez un PDF, JPG, PNG ou WebP de 20 Mo maximum.",
+      wrongType: "Ce document contient une dépense ou une transaction incertaine. Vérifiez-le dans Documents avant de confirmer.",
+      incompleteDocument: "Le revenu détecté est incomplet. Utilisez un document plus lisible ou vérifiez-le dans Documents.",
+      noDocuments: "Aucun document de revenu en attente.",
+      allDocuments: "Voir tous les documents",
+      deleteDocumentConfirm: "Supprimer ce document?",
     },
     en: {
       title: "Income",
@@ -193,6 +264,30 @@ export default function RevenusPage() {
       quarterly: "Quarterly",
       annual: "Annual",
       createBusiness: "Create my file",
+      manualTab: "Manual entry",
+      documentTab: "Upload a document",
+      documentTitle: "Import income with AI",
+      documentText: "Upload an invoice, statement, proof of payment or photo. AI analyzes the document, then you review the income before confirming it.",
+      uploadDocument: "Upload a PDF or photo",
+      formats: "PDF, JPG, PNG or WebP — maximum 20 MB",
+      analysing: "Analyzing…",
+      analyze: "Analyze",
+      open: "Open",
+      deleteDocument: "Delete",
+      confirmIncome: "Confirm detected income",
+      detected: "transactions detected",
+      incomeDetected: "Income",
+      expenseDetected: "Expense",
+      unknownDetected: "Uncertain type",
+      confidence: "AI confidence",
+      review: "Review",
+      documentSaved: "The income transaction(s) were confirmed.",
+      badFile: "Use a PDF, JPG, PNG or WebP file up to 20 MB.",
+      wrongType: "This document contains an expense or an uncertain transaction. Review it in Documents before confirming.",
+      incompleteDocument: "The detected income is incomplete. Use a clearer document or review it in Documents.",
+      noDocuments: "No pending income documents.",
+      allDocuments: "View all documents",
+      deleteDocumentConfirm: "Delete this document?",
     },
     es: {
       title: "Ingresos",
@@ -252,6 +347,30 @@ export default function RevenusPage() {
       quarterly: "Trimestral",
       annual: "Anual",
       createBusiness: "Crear mi expediente",
+      manualTab: "Entrada manual",
+      documentTab: "Subir un documento",
+      documentTitle: "Importar ingresos con IA",
+      documentText: "Suba una factura, un estado, un comprobante de pago o una foto. La IA analiza el documento y usted verifica el ingreso antes de confirmarlo.",
+      uploadDocument: "Subir un PDF o una foto",
+      formats: "PDF, JPG, PNG o WebP — máximo 20 MB",
+      analysing: "Analizando…",
+      analyze: "Analizar",
+      open: "Abrir",
+      deleteDocument: "Eliminar",
+      confirmIncome: "Confirmar los ingresos detectados",
+      detected: "transacciones detectadas",
+      incomeDetected: "Ingreso",
+      expenseDetected: "Gasto",
+      unknownDetected: "Tipo incierto",
+      confidence: "Confianza IA",
+      review: "Por verificar",
+      documentSaved: "Los ingresos fueron confirmados.",
+      badFile: "Use un PDF, JPG, PNG o WebP de hasta 20 MB.",
+      wrongType: "Este documento contiene un gasto o una transacción incierta. Revíselo en Documentos antes de confirmar.",
+      incompleteDocument: "El ingreso detectado está incompleto. Use un documento más legible o revíselo en Documentos.",
+      noDocuments: "No hay documentos de ingresos pendientes.",
+      allDocuments: "Ver todos los documentos",
+      deleteDocumentConfirm: "¿Eliminar este documento?",
     },
   }[lang];
 
@@ -346,7 +465,245 @@ export default function RevenusPage() {
     if (transactionError) setError(transactionError.message);
     else setRevenues((transactionData ?? []).map((row) => mapRevenue(row)));
 
+    await loadDocs(selectedBusiness.id);
     setLoading(false);
+  }
+
+  async function loadDocs(businessId: string) {
+    const { data, error: docsError } = await supabase
+      .from("bookkeeping_documents")
+      .select("id, storage_path, original_file_name, mime_type, size_bytes, status, extraction, error_message, transaction_id, created_at")
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false });
+
+    if (docsError) {
+      setDocMessage(docsError.message);
+      return;
+    }
+
+    const allDocs = (data ?? []) as Doc[];
+    const incomeDocs = allDocs.filter((doc) => {
+      if (doc.status === "confirmed") return false;
+      const items = doc.extraction?.transactions ?? [];
+      return items.length === 0 || items.some((item) => item.entry_type === "income");
+    });
+
+    setDocs(incomeDocs);
+  }
+
+  async function analyzeDocument(documentId: string) {
+    if (!business) return;
+    setBusyDocId(documentId);
+    setDocMessage("");
+
+    try {
+      const response = await fetch("/api/tenue-de-livres/analyser-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId }),
+      });
+
+      const result = (await response.json()) as { ok?: boolean; error?: string };
+
+      if (!response.ok || !result.ok) {
+        setDocMessage(result.error ?? "Erreur");
+      }
+
+      await loadDocs(business.id);
+    } catch (err: unknown) {
+      setDocMessage(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setBusyDocId("");
+    }
+  }
+
+  async function uploadDocument(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !business || !userId) return;
+
+    if (!allowed.includes(file.type) || file.size > MAX_SIZE) {
+      setDocMessage(copy.badFile);
+      return;
+    }
+
+    setUploading(true);
+    setDocMessage("");
+
+    const path = `${userId}/${business.id}/${crypto.randomUUID()}-${safeName(file.name)}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("bookkeeping-documents")
+        .upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        setDocMessage(uploadError.message);
+        return;
+      }
+
+      const { data: doc, error: rowError } = await supabase
+        .from("bookkeeping_documents")
+        .insert({
+          business_id: business.id,
+          storage_path: path,
+          original_file_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+        })
+        .select("id")
+        .single();
+
+      if (rowError || !doc) {
+        await supabase.storage.from("bookkeeping-documents").remove([path]);
+        setDocMessage(rowError?.message ?? "Erreur");
+        return;
+      }
+
+      await loadDocs(business.id);
+      await analyzeDocument(doc.id);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function openDocument(path: string) {
+    const { data, error: signedError } = await supabase.storage
+      .from("bookkeeping-documents")
+      .createSignedUrl(path, 600);
+
+    if (signedError || !data?.signedUrl) {
+      setDocMessage(signedError?.message ?? "Erreur");
+      return;
+    }
+
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
+  async function confirmIncomeDocument(doc: Doc) {
+    if (!business || !doc.extraction?.relevant) {
+      setDocMessage(copy.incompleteDocument);
+      return;
+    }
+
+    const items = doc.extraction.transactions ?? [];
+    const incomeItems = items.filter((item) => item.entry_type === "income");
+    const hasWrongType = items.some((item) => item.entry_type !== "income");
+    const complete =
+      incomeItems.length > 0 &&
+      incomeItems.every(
+        (item) =>
+          item.transaction_date &&
+          item.source &&
+          item.subtotal !== null
+      );
+
+    if (hasWrongType) {
+      setDocMessage(copy.wrongType);
+      return;
+    }
+
+    if (!complete) {
+      setDocMessage(copy.incompleteDocument);
+      return;
+    }
+
+    setBusyDocId(doc.id);
+    setDocMessage("");
+
+    const rows = incomeItems.map((item) => {
+      const gst = item.gst ?? 0;
+      const qst = item.qst ?? 0;
+
+      return {
+        business_id: business.id,
+        entry_type: "income",
+        transaction_date: item.transaction_date,
+        source: item.source,
+        description: item.description,
+        subtotal: item.subtotal,
+        tax_mode: qst > 0 ? "gst_qst" : gst > 0 ? "gst" : "none",
+        gst,
+        qst,
+        payment_method: item.payment_method === "unknown" ? "other" : item.payment_method,
+        status: "confirmed",
+        document_path: doc.storage_path,
+        original_file_name: doc.original_file_name,
+        document_mime_type: doc.mime_type,
+        entered_by: "document_ai",
+        ai_confidence: item.confidence,
+        ai_extraction: item,
+      };
+    });
+
+    const { data: transactions, error: insertError } = await supabase
+      .from("bookkeeping_transactions")
+      .insert(rows)
+      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method");
+
+    if (insertError || !transactions?.length) {
+      setDocMessage(insertError?.message ?? "Erreur");
+      setBusyDocId("");
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("bookkeeping_documents")
+      .update({
+        status: "confirmed",
+        transaction_id: transactions[0].id,
+      })
+      .eq("id", doc.id);
+
+    if (updateError) {
+      await supabase
+        .from("bookkeeping_transactions")
+        .delete()
+        .in("id", transactions.map((item) => item.id));
+
+      setDocMessage(updateError.message);
+      setBusyDocId("");
+      return;
+    }
+
+    const saved = transactions.map((row) =>
+      mapRevenue(row as Record<string, unknown>)
+    );
+
+    setRevenues((current) => [...saved, ...current]);
+    setDocMessage(copy.documentSaved);
+    await loadDocs(business.id);
+    setBusyDocId("");
+  }
+
+  async function removeDocument(doc: Doc) {
+    if (!business || doc.status === "confirmed") return;
+    if (!window.confirm(copy.deleteDocumentConfirm)) return;
+
+    setBusyDocId(doc.id);
+    setDocMessage("");
+
+    const { error: deleteError } = await supabase
+      .from("bookkeeping_documents")
+      .delete()
+      .eq("id", doc.id);
+
+    if (deleteError) {
+      setDocMessage(deleteError.message);
+      setBusyDocId("");
+      return;
+    }
+
+    await supabase.storage
+      .from("bookkeeping-documents")
+      .remove([doc.storage_path]);
+
+    await loadDocs(business.id);
+    setBusyDocId("");
   }
 
   async function createBusiness(event: FormEvent<HTMLFormElement>) {
@@ -559,7 +916,43 @@ export default function RevenusPage() {
           <Summary title={copy.total} value={money(summary.total, lang)} strong />
         </section>
 
-        <section style={{ ...panel, padding: 22, marginBottom: 24 }}>
+        <section style={{ ...panel, padding: 10, marginBottom: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => setEntryMode("manual")}
+              style={{
+                border: entryMode === "manual" ? "1px solid #004aad" : "1px solid #dbe5f1",
+                borderRadius: 11,
+                padding: "13px 16px",
+                background: entryMode === "manual" ? "#004aad" : "#fff",
+                color: entryMode === "manual" ? "#fff" : "#334155",
+                fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              ✏️ {copy.manualTab}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEntryMode("document")}
+              style={{
+                border: entryMode === "document" ? "1px solid #004aad" : "1px solid #dbe5f1",
+                borderRadius: 11,
+                padding: "13px 16px",
+                background: entryMode === "document" ? "#004aad" : "#fff",
+                color: entryMode === "document" ? "#fff" : "#334155",
+                fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              📄 {copy.documentTab}
+            </button>
+          </div>
+        </section>
+
+        {entryMode === "manual" && <section style={{ ...panel, padding: 22, marginBottom: 24 }}>
           <h2 style={{ margin: "0 0 18px", fontSize: 22 }}>{editingId ? copy.edit : copy.add}</h2>
           <form onSubmit={submit}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 16 }}>
@@ -613,7 +1006,226 @@ export default function RevenusPage() {
               {editingId && <button type="button" onClick={resetForm} style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "11px 18px", background: "#fff", color: "#334155", fontWeight: 800, cursor: "pointer" }}>{copy.cancel}</button>}
             </div>
           </form>
-        </section>
+        </section>}
+
+        {entryMode === "document" && (
+          <section style={{ ...panel, padding: 22, marginBottom: 24 }}>
+            <h2 style={{ margin: "0 0 7px", fontSize: 22 }}>{copy.documentTitle}</h2>
+            <p style={{ color: "#64748b", lineHeight: 1.55, marginTop: 0 }}>{copy.documentText}</p>
+
+            {docMessage && (
+              <p style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e3a8a", padding: 12, borderRadius: 10 }}>
+                {docMessage}
+              </p>
+            )}
+
+            <label
+              style={{
+                display: "grid",
+                placeItems: "center",
+                background: "#004aad",
+                color: "#fff",
+                padding: 25,
+                borderRadius: 16,
+                fontWeight: 900,
+                cursor: uploading ? "wait" : "pointer",
+                margin: "20px 0",
+              }}
+            >
+              <span style={{ fontSize: 31 }}>📄</span>
+              <span style={{ marginTop: 5 }}>{uploading ? copy.analysing : copy.uploadDocument}</span>
+              <small style={{ marginTop: 7, opacity: 0.85 }}>{copy.formats}</small>
+              <input
+                type="file"
+                accept="application/pdf,image/jpeg,image/png,image/webp"
+                onChange={uploadDocument}
+                disabled={uploading}
+                hidden
+              />
+            </label>
+
+            <div style={{ display: "grid", gap: 14 }}>
+              {docs.length === 0 && (
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: 18, borderRadius: 12, color: "#64748b" }}>
+                  {copy.noDocuments}
+                </div>
+              )}
+
+              {docs.map((doc) => {
+                const items = doc.extraction?.transactions ?? [];
+                const incomeItems = items.filter((item) => item.entry_type === "income");
+                const hasWrongType = items.some((item) => item.entry_type !== "income");
+                const complete =
+                  Boolean(doc.extraction?.relevant) &&
+                  incomeItems.length > 0 &&
+                  !hasWrongType &&
+                  incomeItems.every(
+                    (item) =>
+                      item.transaction_date &&
+                      item.source &&
+                      item.subtotal !== null
+                  );
+
+                return (
+                  <article
+                    key={doc.id}
+                    style={{
+                      border: "1px solid #dbe5f1",
+                      borderRadius: 14,
+                      padding: 16,
+                      background: "#fff",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                      <div>
+                        <strong>{doc.original_file_name}</strong>
+                        <div style={{ color: "#64748b", fontSize: 13, marginTop: 5 }}>
+                          {doc.status === "analyzing"
+                            ? copy.analysing
+                            : doc.status === "ready"
+                              ? copy.review
+                              : doc.status}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                        <button type="button" onClick={() => openDocument(doc.storage_path)} style={smallButton}>
+                          {copy.open}
+                        </button>
+
+                        {doc.status !== "confirmed" && (
+                          <button
+                            type="button"
+                            disabled={busyDocId === doc.id}
+                            onClick={() => analyzeDocument(doc.id)}
+                            style={smallButton}
+                          >
+                            {busyDocId === doc.id ? copy.analysing : copy.analyze}
+                          </button>
+                        )}
+
+                        {doc.status !== "confirmed" && (
+                          <button
+                            type="button"
+                            disabled={busyDocId === doc.id}
+                            onClick={() => removeDocument(doc)}
+                            style={{ ...smallButton, color: "#b91c1c", borderColor: "#fecaca" }}
+                          >
+                            {copy.deleteDocument}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {doc.error_message && (
+                      <p style={{ color: "#b91c1c" }}>{doc.error_message}</p>
+                    )}
+
+                    {doc.extraction && (
+                      <div style={{ marginTop: 14 }}>
+                        <p style={{ color: "#004aad", fontWeight: 900 }}>
+                          {items.length} {copy.detected}
+                        </p>
+
+                        {(doc.extraction.document_notes ?? []).length > 0 && (
+                          <p style={{ color: "#92400e" }}>
+                            <strong>{copy.review} :</strong>{" "}
+                            {doc.extraction.document_notes.join(" • ")}
+                          </p>
+                        )}
+
+                        <div style={{ display: "grid", gap: 10 }}>
+                          {items.map((item, index) => (
+                            <div
+                              key={`${doc.id}-${index}`}
+                              style={{
+                                background: item.entry_type === "income" ? "#f0fdf4" : "#fff7ed",
+                                border: item.entry_type === "income" ? "1px solid #bbf7d0" : "1px solid #fed7aa",
+                                borderRadius: 11,
+                                padding: 13,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))",
+                                  gap: 10,
+                                }}
+                              >
+                                <DocField
+                                  label="Type"
+                                  value={
+                                    item.entry_type === "income"
+                                      ? copy.incomeDetected
+                                      : item.entry_type === "expense"
+                                        ? copy.expenseDetected
+                                        : copy.unknownDetected
+                                  }
+                                />
+                                <DocField label={copy.date} value={item.transaction_date ? item.transaction_date.split("-").reverse().join("/") : "—"} />
+                                <DocField label={copy.source} value={item.source ?? "—"} />
+                                <DocField label={copy.beforeTax} value={item.subtotal === null ? "—" : money(item.subtotal, lang)} />
+                                <DocField label={copy.gst} value={item.gst === null ? "—" : money(item.gst, lang)} />
+                                <DocField label={copy.qst} value={item.qst === null ? "—" : money(item.qst, lang)} />
+                                <DocField label={copy.total} value={item.total === null ? "—" : money(item.total, lang)} />
+                                <DocField label={copy.confidence} value={`${Math.round(item.confidence * 100)} %`} />
+                              </div>
+
+                              {item.notes.length > 0 && (
+                                <p style={{ color: "#92400e", marginBottom: 0 }}>
+                                  <strong>{copy.review} :</strong> {item.notes.join(" • ")}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {hasWrongType && (
+                          <p style={{ background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", padding: 12, borderRadius: 10 }}>
+                            {copy.wrongType}
+                          </p>
+                        )}
+
+                        {doc.status === "ready" && (
+                          <button
+                            type="button"
+                            disabled={!complete || busyDocId === doc.id}
+                            onClick={() => confirmIncomeDocument(doc)}
+                            style={{
+                              border: 0,
+                              borderRadius: 10,
+                              background: complete ? "#15803d" : "#94a3b8",
+                              color: "#fff",
+                              padding: "11px 16px",
+                              marginTop: 14,
+                              fontWeight: 900,
+                              cursor: complete ? "pointer" : "not-allowed",
+                            }}
+                          >
+                            {copy.confirmIncome}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+
+            <Link
+              href={`/tenue-de-livres/documents?lang=${lang}`}
+              style={{
+                display: "inline-block",
+                marginTop: 18,
+                color: "#004aad",
+                fontWeight: 900,
+                textDecoration: "none",
+              }}
+            >
+              {copy.allDocuments} →
+            </Link>
+          </section>
+        )}
 
         <section style={{ ...panel, overflow: "hidden" }}>
           <h2 style={{ margin: 0, padding: "20px 22px", fontSize: 22, borderBottom: "1px solid #e2e8f0" }}>{copy.list}</h2>
@@ -662,4 +1274,13 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function Td({ children }: { children: React.ReactNode }) {
   return <td style={{ padding: "13px 14px", fontSize: 14 }}>{children}</td>;
+}
+
+function DocField({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,.72)", borderRadius: 8, padding: 9 }}>
+      <div style={{ color: "#64748b", fontSize: 12, fontWeight: 800 }}>{label}</div>
+      <div style={{ fontWeight: 900, marginTop: 4, overflowWrap: "anywhere" }}>{value}</div>
+    </div>
+  );
 }
