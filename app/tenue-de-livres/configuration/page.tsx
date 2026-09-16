@@ -1,12 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
-type TaxStatus = "not_registered" | "gst_only" | "gst_qst";
-type Frequency = "monthly" | "quarterly" | "annual";
+
+type TaxStatus =
+  | "not_registered"
+  | "gst_only"
+  | "gst_qst";
+
+type Frequency =
+  | "monthly"
+  | "quarterly"
+  | "annual";
 
 type Business = {
   id: string;
@@ -19,138 +31,1563 @@ type Business = {
 
 export default function ConfigurationTenueLivresPage() {
   const [lang, setLang] = useState<Lang>("fr");
+
   const [userId, setUserId] = useState("");
-  const [business, setBusiness] = useState<Business | null>(null);
+
+  const [business, setBusiness] =
+    useState<Business | null>(null);
+
   const [name, setName] = useState("");
-  const [taxStatus, setTaxStatus] = useState<TaxStatus>("not_registered");
-  const [frequency, setFrequency] = useState<Frequency>("annual");
-  const [startDay, setStartDay] = useState("1");
-  const [startMonth, setStartMonth] = useState("1");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+
+  const [taxStatus, setTaxStatus] =
+    useState<TaxStatus>("not_registered");
+
+  const [frequency, setFrequency] =
+    useState<Frequency>("annual");
+
+  const [startDay, setStartDay] =
+    useState("1");
+
+  const [startMonth, setStartMonth] =
+    useState("1");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   const copy = {
     fr: {
-      back: "Retour à la tenue de livres", title: "Profil de l’entreprise",
-      intro: "Ces renseignements servent uniquement à votre tenue de livres.",
-      name: "Nom de l’entreprise ou du travailleur autonome", taxes: "Inscription aux taxes",
-      none: "Non inscrit à la TPS/TVQ", gst: "TPS seulement", both: "TPS et TVQ",
-      frequency: "Fréquence de production TPS/TVQ", monthly: "Mensuelle",
-      quarterly: "Trimestrielle", annual: "Annuelle", yearStart: "Début de l’exercice financier",
-      day: "Jour", month: "Mois", save: "Créer mon profil", update: "Enregistrer les modifications",
-      saved: "Profil enregistré.", continue: "Continuer vers les documents", loading: "Chargement…",
+      brand: "ComptaNet Québec",
+
+      back: "Retour à la tenue de livres",
+
+      newTitle:
+        "Configuration de votre entreprise",
+
+      editTitle:
+        "Profil de l’entreprise",
+
+      newIntro:
+        "Quelques renseignements suffisent pour préparer votre espace de tenue de livres.",
+
+      editIntro:
+        "Consultez ou modifiez les renseignements utilisés pour votre tenue de livres.",
+
+      step1: "1",
+      step1Title: "Votre entreprise",
+
+      step1Desc:
+        "Indiquez le nom qui doit apparaître dans votre dossier.",
+
+      name:
+        "Nom de l’entreprise ou du travailleur autonome",
+
+      namePlaceholder:
+        "Ex. Entreprise ABC ou Jean Tremblay",
+
+      step2: "2",
+      step2Title: "TPS / TVQ",
+
+      step2Desc:
+        "Indiquez votre situation actuelle concernant les taxes.",
+
+      taxes: "Inscription aux taxes",
+
+      none:
+        "Non inscrit à la TPS/TVQ",
+
+      gst:
+        "TPS seulement",
+
+      both:
+        "TPS et TVQ",
+
+      noTaxInfo:
+        "Vous avez indiqué que vous n’êtes pas inscrit à la TPS/TVQ. Aucune fréquence de production n’est nécessaire.",
+
+      frequency:
+        "Fréquence de production TPS/TVQ",
+
+      monthly: "Mensuelle",
+      quarterly: "Trimestrielle",
+      annual: "Annuelle",
+
+      step3: "3",
+      step3Title: "Exercice financier",
+
+      step3Desc:
+        "Indiquez la date de début de votre exercice financier.",
+
+      yearStart:
+        "Début de l’exercice financier",
+
+      day: "Jour",
+      month: "Mois",
+
+      month1: "Janvier",
+      month2: "Février",
+      month3: "Mars",
+      month4: "Avril",
+      month5: "Mai",
+      month6: "Juin",
+      month7: "Juillet",
+      month8: "Août",
+      month9: "Septembre",
+      month10: "Octobre",
+      month11: "Novembre",
+      month12: "Décembre",
+
+      standardYear:
+        "Pour la plupart des travailleurs autonomes utilisant l’année civile, le début est le 1er janvier.",
+
+      save:
+        "Créer mon dossier",
+
+      update:
+        "Enregistrer les modifications",
+
+      saving:
+        "Enregistrement…",
+
+      saved:
+        "Profil enregistré.",
+
+      updated:
+        "Modifications enregistrées.",
+
+      redirecting:
+        "Votre dossier est prêt. Ouverture de votre tableau de bord…",
+
+      loading:
+        "Chargement de votre profil…",
+
+      required:
+        "Veuillez inscrire le nom de l’entreprise ou du travailleur autonome.",
+
+      invalidDate:
+        "Veuillez vérifier la date de début de l’exercice financier.",
+
+      secure:
+        "Vos renseignements sont enregistrés dans votre espace ComptaNet Québec.",
+
+      existing:
+        "Votre dossier est déjà configuré.",
+
+      dashboard:
+        "Retourner au tableau de bord",
     },
+
     en: {
-      back: "Back to bookkeeping", title: "Business profile",
-      intro: "This information is used only for your bookkeeping.",
-      name: "Business or self-employed name", taxes: "Tax registration",
-      none: "Not registered for GST/QST", gst: "GST only", both: "GST and QST",
-      frequency: "GST/QST filing frequency", monthly: "Monthly",
-      quarterly: "Quarterly", annual: "Annual", yearStart: "Fiscal year start",
-      day: "Day", month: "Month", save: "Create my profile", update: "Save changes",
-      saved: "Profile saved.", continue: "Continue to documents", loading: "Loading…",
+      brand: "ComptaNet Québec",
+
+      back: "Back to bookkeeping",
+
+      newTitle:
+        "Set up your business",
+
+      editTitle:
+        "Business profile",
+
+      newIntro:
+        "A few details are all we need to prepare your bookkeeping workspace.",
+
+      editIntro:
+        "Review or update the information used for your bookkeeping.",
+
+      step1: "1",
+      step1Title: "Your business",
+
+      step1Desc:
+        "Enter the name that should appear in your bookkeeping file.",
+
+      name:
+        "Business or self-employed name",
+
+      namePlaceholder:
+        "Ex. ABC Company or John Smith",
+
+      step2: "2",
+      step2Title: "GST / QST",
+
+      step2Desc:
+        "Tell us about your current tax registration status.",
+
+      taxes: "Tax registration",
+
+      none:
+        "Not registered for GST/QST",
+
+      gst:
+        "GST only",
+
+      both:
+        "GST and QST",
+
+      noTaxInfo:
+        "You indicated that you are not registered for GST/QST. No filing frequency is required.",
+
+      frequency:
+        "GST/QST filing frequency",
+
+      monthly: "Monthly",
+      quarterly: "Quarterly",
+      annual: "Annual",
+
+      step3: "3",
+      step3Title: "Fiscal year",
+
+      step3Desc:
+        "Enter the starting date of your fiscal year.",
+
+      yearStart:
+        "Fiscal year start",
+
+      day: "Day",
+      month: "Month",
+
+      month1: "January",
+      month2: "February",
+      month3: "March",
+      month4: "April",
+      month5: "May",
+      month6: "June",
+      month7: "July",
+      month8: "August",
+      month9: "September",
+      month10: "October",
+      month11: "November",
+      month12: "December",
+
+      standardYear:
+        "For most self-employed individuals using the calendar year, the starting date is January 1.",
+
+      save:
+        "Create my file",
+
+      update:
+        "Save changes",
+
+      saving:
+        "Saving…",
+
+      saved:
+        "Profile saved.",
+
+      updated:
+        "Changes saved.",
+
+      redirecting:
+        "Your file is ready. Opening your dashboard…",
+
+      loading:
+        "Loading your profile…",
+
+      required:
+        "Please enter the business or self-employed name.",
+
+      invalidDate:
+        "Please verify the fiscal year starting date.",
+
+      secure:
+        "Your information is saved in your ComptaNet Québec workspace.",
+
+      existing:
+        "Your file is already configured.",
+
+      dashboard:
+        "Return to dashboard",
     },
+
     es: {
-      back: "Volver a contabilidad", title: "Perfil de la empresa",
-      intro: "Esta información se utiliza únicamente para su contabilidad.",
-      name: "Nombre de la empresa o trabajador autónomo", taxes: "Registro de impuestos",
-      none: "No registrado para GST/QST", gst: "Solo GST", both: "GST y QST",
-      frequency: "Frecuencia de declaración GST/QST", monthly: "Mensual",
-      quarterly: "Trimestral", annual: "Anual", yearStart: "Inicio del año fiscal",
-      day: "Día", month: "Mes", save: "Crear mi perfil", update: "Guardar cambios",
-      saved: "Perfil guardado.", continue: "Continuar a documentos", loading: "Cargando…",
+      brand: "ComptaNet Québec",
+
+      back: "Volver a contabilidad",
+
+      newTitle:
+        "Configure su empresa",
+
+      editTitle:
+        "Perfil de la empresa",
+
+      newIntro:
+        "Solo necesitamos algunos datos para preparar su espacio de contabilidad.",
+
+      editIntro:
+        "Consulte o modifique la información utilizada para su contabilidad.",
+
+      step1: "1",
+      step1Title: "Su empresa",
+
+      step1Desc:
+        "Indique el nombre que debe aparecer en su expediente.",
+
+      name:
+        "Nombre de la empresa o trabajador autónomo",
+
+      namePlaceholder:
+        "Ej. Empresa ABC o Juan Pérez",
+
+      step2: "2",
+      step2Title: "GST / QST",
+
+      step2Desc:
+        "Indique su situación actual respecto a los impuestos.",
+
+      taxes: "Registro de impuestos",
+
+      none:
+        "No registrado para GST/QST",
+
+      gst:
+        "Solo GST",
+
+      both:
+        "GST y QST",
+
+      noTaxInfo:
+        "Ha indicado que no está registrado para GST/QST. No se requiere una frecuencia de declaración.",
+
+      frequency:
+        "Frecuencia de declaración GST/QST",
+
+      monthly: "Mensual",
+      quarterly: "Trimestral",
+      annual: "Anual",
+
+      step3: "3",
+      step3Title: "Año fiscal",
+
+      step3Desc:
+        "Indique la fecha de inicio de su año fiscal.",
+
+      yearStart:
+        "Inicio del año fiscal",
+
+      day: "Día",
+      month: "Mes",
+
+      month1: "Enero",
+      month2: "Febrero",
+      month3: "Marzo",
+      month4: "Abril",
+      month5: "Mayo",
+      month6: "Junio",
+      month7: "Julio",
+      month8: "Agosto",
+      month9: "Septiembre",
+      month10: "Octubre",
+      month11: "Noviembre",
+      month12: "Diciembre",
+
+      standardYear:
+        "Para la mayoría de los trabajadores autónomos que utilizan el año calendario, la fecha de inicio es el 1 de enero.",
+
+      save:
+        "Crear mi expediente",
+
+      update:
+        "Guardar cambios",
+
+      saving:
+        "Guardando…",
+
+      saved:
+        "Perfil guardado.",
+
+      updated:
+        "Cambios guardados.",
+
+      redirecting:
+        "Su expediente está listo. Abriendo su panel…",
+
+      loading:
+        "Cargando su perfil…",
+
+      required:
+        "Ingrese el nombre de la empresa o trabajador autónomo.",
+
+      invalidDate:
+        "Verifique la fecha de inicio del año fiscal.",
+
+      secure:
+        "Su información se guarda en su espacio ComptaNet Québec.",
+
+      existing:
+        "Su expediente ya está configurado.",
+
+      dashboard:
+        "Volver al panel",
     },
   }[lang];
 
   useEffect(() => {
-    const queryLang = new URLSearchParams(window.location.search).get("lang");
-    const selected: Lang = queryLang === "en" || queryLang === "es" ? queryLang : "fr";
+    const queryLang =
+      new URLSearchParams(
+        window.location.search
+      ).get("lang");
+
+    const selected: Lang =
+      queryLang === "en" ||
+      queryLang === "es"
+        ? queryLang
+        : "fr";
+
     setLang(selected);
+
     void load(selected);
   }, []);
 
   async function load(selected: Lang) {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
-      const next = encodeURIComponent(`/tenue-de-livres/configuration?lang=${selected}`);
-      window.location.href = `/espace-client?lang=${selected}&next=${next}`;
+    try {
+      setLoading(true);
+      setError("");
+      setMessage("");
+
+      const {
+        data: auth,
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !auth.user) {
+        const next = encodeURIComponent(
+          `/tenue-de-livres/configuration?lang=${selected}`
+        );
+
+        window.location.replace(
+          `/espace-client?lang=${selected}&next=${next}`
+        );
+
+        return;
+      }
+
+      setUserId(auth.user.id);
+
+      const {
+        data,
+        error: businessError,
+      } = await supabase
+        .from("bookkeeping_businesses")
+        .select(
+          "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day"
+        )
+        .eq("owner_id", auth.user.id)
+        .order("created_at", {
+          ascending: true,
+        })
+        .limit(1)
+        .maybeSingle();
+
+      if (businessError) {
+        throw new Error(
+          businessError.message
+        );
+      }
+
+      if (data) {
+        const current =
+          data as Business;
+
+        setBusiness(current);
+
+        setName(
+          current.business_name ?? ""
+        );
+
+        setTaxStatus(
+          current.tax_status ??
+            "not_registered"
+        );
+
+        setFrequency(
+          current.filing_frequency ??
+            "annual"
+        );
+
+        setStartDay(
+          String(
+            current.fiscal_year_start_day ??
+              1
+          )
+        );
+
+        setStartMonth(
+          String(
+            current.fiscal_year_start_month ??
+              1
+          )
+        );
+      } else {
+        const metadataName =
+          auth.user.user_metadata
+            ?.business_name ||
+          auth.user.user_metadata
+            ?.full_name ||
+          "";
+
+        setName(
+          String(metadataName)
+        );
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function changeLang(
+    nextLang: Lang
+  ) {
+    setLang(nextLang);
+
+    const url = new URL(
+      window.location.href
+    );
+
+    url.searchParams.set(
+      "lang",
+      nextLang
+    );
+
+    window.history.replaceState(
+      {},
+      "",
+      url.toString()
+    );
+  }
+
+  function isValidFiscalDate() {
+    const day = Number(startDay);
+    const month = Number(startMonth);
+
+    if (
+      !Number.isInteger(day) ||
+      !Number.isInteger(month)
+    ) {
+      return false;
+    }
+
+    if (
+      month < 1 ||
+      month > 12 ||
+      day < 1
+    ) {
+      return false;
+    }
+
+    const daysInMonth =
+      new Date(
+        2024,
+        month,
+        0
+      ).getDate();
+
+    return day <= daysInMonth;
+  }
+
+  async function save(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    if (
+      !userId ||
+      saving
+    ) {
       return;
     }
-    setUserId(auth.user.id);
-    const { data, error } = await supabase
-      .from("bookkeeping_businesses")
-      .select("id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day")
-      .eq("owner_id", auth.user.id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
 
-    if (error) setMessage(error.message);
-    if (data) {
-      const current = data as Business;
-      setBusiness(current);
-      setName(current.business_name);
-      setTaxStatus(current.tax_status);
-      setFrequency(current.filing_frequency);
-      setStartDay(String(current.fiscal_year_start_day));
-      setStartMonth(String(current.fiscal_year_start_month));
-    } else {
-      setName(String(auth.user.user_metadata?.business_name || auth.user.user_metadata?.full_name || ""));
+    if (!name.trim()) {
+      setError(copy.required);
+      return;
     }
-    setLoading(false);
+
+    if (!isValidFiscalDate()) {
+      setError(copy.invalidDate);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setMessage("");
+      setError("");
+
+      const wasExisting =
+        Boolean(business);
+
+      /*
+       * Si le client n'est pas inscrit
+       * aux taxes, on conserve "annual"
+       * comme valeur technique dans Supabase.
+       *
+       * La fréquence n'est simplement pas
+       * affichée à l'utilisateur.
+       */
+      const filingFrequency:
+        Frequency =
+        taxStatus ===
+        "not_registered"
+          ? "annual"
+          : frequency;
+
+      const values = {
+        business_name:
+          name.trim(),
+
+        tax_status:
+          taxStatus,
+
+        filing_frequency:
+          filingFrequency,
+
+        fiscal_year_start_day:
+          Number(startDay),
+
+        fiscal_year_start_month:
+          Number(startMonth),
+      };
+
+      if (business) {
+        const {
+          data,
+          error: updateError,
+        } = await supabase
+          .from(
+            "bookkeeping_businesses"
+          )
+          .update(values)
+          .eq(
+            "id",
+            business.id
+          )
+          .eq(
+            "owner_id",
+            userId
+          )
+          .select(
+            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day"
+          )
+          .single();
+
+        if (updateError) {
+          throw new Error(
+            updateError.message
+          );
+        }
+
+        setBusiness(
+          data as Business
+        );
+
+        setMessage(
+          copy.updated
+        );
+      } else {
+        const {
+          data,
+          error: insertError,
+        } = await supabase
+          .from(
+            "bookkeeping_businesses"
+          )
+          .insert({
+            ...values,
+            owner_id:
+              userId,
+          })
+          .select(
+            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day"
+          )
+          .single();
+
+        if (insertError) {
+          throw new Error(
+            insertError.message
+          );
+        }
+
+        setBusiness(
+          data as Business
+        );
+
+        setMessage(
+          copy.redirecting
+        );
+      }
+
+      /*
+       * PREMIÈRE CONFIGURATION :
+       *
+       * Le profil vient d'être créé.
+       * On retourne au tableau de bord.
+       *
+       * On n'envoie PLUS automatiquement
+       * le client vers Documents.
+       */
+      if (!wasExisting) {
+        window.setTimeout(() => {
+          window.location.replace(
+            `/tenue-de-livres?lang=${lang}`
+          );
+        }, 700);
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!userId || !name.trim()) return;
-    setSaving(true);
-    setMessage("");
-    const values = {
-      business_name: name.trim(), tax_status: taxStatus, filing_frequency: frequency,
-      fiscal_year_start_day: Number(startDay), fiscal_year_start_month: Number(startMonth),
-    };
+  const inputStyle = {
+    width: "100%",
+    boxSizing:
+      "border-box" as const,
+    border:
+      "1px solid #cbd5e1",
+    borderRadius: 10,
+    padding: "12px 13px",
+    fontSize: 15,
+    background: "#ffffff",
+    color: "#0f172a",
+    outline: "none",
+  };
 
-    const request = business
-      ? supabase.from("bookkeeping_businesses").update(values).eq("id", business.id).eq("owner_id", userId)
-      : supabase.from("bookkeeping_businesses").insert({ ...values, owner_id: userId });
-    const { data, error } = await request
-      .select("id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day")
-      .single();
+  const labelStyle = {
+    display: "grid",
+    gap: 8,
+    fontWeight: 800,
+    color: "#334155",
+    fontSize: 14,
+  } as const;
 
-    if (error) setMessage(error.message);
-    else {
-      setBusiness(data as Business);
-      setMessage(copy.saved);
-    }
-    setSaving(false);
+  if (loading) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background:
+            "#f5f9ff",
+          fontFamily:
+            "Arial, Helvetica, sans-serif",
+          padding: 20,
+        }}
+      >
+        <section
+          style={{
+            width: "100%",
+            maxWidth: 460,
+            background: "#ffffff",
+            border:
+              "1px solid #dbe5f1",
+            borderRadius: 18,
+            padding: 30,
+            textAlign: "center",
+            boxShadow:
+              "0 8px 24px rgba(15,23,42,.05)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 34,
+              marginBottom: 12,
+            }}
+          >
+            💼
+          </div>
+
+          <strong>
+            {copy.loading}
+          </strong>
+        </section>
+      </main>
+    );
   }
-
-  const input = { width: "100%", boxSizing: "border-box" as const, border: "1px solid #cbd5e1", borderRadius: 10, padding: "11px 12px", fontSize: 15, background: "#fff" };
-  const label = { display: "grid", gap: 7, fontWeight: 800, color: "#334155" } as const;
-  const button = { border: 0, borderRadius: 10, padding: "12px 18px", background: "#004aad", color: "#fff", fontWeight: 900, cursor: "pointer" } as const;
-
-  if (loading) return <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f5f9ff", fontFamily: "Arial" }}><strong>{copy.loading}</strong></main>;
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f5f9ff", color: "#0f172a", fontFamily: "Arial, Helvetica, sans-serif", padding: "35px 20px" }}>
-      <section style={{ maxWidth: 720, margin: "auto", background: "#fff", border: "1px solid #dbe5f1", borderRadius: 18, padding: 26, boxShadow: "0 8px 24px rgba(15,23,42,.05)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 15, flexWrap: "wrap" }}>
-          <Link href={`/tenue-de-livres?lang=${lang}`} style={{ color: "#004aad", fontWeight: 900, textDecoration: "none" }}>← {copy.back}</Link>
-          <div style={{ display: "flex", gap: 6 }}>{(["fr", "en", "es"] as const).map((item) => <button key={item} type="button" onClick={() => setLang(item)} style={{ ...button, padding: "7px 10px", background: lang === item ? "#004aad" : "#fff", color: lang === item ? "#fff" : "#004aad", border: "1px solid #004aad" }}>{item.toUpperCase()}</button>)}</div>
+    <main
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(180deg, #f7fbff 0%, #edf6ff 100%)",
+        color: "#0f172a",
+        fontFamily:
+          "Arial, Helvetica, sans-serif",
+      }}
+    >
+      {/* HEADER */}
+      <header
+        style={{
+          background: "#ffffff",
+          borderBottom:
+            "1px solid #e5e7eb",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1000,
+            margin: "0 auto",
+            padding:
+              "14px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent:
+              "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <Link
+            href={`/tenue-de-livres?lang=${lang}`}
+            style={{
+              color: "#0f172a",
+              fontWeight: 900,
+              fontSize: 19,
+              textDecoration:
+                "none",
+            }}
+          >
+            ComptaNet Québec
+          </Link>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+            }}
+          >
+            {(
+              [
+                "fr",
+                "en",
+                "es",
+              ] as const
+            ).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() =>
+                  changeLang(
+                    item
+                  )
+                }
+                style={{
+                  border:
+                    lang === item
+                      ? "1px solid #004aad"
+                      : "1px solid #dbe3ef",
+
+                  background:
+                    lang === item
+                      ? "#004aad"
+                      : "#ffffff",
+
+                  color:
+                    lang === item
+                      ? "#ffffff"
+                      : "#334155",
+
+                  borderRadius: 8,
+                  padding:
+                    "7px 10px",
+                  fontWeight: 800,
+                  cursor:
+                    "pointer",
+                }}
+              >
+                {item.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-        <h1 style={{ margin: "26px 0 8px" }}>{copy.title}</h1>
-        <p style={{ color: "#64748b" }}>{copy.intro}</p>
-        {message && <p style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e3a8a", padding: 12, borderRadius: 10 }}>{message}</p>}
-        <form onSubmit={save} style={{ display: "grid", gap: 17, marginTop: 24 }}>
-          <label style={label}>{copy.name}<input required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} style={input} /></label>
-          <label style={label}>{copy.taxes}<select value={taxStatus} onChange={(e) => setTaxStatus(e.target.value as TaxStatus)} style={input}><option value="not_registered">{copy.none}</option><option value="gst_only">{copy.gst}</option><option value="gst_qst">{copy.both}</option></select></label>
-          <label style={label}>{copy.frequency}<select value={frequency} onChange={(e) => setFrequency(e.target.value as Frequency)} style={input}><option value="monthly">{copy.monthly}</option><option value="quarterly">{copy.quarterly}</option><option value="annual">{copy.annual}</option></select></label>
-          <fieldset style={{ border: "1px solid #dbe5f1", borderRadius: 12, padding: 15 }}><legend style={{ fontWeight: 900 }}>{copy.yearStart}</legend><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}><label style={label}>{copy.day}<input type="number" min="1" max="31" required value={startDay} onChange={(e) => setStartDay(e.target.value)} style={input} /></label><label style={label}>{copy.month}<input type="number" min="1" max="12" required value={startMonth} onChange={(e) => setStartMonth(e.target.value)} style={input} /></label></div></fieldset>
-          <button disabled={saving} type="submit" style={{ ...button, opacity: saving ? .6 : 1 }}>{business ? copy.update : copy.save}</button>
+      </header>
+
+      <div
+        style={{
+          maxWidth: 820,
+          margin: "0 auto",
+          padding:
+            "32px 20px 70px",
+        }}
+      >
+        {/* RETOUR */}
+        <Link
+          href={`/tenue-de-livres?lang=${lang}`}
+          style={{
+            display:
+              "inline-block",
+            color: "#004aad",
+            fontWeight: 800,
+            textDecoration:
+              "none",
+            marginBottom: 20,
+          }}
+        >
+          ← {copy.back}
+        </Link>
+
+        {/* INTRODUCTION */}
+        <section
+          style={{
+            background: "#ffffff",
+            border:
+              "1px solid #dbe5f1",
+            borderRadius: 20,
+            padding: 28,
+            marginBottom: 18,
+            boxShadow:
+              "0 8px 24px rgba(15,23,42,.05)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems:
+                "center",
+              gap: 12,
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background:
+                  "#eef6ff",
+                display: "grid",
+                placeItems:
+                  "center",
+                fontSize: 24,
+              }}
+            >
+              💼
+            </div>
+
+            <div>
+              <div
+                style={{
+                  color:
+                    "#004aad",
+                  fontWeight: 900,
+                  fontSize: 14,
+                  marginBottom: 3,
+                }}
+              >
+                {copy.brand}
+              </div>
+
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize:
+                    "clamp(27px, 5vw, 36px)",
+                }}
+              >
+                {business
+                  ? copy.editTitle
+                  : copy.newTitle}
+              </h1>
+            </div>
+          </div>
+
+          <p
+            style={{
+              color: "#64748b",
+              lineHeight: 1.6,
+              margin:
+                "14px 0 0",
+              maxWidth: 680,
+            }}
+          >
+            {business
+              ? copy.editIntro
+              : copy.newIntro}
+          </p>
+        </section>
+
+        {/* MESSAGES */}
+        {error && (
+          <div
+            style={{
+              background:
+                "#fef2f2",
+              border:
+                "1px solid #fecaca",
+              color:
+                "#991b1b",
+              padding: 14,
+              borderRadius: 12,
+              marginBottom: 18,
+              lineHeight: 1.5,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {message && (
+          <div
+            style={{
+              background:
+                "#ecfdf5",
+              border:
+                "1px solid #bbf7d0",
+              color:
+                "#166534",
+              padding: 14,
+              borderRadius: 12,
+              marginBottom: 18,
+              fontWeight: 700,
+            }}
+          >
+            ✓ {message}
+          </div>
+        )}
+
+        <form
+          onSubmit={save}
+          style={{
+            display: "grid",
+            gap: 18,
+          }}
+        >
+          {/* ÉTAPE 1 */}
+          <section
+            style={{
+              background:
+                "#ffffff",
+              border:
+                "1px solid #dbe5f1",
+              borderRadius: 18,
+              padding: 24,
+              boxShadow:
+                "0 6px 20px rgba(15,23,42,.04)",
+            }}
+          >
+            <StepHeader
+              number={
+                copy.step1
+              }
+              title={
+                copy.step1Title
+              }
+              description={
+                copy.step1Desc
+              }
+            />
+
+            <label
+              style={
+                labelStyle
+              }
+            >
+              {copy.name}
+
+              <input
+                required
+                maxLength={
+                  120
+                }
+                value={name}
+                placeholder={
+                  copy.namePlaceholder
+                }
+                onChange={(
+                  event
+                ) =>
+                  setName(
+                    event
+                      .target
+                      .value
+                  )
+                }
+                style={
+                  inputStyle
+                }
+              />
+            </label>
+          </section>
+
+          {/* ÉTAPE 2 */}
+          <section
+            style={{
+              background:
+                "#ffffff",
+              border:
+                "1px solid #dbe5f1",
+              borderRadius: 18,
+              padding: 24,
+              boxShadow:
+                "0 6px 20px rgba(15,23,42,.04)",
+            }}
+          >
+            <StepHeader
+              number={
+                copy.step2
+              }
+              title={
+                copy.step2Title
+              }
+              description={
+                copy.step2Desc
+              }
+            />
+
+            <label
+              style={
+                labelStyle
+              }
+            >
+              {copy.taxes}
+
+              <select
+                value={
+                  taxStatus
+                }
+                onChange={(
+                  event
+                ) =>
+                  setTaxStatus(
+                    event
+                      .target
+                      .value as TaxStatus
+                  )
+                }
+                style={
+                  inputStyle
+                }
+              >
+                <option value="not_registered">
+                  {copy.none}
+                </option>
+
+                <option value="gst_only">
+                  {copy.gst}
+                </option>
+
+                <option value="gst_qst">
+                  {copy.both}
+                </option>
+              </select>
+            </label>
+
+            {taxStatus ===
+            "not_registered" ? (
+              <div
+                style={{
+                  marginTop: 14,
+                  background:
+                    "#f8fafc",
+                  border:
+                    "1px solid #e2e8f0",
+                  borderRadius: 10,
+                  padding: 13,
+                  color:
+                    "#64748b",
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                }}
+              >
+                ℹ️{" "}
+                {
+                  copy.noTaxInfo
+                }
+              </div>
+            ) : (
+              <label
+                style={{
+                  ...labelStyle,
+                  marginTop: 16,
+                }}
+              >
+                {
+                  copy.frequency
+                }
+
+                <select
+                  value={
+                    frequency
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setFrequency(
+                      event
+                        .target
+                        .value as Frequency
+                    )
+                  }
+                  style={
+                    inputStyle
+                  }
+                >
+                  <option value="monthly">
+                    {
+                      copy.monthly
+                    }
+                  </option>
+
+                  <option value="quarterly">
+                    {
+                      copy.quarterly
+                    }
+                  </option>
+
+                  <option value="annual">
+                    {
+                      copy.annual
+                    }
+                  </option>
+                </select>
+              </label>
+            )}
+          </section>
+
+          {/* ÉTAPE 3 */}
+          <section
+            style={{
+              background:
+                "#ffffff",
+              border:
+                "1px solid #dbe5f1",
+              borderRadius: 18,
+              padding: 24,
+              boxShadow:
+                "0 6px 20px rgba(15,23,42,.04)",
+            }}
+          >
+            <StepHeader
+              number={
+                copy.step3
+              }
+              title={
+                copy.step3Title
+              }
+              description={
+                copy.step3Desc
+              }
+            />
+
+            <fieldset
+              style={{
+                border: 0,
+                padding: 0,
+                margin: 0,
+              }}
+            >
+              <legend
+                style={{
+                  fontWeight: 900,
+                  marginBottom: 12,
+                  color:
+                    "#334155",
+                }}
+              >
+                {
+                  copy.yearStart
+                }
+              </legend>
+
+              <div
+                style={{
+                  display:
+                    "grid",
+                  gridTemplateColumns:
+                    "minmax(100px, 1fr) minmax(180px, 2fr)",
+                  gap: 12,
+                }}
+              >
+                <label
+                  style={
+                    labelStyle
+                  }
+                >
+                  {copy.day}
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    required
+                    value={
+                      startDay
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setStartDay(
+                        event
+                          .target
+                          .value
+                      )
+                    }
+                    style={
+                      inputStyle
+                    }
+                  />
+                </label>
+
+                <label
+                  style={
+                    labelStyle
+                  }
+                >
+                  {copy.month}
+
+                  <select
+                    value={
+                      startMonth
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setStartMonth(
+                        event
+                          .target
+                          .value
+                      )
+                    }
+                    style={
+                      inputStyle
+                    }
+                  >
+                    {[
+                      copy.month1,
+                      copy.month2,
+                      copy.month3,
+                      copy.month4,
+                      copy.month5,
+                      copy.month6,
+                      copy.month7,
+                      copy.month8,
+                      copy.month9,
+                      copy.month10,
+                      copy.month11,
+                      copy.month12,
+                    ].map(
+                      (
+                        month,
+                        index
+                      ) => (
+                        <option
+                          key={
+                            index +
+                            1
+                          }
+                          value={
+                            index +
+                            1
+                          }
+                        >
+                          {
+                            month
+                          }
+                        </option>
+                      )
+                    )}
+                  </select>
+                </label>
+              </div>
+            </fieldset>
+
+            <div
+              style={{
+                marginTop: 14,
+                background:
+                  "#eff6ff",
+                border:
+                  "1px solid #bfdbfe",
+                borderRadius: 10,
+                padding: 13,
+                color:
+                  "#1e3a8a",
+                fontSize: 14,
+                lineHeight: 1.5,
+              }}
+            >
+              💡{" "}
+              {
+                copy.standardYear
+              }
+            </div>
+          </section>
+
+          {/* ENREGISTRER */}
+          <section
+            style={{
+              background:
+                "#ffffff",
+              border:
+                "1px solid #dbe5f1",
+              borderRadius: 18,
+              padding: 24,
+              boxShadow:
+                "0 6px 20px rgba(15,23,42,.04)",
+            }}
+          >
+            <button
+              disabled={
+                saving
+              }
+              type="submit"
+              style={{
+                width: "100%",
+                border: 0,
+                borderRadius: 11,
+                padding:
+                  "14px 20px",
+                background:
+                  "#004aad",
+                color:
+                  "#ffffff",
+                fontWeight: 900,
+                cursor:
+                  saving
+                    ? "default"
+                    : "pointer",
+                opacity:
+                  saving
+                    ? 0.65
+                    : 1,
+                fontSize: 16,
+              }}
+            >
+              {saving
+                ? copy.saving
+                : business
+                  ? copy.update
+                  : copy.save}
+            </button>
+
+            <div
+              style={{
+                marginTop: 13,
+                color:
+                  "#64748b",
+                textAlign:
+                  "center",
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
+            >
+              🔒 {copy.secure}
+            </div>
+
+            {business && (
+              <div
+                style={{
+                  marginTop: 18,
+                  paddingTop: 18,
+                  borderTop:
+                    "1px solid #e5e7eb",
+                  textAlign:
+                    "center",
+                }}
+              >
+                <Link
+                  href={`/tenue-de-livres?lang=${lang}`}
+                  style={{
+                    color:
+                      "#004aad",
+                    fontWeight: 900,
+                    textDecoration:
+                      "none",
+                  }}
+                >
+                  ←{" "}
+                  {
+                    copy.dashboard
+                  }
+                </Link>
+              </div>
+            )}
+          </section>
         </form>
-        {business && <Link href={`/tenue-de-livres/documents?lang=${lang}`} style={{ display: "inline-block", marginTop: 18, color: "#15803d", fontWeight: 900 }}>{copy.continue} →</Link>}
-      </section>
+      </div>
     </main>
+  );
+}
+
+function StepHeader({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 13,
+        alignItems:
+          "flex-start",
+        marginBottom: 20,
+      }}
+    >
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          flex:
+            "0 0 34px",
+          borderRadius:
+            "50%",
+          background:
+            "#004aad",
+          color: "#ffffff",
+          display: "grid",
+          placeItems:
+            "center",
+          fontWeight: 900,
+        }}
+      >
+        {number}
+      </div>
+
+      <div>
+        <h2
+          style={{
+            margin:
+              "1px 0 5px",
+            fontSize: 19,
+          }}
+        >
+          {title}
+        </h2>
+
+        <p
+          style={{
+            margin: 0,
+            color:
+              "#64748b",
+            fontSize: 14,
+            lineHeight: 1.5,
+          }}
+        >
+          {description}
+        </p>
+      </div>
+    </div>
   );
 }
