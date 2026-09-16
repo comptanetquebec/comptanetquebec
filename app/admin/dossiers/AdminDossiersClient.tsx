@@ -164,8 +164,14 @@ function StatCard({
         </div>
 
         <div>
-          <div className="text-sm font-medium text-slate-500">{title}</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{value}</div>
+          <div className="text-sm font-medium text-slate-500">
+            {title}
+          </div>
+
+          <div className="mt-1 text-2xl font-bold text-slate-900">
+            {value}
+          </div>
+
           {subtitle && (
             <div className="mt-1 text-xs font-medium text-slate-500">
               {subtitle}
@@ -194,12 +200,14 @@ export default function AdminDossiersClient({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("created_desc");
-  const [yearFilter, setYearFilter] = useState<YearFilter>("2026");
+  const [yearFilter, setYearFilter] =
+    useState<YearFilter>("2026");
 
   const yearRows = useMemo(() => {
     if (yearFilter === "all") return rows;
 
     const year = Number(yearFilter);
+
     return rows.filter((row) => row.tax_year === year);
   }, [rows, yearFilter]);
 
@@ -219,7 +227,8 @@ export default function AdminDossiersClient({
   }, [yearRows]);
 
   const globalTodo = useMemo(
-    () => rows.filter((row) => rowTab(row.status) === "todo").length,
+    () =>
+      rows.filter((row) => rowTab(row.status) === "todo").length,
     [rows]
   );
 
@@ -227,7 +236,12 @@ export default function AdminDossiersClient({
     const countsByYear = new Map<number, number>();
 
     for (const row of rows) {
-      if (rowTab(row.status) !== "todo" || row.tax_year == null) continue;
+      if (
+        rowTab(row.status) !== "todo" ||
+        row.tax_year == null
+      ) {
+        continue;
+      }
 
       countsByYear.set(
         row.tax_year,
@@ -247,7 +261,9 @@ export default function AdminDossiersClient({
     let result =
       tab === "all"
         ? yearRows
-        : yearRows.filter((row) => rowTab(row.status) === tab);
+        : yearRows.filter(
+            (row) => rowTab(row.status) === tab
+          );
 
     if (q) {
       result = result.filter((row) =>
@@ -282,11 +298,34 @@ export default function AdminDossiersClient({
     });
   }, [yearRows, tab, query, sort]);
 
+  /*
+   * ==========================================================
+   * STATUT + SYSTÈME DE RAPPELS
+   * ==========================================================
+   *
+   * Quand un dossier passe à "attente_client":
+   *
+   * waiting_since = maintenant
+   * reminder_count = 0
+   * last_reminder_at = null
+   * inactive_at = null
+   *
+   * La future route automatique pourra ensuite envoyer :
+   *
+   * J+2  -> rappel 1
+   * J+5  -> rappel 2
+   * J+10 -> rappel 3
+   *
+   * Si le dossier quitte "attente_client",
+   * les données de rappel sont réinitialisées.
+   */
+
   async function updateStatus(
     formulaire_id: string,
     status: DossierStatus
   ) {
     const previousRows = rows.map((row) => ({ ...row }));
+    const now = new Date().toISOString();
 
     setRows((current) =>
       current.map((row) =>
@@ -294,7 +333,7 @@ export default function AdminDossiersClient({
           ? {
               ...row,
               status,
-              updated_at: new Date().toISOString(),
+              updated_at: now,
             }
           : row
       )
@@ -302,13 +341,29 @@ export default function AdminDossiersClient({
 
     setSavingId(formulaire_id);
 
+    const reminderData =
+      status === "attente_client"
+        ? {
+            waiting_since: now,
+            last_reminder_at: null,
+            reminder_count: 0,
+            inactive_at: null,
+          }
+        : {
+            waiting_since: null,
+            last_reminder_at: null,
+            reminder_count: 0,
+            inactive_at: null,
+          };
+
     const { error } = await supabase
       .from("dossier_statuses")
       .upsert(
         {
           formulaire_id,
           status,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
+          ...reminderData,
         },
         {
           onConflict: "formulaire_id",
@@ -319,24 +374,30 @@ export default function AdminDossiersClient({
 
     if (error) {
       setRows(previousRows);
-      alert("Erreur sauvegarde statut: " + error.message);
+
+      alert(
+        "Erreur sauvegarde statut: " + error.message
+      );
     }
   }
-
 
   function resetFilters() {
     setQuery("");
     setSort("created_desc");
     setTab("todo");
-    setYearFilter("2025");
+    setYearFilter("2026");
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* HEADER */}
+
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 lg:px-8">
-          <Link href="/admin/dossiers" className="flex shrink-0 items-center">
+          <Link
+            href="/admin/dossiers"
+            className="flex shrink-0 items-center"
+          >
             <img
               src="/logo-cq.png"
               alt="ComptaNet Québec"
@@ -364,6 +425,7 @@ export default function AdminDossiersClient({
 
       <main className="mx-auto max-w-[1600px] px-5 py-7 lg:px-8">
         {/* TITLE */}
+
         <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-3">
@@ -377,7 +439,8 @@ export default function AdminDossiersClient({
                 </h1>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Gérez tous les dossiers de vos clients au même endroit.
+                  Gérez tous les dossiers de vos clients au même
+                  endroit.
                 </p>
               </div>
             </div>
@@ -391,6 +454,7 @@ export default function AdminDossiersClient({
         </div>
 
         {/* YEAR FILTER */}
+
         <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-2 text-sm font-bold text-slate-700">
@@ -423,13 +487,16 @@ export default function AdminDossiersClient({
         </div>
 
         {/* STAT CARDS */}
+
         <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon="📂"
             title="À faire"
             value={globalTodo}
             active={tab === "todo"}
-            subtitle={globalTodoByYear || "Aucun dossier à faire"}
+            subtitle={
+              globalTodoByYear || "Aucun dossier à faire"
+            }
             onClick={() => {
               setYearFilter("all");
               setTab("todo");
@@ -462,11 +529,16 @@ export default function AdminDossiersClient({
         </div>
 
         {/* TABS + SORT */}
+
         <div className="mb-4 flex flex-col justify-between gap-3 xl:flex-row xl:items-center">
           <div className="flex flex-wrap gap-2">
             {[
               ["todo", "📥 À faire", counts.todo],
-              ["waiting", "⏱️ En attente client", counts.waiting],
+              [
+                "waiting",
+                "⏱️ En attente client",
+                counts.waiting,
+              ],
               ["done", "✅ Terminés", counts.done],
               ["all", "📚 Tous", counts.all],
             ].map(([key, label, count]) => (
@@ -495,12 +567,15 @@ export default function AdminDossiersClient({
             <option value="created_desc">
               Tri : Création (récent)
             </option>
+
             <option value="created_asc">
               Tri : Création (ancien)
             </option>
+
             <option value="updated_desc">
               Tri : Dernière maj
             </option>
+
             <option value="cq_asc">
               Tri : Nom / CQ (A→Z)
             </option>
@@ -508,6 +583,7 @@ export default function AdminDossiersClient({
         </div>
 
         {/* SEARCH */}
+
         <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
@@ -534,6 +610,7 @@ export default function AdminDossiersClient({
         </div>
 
         {/* TABLE */}
+
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="hidden grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_210px] gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500 xl:grid">
             <div>Client</div>
@@ -579,6 +656,7 @@ export default function AdminDossiersClient({
                   >
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_210px] xl:items-center xl:gap-3">
                       {/* CLIENT */}
+
                       <div className="min-w-0">
                         <div className="truncate font-bold text-slate-900">
                           {row.client_name ||
@@ -586,11 +664,13 @@ export default function AdminDossiersClient({
                         </div>
 
                         <div className="mt-1 text-xs text-slate-400">
-                          Créé le {formatDate(row.created_at)}
+                          Créé le{" "}
+                          {formatDate(row.created_at)}
                         </div>
                       </div>
 
                       {/* CONTACT */}
+
                       <div className="min-w-0 text-sm">
                         {row.client_email && (
                           <div className="truncate text-slate-700">
@@ -613,6 +693,7 @@ export default function AdminDossiersClient({
                       </div>
 
                       {/* DOSSIER */}
+
                       <div>
                         <div className="text-sm font-semibold text-slate-800">
                           {row.cq_id ?? "—"}
@@ -625,11 +706,13 @@ export default function AdminDossiersClient({
                       </div>
 
                       {/* YEAR */}
+
                       <div className="text-sm font-semibold text-slate-700">
                         {row.tax_year ?? "—"}
                       </div>
 
                       {/* TYPE */}
+
                       <div>
                         <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
                           {row.form_type ?? "—"}
@@ -657,6 +740,7 @@ export default function AdminDossiersClient({
                       </div>
 
                       {/* STATUS */}
+
                       <div>
                         <span
                           className={`mb-2 inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${BADGE_CLASS[row.status]}`}
@@ -682,12 +766,15 @@ export default function AdminDossiersClient({
                           <option value="recu">
                             Reçu
                           </option>
+
                           <option value="en_cours">
                             En cours
                           </option>
+
                           <option value="attente_client">
                             En attente client
                           </option>
+
                           <option value="termine">
                             Terminé
                           </option>
@@ -695,6 +782,7 @@ export default function AdminDossiersClient({
                       </div>
 
                       {/* ACTIONS */}
+
                       <div className="flex gap-2 xl:justify-end">
                         <Link
                           href={`/admin/dossiers/formulaire?fid=${encodeURIComponent(
