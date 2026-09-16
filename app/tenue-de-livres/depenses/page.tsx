@@ -592,7 +592,7 @@ export default function DepensesPage() {
 
     const items = doc.extraction.transactions ?? [];
     const expenseItems = items.filter((item) => item.entry_type === "expense");
-    const hasWrongType = items.some((item) => item.entry_type !== "income");
+    const hasWrongType = items.some((item) => item.entry_type !== "expense");
     const complete =
       expenseItems.length > 0 &&
       expenseItems.every(
