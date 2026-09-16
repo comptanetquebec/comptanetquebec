@@ -424,6 +424,7 @@ export default function TenueDeLivresPage() {
         "Gérez simplement vos revenus, vos dépenses, vos documents et vos taxes au même endroit.",
 
       year: `Année ${currentYear}`,
+      summary: `Résumé ${currentYear}`,
 
       dashboard: "Tableau de bord",
 
@@ -503,6 +504,7 @@ export default function TenueDeLivresPage() {
         "Manage your business income, expenses, documents and taxes in one place.",
 
       year: `Year ${currentYear}`,
+      summary: `Summary ${currentYear}`,
 
       dashboard: "Dashboard",
 
@@ -588,6 +590,7 @@ export default function TenueDeLivresPage() {
         "Gestione sus ingresos, gastos, documentos e impuestos en un solo lugar.",
 
       year: `Año ${currentYear}`,
+      summary: `Resumen ${currentYear}`,
 
       dashboard: "Panel",
 
@@ -1154,7 +1157,7 @@ export default function TenueDeLivresPage() {
               fontSize: 21,
             }}
           >
-            {text.dashboard}
+            {text.summary}
           </h2>
 
           <div
