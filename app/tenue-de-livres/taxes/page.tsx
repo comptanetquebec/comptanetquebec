@@ -165,18 +165,18 @@ export default function TaxesPage() {
       profile: "Profil fiscal",
       plan: "Forfait",
       essentialPlan: "Essentiel",
-      taxPlan: "Taxes",
-      upgradeTitle: "Le module TPS/TVQ est inclus dans le forfait Taxes",
+      taxPlan: "TPS/TVQ",
+      upgradeTitle: "Passez au forfait TPS/TVQ",
       upgradeText:
-        "Passez au forfait Taxes pour accéder au calcul détaillé de la TPS/TVQ et au suivi des remises.",
-      upgradeButton: "Passer au forfait Taxes",
+        "Activez le forfait TPS/TVQ lorsque votre entreprise est inscrite à la TPS/TVQ.",
+      upgradeButton: "Passer au forfait TPS/TVQ",
       downgradeButton: "Passer au forfait Essentiel",
       downgradeConfirm:
         "Votre forfait Taxes restera actif jusqu’à la fin de la période déjà payée. Voulez-vous programmer le passage au forfait Essentiel?",
       upgradeConfirm:
-        "Le passage au forfait Taxes sera effectué maintenant. Stripe calculera le prorata applicable. Continuer?",
+        "Le passage au forfait TPS/TVQ sera effectué maintenant. Stripe calculera le prorata applicable. Continuer?",
       planChanging: "Modification du forfait…",
-      upgradeSuccess: "Votre forfait Taxes est maintenant actif.",
+      upgradeSuccess: "Votre forfait TPS/TVQ est maintenant actif.",
       downgradeSuccess: "Le passage au forfait Essentiel est programmé pour le",
       planError: "Impossible de modifier le forfait.",
       calculationNote:
@@ -231,18 +231,18 @@ export default function TaxesPage() {
       profile: "Tax profile",
       plan: "Plan",
       essentialPlan: "Essential",
-      taxPlan: "Tax",
-      upgradeTitle: "The GST/QST module is included with the Tax plan",
+      taxPlan: "GST/QST",
+      upgradeTitle: "Switch to the GST/QST plan",
       upgradeText:
-        "Upgrade to the Tax plan to access detailed GST/QST calculations and remittance tracking.",
-      upgradeButton: "Upgrade to Tax plan",
+        "Activate the GST/QST plan when your business is registered for GST/QST.",
+      upgradeButton: "Switch to GST/QST plan",
       downgradeButton: "Switch to Essential plan",
       downgradeConfirm:
         "Your Tax plan will remain active until the end of the period already paid. Schedule the switch to Essential?",
       upgradeConfirm:
-        "The Tax plan upgrade will take effect now. Stripe will calculate the applicable proration. Continue?",
+        "The GST/QST plan upgrade will take effect now. Stripe will calculate the applicable proration. Continue?",
       planChanging: "Changing plan…",
-      upgradeSuccess: "Your Tax plan is now active.",
+      upgradeSuccess: "Your GST/QST plan is now active.",
       downgradeSuccess: "The switch to Essential is scheduled for",
       planError: "Unable to change plan.",
       calculationNote:
@@ -297,18 +297,18 @@ export default function TaxesPage() {
       profile: "Perfil fiscal",
       plan: "Plan",
       essentialPlan: "Esencial",
-      taxPlan: "Impuestos",
-      upgradeTitle: "El módulo GST/QST está incluido en el plan Impuestos",
+      taxPlan: "GST/QST",
+      upgradeTitle: "Cambiar al plan GST/QST",
       upgradeText:
-        "Cambie al plan Impuestos para acceder al cálculo detallado de GST/QST y al seguimiento de remesas.",
-      upgradeButton: "Cambiar al plan Impuestos",
+        "Active el plan GST/QST cuando su empresa esté registrada para GST/QST.",
+      upgradeButton: "Cambiar al plan GST/QST",
       downgradeButton: "Cambiar al plan Esencial",
       downgradeConfirm:
         "Su plan Impuestos seguirá activo hasta el final del período ya pagado. ¿Programar el cambio al plan Esencial?",
       upgradeConfirm:
-        "El cambio al plan Impuestos se realizará ahora. Stripe calculará el prorrateo aplicable. ¿Continuar?",
+        "El cambio al plan GST/QST se realizará ahora. Stripe calculará el prorrateo aplicable. ¿Continuar?",
       planChanging: "Modificando el plan…",
-      upgradeSuccess: "Su plan Impuestos ya está activo.",
+      upgradeSuccess: "Su plan GST/QST ya está activo.",
       downgradeSuccess: "El cambio al plan Esencial está programado para el",
       planError: "No se puede modificar el plan.",
       calculationNote:
@@ -810,20 +810,6 @@ export default function TaxesPage() {
           </div>
 
           <div style={profileBadgesStyle}>
-            {subscription && (
-              <span
-                style={{
-                  ...badgeStyle,
-                  background: taxPlanActive ? "#ecfdf5" : "#eef6ff",
-                  color: taxPlanActive ? "#047857" : "#004aad",
-                  borderColor: taxPlanActive ? "#a7f3d0" : "#cfe3ff",
-                }}
-              >
-                {text.plan}:{" "}
-                {taxPlanActive ? text.taxPlan : text.essentialPlan}
-              </span>
-            )}
-
             <span
               style={{
                 ...badgeStyle,
@@ -835,14 +821,16 @@ export default function TaxesPage() {
               {registered ? text.registered : text.notRegistered}
             </span>
 
-            <span style={badgeStyle}>
-              {text.frequency}:{" "}
-              {frequency === "monthly"
-                ? text.monthly
-                : frequency === "quarterly"
-                  ? text.quarterly
-                  : text.annual}
-            </span>
+            {registered && (
+              <span style={badgeStyle}>
+                {text.frequency}:{" "}
+                {frequency === "monthly"
+                  ? text.monthly
+                  : frequency === "quarterly"
+                    ? text.quarterly
+                    : text.annual}
+              </span>
+            )}
           </div>
         </section>
 
@@ -850,21 +838,25 @@ export default function TaxesPage() {
           <section
             style={{
               ...planStyle,
-              borderColor: taxPlanActive ? "#a7f3d0" : "#bfdbfe",
-              background: taxPlanActive ? "#f0fdf4" : "#eff6ff",
+              borderColor: !registered || !taxPlanActive ? "#bfdbfe" : "#a7f3d0",
+              background: !registered || !taxPlanActive ? "#eff6ff" : "#f0fdf4",
             }}
           >
             <div style={{ flex: "1 1 520px" }}>
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 5 }}>
-                {taxPlanActive
-                  ? `${text.plan}: ${text.taxPlan}`
-                  : text.upgradeTitle}
+                {!registered
+                  ? text.notRegistered
+                  : taxPlanActive
+                    ? `${text.plan}: ${text.taxPlan}`
+                    : text.upgradeTitle}
               </div>
 
               <div style={{ lineHeight: 1.55, color: "#475569" }}>
-                {taxPlanActive
-                  ? text.subtitle
-                  : text.upgradeText}
+                {!registered
+                  ? text.upgradeText
+                  : taxPlanActive
+                    ? text.subtitle
+                    : text.upgradeText}
               </div>
 
               {planMessage && (
@@ -874,23 +866,37 @@ export default function TaxesPage() {
 
             <button
               type="button"
-              disabled={changingPlan}
+              disabled={changingPlan || (!registered && taxPlanActive)}
               onClick={() =>
-                void changePlan(taxPlanActive ? "essential" : "tax")
+                void changePlan(
+                  !registered
+                    ? "tax"
+                    : taxPlanActive
+                      ? "essential"
+                      : "tax"
+                )
               }
               style={{
                 ...planButtonStyle,
-                opacity: changingPlan ? 0.65 : 1,
-                cursor: changingPlan ? "wait" : "pointer",
-                background: taxPlanActive ? "#ffffff" : "#004aad",
-                color: taxPlanActive ? "#004aad" : "#ffffff",
+                opacity:
+                  changingPlan || (!registered && taxPlanActive) ? 0.65 : 1,
+                cursor:
+                  changingPlan || (!registered && taxPlanActive)
+                    ? "default"
+                    : "pointer",
+                background:
+                  !registered || !taxPlanActive ? "#004aad" : "#ffffff",
+                color:
+                  !registered || !taxPlanActive ? "#ffffff" : "#004aad",
               }}
             >
               {changingPlan
                 ? text.planChanging
-                : taxPlanActive
-                  ? text.downgradeButton
-                  : text.upgradeButton}
+                : !registered
+                  ? text.upgradeButton
+                  : taxPlanActive
+                    ? text.downgradeButton
+                    : text.upgradeButton}
             </button>
           </section>
         )}
@@ -909,6 +915,8 @@ export default function TaxesPage() {
           </section>
         )}
 
+        {registered && (
+          <>
         <section style={summaryGridStyle}>
           <SummaryCard
             title={text.sales}
@@ -1074,6 +1082,8 @@ export default function TaxesPage() {
             </div>
           )}
         </section>
+          </>
+        )}
       </div>
     </main>
   );
