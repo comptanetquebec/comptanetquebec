@@ -803,7 +803,7 @@ export default function DepensesPage() {
     setBusy(false);
   }
 
-  function edit(item: Revenue) {
+  function edit(item: Expense) {
     setEditingId(item.id);
     const [savedYear, savedMonth, savedDay] = item.date.split("-");
     setDay(savedDay);
