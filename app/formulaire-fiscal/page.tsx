@@ -2072,6 +2072,7 @@ return (
 />
 
 <RevenusLocatifsSection
+  lang={lang}
   actif={locatifActif}
   setActif={setLocatifActif}
   adresse={locatifAdresse}
