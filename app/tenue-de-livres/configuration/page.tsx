@@ -70,6 +70,9 @@ export default function ConfigurationTenueLivresPage() {
   const [taxActivationMode, setTaxActivationMode] =
     useState(false);
 
+  const [selectedYear, setSelectedYear] =
+    useState(new Date().getFullYear());
+
   const copy = {
     fr: {
       brand: "ComptaNet Québec",
@@ -133,7 +136,13 @@ export default function ConfigurationTenueLivresPage() {
         "Confirmez votre inscription fiscale et votre fréquence de production avant d’activer le forfait TPS/TVQ.",
 
       activationSave:
-        "Continuer vers le forfait TPS/TVQ",
+        "Payer et activer le forfait TPS/TVQ",
+
+      paymentRequired:
+        "Le paiement Stripe doit être complété avant d’activer la TPS/TVQ.",
+
+      paymentOpening:
+        "Ouverture du paiement sécurisé Stripe…",
 
       registrationRequired:
         "Pour continuer, indiquez que votre entreprise est inscrite à la TPS ou à la TPS/TVQ.",
@@ -275,7 +284,13 @@ export default function ConfigurationTenueLivresPage() {
         "Confirm your tax registration and filing frequency before activating the GST/QST plan.",
 
       activationSave:
-        "Continue to the GST/QST plan",
+        "Pay and activate the GST/QST plan",
+
+      paymentRequired:
+        "Stripe payment must be completed before GST/QST is activated.",
+
+      paymentOpening:
+        "Opening secure Stripe payment…",
 
       registrationRequired:
         "To continue, indicate that your business is registered for GST or GST/QST.",
@@ -417,7 +432,13 @@ export default function ConfigurationTenueLivresPage() {
         "Confirme su registro fiscal y la frecuencia de declaración antes de activar el plan GST/QST.",
 
       activationSave:
-        "Continuar al plan GST/QST",
+        "Pagar y activar el plan GST/QST",
+
+      paymentRequired:
+        "El pago de Stripe debe completarse antes de activar GST/QST.",
+
+      paymentOpening:
+        "Abriendo el pago seguro de Stripe…",
 
       registrationRequired:
         "Para continuar, indique que su empresa está registrada para GST o GST/QST.",
@@ -512,15 +533,31 @@ export default function ConfigurationTenueLivresPage() {
 
     setLang(selected);
 
+    const params =
+      new URLSearchParams(window.location.search);
+
     const activateTaxes =
-      new URLSearchParams(window.location.search).get("activateTaxes") === "1";
+      params.get("activateTaxes") === "1";
+
+    const yearValue = Number(params.get("year"));
+    const initialYear =
+      Number.isInteger(yearValue) &&
+      yearValue >= 2020 &&
+      yearValue <= new Date().getFullYear() + 5
+        ? yearValue
+        : new Date().getFullYear();
 
     setTaxActivationMode(activateTaxes);
+    setSelectedYear(initialYear);
 
-    void load(selected);
+    void load(selected, activateTaxes, initialYear);
   }, []);
 
-  async function load(selected: Lang) {
+  async function load(
+    selected: Lang,
+    activateTaxes: boolean,
+    year: number
+  ) {
     try {
       setLoading(true);
       setError("");
@@ -533,7 +570,7 @@ export default function ConfigurationTenueLivresPage() {
 
       if (authError || !auth.user) {
         const next = encodeURIComponent(
-          `/tenue-de-livres/configuration?lang=${selected}${taxActivationMode ? "&activateTaxes=1" : ""}`
+          `/tenue-de-livres/configuration?lang=${selected}&year=${year}${activateTaxes ? "&activateTaxes=1" : ""}`
         );
 
         window.location.replace(
@@ -576,9 +613,15 @@ export default function ConfigurationTenueLivresPage() {
           current.business_name ?? ""
         );
 
-        setTaxStatus(
+        const currentTaxStatus =
           current.tax_status ??
-            "not_registered"
+            "not_registered";
+
+        setTaxStatus(
+          activateTaxes &&
+          currentTaxStatus === "not_registered"
+            ? "gst_qst"
+            : currentTaxStatus
         );
 
         setFrequency(
@@ -722,18 +765,9 @@ export default function ConfigurationTenueLivresPage() {
       const wasExisting =
         Boolean(business);
 
-      /*
-       * Si le client n'est pas inscrit
-       * aux taxes, on conserve "annual"
-       * comme valeur technique dans Supabase.
-       *
-       * La fréquence n'est simplement pas
-       * affichée à l'utilisateur.
-       */
       const filingFrequency:
         Frequency =
-        taxStatus ===
-        "not_registered"
+        taxStatus === "not_registered"
           ? "annual"
           : frequency;
 
@@ -759,6 +793,122 @@ export default function ConfigurationTenueLivresPage() {
           Number(startMonth),
       };
 
+      /*
+       * MODE ACTIVATION TPS/TVQ
+       *
+       * IMPORTANT :
+       * on fait l'upgrade Stripe AVANT d'enregistrer
+       * le profil comme inscrit à la TPS/TVQ.
+       *
+       * Donc aucun accès TPS/TVQ n'est accordé si
+       * le paiement n'est pas complété.
+       */
+      if (taxActivationMode) {
+        if (!business) {
+          throw new Error(
+            "Le dossier de tenue de livres doit exister avant l’activation du forfait TPS/TVQ."
+          );
+        }
+
+        setMessage(copy.paymentOpening);
+
+        const response = await fetch(
+          "/api/tenue-de-livres/change-plan",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              plan: "tax",
+            }),
+          }
+        );
+
+        const result =
+          await response.json().catch(() => null);
+
+        if (!response.ok || !result?.ok) {
+          throw new Error(
+            result?.error ||
+              "Impossible d’activer le forfait TPS/TVQ."
+          );
+        }
+
+        /*
+         * Si Stripe exige encore un paiement/action,
+         * on ouvre la facture Stripe et on n'enregistre
+         * PAS encore le profil TPS/TVQ.
+         */
+        if (result.action === "payment_required") {
+          if (result.hostedInvoiceUrl) {
+            window.location.assign(
+              result.hostedInvoiceUrl
+            );
+            return;
+          }
+
+          throw new Error(
+            copy.paymentRequired
+          );
+        }
+
+        /*
+         * "upgraded" = paiement accepté.
+         * "unchanged" = le forfait TPS/TVQ était déjà actif.
+         *
+         * Seulement maintenant on enregistre les
+         * informations fiscales.
+         */
+        if (
+          result.action !== "upgraded" &&
+          result.action !== "unchanged"
+        ) {
+          throw new Error(
+            copy.paymentRequired
+          );
+        }
+
+        const {
+          data,
+          error: updateError,
+        } = await supabase
+          .from(
+            "bookkeeping_businesses"
+          )
+          .update(values)
+          .eq(
+            "id",
+            business.id
+          )
+          .eq(
+            "owner_id",
+            userId
+          )
+          .select(
+            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day, tax_registration_date"
+          )
+          .single();
+
+        if (updateError) {
+          throw new Error(
+            updateError.message
+          );
+        }
+
+        setBusiness(
+          data as Business
+        );
+
+        window.location.replace(
+          `/tenue-de-livres/taxes?lang=${lang}&year=${selectedYear}`
+        );
+        return;
+      }
+
+      /*
+       * CONFIGURATION NORMALE
+       */
       if (business) {
         const {
           data,
@@ -794,35 +944,6 @@ export default function ConfigurationTenueLivresPage() {
         setMessage(
           copy.updated
         );
-
-        if (taxActivationMode) {
-          const response = await fetch(
-            "/api/tenue-de-livres/change-plan",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                plan: "tax",
-              }),
-            }
-          );
-
-          const result = await response.json();
-
-          if (!response.ok) {
-            throw new Error(
-              result?.error ||
-                "Impossible d’activer le forfait TPS/TVQ."
-            );
-          }
-
-          window.location.replace(
-            `/tenue-de-livres/taxes?lang=${lang}`
-          );
-          return;
-        }
       } else {
         const {
           data,
@@ -856,19 +977,10 @@ export default function ConfigurationTenueLivresPage() {
         );
       }
 
-      /*
-       * PREMIÈRE CONFIGURATION :
-       *
-       * Le profil vient d'être créé.
-       * On retourne au tableau de bord.
-       *
-       * On n'envoie PLUS automatiquement
-       * le client vers Documents.
-       */
       if (!wasExisting) {
         window.setTimeout(() => {
           window.location.replace(
-            `/tenue-de-livres?lang=${lang}`
+            `/tenue-de-livres?lang=${lang}&year=${selectedYear}`
           );
         }, 700);
       }
@@ -986,8 +1098,8 @@ export default function ConfigurationTenueLivresPage() {
           <Link
             href={
               taxActivationMode
-                ? `/tenue-de-livres/taxes?lang=${lang}`
-                : `/tenue-de-livres?lang=${lang}`
+                ? `/tenue-de-livres/taxes?lang=${lang}&year=${selectedYear}`
+                : `/tenue-de-livres?lang=${lang}&year=${selectedYear}`
             }
             style={{
               color: "#0f172a",
@@ -1064,8 +1176,8 @@ export default function ConfigurationTenueLivresPage() {
         <Link
           href={
             taxActivationMode
-              ? `/tenue-de-livres/taxes?lang=${lang}`
-              : `/tenue-de-livres?lang=${lang}`
+              ? `/tenue-de-livres/taxes?lang=${lang}&year=${selectedYear}`
+              : `/tenue-de-livres?lang=${lang}&year=${selectedYear}`
           }
           style={{
             display:
@@ -1680,7 +1792,7 @@ export default function ConfigurationTenueLivresPage() {
                 }}
               >
                 <Link
-                  href={`/tenue-de-livres?lang=${lang}`}
+                  href={`/tenue-de-livres?lang=${lang}&year=${selectedYear}`}
                   style={{
                     color:
                       "#004aad",
