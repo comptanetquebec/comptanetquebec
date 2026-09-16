@@ -26,11 +26,32 @@ type SubscriptionResponse = {
   error?: string;
 };
 
+type DashboardTotals = {
+  income: number;
+  expenses: number;
+  documents: number;
+};
+
+type TransactionRow = {
+  entry_type: "income" | "expense" | string;
+  subtotal: number | string | null;
+  gst: number | string | null;
+  qst: number | string | null;
+};
+
 export default function TenueDeLivresPage() {
   const [lang, setLang] = useState<Lang>("fr");
+
   const [accessState, setAccessState] =
     useState<AccessState>("loading");
+
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [totals, setTotals] = useState<DashboardTotals>({
+    income: 0,
+    expenses: 0,
+    documents: 0,
+  });
 
   const currentYear = new Date().getFullYear();
 
@@ -58,6 +79,89 @@ export default function TenueDeLivresPage() {
     setLang(selected);
     void checkAccess(selected);
   }, []);
+
+  async function loadDashboard(businessId: string) {
+    /*
+     * Tableau de bord de l'année courante.
+     *
+     * On utilise les transactions CONFIRMÉES seulement.
+     */
+    const yearStart = `${currentYear}-01-01`;
+    const yearEnd = `${currentYear}-12-31`;
+
+    const {
+      data: transactions,
+      error: transactionsError,
+    } = await supabase
+      .from("bookkeeping_transactions")
+      .select(
+        "entry_type, subtotal, gst, qst"
+      )
+      .eq("business_id", businessId)
+      .eq("status", "confirmed")
+      .gte("transaction_date", yearStart)
+      .lte("transaction_date", yearEnd);
+
+    if (transactionsError) {
+      throw new Error(transactionsError.message);
+    }
+
+    /*
+     * Compter les documents de cette entreprise.
+     */
+    const {
+      count: documentCount,
+      error: documentsError,
+    } = await supabase
+      .from("bookkeeping_documents")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq("business_id", businessId);
+
+    if (documentsError) {
+      throw new Error(documentsError.message);
+    }
+
+    let income = 0;
+    let expenses = 0;
+
+    for (const row of (transactions ?? []) as TransactionRow[]) {
+      const subtotal = Number(row.subtotal ?? 0);
+      const gst = Number(row.gst ?? 0);
+      const qst = Number(row.qst ?? 0);
+
+      /*
+       * Le total réel de la transaction est :
+       * avant taxes + TPS + TVQ.
+       *
+       * C'est ce qui permet à une facture comme :
+       *
+       * 1 565,00
+       * + 78,25 TPS
+       * + 156,12 TVQ
+       * = 1 799,37 $
+       *
+       * d'apparaître correctement au tableau de bord.
+       */
+      const total = subtotal + gst + qst;
+
+      if (row.entry_type === "income") {
+        income += total;
+      }
+
+      if (row.entry_type === "expense") {
+        expenses += total;
+      }
+    }
+
+    setTotals({
+      income,
+      expenses,
+      documents: documentCount ?? 0,
+    });
+  }
 
   async function checkAccess(selected: Lang) {
     try {
@@ -170,19 +274,14 @@ export default function TenueDeLivresPage() {
 
         /*
          * Ce n'est pas un retour Stripe.
-         *
-         * Aucun abonnement actif :
-         * on peut afficher normalement les forfaits.
          */
         if (!checkoutSuccess) {
           break;
         }
 
         /*
-         * Nous revenons de Stripe.
-         *
-         * Ne pas afficher les forfaits immédiatement.
-         * On laisse quelques secondes au webhook.
+         * Retour de Stripe :
+         * laisser quelques secondes au webhook.
          */
         if (attempt < maxAttempts) {
           setAccessState("confirming_payment");
@@ -203,9 +302,6 @@ export default function TenueDeLivresPage() {
 
       /*
        * 4. L'abonnement est actif.
-       *
-       * Les informations temporaires du paiement
-       * Embedded Checkout ne sont plus nécessaires.
        */
       try {
         sessionStorage.removeItem(
@@ -261,9 +357,6 @@ export default function TenueDeLivresPage() {
 
       /*
        * 6. Première utilisation.
-       *
-       * Abonnement actif, mais aucune compagnie :
-       * envoyer le client vers la configuration.
        */
       if (!business) {
         window.location.replace(
@@ -274,8 +367,12 @@ export default function TenueDeLivresPage() {
       }
 
       /*
-       * 7. Abonnement actif + compagnie existante :
-       * afficher le tableau de bord.
+       * 7. Charger les vrais chiffres Supabase.
+       */
+      await loadDashboard(business.id);
+
+      /*
+       * 8. Afficher le tableau de bord.
        */
       setAccessState("ready");
     } catch (error: unknown) {
@@ -302,6 +399,24 @@ export default function TenueDeLivresPage() {
     );
   }
 
+  function money(value: number) {
+    const locale =
+      lang === "fr"
+        ? "fr-CA"
+        : lang === "es"
+          ? "es-CA"
+          : "en-CA";
+
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "CAD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  const profit = totals.income - totals.expenses;
+
   const text = {
     fr: {
       title: "Tenue de livres",
@@ -311,8 +426,6 @@ export default function TenueDeLivresPage() {
       year: `Année ${currentYear}`,
 
       dashboard: "Tableau de bord",
-      dashboardDesc:
-        "Voyez rapidement la situation de votre entreprise.",
 
       income: "Revenus",
       incomeDesc:
@@ -343,7 +456,6 @@ export default function TenueDeLivresPage() {
       profit: "Résultat",
       documentsTotal: "Documents",
 
-      coming: "À configurer",
       back: "Retour à ComptaNet Québec",
 
       loading: "Vérification de votre accès…",
@@ -394,9 +506,6 @@ export default function TenueDeLivresPage() {
 
       dashboard: "Dashboard",
 
-      dashboardDesc:
-        "Quickly view the financial activity of your business.",
-
       income: "Income",
 
       incomeDesc:
@@ -431,8 +540,6 @@ export default function TenueDeLivresPage() {
       expensesTotal: "Expenses",
       profit: "Net result",
       documentsTotal: "Documents",
-
-      coming: "To configure",
 
       back: "Back to ComptaNet Québec",
 
@@ -484,9 +591,6 @@ export default function TenueDeLivresPage() {
 
       dashboard: "Panel",
 
-      dashboardDesc:
-        "Consulte rápidamente la actividad financiera de su empresa.",
-
       income: "Ingresos",
 
       incomeDesc:
@@ -521,8 +625,6 @@ export default function TenueDeLivresPage() {
       expensesTotal: "Gastos",
       profit: "Resultado",
       documentsTotal: "Documentos",
-
-      coming: "Por configurar",
 
       back: "Volver a ComptaNet Québec",
 
@@ -1065,25 +1167,25 @@ export default function TenueDeLivresPage() {
           >
             <SummaryCard
               title={text.incomeTotal}
-              value="0,00 $"
+              value={money(totals.income)}
               icon="💰"
             />
 
             <SummaryCard
               title={text.expensesTotal}
-              value="0,00 $"
+              value={money(totals.expenses)}
               icon="🧾"
             />
 
             <SummaryCard
               title={text.profit}
-              value="0,00 $"
+              value={money(profit)}
               icon="📈"
             />
 
             <SummaryCard
               title={text.documentsTotal}
-              value="0"
+              value={String(totals.documents)}
               icon="📁"
             />
           </div>
@@ -1119,7 +1221,7 @@ export default function TenueDeLivresPage() {
                   padding: 20,
                   textDecoration: "none",
                   color: "#0f172a",
-                  minHeight: 155,
+                  minHeight: 135,
                   display: "flex",
                   flexDirection: "column",
                   boxShadow:
@@ -1153,18 +1255,6 @@ export default function TenueDeLivresPage() {
                   }}
                 >
                   {card.desc}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "auto",
-                    paddingTop: 14,
-                    color: "#004aad",
-                    fontWeight: 900,
-                    fontSize: 14,
-                  }}
-                >
-                  {text.coming} →
                 </div>
               </Link>
             ))}
