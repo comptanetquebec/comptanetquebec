@@ -124,6 +124,9 @@ export default function TaxesPage() {
       title: "TPS / TVQ",
       subtitle:
         "Suivez automatiquement les taxes perçues sur vos revenus et les taxes payées sur vos dépenses.",
+      heroAdTitle: "Simplifiez votre TPS/TVQ",
+      heroAdText:
+        "Suivez vos taxes perçues et payées, vos périodes et vos remises au même endroit.",
       back: "Retour à la tenue de livres",
       year: "Année",
       period: "Période",
@@ -190,6 +193,9 @@ export default function TaxesPage() {
       title: "GST / QST",
       subtitle:
         "Automatically track taxes collected on income and taxes paid on expenses.",
+      heroAdTitle: "Simplify your GST/QST",
+      heroAdText:
+        "Track taxes collected and paid, filing periods and remittances in one place.",
       back: "Back to bookkeeping",
       year: "Year",
       period: "Period",
@@ -256,6 +262,9 @@ export default function TaxesPage() {
       title: "GST / QST",
       subtitle:
         "Controle automáticamente los impuestos cobrados sobre ingresos y los impuestos pagados sobre gastos.",
+      heroAdTitle: "Simplifique su GST/QST",
+      heroAdText:
+        "Controle los impuestos cobrados y pagados, los períodos y las remesas en un solo lugar.",
       back: "Volver a contabilidad",
       year: "Año",
       period: "Período",
@@ -752,11 +761,45 @@ export default function TaxesPage() {
           ← {text.back}
         </Link>
 
-        <section style={heroStyle}>
-          <div>
+        <section
+          style={{
+            ...heroStyle,
+            borderColor: !registered ? "#bfdbfe" : "#e5e7eb",
+            background: !registered
+              ? "linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)"
+              : "#ffffff",
+          }}
+        >
+          <div style={{ flex: "1 1 560px" }}>
             <div style={eyebrowStyle}>🧮 ComptaNet Québec</div>
-            <h1 style={titleStyle}>{text.title}</h1>
-            <p style={subtitleStyle}>{text.subtitle}</p>
+
+            <h1 style={titleStyle}>
+              {!registered ? text.heroAdTitle : text.title}
+            </h1>
+
+            <p style={subtitleStyle}>
+              {!registered ? text.heroAdText : text.subtitle}
+            </p>
+
+            {!registered && subscription && (
+              <button
+                type="button"
+                disabled={changingPlan || taxPlanActive}
+                onClick={() => void changePlan("tax")}
+                style={{
+                  ...heroButtonStyle,
+                  opacity: changingPlan || taxPlanActive ? 0.65 : 1,
+                  cursor:
+                    changingPlan || taxPlanActive ? "default" : "pointer",
+                }}
+              >
+                {changingPlan ? text.planChanging : text.upgradeButton}
+              </button>
+            )}
+
+            {!registered && planMessage && (
+              <div style={planMessageStyle}>{planMessage}</div>
+            )}
           </div>
 
           <div style={controlsStyle}>
@@ -834,7 +877,7 @@ export default function TaxesPage() {
           </div>
         </section>
 
-        {subscription && (
+        {subscription && registered && (
           <section
             style={{
               ...planStyle,
@@ -1228,6 +1271,17 @@ const subtitleStyle: React.CSSProperties = {
   color: "#64748b",
   lineHeight: 1.55,
   maxWidth: 700,
+};
+
+const heroButtonStyle: React.CSSProperties = {
+  marginTop: 18,
+  border: "1px solid #004aad",
+  borderRadius: 10,
+  padding: "12px 18px",
+  background: "#004aad",
+  color: "#ffffff",
+  fontWeight: 900,
+  fontSize: 14,
 };
 
 const controlsStyle: React.CSSProperties = {
