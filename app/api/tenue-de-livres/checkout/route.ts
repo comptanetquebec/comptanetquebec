@@ -73,7 +73,6 @@ export async function POST(req: Request) {
     }
 
     /*
-     * IMPORTANT :
      * L'utilisateur doit être connecté.
      */
     const supabase = await supabaseServer();
@@ -116,9 +115,7 @@ export async function POST(req: Request) {
       ui_mode: "embedded",
 
       /*
-       * IMPORTANT :
-       * abonnement mensuel, contrairement aux acomptes T1/T2
-       * qui utilisent mode: "payment".
+       * Abonnement mensuel.
        */
       mode: "subscription",
 
@@ -128,6 +125,23 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
+
+      /*
+       * STRIPE TAX
+       *
+       * Stripe calcule automatiquement les taxes applicables
+       * selon l'adresse du client et les inscriptions fiscales
+       * configurées dans Stripe Tax.
+       */
+      automatic_tax: {
+        enabled: true,
+      },
+
+      /*
+       * Permet à Stripe de demander l'adresse nécessaire
+       * au calcul des taxes.
+       */
+      billing_address_collection: "required",
 
       /*
        * On rattache le paiement à l'utilisateur Supabase.
@@ -149,8 +163,7 @@ export async function POST(req: Request) {
        * TEMPORAIRE POUR NOTRE TEST :
        * 2 jours d'essai gratuit.
        *
-       * Après avoir validé tout le parcours,
-       * supprimer uniquement :
+       * Après validation, supprimer uniquement :
        *
        * trial_period_days: 2,
        */
