@@ -104,18 +104,13 @@ async function upgradeToTax(
   userId: string
 ) {
   /*
-   * Un éventuel downgrade futur est annulé avant
-   * d'effectuer l'upgrade.
+   * On annule d'abord un éventuel downgrade futur.
    */
   await releaseExistingSchedule(
     stripe,
     subscription
   );
 
-  /*
-   * On recharge l'abonnement après la libération
-   * du schedule afin d'avoir son état Stripe actuel.
-   */
   const freshSubscription =
     await stripe.subscriptions.retrieve(
       subscription.id
@@ -132,14 +127,13 @@ async function upgradeToTax(
   const taxPriceId = getPriceId("tax");
 
   /*
-   * UPGRADE IMMÉDIAT :
+   * UPGRADE ESSENTIEL -> TPS/TVQ
    *
-   * - on conserve le même abonnement;
-   * - on remplace le prix Essential par Taxes;
-   * - always_invoice demande à Stripe de calculer
-   *   le prorata et de facturer immédiatement;
-   * - metadata.plan devient tax pour que le webhook
-   *   enregistre correctement le forfait dans Supabase.
+   * - même abonnement Stripe;
+   * - prorata facturé immédiatement;
+   * - pending_if_incomplete empêche de considérer
+   *   l'upgrade comme terminé si le paiement échoue
+   *   ou exige une action du client.
    */
   const updated =
     await stripe.subscriptions.update(
@@ -154,6 +148,7 @@ async function upgradeToTax(
         ],
 
         proration_behavior: "always_invoice",
+        payment_behavior: "pending_if_incomplete",
 
         metadata: {
           ...freshSubscription.metadata,
@@ -161,9 +156,44 @@ async function upgradeToTax(
           plan: "tax",
           user_id: userId,
         },
+
+        expand: ["latest_invoice"],
       }
     );
 
+  const latestInvoice =
+    typeof updated.latest_invoice === "string"
+      ? await stripe.invoices.retrieve(
+          updated.latest_invoice
+        )
+      : updated.latest_invoice;
+
+  /*
+   * Si Stripe a créé une facture qui n'est pas payée,
+   * on NE donne pas encore accès au module TPS/TVQ.
+   * L'URL Stripe permet au client de terminer le paiement.
+   */
+  if (
+    latestInvoice &&
+    latestInvoice.status !== "paid" &&
+    latestInvoice.status !== "void"
+  ) {
+    return {
+      action: "payment_required" as const,
+      plan: "essential" as const,
+      effective: "after_payment" as const,
+      subscriptionId: updated.id,
+      invoiceId: latestInvoice.id,
+      hostedInvoiceUrl:
+        latestInvoice.hosted_invoice_url ?? null,
+      invoiceStatus: latestInvoice.status,
+    };
+  }
+
+  /*
+   * Facture payée (ou aucune somme à payer) :
+   * l'upgrade peut être considéré comme terminé.
+   */
   return {
     action: "upgraded" as const,
     plan: "tax" as const,
