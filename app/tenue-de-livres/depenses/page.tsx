@@ -22,6 +22,9 @@ type ExtractedTransaction = {
   payment_method: "transfer" | "card" | "cash" | "cheque" | "platform" | "other" | "unknown";
   confidence: number;
   notes: string[];
+  tax_category?: string | null;
+  tax_category_confidence?: number | null;
+  tax_category_note?: string | null;
 };
 
 type Extraction = {
@@ -69,6 +72,10 @@ type Expense = {
   qst: number;
   total: number;
   paymentMethod: string;
+  taxCategory: string;
+  taxCategorySource: string;
+  taxCategoryConfidence: number | null;
+  taxCategoryNote: string;
 };
 
 const GST_RATE = 0.05;
@@ -94,6 +101,8 @@ export default function DepensesPage() {
   const [subtotal, setSubtotal] = useState("");
   const [taxMode, setTaxMode] = useState<TaxMode>("gst_qst");
   const [paymentMethod, setPaymentMethod] = useState("transfer");
+  const [taxCategory, setTaxCategory] = useState("other");
+  const [taxCategoryNote, setTaxCategoryNote] = useState("");
   const [business, setBusiness] = useState<Business | null>(null);
   const [userId, setUserId] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -146,6 +155,11 @@ export default function DepensesPage() {
       qst: "TVQ",
       total: "Total",
       payment: "Mode de paiement",
+      fiscalCategory: "Catégorie fiscale",
+      fiscalCategoryNote: "Note de classement fiscal",
+      fiscalCategoryNotePlaceholder: "Précision facultative pour l'impôt",
+      fiscalCategoryAi: "Suggestion IA",
+      fiscalCategoryManual: "Choix manuel",
       transfer: "Virement Interac",
       card: "Carte",
       cash: "Comptant",
@@ -229,6 +243,11 @@ export default function DepensesPage() {
       qst: "QST",
       total: "Total",
       payment: "Payment method",
+      fiscalCategory: "Tax category",
+      fiscalCategoryNote: "Tax classification note",
+      fiscalCategoryNotePlaceholder: "Optional note for tax preparation",
+      fiscalCategoryAi: "AI suggestion",
+      fiscalCategoryManual: "Manual choice",
       transfer: "Interac e-Transfer",
       card: "Card",
       cash: "Cash",
@@ -312,6 +331,11 @@ export default function DepensesPage() {
       qst: "QST",
       total: "Total",
       payment: "Método de pago",
+      fiscalCategory: "Categoría fiscal",
+      fiscalCategoryNote: "Nota de clasificación fiscal",
+      fiscalCategoryNotePlaceholder: "Nota opcional para la preparación fiscal",
+      fiscalCategoryAi: "Sugerencia IA",
+      fiscalCategoryManual: "Selección manual",
       transfer: "Transferencia Interac",
       card: "Tarjeta",
       cash: "Efectivo",
@@ -374,6 +398,35 @@ export default function DepensesPage() {
     },
   }[lang];
 
+  const fiscalCategories = [
+    ["advertising", lang === "fr" ? "Publicité" : lang === "es" ? "Publicidad" : "Advertising"],
+    ["meals_entertainment", lang === "fr" ? "Repas et représentation" : lang === "es" ? "Comidas y representación" : "Meals and entertainment"],
+    ["bad_debts", lang === "fr" ? "Mauvaises créances" : lang === "es" ? "Deudas incobrables" : "Bad debts"],
+    ["insurance", lang === "fr" ? "Assurances" : lang === "es" ? "Seguros" : "Insurance"],
+    ["interest_bank", lang === "fr" ? "Intérêts et frais bancaires" : lang === "es" ? "Intereses y gastos bancarios" : "Interest and bank charges"],
+    ["licenses_dues", lang === "fr" ? "Taxes, licences et cotisations" : lang === "es" ? "Impuestos, licencias y cuotas" : "Business taxes, licences and dues"],
+    ["office", lang === "fr" ? "Frais de bureau" : lang === "es" ? "Gastos de oficina" : "Office expenses"],
+    ["supplies", lang === "fr" ? "Fournitures" : lang === "es" ? "Suministros" : "Supplies"],
+    ["professional_fees", lang === "fr" ? "Honoraires professionnels" : lang === "es" ? "Honorarios profesionales" : "Professional fees"],
+    ["management_admin", lang === "fr" ? "Gestion et administration" : lang === "es" ? "Gestión y administración" : "Management and administration"],
+    ["rent", lang === "fr" ? "Loyer" : lang === "es" ? "Alquiler" : "Rent"],
+    ["repairs_maintenance", lang === "fr" ? "Entretien et réparations" : lang === "es" ? "Mantenimiento y reparaciones" : "Repairs and maintenance"],
+    ["salaries_wages", lang === "fr" ? "Salaires et main-d’œuvre" : lang === "es" ? "Sueldos y mano de obra" : "Salaries, wages and labour"],
+    ["property_taxes", lang === "fr" ? "Impôts fonciers" : lang === "es" ? "Impuestos sobre la propiedad" : "Property taxes"],
+    ["travel", lang === "fr" ? "Déplacements et voyages" : lang === "es" ? "Viajes" : "Travel"],
+    ["utilities", lang === "fr" ? "Services publics" : lang === "es" ? "Servicios públicos" : "Utilities"],
+    ["fuel_non_vehicle", lang === "fr" ? "Carburant — hors véhicule" : lang === "es" ? "Combustible — fuera de vehículo" : "Fuel costs — except motor vehicle"],
+    ["delivery_freight", lang === "fr" ? "Livraison, transport et messagerie" : lang === "es" ? "Entrega, transporte y mensajería" : "Delivery, freight and express"],
+    ["motor_vehicle", lang === "fr" ? "Véhicule à moteur" : lang === "es" ? "Vehículo de motor" : "Motor vehicle"],
+    ["home_office", lang === "fr" ? "Bureau à domicile" : lang === "es" ? "Oficina en casa" : "Business-use-of-home"],
+    ["capital_asset", lang === "fr" ? "Immobilisation / DPA" : lang === "es" ? "Activo de capital / CCA" : "Capital asset / CCA"],
+    ["other", lang === "fr" ? "Autre dépense" : lang === "es" ? "Otro gasto" : "Other expense"],
+  ] as const;
+
+  const categoryLabel = (value: string) =>
+    fiscalCategories.find(([key]) => key === value)?.[1] ??
+    (lang === "fr" ? "Non classée" : lang === "es" ? "Sin clasificar" : "Unclassified");
+
   const amount = Number.parseFloat(subtotal.replace(",", ".")) || 0;
   const calculatedGst = taxMode === "none" ? 0 : roundMoney(amount * GST_RATE);
   const calculatedQst = taxMode === "gst_qst" ? roundMoney(amount * QST_RATE) : 0;
@@ -403,6 +456,13 @@ export default function DepensesPage() {
       qst: Number(row.qst),
       total: Number(row.total),
       paymentMethod: row.payment_method ? String(row.payment_method) : "other",
+      taxCategory: row.tax_category ? String(row.tax_category) : "",
+      taxCategorySource: row.tax_category_source ? String(row.tax_category_source) : "",
+      taxCategoryConfidence:
+        row.tax_category_confidence === null || row.tax_category_confidence === undefined
+          ? null
+          : Number(row.tax_category_confidence),
+      taxCategoryNote: row.tax_category_note ? String(row.tax_category_note) : "",
     };
   }
 
@@ -456,7 +516,7 @@ export default function DepensesPage() {
 
     const { data: transactionData, error: transactionError } = await supabase
       .from("bookkeeping_transactions")
-      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method")
+      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method, tax_category, tax_category_source, tax_category_confidence, tax_category_note")
       .eq("business_id", selectedBusiness.id)
       .eq("entry_type", "expense")
       .order("transaction_date", { ascending: false })
@@ -637,13 +697,17 @@ export default function DepensesPage() {
         entered_by: "document_ai",
         ai_confidence: item.confidence,
         ai_extraction: item,
+        tax_category: item.tax_category || "other",
+        tax_category_source: item.tax_category ? "ai" : "manual",
+        tax_category_confidence: item.tax_category_confidence ?? null,
+        tax_category_note: item.tax_category_note ?? null,
       };
     });
 
     const { data: transactions, error: insertError } = await supabase
       .from("bookkeeping_transactions")
       .insert(rows)
-      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method");
+      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method, tax_category, tax_category_source, tax_category_confidence, tax_category_note");
 
     if (insertError || !transactions?.length) {
       setDocMessage(insertError?.message ?? "Erreur");
@@ -747,6 +811,8 @@ export default function DepensesPage() {
           : "gst_qst"
     );
     setPaymentMethod("transfer");
+    setTaxCategory("other");
+    setTaxCategoryNote("");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -777,6 +843,10 @@ export default function DepensesPage() {
       gst: calculatedGst,
       qst: calculatedQst,
       payment_method: paymentMethod,
+      tax_category: taxCategory,
+      tax_category_source: "manual",
+      tax_category_confidence: null,
+      tax_category_note: taxCategoryNote.trim() || null,
       status: "confirmed",
       entered_by: "manual",
     };
@@ -787,7 +857,7 @@ export default function DepensesPage() {
       ? supabase.from("bookkeeping_transactions").update(payload).eq("id", editingId)
       : supabase.from("bookkeeping_transactions").insert(payload);
     const { data, error: saveError } = await request
-      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method")
+      .select("id, transaction_date, source, description, subtotal, tax_mode, gst, qst, total, payment_method, tax_category, tax_category_source, tax_category_confidence, tax_category_note")
       .single();
 
     if (saveError) setError(saveError.message);
@@ -814,6 +884,8 @@ export default function DepensesPage() {
     setSubtotal(item.subtotal.toFixed(2));
     setTaxMode(item.taxMode);
     setPaymentMethod(item.paymentMethod);
+    setTaxCategory(item.taxCategory || "other");
+    setTaxCategoryNote(item.taxCategoryNote || "");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -993,6 +1065,18 @@ export default function DepensesPage() {
               <label style={label}>{copy.subtotal}<input required min="0.01" step="0.01" inputMode="decimal" type="number" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} placeholder="0.00" style={input} /></label>
               <label style={label}>{copy.taxes}<select value={taxMode} onChange={(e) => setTaxMode(e.target.value as TaxMode)} style={input}><option value="none">{copy.noTax}</option><option value="gst">{copy.gstOnly}</option><option value="gst_qst">{copy.gstQst}</option></select></label>
               <label style={label}>{copy.payment}<select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={input}><option value="transfer">{copy.transfer}</option><option value="card">{copy.card}</option><option value="cash">{copy.cash}</option><option value="cheque">{copy.cheque}</option><option value="platform">{copy.platform}</option><option value="other">{copy.other}</option></select></label>
+              <label style={label}>
+                {copy.fiscalCategory}
+                <select value={taxCategory} onChange={(e) => setTaxCategory(e.target.value)} style={input}>
+                  {fiscalCategories.map(([key, labelText]) => (
+                    <option key={key} value={key}>{labelText}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={label}>
+                {copy.fiscalCategoryNote}
+                <input value={taxCategoryNote} onChange={(e) => setTaxCategoryNote(e.target.value)} placeholder={copy.fiscalCategoryNotePlaceholder} style={input} />
+              </label>
             </div>
 
             <div style={{ background: "#f0f7ff", border: "1px solid #cfe3ff", borderRadius: 12, padding: 15, marginTop: 18, display: "flex", gap: 22, flexWrap: "wrap" }}>
@@ -1169,6 +1253,10 @@ export default function DepensesPage() {
                                 <DocField label={copy.qst} value={item.qst === null ? "—" : money(item.qst, lang)} />
                                 <DocField label={copy.total} value={item.total === null ? "—" : money(item.total, lang)} />
                                 <DocField label={copy.confidence} value={`${Math.round(item.confidence * 100)} %`} />
+                                <DocField
+                                  label={copy.fiscalCategory}
+                                  value={item.tax_category ? categoryLabel(item.tax_category) : categoryLabel("other")}
+                                />
                               </div>
 
                               {item.notes.length > 0 && (
@@ -1233,8 +1321,8 @@ export default function DepensesPage() {
             <p style={{ color: "#64748b", padding: 22, margin: 0 }}>{copy.empty}</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 850 }}>
-                <thead><tr style={{ background: "#f8fafc", textAlign: "left" }}><Th>{copy.date}</Th><Th>{copy.source}</Th><Th>{copy.description}</Th><Th>{copy.beforeTax}</Th><Th>{copy.gst}</Th><Th>{copy.qst}</Th><Th>{copy.total}</Th><Th>{copy.actions}</Th></tr></thead>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1050 }}>
+                <thead><tr style={{ background: "#f8fafc", textAlign: "left" }}><Th>{copy.date}</Th><Th>{copy.source}</Th><Th>{copy.description}</Th><Th>{copy.beforeTax}</Th><Th>{copy.gst}</Th><Th>{copy.qst}</Th><Th>{copy.total}</Th><Th>{copy.fiscalCategory}</Th><Th>{copy.actions}</Th></tr></thead>
                 <tbody>
                   {expenses.map((item) => (
                     <tr key={item.id} style={{ borderTop: "1px solid #e2e8f0" }}>
@@ -1247,6 +1335,7 @@ export default function DepensesPage() {
 <Td>
   <strong>{money(item.total, lang)}</strong>
 </Td>
+<Td>{categoryLabel(item.taxCategory)}</Td>
                       <Td><div style={{ display: "flex", gap: 7 }}><button type="button" onClick={() => edit(item)} style={smallButton}>{copy.modify}</button><button type="button" onClick={() => remove(item.id)} style={{ ...smallButton, color: "#b91c1c", borderColor: "#fecaca" }}>{copy.remove}</button></div></Td>
                     </tr>
                   ))}
