@@ -10,7 +10,7 @@ type TaxStatus = "not_registered" | "gst_only" | "gst_qst";
 type FilingFrequency = "monthly" | "quarterly" | "annual";
 
 type ExtractedTransaction = {
-  entry_type: "expense" | "expense" | "unknown";
+  entry_type: "income" | "expense" | "unknown";
   transaction_date: string | null;
   source: string | null;
   description: string | null;
@@ -1054,7 +1054,7 @@ export default function DepensesPage() {
               {docs.map((doc) => {
                 const items = doc.extraction?.transactions ?? [];
                 const expenseItems = items.filter((item) => item.entry_type === "expense");
-                const hasWrongType = items.some((item) => item.entry_type !== "income");
+                const hasWrongType = items.some((item) => item.entry_type !== "expense");
                 const complete =
                   Boolean(doc.extraction?.relevant) &&
                   expenseItems.length > 0 &&
@@ -1155,7 +1155,7 @@ export default function DepensesPage() {
                                 <DocField
                                   label="Type"
                                   value={
-                                    item.entry_type === "expense"
+                                    item.entry_type === "income"
                                       ? copy.incomeDetected
                                       : item.entry_type === "expense"
                                         ? copy.expenseDetected
