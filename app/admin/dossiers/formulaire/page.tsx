@@ -23,41 +23,85 @@ type AnalyseResponse = {
   error?: string;
 };
 
+/**
+ * Détermine quel formulaire présentiel ouvrir.
+ *
+ * IMPORTANT :
+ * "T1 + TA" contient "t1".
+ * Il faut donc tester le TA AVANT le T1.
+ */
 function routeForFormPresentiel(formType: string | null) {
-  const t = (formType ?? "").toLowerCase();
+  const t = (formType ?? "").trim().toLowerCase();
 
-  if (t === "t1" || t.includes("t1")) return "/formulaire-fiscal-presentiel-t1";
-  if (t === "ta" || t.includes("autonome") || t.includes("travailleur")) {
+  // TA / T1 + TA
+  if (
+    t === "ta" ||
+    t.includes("t1 + ta") ||
+    t.includes("t1+ta") ||
+    t.includes("autonome") ||
+    t.includes("travailleur")
+  ) {
     return "/formulaire-fiscal-presentiel-ta";
   }
-  if (t === "t2" || t.includes("t2")) return "/formulaire-fiscal-presentiel-t2";
 
+  // T2
+  if (t === "t2" || t.includes("t2")) {
+    return "/formulaire-fiscal-presentiel-t2";
+  }
+
+  // T1
+  if (t === "t1" || t.includes("t1")) {
+    return "/formulaire-fiscal-presentiel-t1";
+  }
+
+  // Sécurité : formulaire T1 par défaut
   return "/formulaire-fiscal-presentiel-t1";
 }
 
 function formatNas(nas: string | null | undefined) {
   const digits = (nas ?? "").replace(/\D+/g, "").slice(0, 9);
+
   if (!digits) return "Non fourni";
-  if (digits.length !== 9) return nas ?? "Non fourni";
+
+  if (digits.length !== 9) {
+    return nas ?? "Non fourni";
+  }
+
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 9)}`;
 }
 
 export default function AdminDossierFormulairePage() {
   const sp = useSearchParams();
 
-  const fid = useMemo(() => (sp.get("fid") ?? "").trim(), [sp]);
-  const formType = useMemo(() => (sp.get("type") ?? "t1").trim(), [sp]);
-  const lang = useMemo(() => (sp.get("lang") ?? "fr").trim(), [sp]);
+  const fid = useMemo(
+    () => (sp.get("fid") ?? "").trim(),
+    [sp]
+  );
+
+  const formType = useMemo(
+    () => (sp.get("type") ?? "t1").trim(),
+    [sp]
+  );
+
+  const lang = useMemo(
+    () => (sp.get("lang") ?? "fr").trim(),
+    [sp]
+  );
 
   const [analysing, setAnalysing] = useState(false);
   const [analyse, setAnalyse] = useState<string | null>(null);
-  const [identiteNas, setIdentiteNas] = useState<IdentiteNas | null>(null);
-  const [analyseError, setAnalyseError] = useState<string | null>(null);
+  const [identiteNas, setIdentiteNas] =
+    useState<IdentiteNas | null>(null);
+  const [analyseError, setAnalyseError] =
+    useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const formUrl = useMemo(() => {
     const base = routeForFormPresentiel(formType);
-    return `${base}?fid=${encodeURIComponent(fid)}&lang=${encodeURIComponent(lang)}`;
+
+    return `${base}?fid=${encodeURIComponent(
+      fid
+    )}&lang=${encodeURIComponent(lang)}`;
   }, [fid, formType, lang]);
 
   const analyseFormulaire = useCallback(async () => {
@@ -67,25 +111,31 @@ export default function AdminDossierFormulairePage() {
     setAnalyseError(null);
 
     try {
-      const response = await fetch("/api/admin/analyse-formulaire", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fid }),
-      });
+      const response = await fetch(
+        "/api/admin/analyse-formulaire",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fid }),
+        }
+      );
 
       let result: AnalyseResponse;
 
       try {
         result = (await response.json()) as AnalyseResponse;
       } catch {
-        throw new Error("Réponse invalide du serveur IA.");
+        throw new Error(
+          "Réponse invalide du serveur IA."
+        );
       }
 
       if (!response.ok || !result.ok || !result.analyse) {
         throw new Error(
-          result.error ?? "Impossible d'analyser le formulaire."
+          result.error ??
+            "Impossible d'analyser le formulaire."
         );
       }
 
@@ -111,16 +161,27 @@ export default function AdminDossierFormulairePage() {
     ];
 
     if (identiteNas.conjoint) {
-      lines.push(`Conjoint : ${formatNas(identiteNas.conjoint)}`);
+      lines.push(
+        `Conjoint : ${formatNas(identiteNas.conjoint)}`
+      );
     }
 
-    identiteNas.personnesACharge.forEach((personne, index) => {
-      if (!personne.nas) return;
-      const nom =
-        [personne.prenom, personne.nom].filter(Boolean).join(" ").trim() ||
-        `Personne à charge ${index + 1}`;
-      lines.push(`${nom} : ${formatNas(personne.nas)}`);
-    });
+    identiteNas.personnesACharge.forEach(
+      (personne, index) => {
+        if (!personne.nas) return;
+
+        const nom =
+          [personne.prenom, personne.nom]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
+          `Personne à charge ${index + 1}`;
+
+        lines.push(
+          `${nom} : ${formatNas(personne.nas)}`
+        );
+      }
+    );
 
     return lines.join("\n");
   }, [identiteNas]);
@@ -134,13 +195,16 @@ export default function AdminDossierFormulairePage() {
 
     try {
       await navigator.clipboard.writeText(texteComplet);
+
       setCopied(true);
 
       window.setTimeout(() => {
         setCopied(false);
       }, 1800);
     } catch {
-      setAnalyseError("Impossible de copier l'analyse.");
+      setAnalyseError(
+        "Impossible de copier l'analyse."
+      );
     }
   }, [analyse, nasText]);
 
@@ -148,6 +212,7 @@ export default function AdminDossierFormulairePage() {
     return (
       <div style={{ padding: 16 }}>
         ❌ fid manquant
+        <br />
         (ex: /admin/dossiers/formulaire?fid=...)
       </div>
     );
@@ -161,6 +226,8 @@ export default function AdminDossierFormulairePage() {
         margin: "0 auto",
       }}
     >
+      {/* HEADER */}
+
       <div
         style={{
           display: "flex",
@@ -193,7 +260,9 @@ export default function AdminDossierFormulairePage() {
         </div>
 
         <Link
-          href={`/admin/dossiers/docs?fid=${encodeURIComponent(fid)}`}
+          href={`/admin/dossiers/docs?fid=${encodeURIComponent(
+            fid
+          )}`}
           style={{
             padding: "9px 13px",
             borderRadius: 8,
@@ -208,6 +277,8 @@ export default function AdminDossierFormulairePage() {
           📄 Voir les documents
         </Link>
       </div>
+
+      {/* FORMULAIRE */}
 
       <div
         style={{
@@ -251,6 +322,33 @@ export default function AdminDossierFormulairePage() {
             >
               Type : {formType.toUpperCase()}
             </div>
+
+            {/* Indication claire pour le TA */}
+            {(formType
+              .toLowerCase()
+              .includes("ta") ||
+              formType
+                .toLowerCase()
+                .includes("autonome") ||
+              formType
+                .toLowerCase()
+                .includes("travailleur")) && (
+              <div
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  padding: "5px 9px",
+                  borderRadius: 7,
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  color: "#1d4ed8",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                👤 Travailleur autonome
+              </div>
+            )}
           </div>
 
           <div
@@ -283,10 +381,14 @@ export default function AdminDossierFormulairePage() {
                 padding: "8px 12px",
                 borderRadius: 8,
                 border: "1px solid #2563eb",
-                background: analysing ? "#dbeafe" : "#eff6ff",
+                background: analysing
+                  ? "#dbeafe"
+                  : "#eff6ff",
                 color: "#1d4ed8",
                 fontWeight: 700,
-                cursor: analysing ? "wait" : "pointer",
+                cursor: analysing
+                  ? "wait"
+                  : "pointer",
               }}
             >
               {analysing
@@ -297,6 +399,8 @@ export default function AdminDossierFormulairePage() {
             </button>
           </div>
         </div>
+
+        {/* ERREUR */}
 
         {analyseError && (
           <div
@@ -314,6 +418,8 @@ export default function AdminDossierFormulairePage() {
             ❌ {analyseError}
           </div>
         )}
+
+        {/* ANALYSE IA */}
 
         {analyse && (
           <div
@@ -355,9 +461,13 @@ export default function AdminDossierFormulairePage() {
                   cursor: "pointer",
                 }}
               >
-                {copied ? "✓ Copiée" : "📋 Copier l'analyse"}
+                {copied
+                  ? "✓ Copiée"
+                  : "📋 Copier l'analyse"}
               </button>
             </div>
+
+            {/* NAS */}
 
             {identiteNas && (
               <div
@@ -372,12 +482,18 @@ export default function AdminDossierFormulairePage() {
                   lineHeight: 1.6,
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>
+                <div
+                  style={{
+                    fontWeight: 800,
+                    marginBottom: 6,
+                  }}
+                >
                   🔒 NAS — affiché depuis le formulaire
                 </div>
 
                 <div>
-                  <strong>Client :</strong> {formatNas(identiteNas.client)}
+                  <strong>Client :</strong>{" "}
+                  {formatNas(identiteNas.client)}
                 </div>
 
                 {identiteNas.conjoint && (
@@ -387,21 +503,27 @@ export default function AdminDossierFormulairePage() {
                   </div>
                 )}
 
-                {identiteNas.personnesACharge.map((personne, index) => {
-                  if (!personne.nas) return null;
+                {identiteNas.personnesACharge.map(
+                  (personne, index) => {
+                    if (!personne.nas) return null;
 
-                  const nom =
-                    [personne.prenom, personne.nom]
-                      .filter(Boolean)
-                      .join(" ")
-                      .trim() || `Personne à charge ${index + 1}`;
+                    const nom =
+                      [personne.prenom, personne.nom]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim() ||
+                      `Personne à charge ${index + 1}`;
 
-                  return (
-                    <div key={`${nom}-${index}`}>
-                      <strong>{nom} :</strong> {formatNas(personne.nas)}
-                    </div>
-                  );
-                })}
+                    return (
+                      <div
+                        key={`${nom}-${index}`}
+                      >
+                        <strong>{nom} :</strong>{" "}
+                        {formatNas(personne.nas)}
+                      </div>
+                    );
+                  }
+                )}
 
                 <div
                   style={{
@@ -410,11 +532,13 @@ export default function AdminDossierFormulairePage() {
                     color: "#64748b",
                   }}
                 >
-                  Ces NAS proviennent directement du formulaire et ne sont pas
-                  envoyés à l'IA.
+                  Ces NAS proviennent directement du
+                  formulaire et ne sont pas envoyés à l'IA.
                 </div>
               </div>
             )}
+
+            {/* TEXTE ANALYSE */}
 
             <div
               style={{
@@ -434,7 +558,8 @@ export default function AdminDossierFormulairePage() {
                 color: "#64748b",
               }}
             >
-              À valider avant d'utiliser les informations dans le dossier fiscal.
+              À valider avant d'utiliser les informations
+              dans le dossier fiscal.
             </div>
           </div>
         )}
