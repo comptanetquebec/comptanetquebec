@@ -143,7 +143,20 @@ export async function POST(req: Request) {
         lang,
       },
 
+      /*
+       * ABONNEMENT TENUE DE LIVRES
+       *
+       * TEMPORAIRE POUR NOTRE TEST :
+       * 2 jours d'essai gratuit.
+       *
+       * Après avoir validé tout le parcours,
+       * supprimer uniquement :
+       *
+       * trial_period_days: 2,
+       */
       subscription_data: {
+        trial_period_days: 2,
+
         metadata: {
           service: "bookkeeping",
           plan,
