@@ -27,6 +27,7 @@ type Business = {
   filing_frequency: Frequency;
   fiscal_year_start_month: number;
   fiscal_year_start_day: number;
+  tax_registration_date?: string | null;
 };
 
 export default function ConfigurationTenueLivresPage() {
@@ -45,6 +46,9 @@ export default function ConfigurationTenueLivresPage() {
   const [frequency, setFrequency] =
     useState<Frequency>("annual");
 
+  const [taxRegistrationDate, setTaxRegistrationDate] =
+    useState("");
+
   const [startDay, setStartDay] =
     useState("1");
 
@@ -62,6 +66,9 @@ export default function ConfigurationTenueLivresPage() {
 
   const [error, setError] =
     useState("");
+
+  const [taxActivationMode, setTaxActivationMode] =
+    useState(false);
 
   const copy = {
     fr: {
@@ -112,6 +119,27 @@ export default function ConfigurationTenueLivresPage() {
 
       noTaxInfo:
         "Vous avez indiqué que vous n’êtes pas inscrit à la TPS/TVQ. Aucune fréquence de production n’est nécessaire.",
+
+      registrationDate:
+        "Date d’inscription à la TPS/TVQ",
+
+      registrationDateHelp:
+        "Indiquez la date officielle à partir de laquelle votre entreprise est inscrite.",
+
+      activationTitle:
+        "Activer la TPS/TVQ",
+
+      activationIntro:
+        "Confirmez votre inscription fiscale et votre fréquence de production avant d’activer le forfait TPS/TVQ.",
+
+      activationSave:
+        "Continuer vers le forfait TPS/TVQ",
+
+      registrationRequired:
+        "Pour continuer, indiquez que votre entreprise est inscrite à la TPS ou à la TPS/TVQ.",
+
+      registrationDateRequired:
+        "Veuillez indiquer votre date officielle d’inscription aux taxes.",
 
       frequency:
         "Fréquence de production TPS/TVQ",
@@ -234,6 +262,27 @@ export default function ConfigurationTenueLivresPage() {
       noTaxInfo:
         "You indicated that you are not registered for GST/QST. No filing frequency is required.",
 
+      registrationDate:
+        "GST/QST registration date",
+
+      registrationDateHelp:
+        "Enter the official date from which your business is registered.",
+
+      activationTitle:
+        "Activate GST/QST",
+
+      activationIntro:
+        "Confirm your tax registration and filing frequency before activating the GST/QST plan.",
+
+      activationSave:
+        "Continue to the GST/QST plan",
+
+      registrationRequired:
+        "To continue, indicate that your business is registered for GST or GST/QST.",
+
+      registrationDateRequired:
+        "Please enter your official tax registration date.",
+
       frequency:
         "GST/QST filing frequency",
 
@@ -355,6 +404,27 @@ export default function ConfigurationTenueLivresPage() {
       noTaxInfo:
         "Ha indicado que no está registrado para GST/QST. No se requiere una frecuencia de declaración.",
 
+      registrationDate:
+        "Fecha de registro GST/QST",
+
+      registrationDateHelp:
+        "Indique la fecha oficial desde la que su empresa está registrada.",
+
+      activationTitle:
+        "Activar GST/QST",
+
+      activationIntro:
+        "Confirme su registro fiscal y la frecuencia de declaración antes de activar el plan GST/QST.",
+
+      activationSave:
+        "Continuar al plan GST/QST",
+
+      registrationRequired:
+        "Para continuar, indique que su empresa está registrada para GST o GST/QST.",
+
+      registrationDateRequired:
+        "Indique la fecha oficial de registro de impuestos.",
+
       frequency:
         "Frecuencia de declaración GST/QST",
 
@@ -442,6 +512,11 @@ export default function ConfigurationTenueLivresPage() {
 
     setLang(selected);
 
+    const activateTaxes =
+      new URLSearchParams(window.location.search).get("activateTaxes") === "1";
+
+    setTaxActivationMode(activateTaxes);
+
     void load(selected);
   }, []);
 
@@ -458,7 +533,7 @@ export default function ConfigurationTenueLivresPage() {
 
       if (authError || !auth.user) {
         const next = encodeURIComponent(
-          `/tenue-de-livres/configuration?lang=${selected}`
+          `/tenue-de-livres/configuration?lang=${selected}${taxActivationMode ? "&activateTaxes=1" : ""}`
         );
 
         window.location.replace(
@@ -476,7 +551,7 @@ export default function ConfigurationTenueLivresPage() {
       } = await supabase
         .from("bookkeeping_businesses")
         .select(
-          "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day"
+          "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day, tax_registration_date"
         )
         .eq("owner_id", auth.user.id)
         .order("created_at", {
@@ -509,6 +584,10 @@ export default function ConfigurationTenueLivresPage() {
         setFrequency(
           current.filing_frequency ??
             "annual"
+        );
+
+        setTaxRegistrationDate(
+          current.tax_registration_date ?? ""
         );
 
         setStartDay(
@@ -619,6 +698,22 @@ export default function ConfigurationTenueLivresPage() {
       return;
     }
 
+    if (
+      taxActivationMode &&
+      taxStatus === "not_registered"
+    ) {
+      setError(copy.registrationRequired);
+      return;
+    }
+
+    if (
+      taxStatus !== "not_registered" &&
+      !taxRegistrationDate
+    ) {
+      setError(copy.registrationDateRequired);
+      return;
+    }
+
     try {
       setSaving(true);
       setMessage("");
@@ -652,6 +747,11 @@ export default function ConfigurationTenueLivresPage() {
         filing_frequency:
           filingFrequency,
 
+        tax_registration_date:
+          taxStatus === "not_registered"
+            ? null
+            : taxRegistrationDate,
+
         fiscal_year_start_day:
           Number(startDay),
 
@@ -677,7 +777,7 @@ export default function ConfigurationTenueLivresPage() {
             userId
           )
           .select(
-            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day"
+            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day, tax_registration_date"
           )
           .single();
 
@@ -694,6 +794,35 @@ export default function ConfigurationTenueLivresPage() {
         setMessage(
           copy.updated
         );
+
+        if (taxActivationMode) {
+          const response = await fetch(
+            "/api/tenue-de-livres/change-plan",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                plan: "tax",
+              }),
+            }
+          );
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              result?.error ||
+                "Impossible d’activer le forfait TPS/TVQ."
+            );
+          }
+
+          window.location.replace(
+            `/tenue-de-livres/taxes?lang=${lang}`
+          );
+          return;
+        }
       } else {
         const {
           data,
@@ -708,7 +837,7 @@ export default function ConfigurationTenueLivresPage() {
               userId,
           })
           .select(
-            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day"
+            "id, business_name, tax_status, filing_frequency, fiscal_year_start_month, fiscal_year_start_day, tax_registration_date"
           )
           .single();
 
@@ -855,7 +984,11 @@ export default function ConfigurationTenueLivresPage() {
           }}
         >
           <Link
-            href={`/tenue-de-livres?lang=${lang}`}
+            href={
+              taxActivationMode
+                ? `/tenue-de-livres/taxes?lang=${lang}`
+                : `/tenue-de-livres?lang=${lang}`
+            }
             style={{
               color: "#0f172a",
               fontWeight: 900,
@@ -929,7 +1062,11 @@ export default function ConfigurationTenueLivresPage() {
       >
         {/* RETOUR */}
         <Link
-          href={`/tenue-de-livres?lang=${lang}`}
+          href={
+            taxActivationMode
+              ? `/tenue-de-livres/taxes?lang=${lang}`
+              : `/tenue-de-livres?lang=${lang}`
+          }
           style={{
             display:
               "inline-block",
@@ -1001,9 +1138,11 @@ export default function ConfigurationTenueLivresPage() {
                     "clamp(27px, 5vw, 36px)",
                 }}
               >
-                {business
-                  ? copy.editTitle
-                  : copy.newTitle}
+                {taxActivationMode
+                  ? copy.activationTitle
+                  : business
+                    ? copy.editTitle
+                    : copy.newTitle}
               </h1>
             </div>
           </div>
@@ -1017,9 +1156,11 @@ export default function ConfigurationTenueLivresPage() {
               maxWidth: 680,
             }}
           >
-            {business
-              ? copy.editIntro
-              : copy.newIntro}
+            {taxActivationMode
+              ? copy.activationIntro
+              : business
+                ? copy.editIntro
+                : copy.newIntro}
           </p>
         </section>
 
@@ -1175,9 +1316,11 @@ export default function ConfigurationTenueLivresPage() {
                   inputStyle
                 }
               >
-                <option value="not_registered">
-                  {copy.none}
-                </option>
+                {!taxActivationMode && (
+                  <option value="not_registered">
+                    {copy.none}
+                  </option>
+                )}
 
                 <option value="gst_only">
                   {copy.gst}
@@ -1212,10 +1355,41 @@ export default function ConfigurationTenueLivresPage() {
                 }
               </div>
             ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gap: 16,
+                  marginTop: 16,
+                }}
+              >
+                <label style={labelStyle}>
+                  {copy.registrationDate}
+
+                  <input
+                    type="date"
+                    required
+                    value={taxRegistrationDate}
+                    onChange={(event) =>
+                      setTaxRegistrationDate(event.target.value)
+                    }
+                    style={inputStyle}
+                  />
+
+                  <span
+                    style={{
+                      color: "#64748b",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {copy.registrationDateHelp}
+                  </span>
+                </label>
+
               <label
                 style={{
                   ...labelStyle,
-                  marginTop: 16,
                 }}
               >
                 {
@@ -1258,6 +1432,7 @@ export default function ConfigurationTenueLivresPage() {
                   </option>
                 </select>
               </label>
+              </div>
             )}
           </section>
 
@@ -1472,9 +1647,11 @@ export default function ConfigurationTenueLivresPage() {
             >
               {saving
                 ? copy.saving
-                : business
-                  ? copy.update
-                  : copy.save}
+                : taxActivationMode
+                  ? copy.activationSave
+                  : business
+                    ? copy.update
+                    : copy.save}
             </button>
 
             <div
