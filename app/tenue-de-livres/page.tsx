@@ -1742,3 +1742,5 @@ function SummaryCard({
     >
       {card}
     </Link>
+  );
+}
