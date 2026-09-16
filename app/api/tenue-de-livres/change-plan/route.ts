@@ -280,12 +280,14 @@ async function downgradeToEssential(
             },
 
             /*
-             * Une seule période Essential est nécessaire
-             * dans le schedule. À la fin, Stripe libère
-             * l'abonnement qui continue alors au prix
+             * Cette phase Essential couvre une période
+             * complète. À sa fin, Stripe libère
+             * l'abonnement, qui continue alors au prix
              * Essential grâce à end_behavior: release.
              */
-            iterations: 1,
+            end_date:
+              period.end +
+              (period.end - period.start),
 
             proration_behavior: "none",
           },
