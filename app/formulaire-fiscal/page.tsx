@@ -411,13 +411,95 @@ const removeEnfant = useCallback((i: number) => {
   /* =========================== Travailleur autonome =========================== */
   const [taActif, setTaActif] = useState(false);
   const [taNomEntreprise, setTaNomEntreprise] = useState("");
+  const [taDescriptionActivite, setTaDescriptionActivite] = useState("");
+  const [taDateDebutActivite, setTaDateDebutActivite] = useState("");
   const [taRevenus, setTaRevenus] = useState("");
+
+  const [taInscritTPS, setTaInscritTPS] = useState<boolean | undefined>(undefined);
+  const [taInscritTVQ, setTaInscritTVQ] = useState<boolean | undefined>(undefined);
+  const [taNumeroTPS, setTaNumeroTPS] = useState("");
+  const [taNumeroTVQ, setTaNumeroTVQ] = useState("");
+
   const [taDepenses, setTaDepenses] = useState("");
+  const [taPublicite, setTaPublicite] = useState("");
+  const [taRepasRepresentation, setTaRepasRepresentation] = useState("");
+  const [taAssurances, setTaAssurances] = useState("");
+  const [taInteretsFraisBancaires, setTaInteretsFraisBancaires] = useState("");
+  const [taFraisBureau, setTaFraisBureau] = useState("");
+  const [taFournitures, setTaFournitures] = useState("");
+  const [taHonorairesProfessionnels, setTaHonorairesProfessionnels] = useState("");
+  const [taTelephoneInternet, setTaTelephoneInternet] = useState("");
+  const [taSousTraitance, setTaSousTraitance] = useState("");
+  const [taSalaires, setTaSalaires] = useState("");
+  const [taLoyers, setTaLoyers] = useState("");
+  const [taEntretienReparations, setTaEntretienReparations] = useState("");
+  const [taDeplacements, setTaDeplacements] = useState("");
+  const [taAutresDepenses, setTaAutresDepenses] = useState("");
+  const [taAutresDepensesDescription, setTaAutresDepensesDescription] = useState("");
+
+  const [taUtiliseVehicule, setTaUtiliseVehicule] = useState<boolean | undefined>(undefined);
+  const [taKmTotal, setTaKmTotal] = useState("");
+  const [taKmAffaires, setTaKmAffaires] = useState("");
+  const [taCarburant, setTaCarburant] = useState("");
+  const [taAssuranceAuto, setTaAssuranceAuto] = useState("");
+  const [taImmatriculation, setTaImmatriculation] = useState("");
+  const [taEntretienAuto, setTaEntretienAuto] = useState("");
+  const [taInteretsAuto, setTaInteretsAuto] = useState("");
+  const [taLocationAuto, setTaLocationAuto] = useState("");
+
+  const [taBureauDomicile, setTaBureauDomicile] = useState<boolean | undefined>(undefined);
+  const [taSuperficieBureau, setTaSuperficieBureau] = useState("");
+  const [taSuperficieResidence, setTaSuperficieResidence] = useState("");
+  const [taLoyerResidence, setTaLoyerResidence] = useState("");
+  const [taInteretsHypothecaires, setTaInteretsHypothecaires] = useState("");
+  const [taTaxesMunicipales, setTaTaxesMunicipales] = useState("");
+  const [taAssuranceHabitation, setTaAssuranceHabitation] = useState("");
+  const [taElectriciteChauffage, setTaElectriciteChauffage] = useState("");
+  const [taEntretienResidence, setTaEntretienResidence] = useState("");
+
+  const [taEmployes, setTaEmployes] = useState<boolean | undefined>(undefined);
+  const [taSousTraitants, setTaSousTraitants] = useState<boolean | undefined>(undefined);
+  const [taAchatsEquipements, setTaAchatsEquipements] = useState<boolean | undefined>(undefined);
+  const [taDetailsEquipements, setTaDetailsEquipements] = useState("");
 
   /* =========================== Revenus locatifs =========================== */
-const [locatifActif, setLocatifActif] = useState(false);
-const [locatifRevenus, setLocatifRevenus] = useState("");
-const [locatifDepenses, setLocatifDepenses] = useState("");
+  const [locatifActif, setLocatifActif] = useState(false);
+  const [locatifAdresse, setLocatifAdresse] = useState("");
+  const [locatifVille, setLocatifVille] = useState("");
+  const [locatifProvince, setLocatifProvince] = useState<ProvinceCode>("QC");
+  const [locatifCodePostal, setLocatifCodePostal] = useState("");
+  const [locatifTypeImmeuble, setLocatifTypeImmeuble] = useState("");
+  const [locatifNombreUnites, setLocatifNombreUnites] = useState("");
+
+  const [locatifPourcentagePropriete, setLocatifPourcentagePropriete] = useState("");
+  const [locatifCoproprietaires, setLocatifCoproprietaires] = useState<boolean | undefined>(undefined);
+  const [locatifDetailsCoproprietaires, setLocatifDetailsCoproprietaires] = useState("");
+
+  const [locatifHabiteImmeuble, setLocatifHabiteImmeuble] = useState<boolean | undefined>(undefined);
+  const [locatifPourcentagePersonnel, setLocatifPourcentagePersonnel] = useState("");
+  const [locatifDateAcquisition, setLocatifDateAcquisition] = useState("");
+
+  const [locatifRevenus, setLocatifRevenus] = useState("");
+  const [locatifDepenses, setLocatifDepenses] = useState("");
+  const [locatifTaxesMunicipales, setLocatifTaxesMunicipales] = useState("");
+  const [locatifTaxesScolaires, setLocatifTaxesScolaires] = useState("");
+  const [locatifAssurances, setLocatifAssurances] = useState("");
+  const [locatifInteretsHypothecaires, setLocatifInteretsHypothecaires] = useState("");
+  const [locatifEntretienReparations, setLocatifEntretienReparations] = useState("");
+  const [locatifElectricite, setLocatifElectricite] = useState("");
+  const [locatifChauffage, setLocatifChauffage] = useState("");
+  const [locatifEau, setLocatifEau] = useState("");
+  const [locatifPublicite, setLocatifPublicite] = useState("");
+  const [locatifFraisGestion, setLocatifFraisGestion] = useState("");
+  const [locatifHonorairesProfessionnels, setLocatifHonorairesProfessionnels] = useState("");
+  const [locatifFraisBancaires, setLocatifFraisBancaires] = useState("");
+  const [locatifAutresDepenses, setLocatifAutresDepenses] = useState("");
+  const [locatifAutresDepensesDescription, setLocatifAutresDepensesDescription] = useState("");
+
+  const [locatifRenovationsImportantes, setLocatifRenovationsImportantes] = useState<boolean | undefined>(undefined);
+  const [locatifDetailsRenovations, setLocatifDetailsRenovations] = useState("");
+  const [locatifAchatsEquipements, setLocatifAchatsEquipements] = useState<boolean | undefined>(undefined);
+  const [locatifDetailsEquipements, setLocatifDetailsEquipements] = useState("");
 
   /* =========================== Validations finales =========================== */
   const [vExactitude, setVExactitude] = useState(false);
@@ -535,13 +617,100 @@ const draftData: Formdata = useMemo(() => {
     travailleurAutonome: {
       actif: taActif,
       nomEntreprise: taActif ? taNomEntreprise.trim() : "",
+      descriptionActivite: taActif ? taDescriptionActivite.trim() : "",
+      dateDebutActivite: taActif ? taDateDebutActivite.trim() : "",
       revenus: taActif ? taRevenus.trim() : "",
+
+      inscritTPS: taActif ? taInscritTPS : undefined,
+      inscritTVQ: taActif ? taInscritTVQ : undefined,
+      numeroTPS: taActif && taInscritTPS === true ? taNumeroTPS.trim() : "",
+      numeroTVQ: taActif && taInscritTVQ === true ? taNumeroTVQ.trim() : "",
+
       depenses: taActif ? taDepenses.trim() : "",
+      publicite: taActif ? taPublicite.trim() : "",
+      repasRepresentation: taActif ? taRepasRepresentation.trim() : "",
+      assurances: taActif ? taAssurances.trim() : "",
+      interetsFraisBancaires: taActif ? taInteretsFraisBancaires.trim() : "",
+      fraisBureau: taActif ? taFraisBureau.trim() : "",
+      fournitures: taActif ? taFournitures.trim() : "",
+      honorairesProfessionnels: taActif ? taHonorairesProfessionnels.trim() : "",
+      telephoneInternet: taActif ? taTelephoneInternet.trim() : "",
+      sousTraitance: taActif ? taSousTraitance.trim() : "",
+      salaires: taActif ? taSalaires.trim() : "",
+      loyers: taActif ? taLoyers.trim() : "",
+      entretienReparations: taActif ? taEntretienReparations.trim() : "",
+      deplacements: taActif ? taDeplacements.trim() : "",
+      autresDepenses: taActif ? taAutresDepenses.trim() : "",
+      autresDepensesDescription: taActif ? taAutresDepensesDescription.trim() : "",
+
+      utiliseVehicule: taActif ? taUtiliseVehicule : undefined,
+      kmTotal: taActif && taUtiliseVehicule === true ? taKmTotal.trim() : "",
+      kmAffaires: taActif && taUtiliseVehicule === true ? taKmAffaires.trim() : "",
+      carburant: taActif && taUtiliseVehicule === true ? taCarburant.trim() : "",
+      assuranceAuto: taActif && taUtiliseVehicule === true ? taAssuranceAuto.trim() : "",
+      immatriculation: taActif && taUtiliseVehicule === true ? taImmatriculation.trim() : "",
+      entretienAuto: taActif && taUtiliseVehicule === true ? taEntretienAuto.trim() : "",
+      interetsAuto: taActif && taUtiliseVehicule === true ? taInteretsAuto.trim() : "",
+      locationAuto: taActif && taUtiliseVehicule === true ? taLocationAuto.trim() : "",
+
+      bureauDomicile: taActif ? taBureauDomicile : undefined,
+      superficieBureau: taActif && taBureauDomicile === true ? taSuperficieBureau.trim() : "",
+      superficieResidence: taActif && taBureauDomicile === true ? taSuperficieResidence.trim() : "",
+      loyerResidence: taActif && taBureauDomicile === true ? taLoyerResidence.trim() : "",
+      interetsHypothecaires: taActif && taBureauDomicile === true ? taInteretsHypothecaires.trim() : "",
+      taxesMunicipales: taActif && taBureauDomicile === true ? taTaxesMunicipales.trim() : "",
+      assuranceHabitation: taActif && taBureauDomicile === true ? taAssuranceHabitation.trim() : "",
+      electriciteChauffage: taActif && taBureauDomicile === true ? taElectriciteChauffage.trim() : "",
+      entretienResidence: taActif && taBureauDomicile === true ? taEntretienResidence.trim() : "",
+
+      employes: taActif ? taEmployes : undefined,
+      sousTraitants: taActif ? taSousTraitants : undefined,
+      achatsEquipements: taActif ? taAchatsEquipements : undefined,
+      detailsEquipements: taActif && taAchatsEquipements === true ? taDetailsEquipements.trim() : "",
     },
+
     revenusLocatifs: {
       actif: locatifActif,
+      adresse: locatifActif ? locatifAdresse.trim() : "",
+      ville: locatifActif ? locatifVille.trim() : "",
+      province: locatifActif ? locatifProvince : undefined,
+      codePostal: locatifActif ? normalizePostal(locatifCodePostal) : "",
+      typeImmeuble: locatifActif ? locatifTypeImmeuble.trim() : "",
+      nombreUnites: locatifActif ? locatifNombreUnites.trim() : "",
+
+      pourcentagePropriete: locatifActif ? locatifPourcentagePropriete.trim() : "",
+      coproprietaires: locatifActif ? locatifCoproprietaires : undefined,
+      detailsCoproprietaires:
+        locatifActif && locatifCoproprietaires === true ? locatifDetailsCoproprietaires.trim() : "",
+
+      habiteImmeuble: locatifActif ? locatifHabiteImmeuble : undefined,
+      pourcentagePersonnel:
+        locatifActif && locatifHabiteImmeuble === true ? locatifPourcentagePersonnel.trim() : "",
+      dateAcquisition: locatifActif ? locatifDateAcquisition.trim() : "",
+
       revenus: locatifActif ? locatifRevenus.trim() : "",
       depenses: locatifActif ? locatifDepenses.trim() : "",
+      taxesMunicipales: locatifActif ? locatifTaxesMunicipales.trim() : "",
+      taxesScolaires: locatifActif ? locatifTaxesScolaires.trim() : "",
+      assurances: locatifActif ? locatifAssurances.trim() : "",
+      interetsHypothecaires: locatifActif ? locatifInteretsHypothecaires.trim() : "",
+      entretienReparations: locatifActif ? locatifEntretienReparations.trim() : "",
+      electricite: locatifActif ? locatifElectricite.trim() : "",
+      chauffage: locatifActif ? locatifChauffage.trim() : "",
+      eau: locatifActif ? locatifEau.trim() : "",
+      publicite: locatifActif ? locatifPublicite.trim() : "",
+      fraisGestion: locatifActif ? locatifFraisGestion.trim() : "",
+      honorairesProfessionnels: locatifActif ? locatifHonorairesProfessionnels.trim() : "",
+      fraisBancaires: locatifActif ? locatifFraisBancaires.trim() : "",
+      autresDepenses: locatifActif ? locatifAutresDepenses.trim() : "",
+      autresDepensesDescription: locatifActif ? locatifAutresDepensesDescription.trim() : "",
+
+      renovationsImportantes: locatifActif ? locatifRenovationsImportantes : undefined,
+      detailsRenovations:
+        locatifActif && locatifRenovationsImportantes === true ? locatifDetailsRenovations.trim() : "",
+      achatsEquipements: locatifActif ? locatifAchatsEquipements : undefined,
+      detailsEquipements:
+        locatifActif && locatifAchatsEquipements === true ? locatifDetailsEquipements.trim() : "",
     },
     questionsGenerales: {
       habiteSeulTouteAnnee: habiteSeulTouteAnnee as any,
@@ -626,11 +795,84 @@ const draftData: Formdata = useMemo(() => {
   anneeImposition,
   taActif,
   taNomEntreprise,
+  taDescriptionActivite,
+  taDateDebutActivite,
   taRevenus,
+  taInscritTPS,
+  taInscritTVQ,
+  taNumeroTPS,
+  taNumeroTVQ,
   taDepenses,
+  taPublicite,
+  taRepasRepresentation,
+  taAssurances,
+  taInteretsFraisBancaires,
+  taFraisBureau,
+  taFournitures,
+  taHonorairesProfessionnels,
+  taTelephoneInternet,
+  taSousTraitance,
+  taSalaires,
+  taLoyers,
+  taEntretienReparations,
+  taDeplacements,
+  taAutresDepenses,
+  taAutresDepensesDescription,
+  taUtiliseVehicule,
+  taKmTotal,
+  taKmAffaires,
+  taCarburant,
+  taAssuranceAuto,
+  taImmatriculation,
+  taEntretienAuto,
+  taInteretsAuto,
+  taLocationAuto,
+  taBureauDomicile,
+  taSuperficieBureau,
+  taSuperficieResidence,
+  taLoyerResidence,
+  taInteretsHypothecaires,
+  taTaxesMunicipales,
+  taAssuranceHabitation,
+  taElectriciteChauffage,
+  taEntretienResidence,
+  taEmployes,
+  taSousTraitants,
+  taAchatsEquipements,
+  taDetailsEquipements,
   locatifActif,
+  locatifAdresse,
+  locatifVille,
+  locatifProvince,
+  locatifCodePostal,
+  locatifTypeImmeuble,
+  locatifNombreUnites,
+  locatifPourcentagePropriete,
+  locatifCoproprietaires,
+  locatifDetailsCoproprietaires,
+  locatifHabiteImmeuble,
+  locatifPourcentagePersonnel,
+  locatifDateAcquisition,
   locatifRevenus,
   locatifDepenses,
+  locatifTaxesMunicipales,
+  locatifTaxesScolaires,
+  locatifAssurances,
+  locatifInteretsHypothecaires,
+  locatifEntretienReparations,
+  locatifElectricite,
+  locatifChauffage,
+  locatifEau,
+  locatifPublicite,
+  locatifFraisGestion,
+  locatifHonorairesProfessionnels,
+  locatifFraisBancaires,
+  locatifAutresDepenses,
+  locatifAutresDepensesDescription,
+  locatifRenovationsImportantes,
+  locatifDetailsRenovations,
+  locatifAchatsEquipements,
+  locatifDetailsEquipements,
   vExactitude,
   vDossierComplet,
   vFraisVariables,
@@ -1335,16 +1577,93 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
     setAnneeImposition(q.anneeImposition);
   }
 
-  const ta = (form as any)?.travailleurAutonome ?? {};
+  const ta = form?.travailleurAutonome ?? {};
   setTaActif(!!ta.actif);
   setTaNomEntreprise(ta.nomEntreprise ?? "");
+  setTaDescriptionActivite(ta.descriptionActivite ?? "");
+  setTaDateDebutActivite(ta.dateDebutActivite ?? "");
   setTaRevenus(ta.revenus ?? "");
+  setTaInscritTPS(typeof ta.inscritTPS === "boolean" ? ta.inscritTPS : undefined);
+  setTaInscritTVQ(typeof ta.inscritTVQ === "boolean" ? ta.inscritTVQ : undefined);
+  setTaNumeroTPS(ta.numeroTPS ?? "");
+  setTaNumeroTVQ(ta.numeroTVQ ?? "");
   setTaDepenses(ta.depenses ?? "");
+  setTaPublicite(ta.publicite ?? "");
+  setTaRepasRepresentation(ta.repasRepresentation ?? "");
+  setTaAssurances(ta.assurances ?? "");
+  setTaInteretsFraisBancaires(ta.interetsFraisBancaires ?? "");
+  setTaFraisBureau(ta.fraisBureau ?? "");
+  setTaFournitures(ta.fournitures ?? "");
+  setTaHonorairesProfessionnels(ta.honorairesProfessionnels ?? "");
+  setTaTelephoneInternet(ta.telephoneInternet ?? "");
+  setTaSousTraitance(ta.sousTraitance ?? "");
+  setTaSalaires(ta.salaires ?? "");
+  setTaLoyers(ta.loyers ?? "");
+  setTaEntretienReparations(ta.entretienReparations ?? "");
+  setTaDeplacements(ta.deplacements ?? "");
+  setTaAutresDepenses(ta.autresDepenses ?? "");
+  setTaAutresDepensesDescription(ta.autresDepensesDescription ?? "");
+  setTaUtiliseVehicule(typeof ta.utiliseVehicule === "boolean" ? ta.utiliseVehicule : undefined);
+  setTaKmTotal(ta.kmTotal ?? "");
+  setTaKmAffaires(ta.kmAffaires ?? "");
+  setTaCarburant(ta.carburant ?? "");
+  setTaAssuranceAuto(ta.assuranceAuto ?? "");
+  setTaImmatriculation(ta.immatriculation ?? "");
+  setTaEntretienAuto(ta.entretienAuto ?? "");
+  setTaInteretsAuto(ta.interetsAuto ?? "");
+  setTaLocationAuto(ta.locationAuto ?? "");
+  setTaBureauDomicile(typeof ta.bureauDomicile === "boolean" ? ta.bureauDomicile : undefined);
+  setTaSuperficieBureau(ta.superficieBureau ?? "");
+  setTaSuperficieResidence(ta.superficieResidence ?? "");
+  setTaLoyerResidence(ta.loyerResidence ?? "");
+  setTaInteretsHypothecaires(ta.interetsHypothecaires ?? "");
+  setTaTaxesMunicipales(ta.taxesMunicipales ?? "");
+  setTaAssuranceHabitation(ta.assuranceHabitation ?? "");
+  setTaElectriciteChauffage(ta.electriciteChauffage ?? "");
+  setTaEntretienResidence(ta.entretienResidence ?? "");
+  setTaEmployes(typeof ta.employes === "boolean" ? ta.employes : undefined);
+  setTaSousTraitants(typeof ta.sousTraitants === "boolean" ? ta.sousTraitants : undefined);
+  setTaAchatsEquipements(typeof ta.achatsEquipements === "boolean" ? ta.achatsEquipements : undefined);
+  setTaDetailsEquipements(ta.detailsEquipements ?? "");
 
-  const loc = (form as any)?.revenusLocatifs ?? {};
-setLocatifActif(!!loc.actif);
-setLocatifRevenus(loc.revenus ?? "");
-setLocatifDepenses(loc.depenses ?? "");
+  const loc = form?.revenusLocatifs ?? {};
+  setLocatifActif(!!loc.actif);
+  setLocatifAdresse(loc.adresse ?? "");
+  setLocatifVille(loc.ville ?? "");
+  setLocatifProvince(loc.province ?? "QC");
+  setLocatifCodePostal(loc.codePostal ? formatPostalInput(loc.codePostal) : "");
+  setLocatifTypeImmeuble(loc.typeImmeuble ?? "");
+  setLocatifNombreUnites(loc.nombreUnites ?? "");
+  setLocatifPourcentagePropriete(loc.pourcentagePropriete ?? "");
+  setLocatifCoproprietaires(typeof loc.coproprietaires === "boolean" ? loc.coproprietaires : undefined);
+  setLocatifDetailsCoproprietaires(loc.detailsCoproprietaires ?? "");
+  setLocatifHabiteImmeuble(typeof loc.habiteImmeuble === "boolean" ? loc.habiteImmeuble : undefined);
+  setLocatifPourcentagePersonnel(loc.pourcentagePersonnel ?? "");
+  setLocatifDateAcquisition(loc.dateAcquisition ?? "");
+  setLocatifRevenus(loc.revenus ?? "");
+  setLocatifDepenses(loc.depenses ?? "");
+  setLocatifTaxesMunicipales(loc.taxesMunicipales ?? "");
+  setLocatifTaxesScolaires(loc.taxesScolaires ?? "");
+  setLocatifAssurances(loc.assurances ?? "");
+  setLocatifInteretsHypothecaires(loc.interetsHypothecaires ?? "");
+  setLocatifEntretienReparations(loc.entretienReparations ?? "");
+  setLocatifElectricite(loc.electricite ?? "");
+  setLocatifChauffage(loc.chauffage ?? "");
+  setLocatifEau(loc.eau ?? "");
+  setLocatifPublicite(loc.publicite ?? "");
+  setLocatifFraisGestion(loc.fraisGestion ?? "");
+  setLocatifHonorairesProfessionnels(loc.honorairesProfessionnels ?? "");
+  setLocatifFraisBancaires(loc.fraisBancaires ?? "");
+  setLocatifAutresDepenses(loc.autresDepenses ?? "");
+  setLocatifAutresDepensesDescription(loc.autresDepensesDescription ?? "");
+  setLocatifRenovationsImportantes(
+    typeof loc.renovationsImportantes === "boolean" ? loc.renovationsImportantes : undefined
+  );
+  setLocatifDetailsRenovations(loc.detailsRenovations ?? "");
+  setLocatifAchatsEquipements(
+    typeof loc.achatsEquipements === "boolean" ? loc.achatsEquipements : undefined
+  );
+  setLocatifDetailsEquipements(loc.detailsEquipements ?? "");
 
   const v = form?.validations ?? {};
   setVExactitude(!!v.exactitudeInfo);
@@ -1659,19 +1978,165 @@ return (
   setActif={setTaActif}
   nomEntreprise={taNomEntreprise}
   setNomEntreprise={setTaNomEntreprise}
+  descriptionActivite={taDescriptionActivite}
+  setDescriptionActivite={setTaDescriptionActivite}
+  dateDebutActivite={taDateDebutActivite}
+  setDateDebutActivite={setTaDateDebutActivite}
   revenus={taRevenus}
   setRevenus={setTaRevenus}
+  inscritTPS={taInscritTPS}
+  setInscritTPS={setTaInscritTPS}
+  inscritTVQ={taInscritTVQ}
+  setInscritTVQ={setTaInscritTVQ}
+  numeroTPS={taNumeroTPS}
+  setNumeroTPS={setTaNumeroTPS}
+  numeroTVQ={taNumeroTVQ}
+  setNumeroTVQ={setTaNumeroTVQ}
   depenses={taDepenses}
   setDepenses={setTaDepenses}
+  publicite={taPublicite}
+  setPublicite={setTaPublicite}
+  repasRepresentation={taRepasRepresentation}
+  setRepasRepresentation={setTaRepasRepresentation}
+  assurances={taAssurances}
+  setAssurances={setTaAssurances}
+  interetsFraisBancaires={taInteretsFraisBancaires}
+  setInteretsFraisBancaires={setTaInteretsFraisBancaires}
+  fraisBureau={taFraisBureau}
+  setFraisBureau={setTaFraisBureau}
+  fournitures={taFournitures}
+  setFournitures={setTaFournitures}
+  honorairesProfessionnels={taHonorairesProfessionnels}
+  setHonorairesProfessionnels={setTaHonorairesProfessionnels}
+  telephoneInternet={taTelephoneInternet}
+  setTelephoneInternet={setTaTelephoneInternet}
+  sousTraitance={taSousTraitance}
+  setSousTraitance={setTaSousTraitance}
+  salaires={taSalaires}
+  setSalaires={setTaSalaires}
+  loyers={taLoyers}
+  setLoyers={setTaLoyers}
+  entretienReparations={taEntretienReparations}
+  setEntretienReparations={setTaEntretienReparations}
+  deplacements={taDeplacements}
+  setDeplacements={setTaDeplacements}
+  autresDepenses={taAutresDepenses}
+  setAutresDepenses={setTaAutresDepenses}
+  autresDepensesDescription={taAutresDepensesDescription}
+  setAutresDepensesDescription={setTaAutresDepensesDescription}
+  utiliseVehicule={taUtiliseVehicule}
+  setUtiliseVehicule={setTaUtiliseVehicule}
+  kmTotal={taKmTotal}
+  setKmTotal={setTaKmTotal}
+  kmAffaires={taKmAffaires}
+  setKmAffaires={setTaKmAffaires}
+  carburant={taCarburant}
+  setCarburant={setTaCarburant}
+  assuranceAuto={taAssuranceAuto}
+  setAssuranceAuto={setTaAssuranceAuto}
+  immatriculation={taImmatriculation}
+  setImmatriculation={setTaImmatriculation}
+  entretienAuto={taEntretienAuto}
+  setEntretienAuto={setTaEntretienAuto}
+  interetsAuto={taInteretsAuto}
+  setInteretsAuto={setTaInteretsAuto}
+  locationAuto={taLocationAuto}
+  setLocationAuto={setTaLocationAuto}
+  bureauDomicile={taBureauDomicile}
+  setBureauDomicile={setTaBureauDomicile}
+  superficieBureau={taSuperficieBureau}
+  setSuperficieBureau={setTaSuperficieBureau}
+  superficieResidence={taSuperficieResidence}
+  setSuperficieResidence={setTaSuperficieResidence}
+  loyerResidence={taLoyerResidence}
+  setLoyerResidence={setTaLoyerResidence}
+  interetsHypothecaires={taInteretsHypothecaires}
+  setInteretsHypothecaires={setTaInteretsHypothecaires}
+  taxesMunicipales={taTaxesMunicipales}
+  setTaxesMunicipales={setTaTaxesMunicipales}
+  assuranceHabitation={taAssuranceHabitation}
+  setAssuranceHabitation={setTaAssuranceHabitation}
+  electriciteChauffage={taElectriciteChauffage}
+  setElectriciteChauffage={setTaElectriciteChauffage}
+  entretienResidence={taEntretienResidence}
+  setEntretienResidence={setTaEntretienResidence}
+  employes={taEmployes}
+  setEmployes={setTaEmployes}
+  sousTraitants={taSousTraitants}
+  setSousTraitants={setTaSousTraitants}
+  achatsEquipements={taAchatsEquipements}
+  setAchatsEquipements={setTaAchatsEquipements}
+  detailsEquipements={taDetailsEquipements}
+  setDetailsEquipements={setTaDetailsEquipements}
 />
 
 <RevenusLocatifsSection
   actif={locatifActif}
   setActif={setLocatifActif}
+  adresse={locatifAdresse}
+  setAdresse={setLocatifAdresse}
+  ville={locatifVille}
+  setVille={setLocatifVille}
+  province={locatifProvince}
+  setProvince={setLocatifProvince}
+  codePostal={locatifCodePostal}
+  setCodePostal={(v: string) => setLocatifCodePostal(formatPostalInput(v))}
+  typeImmeuble={locatifTypeImmeuble}
+  setTypeImmeuble={setLocatifTypeImmeuble}
+  nombreUnites={locatifNombreUnites}
+  setNombreUnites={setLocatifNombreUnites}
+  pourcentagePropriete={locatifPourcentagePropriete}
+  setPourcentagePropriete={setLocatifPourcentagePropriete}
+  coproprietaires={locatifCoproprietaires}
+  setCoproprietaires={setLocatifCoproprietaires}
+  detailsCoproprietaires={locatifDetailsCoproprietaires}
+  setDetailsCoproprietaires={setLocatifDetailsCoproprietaires}
+  habiteImmeuble={locatifHabiteImmeuble}
+  setHabiteImmeuble={setLocatifHabiteImmeuble}
+  pourcentagePersonnel={locatifPourcentagePersonnel}
+  setPourcentagePersonnel={setLocatifPourcentagePersonnel}
+  dateAcquisition={locatifDateAcquisition}
+  setDateAcquisition={setLocatifDateAcquisition}
   revenus={locatifRevenus}
   setRevenus={setLocatifRevenus}
   depenses={locatifDepenses}
   setDepenses={setLocatifDepenses}
+  taxesMunicipales={locatifTaxesMunicipales}
+  setTaxesMunicipales={setLocatifTaxesMunicipales}
+  taxesScolaires={locatifTaxesScolaires}
+  setTaxesScolaires={setLocatifTaxesScolaires}
+  assurances={locatifAssurances}
+  setAssurances={setLocatifAssurances}
+  interetsHypothecaires={locatifInteretsHypothecaires}
+  setInteretsHypothecaires={setLocatifInteretsHypothecaires}
+  entretienReparations={locatifEntretienReparations}
+  setEntretienReparations={setLocatifEntretienReparations}
+  electricite={locatifElectricite}
+  setElectricite={setLocatifElectricite}
+  chauffage={locatifChauffage}
+  setChauffage={setLocatifChauffage}
+  eau={locatifEau}
+  setEau={setLocatifEau}
+  publicite={locatifPublicite}
+  setPublicite={setLocatifPublicite}
+  fraisGestion={locatifFraisGestion}
+  setFraisGestion={setLocatifFraisGestion}
+  honorairesProfessionnels={locatifHonorairesProfessionnels}
+  setHonorairesProfessionnels={setLocatifHonorairesProfessionnels}
+  fraisBancaires={locatifFraisBancaires}
+  setFraisBancaires={setLocatifFraisBancaires}
+  autresDepenses={locatifAutresDepenses}
+  setAutresDepenses={setLocatifAutresDepenses}
+  autresDepensesDescription={locatifAutresDepensesDescription}
+  setAutresDepensesDescription={setLocatifAutresDepensesDescription}
+  renovationsImportantes={locatifRenovationsImportantes}
+  setRenovationsImportantes={setLocatifRenovationsImportantes}
+  detailsRenovations={locatifDetailsRenovations}
+  setDetailsRenovations={setLocatifDetailsRenovations}
+  achatsEquipements={locatifAchatsEquipements}
+  setAchatsEquipements={setLocatifAchatsEquipements}
+  detailsEquipements={locatifDetailsEquipements}
+  setDetailsEquipements={setLocatifDetailsEquipements}
 />
 
 <ConfirmationsSection
