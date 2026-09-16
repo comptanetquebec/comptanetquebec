@@ -1974,6 +1974,7 @@ return (
 />
 
 <TravailleurAutonomeSection
+  lang={lang}
   actif={taActif}
   setActif={setTaActif}
   nomEntreprise={taNomEntreprise}
