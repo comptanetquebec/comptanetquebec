@@ -54,6 +54,13 @@ export default function TenueDeLivresPage() {
   });
 
   const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+
+  const availableYears = Array.from(
+    { length: currentYear - 2020 + 6 },
+    (_, index) => 2020 + index
+  ).reverse();
 
   useEffect(() => {
     let selected: Lang = "fr";
@@ -76,18 +83,36 @@ export default function TenueDeLivresPage() {
       selected = "fr";
     }
 
+    let initialYear = currentYear;
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const yearValue = Number(params.get("year"));
+
+      if (
+        Number.isInteger(yearValue) &&
+        yearValue >= 2020 &&
+        yearValue <= currentYear + 5
+      ) {
+        initialYear = yearValue;
+      }
+    } catch {
+      initialYear = currentYear;
+    }
+
     setLang(selected);
-    void checkAccess(selected);
+    setSelectedYear(initialYear);
+    void checkAccess(selected, initialYear);
   }, []);
 
-  async function loadDashboard(businessId: string) {
+  async function loadDashboard(businessId: string, year: number) {
     /*
      * Tableau de bord de l'année courante.
      *
      * On utilise les transactions CONFIRMÉES seulement.
      */
-    const yearStart = `${currentYear}-01-01`;
-    const yearEnd = `${currentYear}-12-31`;
+    const yearStart = `${year}-01-01`;
+    const yearEnd = `${year}-12-31`;
 
     const {
       data: transactions,
@@ -163,7 +188,7 @@ export default function TenueDeLivresPage() {
     });
   }
 
-  async function checkAccess(selected: Lang) {
+  async function checkAccess(selected: Lang, year: number = selectedYear) {
     try {
       setAccessState("loading");
       setErrorMessage("");
@@ -180,7 +205,7 @@ export default function TenueDeLivresPage() {
         setAccessState("not_authenticated");
 
         const next = encodeURIComponent(
-          `/tenue-de-livres?lang=${selected}`
+          `/tenue-de-livres?lang=${selected}&year=${year}`
         );
 
         window.location.replace(
@@ -245,7 +270,7 @@ export default function TenueDeLivresPage() {
           setAccessState("not_authenticated");
 
           const next = encodeURIComponent(
-            `/tenue-de-livres?lang=${selected}`
+            `/tenue-de-livres?lang=${selected}&year=${year}`
           );
 
           window.location.replace(
@@ -360,7 +385,7 @@ export default function TenueDeLivresPage() {
        */
       if (!business) {
         window.location.replace(
-          `/tenue-de-livres/configuration?lang=${selected}`
+          `/tenue-de-livres/configuration?lang=${selected}&year=${year}`
         );
 
         return;
@@ -369,7 +394,8 @@ export default function TenueDeLivresPage() {
       /*
        * 7. Charger les vrais chiffres Supabase.
        */
-      await loadDashboard(business.id);
+      setBusinessId(business.id);
+      await loadDashboard(business.id, year);
 
       /*
        * 8. Afficher le tableau de bord.
@@ -399,6 +425,31 @@ export default function TenueDeLivresPage() {
     );
   }
 
+  async function changeYear(nextYear: number) {
+    setSelectedYear(nextYear);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("year", String(nextYear));
+    window.history.replaceState({}, "", url.toString());
+
+    if (!businessId) {
+      return;
+    }
+
+    try {
+      setErrorMessage("");
+      await loadDashboard(businessId, nextYear);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue.";
+
+      setErrorMessage(message);
+      setAccessState("error");
+    }
+  }
+
   function money(value: number) {
     const locale =
       lang === "fr"
@@ -423,8 +474,8 @@ export default function TenueDeLivresPage() {
       subtitle:
         "Gérez simplement vos revenus, vos dépenses, vos documents et vos taxes au même endroit.",
 
-      year: `Année ${currentYear}`,
-      summary: `Résumé ${currentYear}`,
+      year: `Année ${selectedYear}`,
+      summary: `Résumé ${selectedYear}`,
 
       dashboard: "Tableau de bord",
 
@@ -503,8 +554,8 @@ export default function TenueDeLivresPage() {
       subtitle:
         "Manage your business income, expenses, documents and taxes in one place.",
 
-      year: `Year ${currentYear}`,
-      summary: `Summary ${currentYear}`,
+      year: `Year ${selectedYear}`,
+      summary: `Summary ${selectedYear}`,
 
       dashboard: "Dashboard",
 
@@ -589,8 +640,8 @@ export default function TenueDeLivresPage() {
       subtitle:
         "Gestione sus ingresos, gastos, documentos e impuestos en un solo lugar.",
 
-      year: `Año ${currentYear}`,
-      summary: `Resumen ${currentYear}`,
+      year: `Año ${selectedYear}`,
+      summary: `Resumen ${selectedYear}`,
 
       dashboard: "Panel",
 
@@ -899,7 +950,7 @@ export default function TenueDeLivresPage() {
           <button
             type="button"
             onClick={() =>
-              void checkAccess(lang)
+              void checkAccess(lang, selectedYear)
             }
             style={{
               border: 0,
@@ -1130,19 +1181,52 @@ export default function TenueDeLivresPage() {
               </p>
             </div>
 
-            <div
+            <label
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
                 background: "#eef6ff",
-                border:
-                  "1px solid #cfe3ff",
+                border: "1px solid #cfe3ff",
                 color: "#004aad",
-                padding: "10px 14px",
+                padding: "8px 10px 8px 14px",
                 borderRadius: 10,
                 fontWeight: 900,
               }}
             >
-              {text.year}
-            </div>
+              <span>
+                {lang === "fr"
+                  ? "Année"
+                  : lang === "es"
+                    ? "Año"
+                    : "Year"}
+              </span>
+
+              <select
+                value={selectedYear}
+                onChange={(event) =>
+                  void changeYear(Number(event.target.value))
+                }
+                aria-label={text.year}
+                style={{
+                  border: "1px solid #b9d5fb",
+                  background: "#ffffff",
+                  color: "#004aad",
+                  borderRadius: 8,
+                  padding: "7px 30px 7px 10px",
+                  fontWeight: 900,
+                  fontSize: 16,
+                  cursor: "pointer",
+                  outline: "none",
+                }}
+              >
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </section>
 
@@ -1172,14 +1256,14 @@ export default function TenueDeLivresPage() {
               title={text.incomeTotal}
               value={money(totals.income)}
               icon="💰"
-              href={`/tenue-de-livres/revenus?lang=${lang}`}
+              href={`/tenue-de-livres/revenus?lang=${lang}&year=${selectedYear}`}
             />
 
             <SummaryCard
               title={text.expensesTotal}
               value={money(totals.expenses)}
               icon="🧾"
-              href={`/tenue-de-livres/depenses?lang=${lang}`}
+              href={`/tenue-de-livres/depenses?lang=${lang}&year=${selectedYear}`}
             />
 
             <SummaryCard
@@ -1192,7 +1276,7 @@ export default function TenueDeLivresPage() {
               title={text.documentsTotal}
               value={String(totals.documents)}
               icon="📁"
-              href={`/tenue-de-livres/documents?lang=${lang}`}
+              href={`/tenue-de-livres/documents?lang=${lang}&year=${selectedYear}`}
             />
           </div>
         </section>
@@ -1218,7 +1302,7 @@ export default function TenueDeLivresPage() {
             {cards.map((card) => (
               <Link
                 key={card.href}
-                href={`${card.href}?lang=${lang}`}
+                href={`${card.href}?lang=${lang}&year=${selectedYear}`}
                 style={{
                   background: "#ffffff",
                   border:
@@ -1658,5 +1742,3 @@ function SummaryCard({
     >
       {card}
     </Link>
-  );
-}
