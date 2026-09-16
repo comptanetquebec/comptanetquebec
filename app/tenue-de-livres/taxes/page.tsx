@@ -784,16 +784,17 @@ export default function TaxesPage() {
             {!registered && subscription && (
               <button
                 type="button"
-                disabled={changingPlan || taxPlanActive}
-                onClick={() => void changePlan("tax")}
+                onClick={() => {
+                  window.location.href =
+                    `/tenue-de-livres/configuration?lang=${lang}&year=${selectedYear}&activateTaxes=1`;
+                }}
                 style={{
                   ...heroButtonStyle,
-                  opacity: changingPlan || taxPlanActive ? 0.65 : 1,
-                  cursor:
-                    changingPlan || taxPlanActive ? "default" : "pointer",
+                  opacity: 1,
+                  cursor: "pointer",
                 }}
               >
-                {changingPlan ? text.planChanging : text.upgradeButton}
+                {text.upgradeButton}
               </button>
             )}
 
