@@ -6,6 +6,14 @@ import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
 type FilingFrequency = "monthly" | "quarterly" | "annual";
+type Plan = "essential" | "tax";
+
+type SubscriptionInfo = {
+  plan: Plan;
+  status: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+};
 
 type Business = {
   id: string;
@@ -107,6 +115,9 @@ export default function TaxesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [error, setError] = useState("");
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [planMessage, setPlanMessage] = useState("");
 
   const text = {
     fr: {
@@ -152,6 +163,22 @@ export default function TaxesPage() {
       loading: "Chargement de la TPS/TVQ…",
       error: "Impossible de charger la TPS/TVQ.",
       profile: "Profil fiscal",
+      plan: "Forfait",
+      essentialPlan: "Essentiel",
+      taxPlan: "Taxes",
+      upgradeTitle: "Le module TPS/TVQ est inclus dans le forfait Taxes",
+      upgradeText:
+        "Passez au forfait Taxes pour accéder au calcul détaillé de la TPS/TVQ et au suivi des remises.",
+      upgradeButton: "Passer au forfait Taxes",
+      downgradeButton: "Passer au forfait Essentiel",
+      downgradeConfirm:
+        "Votre forfait Taxes restera actif jusqu’à la fin de la période déjà payée. Voulez-vous programmer le passage au forfait Essentiel?",
+      upgradeConfirm:
+        "Le passage au forfait Taxes sera effectué maintenant. Stripe calculera le prorata applicable. Continuer?",
+      planChanging: "Modification du forfait…",
+      upgradeSuccess: "Votre forfait Taxes est maintenant actif.",
+      downgradeSuccess: "Le passage au forfait Essentiel est programmé pour le",
+      planError: "Impossible de modifier le forfait.",
       calculationNote:
         "Calcul de suivi basé sur les transactions confirmées enregistrées dans ComptaNet Québec.",
       eligibilityNote:
@@ -202,6 +229,22 @@ export default function TaxesPage() {
       loading: "Loading GST/QST…",
       error: "Unable to load GST/QST.",
       profile: "Tax profile",
+      plan: "Plan",
+      essentialPlan: "Essential",
+      taxPlan: "Tax",
+      upgradeTitle: "The GST/QST module is included with the Tax plan",
+      upgradeText:
+        "Upgrade to the Tax plan to access detailed GST/QST calculations and remittance tracking.",
+      upgradeButton: "Upgrade to Tax plan",
+      downgradeButton: "Switch to Essential plan",
+      downgradeConfirm:
+        "Your Tax plan will remain active until the end of the period already paid. Schedule the switch to Essential?",
+      upgradeConfirm:
+        "The Tax plan upgrade will take effect now. Stripe will calculate the applicable proration. Continue?",
+      planChanging: "Changing plan…",
+      upgradeSuccess: "Your Tax plan is now active.",
+      downgradeSuccess: "The switch to Essential is scheduled for",
+      planError: "Unable to change plan.",
       calculationNote:
         "Tracking calculation based on confirmed transactions recorded in ComptaNet Québec.",
       eligibilityNote:
@@ -252,6 +295,22 @@ export default function TaxesPage() {
       loading: "Cargando GST/QST…",
       error: "No se puede cargar GST/QST.",
       profile: "Perfil fiscal",
+      plan: "Plan",
+      essentialPlan: "Esencial",
+      taxPlan: "Impuestos",
+      upgradeTitle: "El módulo GST/QST está incluido en el plan Impuestos",
+      upgradeText:
+        "Cambie al plan Impuestos para acceder al cálculo detallado de GST/QST y al seguimiento de remesas.",
+      upgradeButton: "Cambiar al plan Impuestos",
+      downgradeButton: "Cambiar al plan Esencial",
+      downgradeConfirm:
+        "Su plan Impuestos seguirá activo hasta el final del período ya pagado. ¿Programar el cambio al plan Esencial?",
+      upgradeConfirm:
+        "El cambio al plan Impuestos se realizará ahora. Stripe calculará el prorrateo aplicable. ¿Continuar?",
+      planChanging: "Modificando el plan…",
+      upgradeSuccess: "Su plan Impuestos ya está activo.",
+      downgradeSuccess: "El cambio al plan Esencial está programado para el",
+      planError: "No se puede modificar el plan.",
       calculationNote:
         "Cálculo de seguimiento basado en transacciones confirmadas registradas en ComptaNet Québec.",
       eligibilityNote:
@@ -263,6 +322,7 @@ export default function TaxesPage() {
 
   const frequency = normalizeFrequency(business?.filing_frequency ?? null);
   const registered = isRegistered(business?.tax_status ?? null);
+  const taxPlanActive = subscription?.plan === "tax";
 
   const availableYears = useMemo(
     () =>
@@ -412,10 +472,134 @@ export default function TaxesPage() {
       }
 
       setBusiness(data as Business);
+      await loadSubscription();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : text.error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSubscription() {
+    const response = await fetch(
+      "/api/tenue-de-livres/subscription-status",
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !payload?.active || !payload?.subscription) {
+      setSubscription(null);
+      return;
+    }
+
+    const plan = payload.subscription.plan;
+
+    if (plan !== "essential" && plan !== "tax") {
+      setSubscription(null);
+      return;
+    }
+
+    setSubscription({
+      plan,
+      status: String(payload.subscription.status ?? ""),
+      currentPeriodEnd: payload.subscription.currentPeriodEnd ?? null,
+      cancelAtPeriodEnd: Boolean(payload.subscription.cancelAtPeriodEnd),
+    });
+  }
+
+  async function changePlan(targetPlan: Plan) {
+    if (changingPlan) return;
+
+    const confirmation =
+      targetPlan === "tax"
+        ? text.upgradeConfirm
+        : text.downgradeConfirm;
+
+    if (!window.confirm(confirmation)) {
+      return;
+    }
+
+    try {
+      setChangingPlan(true);
+      setPlanMessage("");
+      setError("");
+
+      const response = await fetch(
+        "/api/tenue-de-livres/change-plan",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            plan: targetPlan,
+          }),
+        }
+      );
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || text.planError);
+      }
+
+      if (payload.action === "upgraded") {
+        setPlanMessage(text.upgradeSuccess);
+
+        /*
+         * Le webhook Stripe met Supabase à jour.
+         * On recharge aussi l'état serveur pour refléter
+         * le nouveau forfait dans l'interface.
+         */
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+        await loadSubscription();
+        return;
+      }
+
+      if (payload.action === "downgrade_scheduled") {
+        const effectiveAt =
+          typeof payload.effectiveAt === "string"
+            ? payload.effectiveAt
+            : null;
+
+        const formattedDate = effectiveAt
+          ? new Intl.DateTimeFormat(
+              lang === "fr" ? "fr-CA" : lang === "es" ? "es-CA" : "en-CA",
+              {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }
+            ).format(new Date(effectiveAt))
+          : "";
+
+        setPlanMessage(
+          formattedDate
+            ? `${text.downgradeSuccess} ${formattedDate}.`
+            : `${text.downgradeSuccess}.`
+        );
+
+        /*
+         * Le plan courant demeure Taxes jusqu'à
+         * l'échéance. On ne le remplace donc pas
+         * visuellement par Essential tout de suite.
+         */
+        return;
+      }
+
+      await loadSubscription();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : text.planError
+      );
+    } finally {
+      setChangingPlan(false);
     }
   }
 
@@ -626,6 +810,20 @@ export default function TaxesPage() {
           </div>
 
           <div style={profileBadgesStyle}>
+            {subscription && (
+              <span
+                style={{
+                  ...badgeStyle,
+                  background: taxPlanActive ? "#ecfdf5" : "#eef6ff",
+                  color: taxPlanActive ? "#047857" : "#004aad",
+                  borderColor: taxPlanActive ? "#a7f3d0" : "#cfe3ff",
+                }}
+              >
+                {text.plan}:{" "}
+                {taxPlanActive ? text.taxPlan : text.essentialPlan}
+              </span>
+            )}
+
             <span
               style={{
                 ...badgeStyle,
@@ -647,6 +845,55 @@ export default function TaxesPage() {
             </span>
           </div>
         </section>
+
+        {subscription && (
+          <section
+            style={{
+              ...planStyle,
+              borderColor: taxPlanActive ? "#a7f3d0" : "#bfdbfe",
+              background: taxPlanActive ? "#f0fdf4" : "#eff6ff",
+            }}
+          >
+            <div style={{ flex: "1 1 520px" }}>
+              <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 5 }}>
+                {taxPlanActive
+                  ? `${text.plan}: ${text.taxPlan}`
+                  : text.upgradeTitle}
+              </div>
+
+              <div style={{ lineHeight: 1.55, color: "#475569" }}>
+                {taxPlanActive
+                  ? text.subtitle
+                  : text.upgradeText}
+              </div>
+
+              {planMessage && (
+                <div style={planMessageStyle}>{planMessage}</div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={changingPlan}
+              onClick={() =>
+                void changePlan(taxPlanActive ? "essential" : "tax")
+              }
+              style={{
+                ...planButtonStyle,
+                opacity: changingPlan ? 0.65 : 1,
+                cursor: changingPlan ? "wait" : "pointer",
+                background: taxPlanActive ? "#ffffff" : "#004aad",
+                color: taxPlanActive ? "#004aad" : "#ffffff",
+              }}
+            >
+              {changingPlan
+                ? text.planChanging
+                : taxPlanActive
+                  ? text.downgradeButton
+                  : text.upgradeButton}
+            </button>
+          </section>
+        )}
 
         {!registered && (
           <section style={warningStyle}>
@@ -685,7 +932,7 @@ export default function TaxesPage() {
           />
         </section>
 
-        {registered && (
+        {registered && taxPlanActive && (
           <>
             <section style={taxGridStyle}>
               <TaxBox
@@ -1037,6 +1284,33 @@ const warningStyle: React.CSSProperties = {
   borderRadius: 14,
   padding: 17,
   marginBottom: 18,
+};
+
+const planStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 18,
+  flexWrap: "wrap",
+  border: "1px solid #bfdbfe",
+  borderRadius: 14,
+  padding: 18,
+  marginBottom: 18,
+};
+
+const planButtonStyle: React.CSSProperties = {
+  border: "1px solid #004aad",
+  borderRadius: 10,
+  padding: "11px 16px",
+  fontWeight: 900,
+  fontSize: 14,
+  whiteSpace: "nowrap",
+};
+
+const planMessageStyle: React.CSSProperties = {
+  marginTop: 10,
+  fontWeight: 900,
+  color: "#047857",
 };
 
 const summaryGridStyle: React.CSSProperties = {
