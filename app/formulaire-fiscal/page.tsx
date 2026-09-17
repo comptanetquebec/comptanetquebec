@@ -1799,6 +1799,227 @@ const goToDepotDocuments = useCallback(async () => {
   }
 }, [canContinue, saveDraft, fidDisplay, loadDocs, router, lang, type, t]);
 
+ /* =========================== Vue admin compacte =========================== */
+const adminHasValue = (value: unknown) => {
+  if (typeof value === "boolean" || typeof value === "number") return true;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== null && value !== undefined;
+};
+
+const adminYesNo = (value: boolean | undefined) =>
+  value === true ? "Oui" : value === false ? "Non" : "";
+
+const adminRows = (rows: Array<[string, unknown]>) =>
+  rows.filter(([, value]) => adminHasValue(value));
+
+function AdminSection({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: Array<[string, unknown]>;
+}) {
+  if (!rows.length) return null;
+
+  return (
+    <section className="ff-card" style={{ padding: 18, marginBottom: 16 }}>
+      <h2 style={{ marginTop: 0, marginBottom: 14 }}>{title}</h2>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: 10,
+        }}
+      >
+        {rows.map(([label, value]) => (
+          <div
+            key={label}
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 10,
+              padding: 12,
+              background: "#fff",
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#64748b", marginBottom: 4 }}>
+              {label}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+              {String(value)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const adminClientRows = adminRows([
+  ["Année d’imposition", anneeImposition], ["Prénom", prenom], ["Nom", nom],
+  ["NAS", nas], ["Date de naissance", dob], ["État civil", etatCivil],
+  ["Ancien état civil", etatCivilChange ? ancienEtatCivil : ""],
+  ["Date du changement d’état civil", etatCivilChange ? dateChangementEtatCivil : ""],
+  ["Téléphone", tel], ["Cellulaire", telCell], ["Courriel", courriel],
+  ["Adresse", adresse], ["Appartement", app], ["Ville", ville], ["Province", province],
+  ["Code postal", codePostal], ["Handicap / déficience", adminYesNo(handicap)],
+  ["T2201", handicap === true ? t2201Statut : ""],
+]);
+
+const adminSpouseRows = aUnConjoint ? adminRows([
+  ["Prénom", prenomConjoint], ["Nom", nomConjoint], ["NAS", nasConjoint],
+  ["Date de naissance", dobConjoint], ["Téléphone", telConjoint],
+  ["Cellulaire", telCellConjoint], ["Courriel", courrielConjoint],
+  ["Revenu net approximatif", revenuNetConjoint],
+  ["Adresse identique", adresseConjointeIdentique ? "Oui" : "Non"],
+  ["Adresse", adresseConjointeIdentique ? "" : adresseConjoint],
+  ["Appartement", adresseConjointeIdentique ? "" : appConjoint],
+  ["Ville", adresseConjointeIdentique ? "" : villeConjoint],
+  ["Province", adresseConjointeIdentique ? "" : provinceConjoint],
+  ["Code postal", adresseConjointeIdentique ? "" : codePostalConjoint],
+  ["Handicap / déficience", adminYesNo(handicapConjoint)],
+  ["T2201", handicapConjoint === true ? t2201StatutConjoint : ""],
+]) : [];
+
+const adminMedsRows = adminRows([
+  ["Assurance médicaments — client", assuranceMedsClient],
+  ["Périodes — client", assuranceMedsClientPeriodes.filter((p) => p.debut || p.fin).map((p) => `${p.debut || "?"} → ${p.fin || "?"}`).join("\n")],
+  ["Assurance médicaments — conjoint", aUnConjoint ? assuranceMedsConjoint : ""],
+  ["Périodes — conjoint", aUnConjoint ? assuranceMedsConjointPeriodes.filter((p) => p.debut || p.fin).map((p) => `${p.debut || "?"} → ${p.fin || "?"}`).join("\n") : ""],
+]);
+
+const adminQuestionRows = adminRows([
+  ["Habite seul(e) toute l’année", habiteSeulTouteAnnee],
+  ["Nombre de personnes au 31/12", nbPersonnesMaison3112],
+  ["Biens à l’étranger > 100 000 $", biensEtranger100k],
+  ["Citoyen(ne) canadien(ne)", citoyenCanadien], ["Non-résident(e)", nonResident],
+  ["Maison achetée ou vendue", maisonAcheteeOuVendue],
+  ["Appel d’un technicien demandé", appelerTechnicien], ["Copie d’impôts", copieImpots],
+  ["Avis de cotisation", avisCotisation], ["Première déclaration ARC", premiereDeclarationARC],
+  ["Première déclaration Québec", premiereDeclarationQuebec], ["Cryptoactifs", cryptoactifs],
+]);
+
+const adminTaRows = taActif ? adminRows([
+  ["Nom de l’entreprise", taNomEntreprise], ["Description de l’activité", taDescriptionActivite],
+  ["Date de début", taDateDebutActivite], ["Revenus", taRevenus],
+  ["Inscrit TPS", adminYesNo(taInscritTPS)], ["Numéro TPS", taInscritTPS === true ? taNumeroTPS : ""],
+  ["Inscrit TVQ", adminYesNo(taInscritTVQ)], ["Numéro TVQ", taInscritTVQ === true ? taNumeroTVQ : ""],
+  ["Dépenses", taDepenses], ["Publicité", taPublicite], ["Repas / représentation", taRepasRepresentation],
+  ["Assurances", taAssurances], ["Intérêts / frais bancaires", taInteretsFraisBancaires],
+  ["Frais de bureau", taFraisBureau], ["Fournitures", taFournitures],
+  ["Honoraires professionnels", taHonorairesProfessionnels], ["Téléphone / Internet", taTelephoneInternet],
+  ["Sous-traitance", taSousTraitance], ["Salaires", taSalaires], ["Loyers", taLoyers],
+  ["Entretien / réparations", taEntretienReparations], ["Déplacements", taDeplacements],
+  ["Autres dépenses", taAutresDepenses], ["Description autres dépenses", taAutresDepensesDescription],
+  ["Utilise un véhicule", adminYesNo(taUtiliseVehicule)],
+  ["Kilométrage total", taUtiliseVehicule === true ? taKmTotal : ""],
+  ["Kilométrage affaires", taUtiliseVehicule === true ? taKmAffaires : ""],
+  ["Carburant", taUtiliseVehicule === true ? taCarburant : ""],
+  ["Assurance auto", taUtiliseVehicule === true ? taAssuranceAuto : ""],
+  ["Immatriculation", taUtiliseVehicule === true ? taImmatriculation : ""],
+  ["Entretien auto", taUtiliseVehicule === true ? taEntretienAuto : ""],
+  ["Intérêts auto", taUtiliseVehicule === true ? taInteretsAuto : ""],
+  ["Location auto", taUtiliseVehicule === true ? taLocationAuto : ""],
+  ["Bureau à domicile", adminYesNo(taBureauDomicile)],
+  ["Superficie bureau", taBureauDomicile === true ? taSuperficieBureau : ""],
+  ["Superficie résidence", taBureauDomicile === true ? taSuperficieResidence : ""],
+  ["Loyer résidence", taBureauDomicile === true ? taLoyerResidence : ""],
+  ["Intérêts hypothécaires", taBureauDomicile === true ? taInteretsHypothecaires : ""],
+  ["Taxes municipales", taBureauDomicile === true ? taTaxesMunicipales : ""],
+  ["Assurance habitation", taBureauDomicile === true ? taAssuranceHabitation : ""],
+  ["Électricité / chauffage", taBureauDomicile === true ? taElectriciteChauffage : ""],
+  ["Entretien résidence", taBureauDomicile === true ? taEntretienResidence : ""],
+  ["Employés", adminYesNo(taEmployes)], ["Sous-traitants", adminYesNo(taSousTraitants)],
+  ["Achats d’équipements", adminYesNo(taAchatsEquipements)],
+  ["Détails équipements", taAchatsEquipements === true ? taDetailsEquipements : ""],
+]) : [];
+
+const adminLocatifRows = locatifActif ? adminRows([
+  ["Adresse", locatifAdresse], ["Ville", locatifVille], ["Province", locatifProvince],
+  ["Code postal", locatifCodePostal], ["Type d’immeuble", locatifTypeImmeuble],
+  ["Nombre d’unités", locatifNombreUnites], ["Pourcentage de propriété", locatifPourcentagePropriete],
+  ["Copropriétaires", adminYesNo(locatifCoproprietaires)],
+  ["Détails copropriétaires", locatifCoproprietaires === true ? locatifDetailsCoproprietaires : ""],
+  ["Habite l’immeuble", adminYesNo(locatifHabiteImmeuble)],
+  ["Pourcentage personnel", locatifHabiteImmeuble === true ? locatifPourcentagePersonnel : ""],
+  ["Date d’acquisition", locatifDateAcquisition], ["Revenus", locatifRevenus],
+  ["Dépenses", locatifDepenses], ["Taxes municipales", locatifTaxesMunicipales],
+  ["Taxes scolaires", locatifTaxesScolaires], ["Assurances", locatifAssurances],
+  ["Intérêts hypothécaires", locatifInteretsHypothecaires],
+  ["Entretien / réparations", locatifEntretienReparations], ["Électricité", locatifElectricite],
+  ["Chauffage", locatifChauffage], ["Eau", locatifEau], ["Publicité", locatifPublicite],
+  ["Frais de gestion", locatifFraisGestion], ["Honoraires professionnels", locatifHonorairesProfessionnels],
+  ["Frais bancaires", locatifFraisBancaires], ["Autres dépenses", locatifAutresDepenses],
+  ["Description autres dépenses", locatifAutresDepensesDescription],
+  ["Rénovations importantes", adminYesNo(locatifRenovationsImportantes)],
+  ["Détails rénovations", locatifRenovationsImportantes === true ? locatifDetailsRenovations : ""],
+  ["Achats d’équipements", adminYesNo(locatifAchatsEquipements)],
+  ["Détails équipements", locatifAchatsEquipements === true ? locatifDetailsEquipements : ""],
+]) : [];
+
+const adminDependantsRows = enfants.flatMap((enfant, index) => adminRows([
+  [`Personne ${index + 1} — prénom`, enfant.prenom], [`Personne ${index + 1} — nom`, enfant.nom],
+  [`Personne ${index + 1} — naissance`, enfant.dob], [`Personne ${index + 1} — NAS`, enfant.nas],
+  [`Personne ${index + 1} — sexe`, enfant.sexe],
+  [`Personne ${index + 1} — a travaillé`, adminYesNo(enfant.aTravaille)],
+  [`Personne ${index + 1} — revenu estimé`, enfant.aTravaille === true ? enfant.revenuTravailEstime : ""],
+  [`Personne ${index + 1} — handicap`, adminYesNo(enfant.handicap)],
+  [`Personne ${index + 1} — T2201`, enfant.handicap === true ? enfant.t2201Statut : ""],
+]));
+
+if (adminMode) {
+  return (
+    <main className="ff-bg">
+      <div className="ff-container">
+        <header className="ff-header">
+          <div className="ff-brand">
+            <Image src="/logo-cq.png" alt="ComptaNet Québec" width={120} height={40} priority style={{ height: 40, width: "auto" }} />
+            <div className="ff-brand-text">
+              <strong>ComptaNet Québec</strong>
+              <span>Vue administrateur</span>
+            </div>
+          </div>
+          <button className="ff-btn ff-btn-outline" type="button" onClick={() => router.push("/admin/dossiers")}>
+            ← Retour aux dossiers
+          </button>
+        </header>
+
+        <div className="ff-title">
+          <h1>Dossier fiscal — vue administrateur</h1>
+          <p>Lecture seule. Seules les sections pertinentes et les réponses fournies par le client sont affichées.</p>
+        </div>
+
+        {msg && <div className="ff-card" style={{ padding: 14, marginBottom: 16 }}>{msg}</div>}
+
+        <AdminSection title="Client" rows={adminClientRows} />
+        <AdminSection title="Conjoint" rows={adminSpouseRows} />
+        <AdminSection title="Assurance médicaments" rows={adminMedsRows} />
+        <AdminSection title="Personnes à charge" rows={adminDependantsRows} />
+        <AdminSection title="Questions générales" rows={adminQuestionRows} />
+        {taActif && <AdminSection title="Travailleur autonome" rows={adminTaRows} />}
+        {locatifActif && <AdminSection title="Revenus locatifs" rows={adminLocatifRows} />}
+
+        <section className="ff-card" style={{ padding: 18, marginBottom: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Documents au dossier</h2>
+          {docsLoading ? (
+            <p>Chargement…</p>
+          ) : docs.length === 0 ? (
+            <p>Aucun document.</p>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }}>
+              {docs.map((doc) => (
+                <button key={doc.id} type="button" className="ff-btn ff-btn-outline" onClick={() => void openDoc(doc)} style={{ textAlign: "left" }}>
+                  📄 {doc.original_name}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
+
  /* =========================== RENDER =========================== */
 return (
   <main className="ff-bg">
