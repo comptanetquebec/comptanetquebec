@@ -243,6 +243,14 @@ export async function POST(req: Request) {
            */
           mode: "payment",
 
+          /*
+           * Carte seulement.
+           * Klarna est désactivé.
+           * Stripe Link peut continuer à fonctionner
+           * avec les paiements par carte.
+           */
+          payment_method_types: ["card"],
+
           line_items: [
             {
               price: priceId,
@@ -357,6 +365,14 @@ export async function POST(req: Request) {
          * Abonnement mensuel.
          */
         mode: "subscription",
+
+        /*
+         * Carte seulement.
+         * Klarna est désactivé.
+         * Stripe Link peut continuer à fonctionner
+         * avec les paiements par carte.
+         */
+        payment_method_types: ["card"],
 
         line_items: [
           {
