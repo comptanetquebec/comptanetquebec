@@ -432,9 +432,7 @@ export default function AdminDossiersClient({
         return;
       }
 
-      router.replace(
-        "/espace-client"
-      );
+      router.replace("/");
 
       router.refresh();
     } catch {
