@@ -555,6 +555,8 @@ export default function TenueDeLivresPage() {
       retry: "Réessayer",
       creditsTitle: "Analyses disponibles",
       monthlyCredits: "Forfait mensuel",
+      essentialCurrentPlan: "Forfait Essentiel — 19,99 $ / mois",
+      taxCurrentPlan: "Forfait TPS / TVQ — 29,99 $ / mois",
       monthlyRemaining: "restantes",
       bonusCredits: "Crédits supplémentaires",
       buyCredits: "Besoin de plus d’analyses ?",
@@ -649,6 +651,8 @@ export default function TenueDeLivresPage() {
       retry: "Try again",
       creditsTitle: "Available analyses",
       monthlyCredits: "Monthly plan",
+      essentialCurrentPlan: "Essential plan — $19.99 / month",
+      taxCurrentPlan: "GST / QST plan — $29.99 / month",
       monthlyRemaining: "remaining",
       bonusCredits: "Extra credits",
       buyCredits: "Need more analyses?",
@@ -743,6 +747,8 @@ export default function TenueDeLivresPage() {
       retry: "Intentar de nuevo",
       creditsTitle: "Análisis disponibles",
       monthlyCredits: "Plan mensual",
+      essentialCurrentPlan: "Plan Esencial — 19,99 $ / mes",
+      taxCurrentPlan: "Plan GST / QST — 29,99 $ / mes",
       monthlyRemaining: "disponibles",
       bonusCredits: "Créditos adicionales",
       buyCredits: "¿Necesita más análisis?",
@@ -1319,78 +1325,94 @@ export default function TenueDeLivresPage() {
 
         <section
           style={{
-            marginBottom: 28,
+            marginBottom: 18,
             background: "#ffffff",
             border: "1px solid #dbe5f1",
-            borderRadius: 18,
-            padding: 22,
+            borderRadius: 16,
+            padding: "16px 18px",
           }}
         >
-          <h2 style={{ margin: "0 0 16px", fontSize: 21 }}>
-            {text.creditsTitle}
-          </h2>
-
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               gap: 14,
-              marginBottom: 22,
+              flexWrap: "wrap",
+              marginBottom: 12,
             }}
           >
-            <div
-              style={{
-                border: "1px solid #dbeafe",
-                background: "#f8fbff",
-                borderRadius: 14,
-                padding: 18,
-              }}
-            >
-              <div style={{ color: "#64748b", fontWeight: 800, fontSize: 14 }}>
-                {text.monthlyCredits}
-              </div>
-              <div style={{ fontSize: 27, fontWeight: 900, marginTop: 7 }}>
-                {monthlyUsed} / {monthlyLimit}
-              </div>
-              <div style={{ color: "#004aad", fontWeight: 800, marginTop: 5 }}>
-                {monthlyRemaining} {text.monthlyRemaining}
+            <div>
+              <h2 style={{ margin: "0 0 4px", fontSize: 19 }}>
+                {text.creditsTitle}
+              </h2>
+              <div style={{ color: "#004aad", fontWeight: 900, fontSize: 14 }}>
+                {subscription?.plan === "tax"
+                  ? text.taxCurrentPlan
+                  : text.essentialCurrentPlan}
               </div>
             </div>
 
             <div
               style={{
-                border: "1px solid #dbeafe",
-                background: "#f8fbff",
-                borderRadius: 14,
-                padding: 18,
+                display: "flex",
+                alignItems: "center",
+                gap: 18,
+                flexWrap: "wrap",
               }}
             >
-              <div style={{ color: "#64748b", fontWeight: 800, fontSize: 14 }}>
-                {text.bonusCredits}
+              <div style={{ fontSize: 14 }}>
+                <span style={{ color: "#64748b", fontWeight: 800 }}>
+                  {text.monthlyCredits}:
+                </span>{" "}
+                <strong style={{ fontSize: 17 }}>
+                  {monthlyUsed} / {monthlyLimit}
+                </strong>{" "}
+                <span style={{ color: "#004aad", fontWeight: 800 }}>
+                  — {monthlyRemaining} {text.monthlyRemaining}
+                </span>
               </div>
-              <div style={{ fontSize: 27, fontWeight: 900, marginTop: 7 }}>
-                {bonusCredits}
+
+              <div style={{ fontSize: 14 }}>
+                <span style={{ color: "#64748b", fontWeight: 800 }}>
+                  {text.bonusCredits}:
+                </span>{" "}
+                <strong style={{ fontSize: 17 }}>{bonusCredits}</strong>
               </div>
             </div>
           </div>
-
-          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 5 }}>
-            {text.buyCredits}
-          </div>
-          <p style={{ margin: "0 0 15px", color: "#64748b", lineHeight: 1.5 }}>
-            {text.buyCreditsDesc}
-          </p>
 
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              borderTop: "1px solid #e5edf7",
+              paddingTop: 12,
+              display: "flex",
+              alignItems: "center",
               gap: 12,
+              flexWrap: "wrap",
             }}
           >
-            <CreditCard credits={25} price="4,99 $" lang={lang} buttonText={text.buy} />
-            <CreditCard credits={50} price="7,99 $" lang={lang} buttonText={text.buy} />
-            <CreditCard credits={100} price="14,99 $" lang={lang} buttonText={text.buy} />
+            <div style={{ minWidth: 190, flex: "1 1 220px" }}>
+              <div style={{ fontWeight: 900, fontSize: 15 }}>
+                {text.buyCredits}
+              </div>
+              <div style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>
+                {text.buyCreditsDesc}
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flex: "3 1 620px",
+                flexWrap: "wrap",
+              }}
+            >
+              <CreditCard credits={25} price="4,99 $" lang={lang} buttonText={text.buy} />
+              <CreditCard credits={50} price="7,99 $" lang={lang} buttonText={text.buy} />
+              <CreditCard credits={100} price="14,99 $" lang={lang} buttonText={text.buy} />
+            </div>
           </div>
         </section>
 
@@ -1837,39 +1859,47 @@ function CreditCard({
     <div
       style={{
         border: "1px solid #cfe3ff",
-        borderRadius: 14,
-        padding: 17,
-        background: "#ffffff",
+        borderRadius: 10,
+        padding: "8px 9px",
+        background: "#f8fbff",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flex: "1 1 190px",
+        minWidth: 0,
       }}
     >
-      <div style={{ fontSize: 22, fontWeight: 900, color: "#004aad" }}>
-        +{credits}
-      </div>
-      <div style={{ fontSize: 21, fontWeight: 900, margin: "6px 0 14px" }}>
-        {price}
+      <div style={{ minWidth: 72 }}>
+        <div style={{ fontSize: 17, fontWeight: 900, color: "#004aad" }}>
+          +{credits}
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 900, marginTop: 1 }}>
+          {price}
+        </div>
       </div>
       <button
         type="button"
         disabled={loading}
         onClick={() => void startCheckout()}
         style={{
-          width: "100%",
+          flex: 1,
           border: 0,
-          borderRadius: 9,
-          padding: "11px 14px",
+          borderRadius: 8,
+          padding: "9px 10px",
           background: "#004aad",
           color: "#ffffff",
           fontWeight: 900,
           cursor: loading ? "default" : "pointer",
           opacity: loading ? 0.65 : 1,
+          whiteSpace: "nowrap",
         }}
       >
         {loading ? "…" : buttonText}
       </button>
       {error && (
-        <p style={{ color: "#b91c1c", fontSize: 12, marginBottom: 0 }}>
+        <div style={{ color: "#b91c1c", fontSize: 11, width: "100%" }}>
           {error}
-        </p>
+        </div>
       )}
     </div>
   );
