@@ -189,6 +189,7 @@ export default function TaxesPage() {
         "Les taxes payées affichées proviennent des montants saisis dans les dépenses. L’admissibilité réelle aux CTI/RTI peut dépendre de la nature de la dépense et de votre situation.",
       all: "Toute l’année",
       quarter: "Trimestre",
+      pdf: "Télécharger le rapport PDF",
     },
     en: {
       title: "GST / QST",
@@ -258,6 +259,7 @@ export default function TaxesPage() {
         "Taxes paid shown here come from amounts entered on expenses. Actual ITC/ITR eligibility can depend on the nature of the expense and your situation.",
       all: "Full year",
       quarter: "Quarter",
+      pdf: "Download PDF report",
     },
     es: {
       title: "GST / QST",
@@ -327,6 +329,7 @@ export default function TaxesPage() {
         "Los impuestos pagados mostrados provienen de los importes ingresados en los gastos. La elegibilidad real para créditos puede depender del tipo de gasto y de su situación.",
       all: "Todo el año",
       quarter: "Trimestre",
+      pdf: "Descargar informe PDF",
     },
   }[lang];
 
@@ -743,7 +746,18 @@ export default function TaxesPage() {
 
   return (
     <main style={pageStyle}>
-      <header style={headerStyle}>
+      <style>{`
+        @media print {
+          @page { size: A4 landscape; margin: 10mm; }
+          body { background: #fff !important; }
+          .tax-no-print { display: none !important; }
+          .tax-print-wrap { max-width: none !important; padding: 0 !important; }
+          .tax-print-avoid { break-inside: avoid; page-break-inside: avoid; }
+          .tax-print-table { overflow: visible !important; }
+          .tax-print-table table { min-width: 0 !important; width: 100% !important; font-size: 9px !important; }
+        }
+      `}</style>
+      <header style={headerStyle} className="tax-no-print">
         <div style={headerInnerStyle}>
           <Link
             href={`/tenue-de-livres?lang=${lang}&year=${selectedYear}`}
@@ -772,13 +786,25 @@ export default function TaxesPage() {
         </div>
       </header>
 
-      <div style={containerStyle}>
-        <Link
-          href={`/tenue-de-livres?lang=${lang}&year=${selectedYear}`}
-          style={backStyle}
-        >
-          ← {text.back}
-        </Link>
+      <div style={containerStyle} className="tax-print-wrap">
+        <div className="tax-no-print" style={toolbarStyle}>
+          <Link
+            href={`/tenue-de-livres?lang=${lang}&year=${selectedYear}`}
+            style={backStyle}
+          >
+            ← {text.back}
+          </Link>
+
+          {registered && taxPlanActive && (
+            <button
+              type="button"
+              onClick={() => window.print()}
+              style={pdfButtonStyle}
+            >
+              📄 {text.pdf}
+            </button>
+          )}
+        </div>
 
         <section
           style={{
@@ -822,7 +848,7 @@ export default function TaxesPage() {
             )}
           </div>
 
-          <div style={controlsStyle}>
+          <div style={controlsStyle} className="tax-no-print">
             <label style={controlLabelStyle}>
               <span>{text.year}</span>
               <select
@@ -869,7 +895,7 @@ export default function TaxesPage() {
           </div>
         )}
 
-        <section style={profileStyle}>
+        <section style={profileStyle} className="tax-print-avoid">
           <div>
             <div style={smallLabelStyle}>{text.profile}</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>
@@ -904,6 +930,7 @@ export default function TaxesPage() {
 
         {subscription && registered && (
           <section
+            className="tax-no-print"
             style={{
               ...planStyle,
               borderColor: !registered || !taxPlanActive ? "#bfdbfe" : "#a7f3d0",
@@ -985,7 +1012,7 @@ export default function TaxesPage() {
 
         {registered && (
           <>
-        <section style={summaryGridStyle}>
+        <section style={summaryGridStyle} className="tax-print-avoid">
           <SummaryCard
             title={text.sales}
             value={money(totals.salesBeforeTax)}
@@ -1010,7 +1037,7 @@ export default function TaxesPage() {
 
         {registered && taxPlanActive && (
           <>
-            <section style={taxGridStyle}>
+            <section style={taxGridStyle} className="tax-print-avoid">
               <TaxBox
                 title={text.gstCollected}
                 collected={totals.gstCollected}
@@ -1066,7 +1093,7 @@ export default function TaxesPage() {
               </section>
             </section>
 
-            <div style={noteStyle}>
+            <div style={noteStyle} className="tax-print-avoid">
               <strong>Note :</strong> {text.eligibilityNote}
             </div>
           </>
@@ -1087,7 +1114,7 @@ export default function TaxesPage() {
           ) : transactions.length === 0 ? (
             <div style={emptyStyle}>{text.noTransactions}</div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
+            <div style={{ overflowX: "auto" }} className="tax-print-table">
               <table style={tableStyle}>
                 <thead>
                   <tr>
@@ -1271,12 +1298,31 @@ const containerStyle: React.CSSProperties = {
   padding: "26px 20px 60px",
 };
 
+const toolbarStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
+  marginBottom: 18,
+};
+
+const pdfButtonStyle: React.CSSProperties = {
+  border: "none",
+  borderRadius: 10,
+  background: "#004aad",
+  color: "#ffffff",
+  padding: "11px 16px",
+  fontWeight: 900,
+  cursor: "pointer",
+  fontSize: 14,
+};
+
 const backStyle: React.CSSProperties = {
   display: "inline-block",
   color: "#004aad",
   fontWeight: 800,
   textDecoration: "none",
-  marginBottom: 18,
 };
 
 const heroStyle: React.CSSProperties = {
