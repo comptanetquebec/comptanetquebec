@@ -140,15 +140,15 @@ export default function TaxesPage() {
       notRegisteredTitle: "Entreprise non inscrite à la TPS/TVQ",
       notRegisteredText:
         "Aucune remise de TPS/TVQ n’est calculée pour ce profil. Les taxes inscrites dans les transactions demeurent visibles dans la tenue de livres.",
-      collected: "Taxes perçues",
-      paid: "Taxes payées",
-      gstCollected: "TPS perçue",
-      qstCollected: "TVQ perçue",
-      gstPaid: "TPS payée",
-      qstPaid: "TVQ payée",
-      netGst: "TPS nette",
-      netQst: "TVQ nette",
-      balance: "Solde net estimé",
+      collected: "Taxes facturées aux clients",
+      paid: "Taxes payées sur vos dépenses",
+      gstCollected: "TPS facturée à vos clients",
+      qstCollected: "TVQ facturée à vos clients",
+      gstPaid: "TPS payée sur vos dépenses",
+      qstPaid: "TVQ payée sur vos dépenses",
+      netGst: "TPS à remettre",
+      netQst: "TVQ à remettre",
+      balance: "Montant estimé à remettre",
       toRemit: "À remettre",
       refund: "Crédit / remboursement estimé",
       sales: "Ventes avant taxes",
@@ -209,15 +209,15 @@ export default function TaxesPage() {
       notRegisteredTitle: "Business not registered for GST/QST",
       notRegisteredText:
         "No GST/QST remittance is calculated for this profile. Taxes recorded in transactions remain visible in your bookkeeping.",
-      collected: "Taxes collected",
-      paid: "Taxes paid",
-      gstCollected: "GST collected",
-      qstCollected: "QST collected",
-      gstPaid: "GST paid",
-      qstPaid: "QST paid",
-      netGst: "Net GST",
-      netQst: "Net QST",
-      balance: "Estimated net balance",
+      collected: "Taxes charged to your customers",
+      paid: "Taxes paid on your expenses",
+      gstCollected: "GST charged to your customers",
+      qstCollected: "QST charged to your customers",
+      gstPaid: "GST paid on your expenses",
+      qstPaid: "QST paid on your expenses",
+      netGst: "GST to remit",
+      netQst: "QST to remit",
+      balance: "Estimated amount to remit",
       toRemit: "To remit",
       refund: "Estimated credit / refund",
       sales: "Sales before tax",
@@ -278,15 +278,15 @@ export default function TaxesPage() {
       notRegisteredTitle: "Empresa no registrada para GST/QST",
       notRegisteredText:
         "No se calcula una remesa de GST/QST para este perfil. Los impuestos registrados en las transacciones siguen visibles en la contabilidad.",
-      collected: "Impuestos cobrados",
-      paid: "Impuestos pagados",
-      gstCollected: "GST cobrado",
-      qstCollected: "QST cobrado",
-      gstPaid: "GST pagado",
-      qstPaid: "QST pagado",
-      netGst: "GST neto",
-      netQst: "QST neto",
-      balance: "Saldo neto estimado",
+      collected: "Impuestos cobrados a sus clientes",
+      paid: "Impuestos pagados en sus gastos",
+      gstCollected: "GST cobrado a sus clientes",
+      qstCollected: "QST cobrado a sus clientes",
+      gstPaid: "GST pagado en sus gastos",
+      qstPaid: "QST pagado en sus gastos",
+      netGst: "GST a remitir",
+      netQst: "QST a remitir",
+      balance: "Importe estimado a remitir",
       toRemit: "A remitir",
       refund: "Crédito / reembolso estimado",
       sales: "Ventas antes de impuestos",
@@ -1051,6 +1051,18 @@ export default function TaxesPage() {
                 >
                   {netBalance >= 0 ? text.toRemit : text.refund}
                 </div>
+                <div
+                  style={{
+                    marginTop: 10,
+                    paddingTop: 10,
+                    borderTop: "1px solid #dbe5f1",
+                    color: "#64748b",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  TPS / GST: {money(Math.abs(netGst))} + TVQ / QST: {money(Math.abs(netQst))}
+                </div>
               </section>
             </section>
 
@@ -1201,12 +1213,12 @@ function TaxBox({
         <strong>{money(collected)}</strong>
       </div>
       <div style={taxLineStyle}>
-        <span>{paidLabel}</span>
-        <strong>− {money(paid)}</strong>
+        <span>− {paidLabel}</span>
+        <strong>{money(paid)}</strong>
       </div>
       <div style={taxNetStyle}>
-        <span>{netLabel}</span>
-        <strong>{money(net)}</strong>
+        <span>= {netLabel}</span>
+        <strong>{money(Math.abs(net))}</strong>
       </div>
     </section>
   );
