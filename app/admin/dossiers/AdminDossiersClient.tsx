@@ -1027,12 +1027,9 @@ export default function AdminDossiersClient({
 
                         <div className="flex gap-2 xl:justify-end">
                           <Link
-                            href={`/admin/dossiers/formulaire?fid=${encodeURIComponent(
+                            href={`/formulaire-fiscal?fid=${encodeURIComponent(
                               row.formulaire_id
-                            )}&type=${encodeURIComponent(
-                              row.form_type ??
-                                "t1"
-                            )}&lang=fr`}
+                            )}&lang=fr&admin=1`}
                             className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
                           >
                             📋 Formulaire
