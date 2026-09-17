@@ -97,6 +97,15 @@ export default function ResumeAnnuelPage() {
       estimatedToRemit: "Montant estimé à remettre",
       estimatedCredit: "Crédit / remboursement estimé",
       pdf: "Télécharger le résumé PDF",
+      incomeBeforeTax: "Revenus avant taxes",
+      incomeGst: "TPS revenus",
+      incomeQst: "TVQ revenus",
+      incomeTotal: "Total revenus",
+      expenseBeforeTax: "Dépenses avant taxes",
+      expenseGst: "TPS dépenses",
+      expenseQst: "TVQ dépenses",
+      expenseTotal: "Total dépenses",
+      profitBeforeTax: "Profit / Perte avant taxes",
     },
     en: {
       title: "Annual summary",
@@ -136,6 +145,15 @@ export default function ResumeAnnuelPage() {
       estimatedToRemit: "Estimated amount to remit",
       estimatedCredit: "Estimated credit / refund",
       pdf: "Download annual summary PDF",
+      incomeBeforeTax: "Income before tax",
+      incomeGst: "Income GST",
+      incomeQst: "Income QST",
+      incomeTotal: "Total income",
+      expenseBeforeTax: "Expenses before tax",
+      expenseGst: "Expense GST",
+      expenseQst: "Expense QST",
+      expenseTotal: "Total expenses",
+      profitBeforeTax: "Profit / Loss before tax",
     },
     es: {
       title: "Resumen anual",
@@ -175,6 +193,15 @@ export default function ResumeAnnuelPage() {
       estimatedToRemit: "Importe estimado a remitir",
       estimatedCredit: "Crédito / reembolso estimado",
       pdf: "Descargar resumen PDF",
+      incomeBeforeTax: "Ingresos antes de impuestos",
+      incomeGst: "GST de ingresos",
+      incomeQst: "QST de ingresos",
+      incomeTotal: "Ingresos totales",
+      expenseBeforeTax: "Gastos antes de impuestos",
+      expenseGst: "GST de gastos",
+      expenseQst: "QST de gastos",
+      expenseTotal: "Gastos totales",
+      profitBeforeTax: "Ganancia / Pérdida antes de impuestos",
     },
   }[lang];
 
@@ -468,19 +495,34 @@ export default function ResumeAnnuelPage() {
                     <thead>
                       <tr>
                         <th style={thStyle}>{text.month}</th>
-                        <th style={thRightStyle}>{text.income}</th>
-                        <th style={thRightStyle}>{text.expenses}</th>
-                        <th style={thRightStyle}>{text.result}</th>
+                        <th style={thRightStyle}>{text.incomeBeforeTax}</th>
+                        <th style={thRightStyle}>{text.incomeGst}</th>
+                        <th style={thRightStyle}>{text.incomeQst}</th>
+                        <th style={thRightStyle}>{text.incomeTotal}</th>
+                        <th style={thRightStyle}>{text.expenseBeforeTax}</th>
+                        <th style={thRightStyle}>{text.expenseGst}</th>
+                        <th style={thRightStyle}>{text.expenseQst}</th>
+                        <th style={thRightStyle}>{text.expenseTotal}</th>
+                        <th style={thRightStyle}>{text.profitBeforeTax}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {monthly.map((m, index) => {
+                        const incomeTotal = m.income + m.gstCollected + m.qstCollected;
+                        const expenseTotal = m.expenses + m.gstPaid + m.qstPaid;
                         const monthResult = m.income - m.expenses;
+
                         return (
                           <tr key={index}>
                             <td style={{ ...tdStyle, fontWeight: 900 }}>{MONTHS[lang][index]}</td>
                             <td style={tdRightStyle}>{money(m.income)}</td>
+                            <td style={tdRightStyle}>{money(m.gstCollected)}</td>
+                            <td style={tdRightStyle}>{money(m.qstCollected)}</td>
+                            <td style={{ ...tdRightStyle, fontWeight: 900 }}>{money(incomeTotal)}</td>
                             <td style={tdRightStyle}>{money(m.expenses)}</td>
+                            <td style={tdRightStyle}>{money(m.gstPaid)}</td>
+                            <td style={tdRightStyle}>{money(m.qstPaid)}</td>
+                            <td style={{ ...tdRightStyle, fontWeight: 900 }}>{money(expenseTotal)}</td>
                             <td style={{ ...tdRightStyle, fontWeight: 900 }}>{money(monthResult)}</td>
                           </tr>
                         );
@@ -490,7 +532,13 @@ export default function ResumeAnnuelPage() {
                       <tr>
                         <td style={totalLabelStyle}>TOTAL {year}</td>
                         <td style={totalRightStyle}>{money(totals.income)}</td>
+                        <td style={totalRightStyle}>{money(totals.gstCollected)}</td>
+                        <td style={totalRightStyle}>{money(totals.qstCollected)}</td>
+                        <td style={totalRightStyle}>{money(totals.income + totals.gstCollected + totals.qstCollected)}</td>
                         <td style={totalRightStyle}>{money(totals.expenses)}</td>
+                        <td style={totalRightStyle}>{money(totals.gstPaid)}</td>
+                        <td style={totalRightStyle}>{money(totals.qstPaid)}</td>
+                        <td style={totalRightStyle}>{money(totals.expenses + totals.gstPaid + totals.qstPaid)}</td>
                         <td style={totalRightStyle}>{money(result)}</td>
                       </tr>
                     </tfoot>
@@ -547,7 +595,7 @@ const taxLinkStyle: React.CSSProperties = { textDecoration:"none", background:"#
 const warningStyle: React.CSSProperties = { background:"#fff7ed", border:"1px solid #fed7aa", color:"#9a3412", borderRadius:12, padding:15, marginBottom:18, lineHeight:1.5 };
 const tableSectionStyle: React.CSSProperties = { background:"#fff", border:"1px solid #e5e7eb", borderRadius:16, overflow:"hidden" };
 const tableHeaderStyle: React.CSSProperties = { padding:20, borderBottom:"1px solid #e5e7eb" };
-const tableStyle: React.CSSProperties = { width:"100%", borderCollapse:"collapse", minWidth:720 };
+const tableStyle: React.CSSProperties = { width:"100%", borderCollapse:"collapse", minWidth:1500 };
 const thStyle: React.CSSProperties = { textAlign:"left", padding:"12px 14px", background:"#f8fafc", color:"#475569", fontSize:12, fontWeight:900, borderBottom:"1px solid #e5e7eb" };
 const thRightStyle: React.CSSProperties = { ...thStyle, textAlign:"right" };
 const tdStyle: React.CSSProperties = { padding:"13px 14px", borderBottom:"1px solid #eef2f7", fontSize:14 };
