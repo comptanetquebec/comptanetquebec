@@ -108,6 +108,7 @@ export default function TaxesPage() {
   const [lang, setLang] = useState<Lang>("fr");
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
+  const [initialPeriodKey, setInitialPeriodKey] = useState("");
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -395,6 +396,9 @@ export default function TaxesPage() {
       const params = new URLSearchParams(window.location.search);
       const langValue = params.get("lang");
       const yearValue = Number(params.get("year"));
+      const periodValue = params.get("period") ?? "";
+
+      setInitialPeriodKey(periodValue);
 
       if (
         langValue === "fr" ||
@@ -424,6 +428,16 @@ export default function TaxesPage() {
   useEffect(() => {
     if (!periods.length) return;
 
+    const requestedPeriodExists =
+      initialPeriodKey &&
+      periods.some((period) => period.key === initialPeriodKey);
+
+    if (requestedPeriodExists && selectedPeriodKey !== initialPeriodKey) {
+      setSelectedPeriodKey(initialPeriodKey);
+      setInitialPeriodKey("");
+      return;
+    }
+
     const stillExists = periods.some(
       (period) => period.key === selectedPeriodKey
     );
@@ -431,7 +445,11 @@ export default function TaxesPage() {
     if (!stillExists) {
       setSelectedPeriodKey(periods[0].key);
     }
-  }, [periods, selectedPeriodKey]);
+
+    if (initialPeriodKey) {
+      setInitialPeriodKey("");
+    }
+  }, [periods, selectedPeriodKey, initialPeriodKey]);
 
   useEffect(() => {
     if (!business || !selectedPeriod) return;
@@ -655,6 +673,7 @@ export default function TaxesPage() {
 
     const url = new URL(window.location.href);
     url.searchParams.set("year", String(nextYear));
+    url.searchParams.delete("period");
     window.history.replaceState({}, "", url.toString());
   }
 
@@ -823,9 +842,14 @@ export default function TaxesPage() {
               <span>{text.period}</span>
               <select
                 value={selectedPeriod?.key ?? ""}
-                onChange={(event) =>
-                  setSelectedPeriodKey(event.target.value)
-                }
+                onChange={(event) => {
+                  const nextPeriod = event.target.value;
+                  setSelectedPeriodKey(nextPeriod);
+
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("period", nextPeriod);
+                  window.history.replaceState({}, "", url.toString());
+                }}
                 style={selectStyle}
               >
                 {periods.map((period) => (
