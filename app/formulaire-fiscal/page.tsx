@@ -274,12 +274,29 @@ export default function FormulaireFiscalPage() {
 
   const type = "T1" as const;
   const lang = normalizeLang(params.get("lang") || "fr");
+  const adminFid = (params.get("fid") || "").trim();
+  const adminMode = params.get("admin") === "1" && !!adminFid;
 
-  const nextPath = useMemo(() => `/formulaire-fiscal?lang=${lang}`, [lang]);
+  const nextPath = useMemo(() => {
+    const qs = new URLSearchParams({ lang });
+    if (adminMode && adminFid) {
+      qs.set("fid", adminFid);
+      qs.set("admin", "1");
+    }
+    return `/formulaire-fiscal?${qs.toString()}`;
+  }, [lang, adminMode, adminFid]);
 
   return (
     <RequireAuth lang={lang} nextPath={nextPath}>
-      {(userId) => <FormulaireFiscalInner userId={userId} lang={lang} type={type} />}
+      {(userId) => (
+        <FormulaireFiscalInner
+          userId={userId}
+          lang={lang}
+          type={type}
+          adminMode={adminMode}
+          adminFid={adminFid}
+        />
+      )}
     </RequireAuth>
   );
 }
@@ -294,8 +311,14 @@ type BlocksStatus = {
   confirms: { block: Mark };
 };
 
-function FormulaireFiscalInner(props: { userId: string; lang: Lang; type: "T1" }) {
-  const { userId, lang, type } = props;
+function FormulaireFiscalInner(props: {
+  userId: string;
+  lang: Lang;
+  type: "T1";
+  adminMode: boolean;
+  adminFid: string;
+}) {
+  const { userId, lang, type, adminMode, adminFid } = props;
 
   const router = useRouter();
   const formTitle = titleFromType();
@@ -1343,6 +1366,8 @@ const draftData: Formdata = useMemo(() => {
 
 /* =========================== Save draft (insert/update) =========================== */
 const saveDraft = useCallback(async (): Promise<string | null> => {
+  // Consultation admin = lecture seule. Ne jamais modifier le dossier du client.
+  if (adminMode) return formulaireId ?? adminFid ?? null;
   if (hydrating.current) return formulaireId ?? null;
   if (submitting) return formulaireId ?? null;
 
@@ -1426,31 +1451,64 @@ if (fid) {
 }
 
 return fid;
-}, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition]);
+}, [userId, submitting, formulaireId, type, lang, draftData, anneeImposition, adminMode, adminFid]);
  /* =========================== Load last form (preload) =========================== */
 const loadLastForm = useCallback(async () => {
   hydrating.current = true;
 
-  const { data: rows, error } = await supabase
-    .from(FORMS_TABLE)
-    .select("id, data, created_at, annee")
-    .eq("user_id", userId)
-    .eq("form_type", type)
-    .order("created_at", { ascending: false })
-    .limit(10)
-    .returns<FormRow[]>();
+  let selected: FormRow | null = null;
 
-  if (error) {
-    setMsg(`Erreur chargement: ${error.message}`);
-    hydrating.current = false;
-    return;
-  }
+  if (adminMode && adminFid) {
+    // Vérification explicite du rôle admin avant de charger un dossier qui
+    // n'appartient pas nécessairement à l'utilisateur connecté.
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", userId)
+      .maybeSingle();
 
-  let selected: FormRow | null = rows?.[0] ?? null;
+    if (profileError || !profile?.is_admin) {
+      setMsg("❌ Accès administrateur refusé.");
+      hydrating.current = false;
+      return;
+    }
 
-  if (anneeImposition) {
-    const found = rows?.find((r) => Number(r.annee) === Number(anneeImposition));
-    selected = found ?? null;
+    const { data: adminForm, error: adminError } = await supabase
+      .from(FORMS_TABLE)
+      .select("id, data, created_at, annee")
+      .eq("id", adminFid)
+      .maybeSingle<FormRow>();
+
+    if (adminError) {
+      setMsg(`Erreur chargement: ${adminError.message}`);
+      hydrating.current = false;
+      return;
+    }
+
+    selected = adminForm ?? null;
+  } else {
+    // Fonctionnement client normal : seulement ses propres formulaires.
+    const { data: rows, error } = await supabase
+      .from(FORMS_TABLE)
+      .select("id, data, created_at, annee")
+      .eq("user_id", userId)
+      .eq("form_type", type)
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .returns<FormRow[]>();
+
+    if (error) {
+      setMsg(`Erreur chargement: ${error.message}`);
+      hydrating.current = false;
+      return;
+    }
+
+    selected = rows?.[0] ?? null;
+
+    if (anneeImposition) {
+      const found = rows?.find((r) => Number(r.annee) === Number(anneeImposition));
+      selected = found ?? null;
+    }
   }
 
   if (!selected) {
@@ -1461,7 +1519,7 @@ const loadLastForm = useCallback(async () => {
     return;
   }
 // 🚨 AJOUT ICI
-if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposition)) {
+if (!adminMode && selected && anneeImposition && Number(selected.annee) !== Number(anneeImposition)) {
   setFormulaireId(null);
   setCurrentFid(null);
   setDocs([]);
@@ -1674,15 +1732,16 @@ if (selected && anneeImposition && Number(selected.annee) !== Number(anneeImposi
 
   await loadDocs(fid);
   hydrating.current = false;
-}, [userId, type, anneeImposition, loadDocs]);
+}, [userId, type, anneeImposition, loadDocs, adminMode, adminFid]);
 
 useEffect(() => {
-  if (!anneeImposition) {
+  if (adminMode || !anneeImposition) {
     void loadLastForm();
   }
-}, [loadLastForm, anneeImposition]);
+}, [loadLastForm, anneeImposition, adminMode]);
 /* =========================== Autosave debounce =========================== */
 useEffect(() => {
+  if (adminMode) return;
   if (hydrating.current) return;
 
   if (saveTimer.current) window.clearTimeout(saveTimer.current);
@@ -1694,7 +1753,7 @@ useEffect(() => {
   return () => {
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
   };
-}, [lang, type, draftData, saveDraft]);
+}, [lang, type, draftData, saveDraft, adminMode]);
 
 /* =========================== Actions =========================== */
 const logout = useCallback(async () => {
@@ -1813,6 +1872,25 @@ return (
 
       {/* ✅ IMPORTANT: tu avais </form> mais pas de <form> */}
       <form className="ff-form" onSubmit={(e) => e.preventDefault()}>
+        {adminMode && (
+          <div
+            className="ff-card"
+            style={{
+              padding: 14,
+              marginBottom: 16,
+              border: "1px solid #93c5fd",
+              background: "#eff6ff",
+              fontWeight: 800,
+            }}
+          >
+            Consultation administrateur — lecture seule
+          </div>
+        )}
+
+        <fieldset
+          disabled={adminMode}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
         <ClientSection
           L={L}
           PROVINCES={PROVINCES}
@@ -2166,7 +2244,8 @@ return (
           submitting={submitting}
           goToDepotDocuments={goToDepotDocuments}
         />
-      </form>
+              </fieldset>
+</form>
     </div>
   </main>
 );
