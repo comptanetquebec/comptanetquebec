@@ -96,6 +96,7 @@ export default function ResumeAnnuelPage() {
       taxSummaryDesc: "Aperçu annuel. Le détail complet reste dans la page TPS/TVQ.",
       estimatedToRemit: "Montant estimé à remettre",
       estimatedCredit: "Crédit / remboursement estimé",
+      pdf: "Télécharger le résumé PDF",
     },
     en: {
       title: "Annual summary",
@@ -134,6 +135,7 @@ export default function ResumeAnnuelPage() {
       taxSummaryDesc: "Annual overview. Full details remain on the GST/QST page.",
       estimatedToRemit: "Estimated amount to remit",
       estimatedCredit: "Estimated credit / refund",
+      pdf: "Download annual summary PDF",
     },
     es: {
       title: "Resumen anual",
@@ -172,6 +174,7 @@ export default function ResumeAnnuelPage() {
       taxSummaryDesc: "Resumen anual. El detalle completo permanece en la página GST/QST.",
       estimatedToRemit: "Importe estimado a remitir",
       estimatedCredit: "Crédito / reembolso estimado",
+      pdf: "Descargar resumen PDF",
     },
   }[lang];
 
@@ -381,7 +384,17 @@ export default function ResumeAnnuelPage() {
 
   return (
     <main style={pageStyle}>
-      <header style={headerStyle}>
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          body { background: #fff !important; }
+          .annual-no-print { display: none !important; }
+          .annual-print-wrap { max-width: none !important; padding: 0 !important; }
+          .annual-print-avoid { break-inside: avoid; page-break-inside: avoid; }
+          table { font-size: 10px !important; }
+        }
+      `}</style>
+      <header style={headerStyle} className="annual-no-print">
         <div style={headerInnerStyle}>
           <Link href={`/tenue-de-livres?lang=${lang}&year=${year}`} style={brandStyle}>
             ComptaNet Québec
@@ -401,8 +414,20 @@ export default function ResumeAnnuelPage() {
         </div>
       </header>
 
-      <div style={containerStyle}>
-        <Link href={`/tenue-de-livres?lang=${lang}&year=${year}`} style={backStyle}>← {text.back}</Link>
+      <div style={containerStyle} className="annual-print-wrap">
+        <div className="annual-no-print" style={toolbarStyle}>
+          <Link href={`/tenue-de-livres?lang=${lang}&year=${year}`} style={backStyle}>
+            ← {text.back}
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            style={pdfButtonStyle}
+          >
+            📄 {text.pdf}
+          </button>
+        </div>
 
         <section style={heroStyle}>
           <div style={{ flex: "1 1 600px" }}>
@@ -411,7 +436,7 @@ export default function ResumeAnnuelPage() {
             <p style={subtitleStyle}>{text.subtitle}</p>
             {business?.business_name && <div style={businessStyle}>{business.business_name}</div>}
           </div>
-          <label style={controlLabelStyle}>
+          <label style={controlLabelStyle} className="annual-no-print">
             <span>{text.year}</span>
             <select value={year} onChange={(e) => void changeYear(Number(e.target.value))} style={selectStyle}>
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -426,13 +451,13 @@ export default function ResumeAnnuelPage() {
           <>
             <div style={noteStyle}>ℹ️ {text.beforeTaxInfo}</div>
 
-            <section style={summaryGridStyle}>
+            <section style={summaryGridStyle} className="annual-print-avoid">
               <SummaryCard title={text.income} value={money(totals.income)} icon="💰" />
               <SummaryCard title={text.expenses} value={money(totals.expenses)} icon="🧾" />
               <SummaryCard title={text.result} value={money(result)} icon="📈" />
             </section>
 
-            <section style={breakdownGridStyle}>
+            <section style={breakdownGridStyle} className="annual-print-avoid">
               <BreakdownCard
                 title={text.incomeBreakdown}
                 columnLabel={text.source}
@@ -455,7 +480,7 @@ export default function ResumeAnnuelPage() {
             </section>
 
             {registered ? (
-              <section style={compactTaxSectionStyle}>
+              <section style={compactTaxSectionStyle} className="annual-print-avoid">
                 <div style={sectionHeaderStyle}>
                   <div>
                     <h2 style={sectionTitleStyle}>{text.taxSummary}</h2>
@@ -610,7 +635,9 @@ const headerInnerStyle: React.CSSProperties = { maxWidth:1200, margin:"0 auto", 
 const brandStyle: React.CSSProperties = { textDecoration:"none", color:"#0f172a", fontWeight:900, fontSize:19 };
 const langButtonStyle: React.CSSProperties = { border:"1px solid #dbe3ef", borderRadius:8, padding:"7px 10px", fontWeight:800, cursor:"pointer" };
 const containerStyle: React.CSSProperties = { maxWidth:1200, margin:"0 auto", padding:"26px 20px 60px" };
-const backStyle: React.CSSProperties = { display:"inline-block", color:"#004aad", fontWeight:800, textDecoration:"none", marginBottom:18 };
+const toolbarStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:18 };
+const pdfButtonStyle: React.CSSProperties = { border:"none", borderRadius:10, background:"#004aad", color:"#fff", padding:"11px 16px", fontWeight:900, cursor:"pointer", fontSize:14 };
+const backStyle: React.CSSProperties = { display:"inline-block", color:"#004aad", fontWeight:800, textDecoration:"none" };
 const heroStyle: React.CSSProperties = { background:"#fff", border:"1px solid #e5e7eb", borderRadius:18, padding:26, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:22, flexWrap:"wrap", marginBottom:18 };
 const eyebrowStyle: React.CSSProperties = { color:"#004aad", fontWeight:900, marginBottom:7 };
 const titleStyle: React.CSSProperties = { margin:0, fontSize:"clamp(30px, 5vw, 42px)" };
