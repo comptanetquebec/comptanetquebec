@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 export type DossierStatus =
@@ -67,20 +68,27 @@ const PAY_BADGE_CLASS: Record<PaymentStatus, string> = {
   paid: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
-function rowTab(status: DossierStatus): Exclude<TabKey, "all"> {
+function rowTab(
+  status: DossierStatus
+): Exclude<TabKey, "all"> {
   if (status === "attente_client") return "waiting";
   if (status === "termine") return "done";
   return "todo";
 }
 
-function toDate(iso: string | null | undefined): Date | null {
+function toDate(
+  iso: string | null | undefined
+): Date | null {
   if (!iso) return null;
 
   const d = new Date(iso);
+
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function formatDate(iso: string | null | undefined) {
+function formatDate(
+  iso: string | null | undefined
+) {
   const d = toDate(iso);
 
   if (!d) return "—";
@@ -96,27 +104,52 @@ function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
 }
 
-function safeInt(value: unknown, fallback = 0) {
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n : fallback;
+function safeInt(
+  value: unknown,
+  fallback = 0
+) {
+  const n =
+    typeof value === "number"
+      ? value
+      : Number(value);
+
+  return Number.isFinite(n)
+    ? n
+    : fallback;
 }
 
-function safePaymentStatus(value: unknown): PaymentStatus {
-  return value === "paid" ? "paid" : "unpaid";
+function safePaymentStatus(
+  value: unknown
+): PaymentStatus {
+  return value === "paid"
+    ? "paid"
+    : "unpaid";
 }
 
-function normalizeRows(input: AdminDossierRow[]): AdminDossierRow[] {
+function normalizeRows(
+  input: AdminDossierRow[]
+): AdminDossierRow[] {
   return (input ?? []).map((row) => ({
     ...row,
-    form_filled: Boolean(row.form_filled),
-    docs_count: safeInt(row.docs_count, 0),
-    payment_status: row.payment_status
-      ? safePaymentStatus(row.payment_status)
-      : null,
+
+    form_filled:
+      Boolean(row.form_filled),
+
+    docs_count:
+      safeInt(row.docs_count, 0),
+
+    payment_status:
+      row.payment_status
+        ? safePaymentStatus(
+            row.payment_status
+          )
+        : null,
   }));
 }
 
-function rowSearchText(row: AdminDossierRow) {
+function rowSearchText(
+  row: AdminDossierRow
+) {
   return normalizeSearch(
     [
       row.client_name ?? "",
@@ -125,7 +158,9 @@ function rowSearchText(row: AdminDossierRow) {
       row.cq_id ?? "",
       row.formulaire_id ?? "",
       row.form_type ?? "",
-      row.tax_year != null ? String(row.tax_year) : "",
+      row.tax_year != null
+        ? String(row.tax_year)
+        : "",
       row.payment_status ?? "",
       row.status ?? "",
       String(row.docs_count ?? 0),
@@ -188,27 +223,46 @@ export default function AdminDossiersClient({
 }: {
   initialRows: AdminDossierRow[];
 }) {
+  const router = useRouter();
+
   const normalizedInitial = useMemo(
     () => normalizeRows(initialRows),
     [initialRows]
   );
 
   const [rows, setRows] =
-    useState<AdminDossierRow[]>(normalizedInitial);
+    useState<AdminDossierRow[]>(
+      normalizedInitial
+    );
 
-  const [tab, setTab] = useState<TabKey>("todo");
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("created_desc");
+  const [tab, setTab] =
+    useState<TabKey>("todo");
+
+  const [savingId, setSavingId] =
+    useState<string | null>(null);
+
+  const [query, setQuery] =
+    useState("");
+
+  const [sort, setSort] =
+    useState<SortKey>("created_desc");
+
   const [yearFilter, setYearFilter] =
     useState<YearFilter>("2026");
 
+  const [loggingOut, setLoggingOut] =
+    useState(false);
+
   const yearRows = useMemo(() => {
-    if (yearFilter === "all") return rows;
+    if (yearFilter === "all") {
+      return rows;
+    }
 
     const year = Number(yearFilter);
 
-    return rows.filter((row) => row.tax_year === year);
+    return rows.filter(
+      (row) => row.tax_year === year
+    );
   }, [rows, yearFilter]);
 
   const counts = useMemo(() => {
@@ -228,41 +282,61 @@ export default function AdminDossiersClient({
 
   const globalTodo = useMemo(
     () =>
-      rows.filter((row) => rowTab(row.status) === "todo").length,
+      rows.filter(
+        (row) =>
+          rowTab(row.status) === "todo"
+      ).length,
     [rows]
   );
 
-  const globalTodoByYear = useMemo(() => {
-    const countsByYear = new Map<number, number>();
+  const globalTodoByYear =
+    useMemo(() => {
+      const countsByYear =
+        new Map<number, number>();
 
-    for (const row of rows) {
-      if (
-        rowTab(row.status) !== "todo" ||
-        row.tax_year == null
-      ) {
-        continue;
+      for (const row of rows) {
+        if (
+          rowTab(row.status) !==
+            "todo" ||
+          row.tax_year == null
+        ) {
+          continue;
+        }
+
+        countsByYear.set(
+          row.tax_year,
+          (countsByYear.get(
+            row.tax_year
+          ) ?? 0) + 1
+        );
       }
 
-      countsByYear.set(
-        row.tax_year,
-        (countsByYear.get(row.tax_year) ?? 0) + 1
-      );
-    }
-
-    return [2026, 2025, 2024]
-      .filter((year) => (countsByYear.get(year) ?? 0) > 0)
-      .map((year) => `${year}: ${countsByYear.get(year)}`)
-      .join(" · ");
-  }, [rows]);
+      return [2026, 2025, 2024]
+        .filter(
+          (year) =>
+            (countsByYear.get(year) ??
+              0) > 0
+        )
+        .map(
+          (year) =>
+            `${year}: ${countsByYear.get(
+              year
+            )}`
+        )
+        .join(" · ");
+    }, [rows]);
 
   const filtered = useMemo(() => {
-    const q = normalizeSearch(query);
+    const q =
+      normalizeSearch(query);
 
     let result =
       tab === "all"
         ? yearRows
         : yearRows.filter(
-            (row) => rowTab(row.status) === tab
+            (row) =>
+              rowTab(row.status) ===
+              tab
           );
 
     if (q) {
@@ -271,32 +345,106 @@ export default function AdminDossiersClient({
       );
     }
 
-    return [...result].sort((a, b) => {
-      const ac = toDate(a.created_at)?.getTime() ?? 0;
-      const bc = toDate(b.created_at)?.getTime() ?? 0;
+    return [...result].sort(
+      (a, b) => {
+        const ac =
+          toDate(
+            a.created_at
+          )?.getTime() ?? 0;
 
-      const au = toDate(a.updated_at)?.getTime() ?? 0;
-      const bu = toDate(b.updated_at)?.getTime() ?? 0;
+        const bc =
+          toDate(
+            b.created_at
+          )?.getTime() ?? 0;
 
-      if (sort === "created_desc") return bc - ac;
-      if (sort === "created_asc") return ac - bc;
-      if (sort === "updated_desc") return bu - au;
+        const au =
+          toDate(
+            a.updated_at
+          )?.getTime() ?? 0;
 
-      const as = (
-        a.client_name ??
-        a.cq_id ??
-        ""
-      ).toLowerCase();
+        const bu =
+          toDate(
+            b.updated_at
+          )?.getTime() ?? 0;
 
-      const bs = (
-        b.client_name ??
-        b.cq_id ??
-        ""
-      ).toLowerCase();
+        if (
+          sort === "created_desc"
+        ) {
+          return bc - ac;
+        }
 
-      return as.localeCompare(bs);
-    });
-  }, [yearRows, tab, query, sort]);
+        if (
+          sort === "created_asc"
+        ) {
+          return ac - bc;
+        }
+
+        if (
+          sort === "updated_desc"
+        ) {
+          return bu - au;
+        }
+
+        const as = (
+          a.client_name ??
+          a.cq_id ??
+          ""
+        ).toLowerCase();
+
+        const bs = (
+          b.client_name ??
+          b.cq_id ??
+          ""
+        ).toLowerCase();
+
+        return as.localeCompare(bs);
+      }
+    );
+  }, [
+    yearRows,
+    tab,
+    query,
+    sort,
+  ]);
+
+  /*
+   * ==========================================================
+   * DÉCONNEXION
+   * ==========================================================
+   */
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      const { error } =
+        await supabase.auth.signOut();
+
+      if (error) {
+        alert(
+          "Erreur de déconnexion : " +
+            error.message
+        );
+
+        setLoggingOut(false);
+        return;
+      }
+
+      router.replace(
+        "/espace-client"
+      );
+
+      router.refresh();
+    } catch {
+      alert(
+        "Impossible de vous déconnecter."
+      );
+
+      setLoggingOut(false);
+    }
+  }
 
   /*
    * ==========================================================
@@ -324,12 +472,18 @@ export default function AdminDossiersClient({
     formulaire_id: string,
     status: DossierStatus
   ) {
-    const previousRows = rows.map((row) => ({ ...row }));
-    const now = new Date().toISOString();
+    const previousRows =
+      rows.map((row) => ({
+        ...row,
+      }));
+
+    const now =
+      new Date().toISOString();
 
     setRows((current) =>
       current.map((row) =>
-        row.formulaire_id === formulaire_id
+        row.formulaire_id ===
+        formulaire_id
           ? {
               ...row,
               status,
@@ -356,19 +510,21 @@ export default function AdminDossiersClient({
             inactive_at: null,
           };
 
-    const { error } = await supabase
-      .from("dossier_statuses")
-      .upsert(
-        {
-          formulaire_id,
-          status,
-          updated_at: now,
-          ...reminderData,
-        },
-        {
-          onConflict: "formulaire_id",
-        }
-      );
+    const { error } =
+      await supabase
+        .from("dossier_statuses")
+        .upsert(
+          {
+            formulaire_id,
+            status,
+            updated_at: now,
+            ...reminderData,
+          },
+          {
+            onConflict:
+              "formulaire_id",
+          }
+        );
 
     setSavingId(null);
 
@@ -376,7 +532,8 @@ export default function AdminDossiersClient({
       setRows(previousRows);
 
       alert(
-        "Erreur sauvegarde statut: " + error.message
+        "Erreur sauvegarde statut: " +
+          error.message
       );
     }
   }
@@ -405,20 +562,31 @@ export default function AdminDossiersClient({
             />
           </Link>
 
-          <nav className="flex items-center gap-3 sm:gap-5">
+          <nav className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
             <Link
               href="/admin/dossiers"
-              className="rounded-2xl bg-blue-50 px-6 py-3 text-base font-bold text-blue-700 transition hover:bg-blue-100 sm:text-lg"
+              className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 transition hover:bg-blue-100 sm:px-6 sm:text-lg"
             >
               📁 Dossiers
             </Link>
 
             <Link
               href="/admin/factures"
-              className="rounded-2xl px-6 py-3 text-base font-bold text-slate-700 transition hover:bg-slate-100 sm:text-lg"
+              className="rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 sm:px-6 sm:text-lg"
             >
               🧾 Factures
             </Link>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:text-lg"
+            >
+              {loggingOut
+                ? "Déconnexion…"
+                : "🚪 Déconnexion"}
+            </button>
           </nav>
         </div>
       </div>
@@ -439,7 +607,8 @@ export default function AdminDossiersClient({
                 </h1>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Gérez tous les dossiers de vos clients au même
+                  Gérez tous les dossiers
+                  de vos clients au même
                   endroit.
                 </p>
               </div>
@@ -471,7 +640,10 @@ export default function AdminDossiersClient({
                 key={key}
                 type="button"
                 onClick={() => {
-                  setYearFilter(key as YearFilter);
+                  setYearFilter(
+                    key as YearFilter
+                  );
+
                   setTab("todo");
                 }}
                 className={`rounded-xl border px-5 py-2.5 text-sm font-bold transition ${
@@ -495,7 +667,8 @@ export default function AdminDossiersClient({
             value={globalTodo}
             active={tab === "todo"}
             subtitle={
-              globalTodoByYear || "Aucun dossier à faire"
+              globalTodoByYear ||
+              "Aucun dossier à faire"
             }
             onClick={() => {
               setYearFilter("all");
@@ -507,8 +680,12 @@ export default function AdminDossiersClient({
             icon="⏱️"
             title="En attente client"
             value={counts.waiting}
-            active={tab === "waiting"}
-            onClick={() => setTab("waiting")}
+            active={
+              tab === "waiting"
+            }
+            onClick={() =>
+              setTab("waiting")
+            }
           />
 
           <StatCard
@@ -516,7 +693,9 @@ export default function AdminDossiersClient({
             title="Terminé"
             value={counts.done}
             active={tab === "done"}
-            onClick={() => setTab("done")}
+            onClick={() =>
+              setTab("done")
+            }
           />
 
           <StatCard
@@ -524,7 +703,9 @@ export default function AdminDossiersClient({
             title="Total dossiers"
             value={counts.all}
             active={tab === "all"}
-            onClick={() => setTab("all")}
+            onClick={() =>
+              setTab("all")
+            }
           />
         </div>
 
@@ -533,34 +714,59 @@ export default function AdminDossiersClient({
         <div className="mb-4 flex flex-col justify-between gap-3 xl:flex-row xl:items-center">
           <div className="flex flex-wrap gap-2">
             {[
-              ["todo", "📥 À faire", counts.todo],
+              [
+                "todo",
+                "📥 À faire",
+                counts.todo,
+              ],
               [
                 "waiting",
                 "⏱️ En attente client",
                 counts.waiting,
               ],
-              ["done", "✅ Terminés", counts.done],
-              ["all", "📚 Tous", counts.all],
-            ].map(([key, label, count]) => (
-              <button
-                key={String(key)}
-                type="button"
-                onClick={() => setTab(key as TabKey)}
-                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                  tab === key
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-300"
-                }`}
-              >
-                {label} ({count})
-              </button>
-            ))}
+              [
+                "done",
+                "✅ Terminés",
+                counts.done,
+              ],
+              [
+                "all",
+                "📚 Tous",
+                counts.all,
+              ],
+            ].map(
+              ([
+                key,
+                label,
+                count,
+              ]) => (
+                <button
+                  key={String(key)}
+                  type="button"
+                  onClick={() =>
+                    setTab(
+                      key as TabKey
+                    )
+                  }
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                    tab === key
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-blue-300"
+                  }`}
+                >
+                  {label} ({count})
+                </button>
+              )
+            )}
           </div>
 
           <select
             value={sort}
             onChange={(e) =>
-              setSort(e.target.value as SortKey)
+              setSort(
+                e.target
+                  .value as SortKey
+              )
             }
             className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-400"
           >
@@ -593,7 +799,11 @@ export default function AdminDossiersClient({
 
               <input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) =>
+                  setQuery(
+                    e.target.value
+                  )
+                }
                 placeholder="Rechercher par nom, courriel, téléphone, CQ, année…"
                 className="w-full rounded-xl border border-slate-200 py-3 pl-12 pr-4 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               />
@@ -619,12 +829,16 @@ export default function AdminDossiersClient({
             <div>Année</div>
             <div>Type</div>
             <div>Statut</div>
-            <div className="text-right">Actions</div>
+            <div className="text-right">
+              Actions
+            </div>
           </div>
 
           {filtered.length === 0 ? (
             <div className="flex min-h-[330px] flex-col items-center justify-center px-6 text-center">
-              <div className="mb-4 text-6xl">📂</div>
+              <div className="mb-4 text-6xl">
+                📂
+              </div>
 
               <div className="text-lg font-bold text-slate-800">
                 Aucun dossier
@@ -640,182 +854,219 @@ export default function AdminDossiersClient({
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {filtered.map((row) => {
-                const pay: PaymentStatus =
-                  row.payment_status ?? "unpaid";
+              {filtered.map(
+                (row) => {
+                  const pay: PaymentStatus =
+                    row.payment_status ??
+                    "unpaid";
 
-                const docsCount = safeInt(
-                  row.docs_count,
-                  0
-                );
+                  const docsCount =
+                    safeInt(
+                      row.docs_count,
+                      0
+                    );
 
-                return (
-                  <li
-                    key={row.formulaire_id}
-                    className="px-5 py-5 transition hover:bg-slate-50/70"
-                  >
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_210px] xl:items-center xl:gap-3">
-                      {/* CLIENT */}
+                  return (
+                    <li
+                      key={
+                        row.formulaire_id
+                      }
+                      className="px-5 py-5 transition hover:bg-slate-50/70"
+                    >
+                      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_210px] xl:items-center xl:gap-3">
+                        {/* CLIENT */}
 
-                      <div className="min-w-0">
-                        <div className="truncate font-bold text-slate-900">
-                          {row.client_name ||
-                            "Client sans nom"}
+                        <div className="min-w-0">
+                          <div className="truncate font-bold text-slate-900">
+                            {row.client_name ||
+                              "Client sans nom"}
+                          </div>
+
+                          <div className="mt-1 text-xs text-slate-400">
+                            Créé le{" "}
+                            {formatDate(
+                              row.created_at
+                            )}
+                          </div>
                         </div>
 
-                        <div className="mt-1 text-xs text-slate-400">
-                          Créé le{" "}
-                          {formatDate(row.created_at)}
-                        </div>
-                      </div>
+                        {/* CONTACT */}
 
-                      {/* CONTACT */}
-
-                      <div className="min-w-0 text-sm">
-                        {row.client_email && (
-                          <div className="truncate text-slate-700">
-                            {row.client_email}
-                          </div>
-                        )}
-
-                        {row.client_phone && (
-                          <div className="truncate text-slate-500">
-                            {row.client_phone}
-                          </div>
-                        )}
-
-                        {!row.client_email &&
-                          !row.client_phone && (
-                            <span className="text-slate-400">
-                              —
-                            </span>
+                        <div className="min-w-0 text-sm">
+                          {row.client_email && (
+                            <div className="truncate text-slate-700">
+                              {
+                                row.client_email
+                              }
+                            </div>
                           )}
-                      </div>
 
-                      {/* DOSSIER */}
+                          {row.client_phone && (
+                            <div className="truncate text-slate-500">
+                              {
+                                row.client_phone
+                              }
+                            </div>
+                          )}
 
-                      <div>
-                        <div className="text-sm font-semibold text-slate-800">
-                          {row.cq_id ?? "—"}
+                          {!row.client_email &&
+                            !row.client_phone && (
+                              <span className="text-slate-400">
+                                —
+                              </span>
+                            )}
                         </div>
 
-                        <div className="mt-1 text-xs text-slate-400">
-                          {docsCount} doc
-                          {docsCount !== 1 ? "s" : ""}
+                        {/* DOSSIER */}
+
+                        <div>
+                          <div className="text-sm font-semibold text-slate-800">
+                            {row.cq_id ??
+                              "—"}
+                          </div>
+
+                          <div className="mt-1 text-xs text-slate-400">
+                            {docsCount} doc
+                            {docsCount !==
+                            1
+                              ? "s"
+                              : ""}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* YEAR */}
+                        {/* YEAR */}
 
-                      <div className="text-sm font-semibold text-slate-700">
-                        {row.tax_year ?? "—"}
-                      </div>
+                        <div className="text-sm font-semibold text-slate-700">
+                          {row.tax_year ??
+                            "—"}
+                        </div>
 
-                      {/* TYPE */}
+                        {/* TYPE */}
 
-                      <div>
-                        <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                          {row.form_type ?? "—"}
-                        </span>
-
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          <span
-                            className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
-                              row.form_filled
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : "border-slate-200 bg-slate-50 text-slate-500"
-                            }`}
-                          >
-                            {row.form_filled
-                              ? "Formulaire OK"
-                              : "Formulaire vide"}
+                        <div>
+                          <span className="inline-flex rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                            {row.form_type ??
+                              "—"}
                           </span>
 
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            <span
+                              className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
+                                row.form_filled
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : "border-slate-200 bg-slate-50 text-slate-500"
+                              }`}
+                            >
+                              {row.form_filled
+                                ? "Formulaire OK"
+                                : "Formulaire vide"}
+                            </span>
+
+                            <span
+                              className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${PAY_BADGE_CLASS[pay]}`}
+                            >
+                              {
+                                PAY_LABEL[
+                                  pay
+                                ]
+                              }
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* STATUS */}
+
+                        <div>
                           <span
-                            className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${PAY_BADGE_CLASS[pay]}`}
+                            className={`mb-2 inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${BADGE_CLASS[row.status]}`}
                           >
-                            {PAY_LABEL[pay]}
+                            {
+                              LABEL[
+                                row
+                                  .status
+                              ]
+                            }
                           </span>
+
+                          <select
+                            value={
+                              row.status
+                            }
+                            onChange={(e) =>
+                              updateStatus(
+                                row.formulaire_id,
+                                e
+                                  .target
+                                  .value as DossierStatus
+                              )
+                            }
+                            disabled={
+                              savingId ===
+                              row.formulaire_id
+                            }
+                            className="block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                          >
+                            <option value="recu">
+                              Reçu
+                            </option>
+
+                            <option value="en_cours">
+                              En cours
+                            </option>
+
+                            <option value="attente_client">
+                              En attente
+                              client
+                            </option>
+
+                            <option value="termine">
+                              Terminé
+                            </option>
+                          </select>
+                        </div>
+
+                        {/* ACTIONS */}
+
+                        <div className="flex gap-2 xl:justify-end">
+                          <Link
+                            href={`/admin/dossiers/formulaire?fid=${encodeURIComponent(
+                              row.formulaire_id
+                            )}&type=${encodeURIComponent(
+                              row.form_type ??
+                                "t1"
+                            )}&lang=fr`}
+                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                          >
+                            📋 Formulaire
+                          </Link>
+
+                          <Link
+                            href={`/admin/dossiers/docs?fid=${encodeURIComponent(
+                              row.formulaire_id
+                            )}`}
+                            className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                          >
+                            📄 Docs
+                          </Link>
                         </div>
                       </div>
-
-                      {/* STATUS */}
-
-                      <div>
-                        <span
-                          className={`mb-2 inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${BADGE_CLASS[row.status]}`}
-                        >
-                          {LABEL[row.status]}
-                        </span>
-
-                        <select
-                          value={row.status}
-                          onChange={(e) =>
-                            updateStatus(
-                              row.formulaire_id,
-                              e.target
-                                .value as DossierStatus
-                            )
-                          }
-                          disabled={
-                            savingId ===
-                            row.formulaire_id
-                          }
-                          className="block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                        >
-                          <option value="recu">
-                            Reçu
-                          </option>
-
-                          <option value="en_cours">
-                            En cours
-                          </option>
-
-                          <option value="attente_client">
-                            En attente client
-                          </option>
-
-                          <option value="termine">
-                            Terminé
-                          </option>
-                        </select>
-                      </div>
-
-                      {/* ACTIONS */}
-
-                      <div className="flex gap-2 xl:justify-end">
-                        <Link
-                          href={`/admin/dossiers/formulaire?fid=${encodeURIComponent(
-                            row.formulaire_id
-                          )}&type=${encodeURIComponent(
-                            row.form_type ?? "t1"
-                          )}&lang=fr`}
-                          className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-                        >
-                          📋 Formulaire
-                        </Link>
-
-                        <Link
-                          href={`/admin/dossiers/docs?fid=${encodeURIComponent(
-                            row.formulaire_id
-                          )}`}
-                          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
-                        >
-                          📄 Docs
-                        </Link>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
+                    </li>
+                  );
+                }
+              )}
             </ul>
           )}
         </div>
 
         <div className="mt-3 text-right text-xs text-slate-400">
           {filtered.length} dossier
-          {filtered.length !== 1 ? "s" : ""} affiché
-          {filtered.length !== 1 ? "s" : ""}
+          {filtered.length !== 1
+            ? "s"
+            : ""}{" "}
+          affiché
+          {filtered.length !== 1
+            ? "s"
+            : ""}
         </div>
       </main>
     </div>
