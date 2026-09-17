@@ -1,96 +1,71 @@
 // app/sitemap.ts
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://comptanetquebec.com";
+  const baseUrl = "https://comptanetquebec.com";
   const lastModified = new Date();
 
   return [
-    // Pages principales
     {
-      url: base,
+      url: baseUrl,
       lastModified,
+      changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: `${base}/declaration-impot-quebec`,
+      url: `${baseUrl}/declaration-impot-quebec`,
       lastModified,
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: `${base}/calculateur-impot-quebec`,
+      url: `${baseUrl}/calculateur-impot-quebec`,
       lastModified,
+      changeFrequency: "monthly",
       priority: 0.9,
     },
     {
-      url: `${base}/tarifs`,
+      url: `${baseUrl}/tarifs`,
       lastModified,
+      changeFrequency: "monthly",
       priority: 0.8,
     },
-
-    // Formulaires publics
     {
-      url: `${base}/formulaire-fiscal`,
+      url: `${baseUrl}/aide`,
       lastModified,
-      priority: 0.7,
-    },
-    {
-      url: `${base}/formulaire-fiscal-t2`,
-      lastModified,
-      priority: 0.7,
-    },
-    {
-      url: `${base}/formulaire-fiscal-ta`,
-      lastModified,
-      priority: 0.7,
-    },
-    {
-      url: `${base}/formulaire`,
-      lastModified,
+      changeFrequency: "monthly",
       priority: 0.6,
     },
     {
-      url: `${base}/demande-prise-en-charge`,
+      url: `${baseUrl}/contact`,
       lastModified,
-      priority: 0.7,
-    },
-    {
-      url: `${base}/questionnaire`,
-      lastModified,
-      priority: 0.6,
-    },
-
-    // Information
-    {
-      url: `${base}/aide`,
-      lastModified,
-      priority: 0.5,
-    },
-    {
-      url: `${base}/contact`,
-      lastModified,
+      changeFrequency: "yearly",
       priority: 0.5,
     },
 
     // Pages légales
     {
-      url: `${base}/legal`,
+      url: `${baseUrl}/legal`,
       lastModified,
+      changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${base}/legal/avis-legal`,
+      url: `${baseUrl}/legal/avis-legal`,
       lastModified,
+      changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${base}/legal/conditions`,
+      url: `${baseUrl}/legal/conditions`,
       lastModified,
+      changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${base}/legal/confidentialite`,
+      url: `${baseUrl}/legal/confidentialite`,
       lastModified,
+      changeFrequency: "yearly",
       priority: 0.3,
     },
   ];
