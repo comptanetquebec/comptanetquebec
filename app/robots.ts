@@ -1,5 +1,5 @@
 // app/robots.ts
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -7,19 +7,40 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
+        // Technique / administration
         "/api/",
         "/admin/",
         "/_admin/",
+
+        // Compte et espace privé
         "/compte/",
         "/connexion/",
-        "/dossiers/",
-        "/depot-documents/",
-        "/documents/",
         "/espace-client/",
+        "/dossiers/",
+        "/documents/",
+        "/depot-documents/",
+
+        // Tenue de livres
+        "/tenue-de-livres/",
+
+        // Formulaires clients
+        "/formulaire/",
+        "/formulaire-fiscal/",
+        "/formulaire-fiscal-t2/",
+        "/formulaire-fiscal-ta/",
+        "/formulaire-fiscal-presentiel/",
+        "/formulaire-fiscal-presentiel-t1/",
+        "/formulaire-fiscal-presentiel-t2/",
+        "/formulaire-fiscal-presentiel-ta/",
+        "/questionnaire/",
+        "/demande-prise-en-charge/",
+
+        // Paiement / confirmation
         "/paiement/",
         "/merci/",
       ],
     },
+
     sitemap: "https://comptanetquebec.com/sitemap.xml",
   };
 }
