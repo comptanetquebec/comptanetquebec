@@ -6,7 +6,12 @@ import { loadStripe } from "@stripe/stripe-js";
 import type { StripeEmbeddedCheckout } from "@stripe/stripe-js";
 
 type Lang = "fr" | "en" | "es";
-type Plan = "essential" | "tax";
+type CheckoutItem =
+  | "essential"
+  | "tax"
+  | "credits_25"
+  | "credits_50"
+  | "credits_100";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
@@ -14,7 +19,8 @@ const stripePromise = loadStripe(
 
 export default function PaiementTenueLivresPage() {
   const [lang, setLang] = useState<Lang>("fr");
-  const [plan, setPlan] = useState<Plan>("essential");
+  const [checkoutItem, setCheckoutItem] =
+    useState<CheckoutItem>("essential");
   const [clientSecret, setClientSecret] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,10 +52,15 @@ export default function PaiementTenueLivresPage() {
           "bookkeeping_checkout_plan"
         );
 
-      if (savedPlan === "tax") {
-        setPlan("tax");
+      if (
+        savedPlan === "tax" ||
+        savedPlan === "credits_25" ||
+        savedPlan === "credits_50" ||
+        savedPlan === "credits_100"
+      ) {
+        setCheckoutItem(savedPlan);
       } else {
-        setPlan("essential");
+        setCheckoutItem("essential");
       }
 
       if (!savedSecret) {
@@ -116,108 +127,146 @@ export default function PaiementTenueLivresPage() {
     };
   }, [clientSecret]);
 
+  const isCredits = checkoutItem.startsWith("credits_");
+
+  const creditAmount =
+    checkoutItem === "credits_25"
+      ? 25
+      : checkoutItem === "credits_50"
+        ? 50
+        : checkoutItem === "credits_100"
+          ? 100
+          : 0;
+
   const copy = {
     fr: {
-      back: "Retour aux forfaits",
+      back: isCredits ? "Retour à la tenue de livres" : "Retour aux forfaits",
       secure: "Paiement sécurisé",
-      title: "Finalisez votre abonnement",
+      title: isCredits
+        ? "Achetez des analyses supplémentaires"
+        : "Finalisez votre abonnement",
       subtitle:
         "Votre paiement est effectué de façon sécurisée directement dans ComptaNet Québec.",
-      order: "Votre forfait",
+      order: isCredits ? "Votre achat" : "Votre forfait",
       essential: "Essentiel",
       tax: "TPS / TVQ",
       essentialDesc:
         "Revenus, dépenses, documents et outils de tenue de livres.",
       taxDesc:
         "Tenue de livres avec suivi de la TPS et de la TVQ.",
+      creditsDesc:
+        "Analyses supplémentaires sans expiration. Elles restent disponibles jusqu’à leur utilisation.",
       perMonth: "par mois",
       essentialPrice: "19,99 $",
       taxPrice: "29,99 $",
       protected: "Paiement protégé par Stripe",
       protectedDesc:
         "Vos informations de carte sont traitées de façon sécurisée par Stripe. ComptaNet Québec ne conserve pas votre numéro de carte.",
-      after:
-        "Après le paiement, votre abonnement sera confirmé automatiquement.",
+      after: isCredits
+        ? "Après le paiement, vos analyses supplémentaires seront ajoutées automatiquement à votre compte."
+        : "Après le paiement, votre abonnement sera confirmé automatiquement.",
       loading: "Chargement du paiement sécurisé…",
       errorTitle: "Le paiement ne peut pas être chargé",
       missing:
-        "Votre session de paiement a expiré ou n'a pas été trouvée. Retournez aux forfaits pour recommencer.",
+        "Votre session de paiement a expiré ou n'a pas été trouvée. Retournez à la tenue de livres pour recommencer.",
       stripeError:
         "Une erreur est survenue pendant le chargement du paiement sécurisé.",
-      retry: "Retourner aux forfaits",
+      retry: "Retourner à la tenue de livres",
+      analyses: "analyses supplémentaires",
     },
 
     en: {
-      back: "Back to plans",
+      back: isCredits ? "Back to bookkeeping" : "Back to plans",
       secure: "Secure payment",
-      title: "Complete your subscription",
+      title: isCredits
+        ? "Purchase additional analyses"
+        : "Complete your subscription",
       subtitle:
         "Your payment is securely completed directly within ComptaNet Québec.",
-      order: "Your plan",
+      order: isCredits ? "Your purchase" : "Your plan",
       essential: "Essential",
       tax: "GST / QST",
       essentialDesc:
         "Income, expenses, documents and bookkeeping tools.",
       taxDesc:
         "Bookkeeping with GST and QST tracking.",
+      creditsDesc:
+        "Additional analyses do not expire. They remain available until used.",
       perMonth: "per month",
       essentialPrice: "$19.99",
       taxPrice: "$29.99",
       protected: "Payment protected by Stripe",
       protectedDesc:
         "Your card information is securely processed by Stripe. ComptaNet Québec does not store your card number.",
-      after:
-        "After payment, your subscription will be confirmed automatically.",
+      after: isCredits
+        ? "After payment, your additional analyses will automatically be added to your account."
+        : "After payment, your subscription will be confirmed automatically.",
       loading: "Loading secure payment…",
       errorTitle: "Payment cannot be loaded",
       missing:
-        "Your payment session has expired or could not be found. Return to the plans to start again.",
+        "Your payment session has expired or could not be found. Return to bookkeeping to start again.",
       stripeError:
         "An error occurred while loading the secure payment form.",
-      retry: "Back to plans",
+      retry: "Back to bookkeeping",
+      analyses: "additional analyses",
     },
 
     es: {
-      back: "Volver a los planes",
+      back: isCredits ? "Volver a contabilidad" : "Volver a los planes",
       secure: "Pago seguro",
-      title: "Complete su suscripción",
+      title: isCredits
+        ? "Compre análisis adicionales"
+        : "Complete su suscripción",
       subtitle:
         "Su pago se realiza de forma segura directamente en ComptaNet Québec.",
-      order: "Su plan",
+      order: isCredits ? "Su compra" : "Su plan",
       essential: "Esencial",
       tax: "GST / QST",
       essentialDesc:
         "Ingresos, gastos, documentos y herramientas de contabilidad.",
       taxDesc:
         "Contabilidad con seguimiento de GST y QST.",
+      creditsDesc:
+        "Los análisis adicionales no caducan. Permanecen disponibles hasta que se utilicen.",
       perMonth: "por mes",
       essentialPrice: "19,99 $",
       taxPrice: "29,99 $",
       protected: "Pago protegido por Stripe",
       protectedDesc:
         "Los datos de su tarjeta son procesados de forma segura por Stripe. ComptaNet Québec no almacena su número de tarjeta.",
-      after:
-        "Después del pago, su suscripción se confirmará automáticamente.",
+      after: isCredits
+        ? "Después del pago, sus análisis adicionales se añadirán automáticamente a su cuenta."
+        : "Después del pago, su suscripción se confirmará automáticamente.",
       loading: "Cargando el pago seguro…",
       errorTitle: "No se puede cargar el pago",
       missing:
-        "Su sesión de pago ha expirado o no se encontró. Vuelva a los planes para comenzar de nuevo.",
+        "Su sesión de pago ha expirado o no se encontró. Vuelva a contabilidad para comenzar de nuevo.",
       stripeError:
         "Se produjo un error al cargar el formulario de pago seguro.",
-      retry: "Volver a los planes",
+      retry: "Volver a contabilidad",
+      analyses: "análisis adicionales",
     },
   }[lang];
 
-  const planName =
-    plan === "tax" ? copy.tax : copy.essential;
+  const itemName = isCredits
+    ? `+${creditAmount} ${copy.analyses}`
+    : checkoutItem === "tax"
+      ? copy.tax
+      : copy.essential;
 
-  const planPrice =
-    plan === "tax"
+  const itemPrice = isCredits
+    ? checkoutItem === "credits_25"
+      ? "4,99 $"
+      : checkoutItem === "credits_50"
+        ? "7,99 $"
+        : "14,99 $"
+    : checkoutItem === "tax"
       ? copy.taxPrice
       : copy.essentialPrice;
 
-  const planDescription =
-    plan === "tax"
+  const itemDescription = isCredits
+    ? copy.creditsDesc
+    : checkoutItem === "tax"
       ? copy.taxDesc
       : copy.essentialDesc;
 
@@ -458,7 +507,7 @@ export default function PaiementTenueLivresPage() {
                   marginBottom: 8,
                 }}
               >
-                {planName}
+                {itemName}
               </div>
 
               <p
@@ -469,7 +518,7 @@ export default function PaiementTenueLivresPage() {
                   fontSize: 14,
                 }}
               >
-                {planDescription}
+                {itemDescription}
               </p>
 
               <div
@@ -484,17 +533,19 @@ export default function PaiementTenueLivresPage() {
                     fontSize: 30,
                   }}
                 >
-                  {planPrice}
+                  {itemPrice}
                 </strong>
 
-                <span
-                  style={{
-                    color: "#64748b",
-                    marginLeft: 7,
-                  }}
-                >
-                  {copy.perMonth}
-                </span>
+                {!isCredits && (
+                  <span
+                    style={{
+                      color: "#64748b",
+                      marginLeft: 7,
+                    }}
+                  >
+                    {copy.perMonth}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -621,5 +672,5 @@ export default function PaiementTenueLivresPage() {
         }
       `}</style>
     </main>
-  );
+);
 }
