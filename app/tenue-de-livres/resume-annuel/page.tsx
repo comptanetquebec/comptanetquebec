@@ -16,6 +16,8 @@ type Transaction = {
   id: string;
   transaction_date: string;
   entry_type: string;
+  source: string | null;
+  description: string | null;
   subtotal: number | string | null;
   gst: number | string | null;
   qst: number | string | null;
@@ -84,7 +86,16 @@ export default function ResumeAnnuelPage() {
       taxNote: "Les taxes payées sont basées sur les montants saisis dans les dépenses. L’admissibilité réelle aux CTI/RTI peut dépendre de la nature de la dépense et de votre situation.",
       notRegistered: "Cette entreprise n’est pas enregistrée comme inscrite à la TPS/TVQ dans ComptaNet Québec.",
       beforeTaxInfo: "Les revenus et dépenses ci-dessous correspondent aux montants totaux des transactions, taxes comprises, comme sur votre tableau de bord.",
-      viewTaxes: "Voir TPS/TVQ",
+      viewTaxes: "Voir le détail TPS/TVQ",
+      incomeBreakdown: "Détail des revenus",
+      expenseBreakdown: "Détail des dépenses",
+      source: "Source",
+      supplier: "Fournisseur / dépense",
+      transactionCount: "transaction(s)",
+      taxSummary: "Résumé TPS / TVQ",
+      taxSummaryDesc: "Aperçu annuel. Le détail complet reste dans la page TPS/TVQ.",
+      estimatedToRemit: "Montant estimé à remettre",
+      estimatedCredit: "Crédit / remboursement estimé",
     },
     en: {
       title: "Annual summary",
@@ -113,7 +124,16 @@ export default function ResumeAnnuelPage() {
       taxNote: "Taxes paid are based on amounts entered on expenses. Actual ITC/ITR eligibility can depend on the nature of the expense and your situation.",
       notRegistered: "This business is not recorded as registered for GST/QST in ComptaNet Québec.",
       beforeTaxInfo: "Income and expenses below are transaction totals including taxes, matching your dashboard.",
-      viewTaxes: "View GST/QST",
+      viewTaxes: "View GST/QST details",
+      incomeBreakdown: "Income details",
+      expenseBreakdown: "Expense details",
+      source: "Source",
+      supplier: "Supplier / expense",
+      transactionCount: "transaction(s)",
+      taxSummary: "GST / QST summary",
+      taxSummaryDesc: "Annual overview. Full details remain on the GST/QST page.",
+      estimatedToRemit: "Estimated amount to remit",
+      estimatedCredit: "Estimated credit / refund",
     },
     es: {
       title: "Resumen anual",
@@ -142,7 +162,16 @@ export default function ResumeAnnuelPage() {
       taxNote: "Los impuestos pagados se basan en los importes ingresados en los gastos. La elegibilidad real de los créditos puede depender del tipo de gasto y de su situación.",
       notRegistered: "Esta empresa no está registrada como inscrita para GST/QST en ComptaNet Québec.",
       beforeTaxInfo: "Los ingresos y gastos siguientes son los totales de las transacciones, impuestos incluidos, igual que en su panel.",
-      viewTaxes: "Ver GST/QST",
+      viewTaxes: "Ver detalle GST/QST",
+      incomeBreakdown: "Detalle de ingresos",
+      expenseBreakdown: "Detalle de gastos",
+      source: "Fuente",
+      supplier: "Proveedor / gasto",
+      transactionCount: "transacción(es)",
+      taxSummary: "Resumen GST / QST",
+      taxSummaryDesc: "Resumen anual. El detalle completo permanece en la página GST/QST.",
+      estimatedToRemit: "Importe estimado a remitir",
+      estimatedCredit: "Crédito / reembolso estimado",
     },
   }[lang];
 
@@ -205,7 +234,7 @@ export default function ResumeAnnuelPage() {
   async function loadTransactions(businessId: string, selectedYear: number) {
     const { data, error: txError } = await supabase
       .from("bookkeeping_transactions")
-      .select("id, transaction_date, entry_type, subtotal, gst, qst, total")
+      .select("id, transaction_date, entry_type, source, description, subtotal, gst, qst, total")
       .eq("business_id", businessId)
       .eq("status", "confirmed")
       .gte("transaction_date", `${selectedYear}-01-01`)
@@ -300,6 +329,46 @@ export default function ResumeAnnuelPage() {
     [monthly]
   );
 
+  const groupedIncome = useMemo(() => {
+    const groups = new Map<string, { label: string; total: number; count: number }>();
+
+    for (const tx of transactions) {
+      if (tx.entry_type !== "income") continue;
+
+      const label = String(tx.source || tx.description || "—").trim() || "—";
+      const subtotal = n(tx.subtotal);
+      const total = n(tx.total) || subtotal + n(tx.gst) + n(tx.qst);
+      const key = label.toLocaleLowerCase();
+
+      const current = groups.get(key) ?? { label, total: 0, count: 0 };
+      current.total += total;
+      current.count += 1;
+      groups.set(key, current);
+    }
+
+    return Array.from(groups.values()).sort((a, b) => b.total - a.total);
+  }, [transactions]);
+
+  const groupedExpenses = useMemo(() => {
+    const groups = new Map<string, { label: string; total: number; count: number }>();
+
+    for (const tx of transactions) {
+      if (tx.entry_type !== "expense") continue;
+
+      const label = String(tx.source || tx.description || "—").trim() || "—";
+      const subtotal = n(tx.subtotal);
+      const total = n(tx.total) || subtotal + n(tx.gst) + n(tx.qst);
+      const key = label.toLocaleLowerCase();
+
+      const current = groups.get(key) ?? { label, total: 0, count: 0 };
+      current.total += total;
+      current.count += 1;
+      groups.set(key, current);
+    }
+
+    return Array.from(groups.values()).sort((a, b) => b.total - a.total);
+  }, [transactions]);
+
   const result = totals.income - totals.expenses;
   const netGst = totals.gstCollected - totals.gstPaid;
   const netQst = totals.qstCollected - totals.qstPaid;
@@ -363,36 +432,61 @@ export default function ResumeAnnuelPage() {
               <SummaryCard title={text.result} value={money(result)} icon="📈" />
             </section>
 
+            <section style={breakdownGridStyle}>
+              <BreakdownCard
+                title={text.incomeBreakdown}
+                columnLabel={text.source}
+                items={groupedIncome}
+                total={totals.income}
+                money={money}
+                transactionCount={text.transactionCount}
+                icon="💰"
+              />
+
+              <BreakdownCard
+                title={text.expenseBreakdown}
+                columnLabel={text.supplier}
+                items={groupedExpenses}
+                total={totals.expenses}
+                money={money}
+                transactionCount={text.transactionCount}
+                icon="🧾"
+              />
+            </section>
+
             {registered ? (
-              <>
-                <section style={taxSectionStyle}>
-                  <div style={sectionHeaderStyle}>
-                    <div>
-                      <h2 style={sectionTitleStyle}>{text.taxes}</h2>
-                      <div style={sectionSubStyle}>{year}</div>
-                    </div>
-                    <Link href={`/tenue-de-livres/taxes?lang=${lang}&year=${year}`} style={taxLinkStyle}>
-                      🧮 {text.viewTaxes}
-                    </Link>
+              <section style={compactTaxSectionStyle}>
+                <div style={sectionHeaderStyle}>
+                  <div>
+                    <h2 style={sectionTitleStyle}>{text.taxSummary}</h2>
+                    <div style={sectionSubStyle}>{text.taxSummaryDesc}</div>
                   </div>
 
-                  <div style={taxGridStyle}>
-                    <TaxCard title="TPS / GST" collectedLabel={text.gstCollected} collected={totals.gstCollected}
-                      paidLabel={text.gstPaid} paid={totals.gstPaid} netLabel={text.gstNet} net={netGst} money={money} />
-                    <TaxCard title="TVQ / QST" collectedLabel={text.qstCollected} collected={totals.qstCollected}
-                      paidLabel={text.qstPaid} paid={totals.qstPaid} netLabel={text.qstNet} net={netQst} money={money} />
-                    <section style={balanceStyle}>
-                      <div style={smallLabelStyle}>{text.netTaxes}</div>
-                      <div style={balanceValueStyle}>{money(Math.abs(netTaxes))}</div>
-                      <div style={{ fontWeight: 900, color: netTaxes >= 0 ? "#b45309" : "#047857" }}>
-                        {netTaxes >= 0 ? text.remit : text.credit}
-                      </div>
-                    </section>
-                  </div>
-                </section>
+                  <Link
+                    href={`/tenue-de-livres/taxes?lang=${lang}&year=${year}`}
+                    style={taxLinkStyle}
+                  >
+                    🧮 {text.viewTaxes}
+                  </Link>
+                </div>
 
-                <div style={taxNoteStyle}><strong>Note :</strong> {text.taxNote}</div>
-              </>
+                <div style={compactTaxGridStyle}>
+                  <div style={compactTaxCardStyle}>
+                    <span>{text.gstNet}</span>
+                    <strong>{money(netGst)}</strong>
+                  </div>
+
+                  <div style={compactTaxCardStyle}>
+                    <span>{text.qstNet}</span>
+                    <strong>{money(netQst)}</strong>
+                  </div>
+
+                  <div style={compactTaxBalanceStyle}>
+                    <span>{netTaxes >= 0 ? text.estimatedToRemit : text.estimatedCredit}</span>
+                    <strong>{money(Math.abs(netTaxes))}</strong>
+                  </div>
+                </div>
+              </section>
             ) : (
               <div style={warningStyle}>ℹ️ {text.notRegistered}</div>
             )}
@@ -416,21 +510,17 @@ export default function ResumeAnnuelPage() {
                         <th style={thRightStyle}>{text.income}</th>
                         <th style={thRightStyle}>{text.expenses}</th>
                         <th style={thRightStyle}>{text.result}</th>
-                        {registered && <th style={thRightStyle}>{text.netTaxes}</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {monthly.map((m, index) => {
                         const monthResult = m.income - m.expenses;
-                        const monthTaxes =
-                          (m.gstCollected - m.gstPaid) + (m.qstCollected - m.qstPaid);
                         return (
                           <tr key={index}>
                             <td style={{ ...tdStyle, fontWeight: 900 }}>{MONTHS[lang][index]}</td>
                             <td style={tdRightStyle}>{money(m.income)}</td>
                             <td style={tdRightStyle}>{money(m.expenses)}</td>
                             <td style={{ ...tdRightStyle, fontWeight: 900 }}>{money(monthResult)}</td>
-                            {registered && <td style={tdRightStyle}>{money(monthTaxes)}</td>}
                           </tr>
                         );
                       })}
@@ -441,7 +531,6 @@ export default function ResumeAnnuelPage() {
                         <td style={totalRightStyle}>{money(totals.income)}</td>
                         <td style={totalRightStyle}>{money(totals.expenses)}</td>
                         <td style={totalRightStyle}>{money(result)}</td>
-                        {registered && <td style={totalRightStyle}>{money(netTaxes)}</td>}
                       </tr>
                     </tfoot>
                   </table>
@@ -464,18 +553,53 @@ function SummaryCard({ title, value, icon }: { title: string; value: string; ico
   );
 }
 
-function TaxCard({
-  title, collectedLabel, collected, paidLabel, paid, netLabel, net, money,
+function BreakdownCard({
+  title,
+  columnLabel,
+  items,
+  total,
+  money,
+  transactionCount,
+  icon,
 }: {
-  title: string; collectedLabel: string; collected: number; paidLabel: string; paid: number;
-  netLabel: string; net: number; money: (value: number) => string;
+  title: string;
+  columnLabel: string;
+  items: { label: string; total: number; count: number }[];
+  total: number;
+  money: (value: number) => string;
+  transactionCount: string;
+  icon: string;
 }) {
   return (
-    <section style={taxCardStyle}>
-      <div style={{fontWeight:900,fontSize:18,marginBottom:8}}>{title}</div>
-      <div style={taxLineStyle}><span>{collectedLabel}</span><strong>{money(collected)}</strong></div>
-      <div style={taxLineStyle}><span>{paidLabel}</span><strong>− {money(paid)}</strong></div>
-      <div style={taxNetStyle}><span>{netLabel}</span><strong>{money(net)}</strong></div>
+    <section style={breakdownCardStyle}>
+      <div style={breakdownHeaderStyle}>
+        <div style={breakdownTitleStyle}>
+          <span>{icon}</span>
+          <span>{title}</span>
+        </div>
+        <div style={breakdownTotalStyle}>{money(total)}</div>
+      </div>
+
+      <div style={breakdownColumnHeaderStyle}>
+        <span>{columnLabel}</span>
+        <span>Total</span>
+      </div>
+
+      {items.length === 0 ? (
+        <div style={breakdownEmptyStyle}>—</div>
+      ) : (
+        items.map((item) => (
+          <div key={`${title}-${item.label}`} style={breakdownRowStyle}>
+            <div>
+              <div style={breakdownNameStyle}>{item.label}</div>
+              <div style={breakdownCountStyle}>
+                {item.count} {transactionCount}
+              </div>
+            </div>
+            <strong style={{ whiteSpace: "nowrap" }}>{money(item.total)}</strong>
+          </div>
+        ))
+      )}
     </section>
   );
 }
@@ -500,6 +624,20 @@ const summaryCardStyle: React.CSSProperties = { background:"#fff", border:"1px s
 const summaryTopStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:11 };
 const summaryLabelStyle: React.CSSProperties = { color:"#64748b", fontWeight:800, fontSize:14 };
 const summaryValueStyle: React.CSSProperties = { fontSize:27, fontWeight:900 };
+const breakdownGridStyle: React.CSSProperties = { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:16, marginBottom:18 };
+const breakdownCardStyle: React.CSSProperties = { background:"#fff", border:"1px solid #dbe5f1", borderRadius:16, overflow:"hidden" };
+const breakdownHeaderStyle: React.CSSProperties = { padding:"18px 20px", background:"#f8fbff", borderBottom:"1px solid #e5e7eb" };
+const breakdownTitleStyle: React.CSSProperties = { display:"flex", alignItems:"center", gap:8, fontSize:18, fontWeight:900 };
+const breakdownTotalStyle: React.CSSProperties = { marginTop:8, fontSize:28, fontWeight:900 };
+const breakdownColumnHeaderStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", gap:15, padding:"10px 20px", background:"#f8fafc", color:"#64748b", fontSize:12, fontWeight:900 };
+const breakdownRowStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:16, padding:"13px 20px", borderTop:"1px solid #eef2f7" };
+const breakdownNameStyle: React.CSSProperties = { fontWeight:900, color:"#0f172a" };
+const breakdownCountStyle: React.CSSProperties = { color:"#64748b", fontSize:12, marginTop:3 };
+const breakdownEmptyStyle: React.CSSProperties = { padding:26, textAlign:"center", color:"#94a3b8" };
+const compactTaxSectionStyle: React.CSSProperties = { background:"#fff", border:"1px solid #dbe5f1", borderRadius:16, padding:20, marginBottom:18 };
+const compactTaxGridStyle: React.CSSProperties = { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(190px, 1fr))", gap:12 };
+const compactTaxCardStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, background:"#f8fbff", border:"1px solid #dbe5f1", borderRadius:12, padding:"15px 16px", fontWeight:800 };
+const compactTaxBalanceStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, background:"#eef6ff", border:"2px solid #cfe3ff", borderRadius:12, padding:"15px 16px", fontWeight:900 };
 const taxSectionStyle: React.CSSProperties = { background:"#fff", border:"1px solid #dbe5f1", borderRadius:16, padding:20, marginBottom:12 };
 const sectionHeaderStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:15, flexWrap:"wrap", marginBottom:16 };
 const sectionTitleStyle: React.CSSProperties = { margin:0, fontSize:21 };
