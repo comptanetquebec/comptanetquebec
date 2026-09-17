@@ -22,6 +22,9 @@ type SubscriptionResponse = {
   subscription?: {
     plan?: string | null;
     status?: string | null;
+    monthlyLimit?: number | null;
+    monthlyUsed?: number | null;
+    bonusCredits?: number | null;
   } | null;
   error?: string;
 };
@@ -56,6 +59,8 @@ export default function TenueDeLivresPage() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [subscription, setSubscription] =
+    useState<SubscriptionResponse["subscription"]>(null);
 
   const availableYears = Array.from(
     { length: currentYear - 2020 + 6 },
@@ -325,6 +330,8 @@ export default function TenueDeLivresPage() {
         return;
       }
 
+      setSubscription(result.subscription ?? null);
+
       /*
        * 4. L'abonnement est actif.
        */
@@ -546,6 +553,14 @@ export default function TenueDeLivresPage() {
         "Impossible de vérifier votre accès",
 
       retry: "Réessayer",
+      creditsTitle: "Analyses disponibles",
+      monthlyCredits: "Forfait mensuel",
+      monthlyRemaining: "restantes",
+      bonusCredits: "Crédits supplémentaires",
+      buyCredits: "Besoin de plus d’analyses ?",
+      buyCreditsDesc:
+        "Les analyses supplémentaires achetées restent disponibles jusqu’à leur utilisation.",
+      buy: "Acheter",
     },
 
     en: {
@@ -632,6 +647,14 @@ export default function TenueDeLivresPage() {
         "Unable to verify your access",
 
       retry: "Try again",
+      creditsTitle: "Available analyses",
+      monthlyCredits: "Monthly plan",
+      monthlyRemaining: "remaining",
+      bonusCredits: "Extra credits",
+      buyCredits: "Need more analyses?",
+      buyCreditsDesc:
+        "Extra analyses you purchase remain available until they are used.",
+      buy: "Buy",
     },
 
     es: {
@@ -718,6 +741,14 @@ export default function TenueDeLivresPage() {
         "No se puede verificar su acceso",
 
       retry: "Intentar de nuevo",
+      creditsTitle: "Análisis disponibles",
+      monthlyCredits: "Plan mensual",
+      monthlyRemaining: "disponibles",
+      bonusCredits: "Créditos adicionales",
+      buyCredits: "¿Necesita más análisis?",
+      buyCreditsDesc:
+        "Los análisis adicionales comprados permanecen disponibles hasta que se utilicen.",
+      buy: "Comprar",
     },
   }[lang];
 
@@ -1103,6 +1134,11 @@ export default function TenueDeLivresPage() {
     );
   }
 
+  const monthlyLimit = Number(subscription?.monthlyLimit ?? 0);
+  const monthlyUsed = Number(subscription?.monthlyUsed ?? 0);
+  const bonusCredits = Number(subscription?.bonusCredits ?? 0);
+  const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
+
   /*
    * Abonnement actif + compagnie existante :
    * tableau de bord.
@@ -1278,6 +1314,83 @@ export default function TenueDeLivresPage() {
               icon="📁"
               href={`/tenue-de-livres/documents?lang=${lang}&year=${selectedYear}`}
             />
+          </div>
+        </section>
+
+        <section
+          style={{
+            marginBottom: 28,
+            background: "#ffffff",
+            border: "1px solid #dbe5f1",
+            borderRadius: 18,
+            padding: 22,
+          }}
+        >
+          <h2 style={{ margin: "0 0 16px", fontSize: 21 }}>
+            {text.creditsTitle}
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 14,
+              marginBottom: 22,
+            }}
+          >
+            <div
+              style={{
+                border: "1px solid #dbeafe",
+                background: "#f8fbff",
+                borderRadius: 14,
+                padding: 18,
+              }}
+            >
+              <div style={{ color: "#64748b", fontWeight: 800, fontSize: 14 }}>
+                {text.monthlyCredits}
+              </div>
+              <div style={{ fontSize: 27, fontWeight: 900, marginTop: 7 }}>
+                {monthlyUsed} / {monthlyLimit}
+              </div>
+              <div style={{ color: "#004aad", fontWeight: 800, marginTop: 5 }}>
+                {monthlyRemaining} {text.monthlyRemaining}
+              </div>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid #dbeafe",
+                background: "#f8fbff",
+                borderRadius: 14,
+                padding: 18,
+              }}
+            >
+              <div style={{ color: "#64748b", fontWeight: 800, fontSize: 14 }}>
+                {text.bonusCredits}
+              </div>
+              <div style={{ fontSize: 27, fontWeight: 900, marginTop: 7 }}>
+                {bonusCredits}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 5 }}>
+            {text.buyCredits}
+          </div>
+          <p style={{ margin: "0 0 15px", color: "#64748b", lineHeight: 1.5 }}>
+            {text.buyCreditsDesc}
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+            }}
+          >
+            <CreditCard credits={25} price="4,99 $" lang={lang} buttonText={text.buy} />
+            <CreditCard credits={50} price="7,99 $" lang={lang} buttonText={text.buy} />
+            <CreditCard credits={100} price="14,99 $" lang={lang} buttonText={text.buy} />
           </div>
         </section>
 
@@ -1660,6 +1773,105 @@ function PlanCard({
         </p>
       )}
     </section>
+  );
+}
+
+function CreditCard({
+  credits,
+  price,
+  lang,
+  buttonText,
+}: {
+  credits: 25 | 50 | 100;
+  price: string;
+  lang: Lang;
+  buttonText: string;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function startCheckout() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch("/api/tenue-de-livres/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          credits,
+          lang,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || "Checkout error");
+      }
+
+      if (!result?.clientSecret) {
+        throw new Error("Missing Stripe client secret");
+      }
+
+      sessionStorage.setItem(
+        "bookkeeping_checkout_client_secret",
+        result.clientSecret
+      );
+      sessionStorage.setItem(
+        "bookkeeping_checkout_plan",
+        `credits_${credits}`
+      );
+
+      window.location.href = `/tenue-de-livres/paiement?lang=${lang}`;
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Checkout error");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        border: "1px solid #cfe3ff",
+        borderRadius: 14,
+        padding: 17,
+        background: "#ffffff",
+      }}
+    >
+      <div style={{ fontSize: 22, fontWeight: 900, color: "#004aad" }}>
+        +{credits}
+      </div>
+      <div style={{ fontSize: 21, fontWeight: 900, margin: "6px 0 14px" }}>
+        {price}
+      </div>
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => void startCheckout()}
+        style={{
+          width: "100%",
+          border: 0,
+          borderRadius: 9,
+          padding: "11px 14px",
+          background: "#004aad",
+          color: "#ffffff",
+          fontWeight: 900,
+          cursor: loading ? "default" : "pointer",
+          opacity: loading ? 0.65 : 1,
+        }}
+      >
+        {loading ? "…" : buttonText}
+      </button>
+      {error && (
+        <p style={{ color: "#b91c1c", fontSize: 12, marginBottom: 0 }}>
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 
