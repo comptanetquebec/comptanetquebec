@@ -64,9 +64,9 @@ export default function ResumeAnnuelPage() {
       subtitle: "Vue d’ensemble de vos revenus, dépenses, résultat et taxes pour l’année sélectionnée.",
       back: "Retour à la tenue de livres",
       year: "Année",
-      income: "Revenus",
-      expenses: "Dépenses",
-      result: "Résultat",
+      income: "Revenus avant taxes",
+      expenses: "Dépenses avant taxes",
+      result: "Profit / Perte",
       taxes: "TPS / TVQ",
       gstCollected: "TPS perçue",
       gstPaid: "TPS payée",
@@ -85,7 +85,7 @@ export default function ResumeAnnuelPage() {
       note: "Résumé basé sur les transactions confirmées enregistrées dans ComptaNet Québec.",
       taxNote: "Les taxes payées sont basées sur les montants saisis dans les dépenses. L’admissibilité réelle aux CTI/RTI peut dépendre de la nature de la dépense et de votre situation.",
       notRegistered: "Cette entreprise n’est pas enregistrée comme inscrite à la TPS/TVQ dans ComptaNet Québec.",
-      beforeTaxInfo: "Les revenus et dépenses ci-dessous correspondent aux montants totaux des transactions, taxes comprises, comme sur votre tableau de bord.",
+      beforeTaxInfo: "Le résumé financier ci-dessous présente les revenus et les dépenses avant TPS/TVQ.",
       viewTaxes: "Voir le détail TPS/TVQ",
       incomeBreakdown: "Détail des revenus",
       expenseBreakdown: "Détail des dépenses",
@@ -103,9 +103,9 @@ export default function ResumeAnnuelPage() {
       subtitle: "Overview of your income, expenses, net result and taxes for the selected year.",
       back: "Back to bookkeeping",
       year: "Year",
-      income: "Income",
-      expenses: "Expenses",
-      result: "Net result",
+      income: "Income before tax",
+      expenses: "Expenses before tax",
+      result: "Profit / Loss",
       taxes: "GST / QST",
       gstCollected: "GST collected",
       gstPaid: "GST paid",
@@ -124,7 +124,7 @@ export default function ResumeAnnuelPage() {
       note: "Summary based on confirmed transactions recorded in ComptaNet Québec.",
       taxNote: "Taxes paid are based on amounts entered on expenses. Actual ITC/ITR eligibility can depend on the nature of the expense and your situation.",
       notRegistered: "This business is not recorded as registered for GST/QST in ComptaNet Québec.",
-      beforeTaxInfo: "Income and expenses below are transaction totals including taxes, matching your dashboard.",
+      beforeTaxInfo: "The financial summary below shows income and expenses before GST/QST.",
       viewTaxes: "View GST/QST details",
       incomeBreakdown: "Income details",
       expenseBreakdown: "Expense details",
@@ -142,9 +142,9 @@ export default function ResumeAnnuelPage() {
       subtitle: "Resumen de ingresos, gastos, resultado e impuestos del año seleccionado.",
       back: "Volver a contabilidad",
       year: "Año",
-      income: "Ingresos",
-      expenses: "Gastos",
-      result: "Resultado",
+      income: "Ingresos antes de impuestos",
+      expenses: "Gastos antes de impuestos",
+      result: "Ganancia / Pérdida",
       taxes: "GST / QST",
       gstCollected: "GST cobrado",
       gstPaid: "GST pagado",
@@ -163,7 +163,7 @@ export default function ResumeAnnuelPage() {
       note: "Resumen basado en transacciones confirmadas registradas en ComptaNet Québec.",
       taxNote: "Los impuestos pagados se basan en los importes ingresados en los gastos. La elegibilidad real de los créditos puede depender del tipo de gasto y de su situación.",
       notRegistered: "Esta empresa no está registrada como inscrita para GST/QST en ComptaNet Québec.",
-      beforeTaxInfo: "Los ingresos y gastos siguientes son los totales de las transacciones, impuestos incluidos, igual que en su panel.",
+      beforeTaxInfo: "El resumen financiero siguiente muestra los ingresos y gastos antes de GST/QST.",
       viewTaxes: "Ver detalle GST/QST",
       incomeBreakdown: "Detalle de ingresos",
       expenseBreakdown: "Detalle de gastos",
@@ -301,14 +301,12 @@ export default function ResumeAnnuelPage() {
       const subtotal = n(tx.subtotal);
       const gst = n(tx.gst);
       const qst = n(tx.qst);
-      const total = n(tx.total) || subtotal + gst + qst;
-
       if (tx.entry_type === "income") {
-        result[month].income += total;
+        result[month].income += subtotal;
         result[month].gstCollected += gst;
         result[month].qstCollected += qst;
       } else if (tx.entry_type === "expense") {
-        result[month].expenses += total;
+        result[month].expenses += subtotal;
         result[month].gstPaid += gst;
         result[month].qstPaid += qst;
       }
@@ -331,46 +329,6 @@ export default function ResumeAnnuelPage() {
     ),
     [monthly]
   );
-
-  const groupedIncome = useMemo(() => {
-    const groups = new Map<string, { label: string; total: number; count: number }>();
-
-    for (const tx of transactions) {
-      if (tx.entry_type !== "income") continue;
-
-      const label = String(tx.source || tx.description || "—").trim() || "—";
-      const subtotal = n(tx.subtotal);
-      const total = n(tx.total) || subtotal + n(tx.gst) + n(tx.qst);
-      const key = label.toLocaleLowerCase();
-
-      const current = groups.get(key) ?? { label, total: 0, count: 0 };
-      current.total += total;
-      current.count += 1;
-      groups.set(key, current);
-    }
-
-    return Array.from(groups.values()).sort((a, b) => b.total - a.total);
-  }, [transactions]);
-
-  const groupedExpenses = useMemo(() => {
-    const groups = new Map<string, { label: string; total: number; count: number }>();
-
-    for (const tx of transactions) {
-      if (tx.entry_type !== "expense") continue;
-
-      const label = String(tx.source || tx.description || "—").trim() || "—";
-      const subtotal = n(tx.subtotal);
-      const total = n(tx.total) || subtotal + n(tx.gst) + n(tx.qst);
-      const key = label.toLocaleLowerCase();
-
-      const current = groups.get(key) ?? { label, total: 0, count: 0 };
-      current.total += total;
-      current.count += 1;
-      groups.set(key, current);
-    }
-
-    return Array.from(groups.values()).sort((a, b) => b.total - a.total);
-  }, [transactions]);
 
   const result = totals.income - totals.expenses;
   const netGst = totals.gstCollected - totals.gstPaid;
@@ -455,28 +413,6 @@ export default function ResumeAnnuelPage() {
               <SummaryCard title={text.income} value={money(totals.income)} icon="💰" />
               <SummaryCard title={text.expenses} value={money(totals.expenses)} icon="🧾" />
               <SummaryCard title={text.result} value={money(result)} icon="📈" />
-            </section>
-
-            <section style={breakdownGridStyle} className="annual-print-avoid">
-              <BreakdownCard
-                title={text.incomeBreakdown}
-                columnLabel={text.source}
-                items={groupedIncome}
-                total={totals.income}
-                money={money}
-                transactionCount={text.transactionCount}
-                icon="💰"
-              />
-
-              <BreakdownCard
-                title={text.expenseBreakdown}
-                columnLabel={text.supplier}
-                items={groupedExpenses}
-                total={totals.expenses}
-                money={money}
-                transactionCount={text.transactionCount}
-                icon="🧾"
-              />
             </section>
 
             {registered ? (
@@ -578,57 +514,6 @@ function SummaryCard({ title, value, icon }: { title: string; value: string; ico
   );
 }
 
-function BreakdownCard({
-  title,
-  columnLabel,
-  items,
-  total,
-  money,
-  transactionCount,
-  icon,
-}: {
-  title: string;
-  columnLabel: string;
-  items: { label: string; total: number; count: number }[];
-  total: number;
-  money: (value: number) => string;
-  transactionCount: string;
-  icon: string;
-}) {
-  return (
-    <section style={breakdownCardStyle}>
-      <div style={breakdownHeaderStyle}>
-        <div style={breakdownTitleStyle}>
-          <span>{icon}</span>
-          <span>{title}</span>
-        </div>
-        <div style={breakdownTotalStyle}>{money(total)}</div>
-      </div>
-
-      <div style={breakdownColumnHeaderStyle}>
-        <span>{columnLabel}</span>
-        <span>Total</span>
-      </div>
-
-      {items.length === 0 ? (
-        <div style={breakdownEmptyStyle}>—</div>
-      ) : (
-        items.map((item) => (
-          <div key={`${title}-${item.label}`} style={breakdownRowStyle}>
-            <div>
-              <div style={breakdownNameStyle}>{item.label}</div>
-              <div style={breakdownCountStyle}>
-                {item.count} {transactionCount}
-              </div>
-            </div>
-            <strong style={{ whiteSpace: "nowrap" }}>{money(item.total)}</strong>
-          </div>
-        ))
-      )}
-    </section>
-  );
-}
-
 const pageStyle: React.CSSProperties = { minHeight:"100vh", background:"#f5f9ff", color:"#0f172a", fontFamily:"Arial, Helvetica, sans-serif" };
 const headerStyle: React.CSSProperties = { background:"#fff", borderBottom:"1px solid #e5e7eb", position:"sticky", top:0, zIndex:20 };
 const headerInnerStyle: React.CSSProperties = { maxWidth:1200, margin:"0 auto", padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexWrap:"wrap" };
@@ -651,33 +536,14 @@ const summaryCardStyle: React.CSSProperties = { background:"#fff", border:"1px s
 const summaryTopStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:11 };
 const summaryLabelStyle: React.CSSProperties = { color:"#64748b", fontWeight:800, fontSize:14 };
 const summaryValueStyle: React.CSSProperties = { fontSize:27, fontWeight:900 };
-const breakdownGridStyle: React.CSSProperties = { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:16, marginBottom:18 };
-const breakdownCardStyle: React.CSSProperties = { background:"#fff", border:"1px solid #dbe5f1", borderRadius:16, overflow:"hidden" };
-const breakdownHeaderStyle: React.CSSProperties = { padding:"18px 20px", background:"#f8fbff", borderBottom:"1px solid #e5e7eb" };
-const breakdownTitleStyle: React.CSSProperties = { display:"flex", alignItems:"center", gap:8, fontSize:18, fontWeight:900 };
-const breakdownTotalStyle: React.CSSProperties = { marginTop:8, fontSize:28, fontWeight:900 };
-const breakdownColumnHeaderStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", gap:15, padding:"10px 20px", background:"#f8fafc", color:"#64748b", fontSize:12, fontWeight:900 };
-const breakdownRowStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:16, padding:"13px 20px", borderTop:"1px solid #eef2f7" };
-const breakdownNameStyle: React.CSSProperties = { fontWeight:900, color:"#0f172a" };
-const breakdownCountStyle: React.CSSProperties = { color:"#64748b", fontSize:12, marginTop:3 };
-const breakdownEmptyStyle: React.CSSProperties = { padding:26, textAlign:"center", color:"#94a3b8" };
 const compactTaxSectionStyle: React.CSSProperties = { background:"#fff", border:"1px solid #dbe5f1", borderRadius:16, padding:20, marginBottom:18 };
 const compactTaxGridStyle: React.CSSProperties = { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(190px, 1fr))", gap:12 };
 const compactTaxCardStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, background:"#f8fbff", border:"1px solid #dbe5f1", borderRadius:12, padding:"15px 16px", fontWeight:800 };
 const compactTaxBalanceStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, background:"#eef6ff", border:"2px solid #cfe3ff", borderRadius:12, padding:"15px 16px", fontWeight:900 };
-const taxSectionStyle: React.CSSProperties = { background:"#fff", border:"1px solid #dbe5f1", borderRadius:16, padding:20, marginBottom:12 };
 const sectionHeaderStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", alignItems:"center", gap:15, flexWrap:"wrap", marginBottom:16 };
 const sectionTitleStyle: React.CSSProperties = { margin:0, fontSize:21 };
 const sectionSubStyle: React.CSSProperties = { color:"#64748b", fontSize:13, marginTop:5 };
 const taxLinkStyle: React.CSSProperties = { textDecoration:"none", background:"#004aad", color:"#fff", borderRadius:10, padding:"10px 14px", fontWeight:900 };
-const taxGridStyle: React.CSSProperties = { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))", gap:14 };
-const taxCardStyle: React.CSSProperties = { background:"#f8fbff", border:"1px solid #dbe5f1", borderRadius:14, padding:18 };
-const taxLineStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", gap:15, padding:"8px 0", color:"#475569" };
-const taxNetStyle: React.CSSProperties = { display:"flex", justifyContent:"space-between", gap:15, paddingTop:13, marginTop:6, borderTop:"1px solid #dbe5f1", fontWeight:900 };
-const balanceStyle: React.CSSProperties = { background:"#f8fbff", border:"2px solid #cfe3ff", borderRadius:14, padding:18 };
-const smallLabelStyle: React.CSSProperties = { color:"#64748b", fontWeight:800, fontSize:13 };
-const balanceValueStyle: React.CSSProperties = { fontSize:28, fontWeight:900, margin:"10px 0" };
-const taxNoteStyle: React.CSSProperties = { background:"#eff6ff", border:"1px solid #bfdbfe", color:"#1e3a8a", borderRadius:12, padding:14, lineHeight:1.5, fontSize:13, marginBottom:18 };
 const warningStyle: React.CSSProperties = { background:"#fff7ed", border:"1px solid #fed7aa", color:"#9a3412", borderRadius:12, padding:15, marginBottom:18, lineHeight:1.5 };
 const tableSectionStyle: React.CSSProperties = { background:"#fff", border:"1px solid #e5e7eb", borderRadius:16, overflow:"hidden" };
 const tableHeaderStyle: React.CSSProperties = { padding:20, borderBottom:"1px solid #e5e7eb" };
