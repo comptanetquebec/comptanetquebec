@@ -321,8 +321,8 @@ export default function DocumentsTenueLivresPage() {
       items.every(
         (item) =>
           item.entry_type !== "unknown" &&
-          item.transaction_date &&
-          item.source &&
+          Boolean(item.transaction_date) &&
+          Boolean(item.source) &&
           item.subtotal !== null
       );
 
@@ -334,62 +334,37 @@ export default function DocumentsTenueLivresPage() {
     setBusyId(doc.id);
     setMessage("");
 
-    const rows = items.map((item) => {
-      const gst = item.gst ?? 0;
-      const qst = item.qst ?? 0;
+    try {
+      const response = await fetch("/api/tenue-de-livres/confirmer-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: doc.id }),
+      });
 
-      return {
-        business_id: business.id,
-        entry_type: item.entry_type,
-        transaction_date: item.transaction_date,
-        source: item.source,
-        description: item.description,
-        subtotal: item.subtotal,
-        tax_mode: qst > 0 ? "gst_qst" : gst > 0 ? "gst" : "none",
-        gst,
-        qst,
-        payment_method: item.payment_method === "unknown" ? "other" : item.payment_method,
-        status: "confirmed",
-        document_path: doc.storage_path,
-        original_file_name: doc.original_file_name,
-        document_mime_type: doc.mime_type,
-        entered_by: "document_ai",
-        ai_confidence: item.confidence,
-        ai_extraction: item,
+      const result = (await response.json().catch(() => ({}))) as {
+        ok?: boolean; error?: string; code?: string; required?: number; available?: number;
       };
-    });
 
-    const { data: transactions, error } = await supabase
-      .from("bookkeeping_transactions")
-      .insert(rows)
-      .select("id");
-
-    if (error || !transactions?.length) {
-      setMessage(error?.message ?? t.error);
-    } else {
-      const { error: updateError } = await supabase
-        .from("bookkeeping_documents")
-        .update({
-          status: "confirmed",
-          transaction_id: transactions[0].id,
-        })
-        .eq("id", doc.id);
-
-      if (updateError) {
-        await supabase
-          .from("bookkeeping_transactions")
-          .delete()
-          .in("id", transactions.map((item) => item.id));
-
-        setMessage(updateError.message);
+      if (!response.ok || !result.ok) {
+        if (result.code === "INSUFFICIENT_CREDITS") {
+          const required = Number(result.required ?? items.length);
+          const available = Number(result.available ?? 0);
+          if (lang === "fr") setMessage(`Crédits insuffisants : ${required} transactions à confirmer, mais seulement ${available} crédit${available > 1 ? "s" : ""} disponible${available > 1 ? "s" : ""}.`);
+          else if (lang === "es") setMessage(`Créditos insuficientes: hay ${required} transacciones para confirmar, pero solo quedan ${available} créditos disponibles.`);
+          else setMessage(`Not enough credits: ${required} transactions need confirmation, but only ${available} credits are available.`);
+        } else if (result.code === "ALREADY_CONFIRMED") setMessage(t.saved);
+        else if (result.code === "INCOMPLETE") setMessage(t.incomplete);
+        else setMessage(result.error ?? t.error);
       } else {
         setMessage(t.saved);
       }
 
       await loadDocs(business.id);
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : t.error);
+    } finally {
+      setBusyId("");
     }
-
-    setBusyId("");
   }
 
   async function remove(doc: Doc) {
