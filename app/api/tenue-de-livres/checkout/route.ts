@@ -5,10 +5,12 @@ import { supabaseServer } from "@/lib/supabaseServer";
 export const runtime = "nodejs";
 
 type Plan = "essential" | "tax";
+type CreditPack = "25" | "50" | "100";
 type Lang = "fr" | "en" | "es";
 
 type CheckoutBody = {
   plan?: unknown;
+  credits?: unknown;
   lang?: unknown;
 };
 
@@ -22,10 +24,28 @@ function normalizePlan(v: unknown): Plan | null {
   return null;
 }
 
+function normalizeCredits(v: unknown): CreditPack | null {
+  const value = String(v ?? "").trim();
+
+  if (
+    value === "25" ||
+    value === "50" ||
+    value === "100"
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
 function normalizeLang(v: unknown): Lang {
   const value = String(v ?? "").trim().toLowerCase();
 
-  if (value === "fr" || value === "en" || value === "es") {
+  if (
+    value === "fr" ||
+    value === "en" ||
+    value === "es"
+  ) {
     return value;
   }
 
@@ -36,17 +56,50 @@ function safeOrigin(req: Request): string {
   const fromHeader = req.headers.get("origin");
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
 
-  return (fromHeader || fromEnv || "").trim().replace(/\/+$/, "");
+  return (fromHeader || fromEnv || "")
+    .trim()
+    .replace(/\/+$/, "");
 }
 
-function getPriceId(plan: Plan): string {
+function getPlanPriceId(plan: Plan): string {
   const priceId =
     plan === "essential"
       ? process.env.STRIPE_PRICE_BOOKKEEPING_ESSENTIAL
       : process.env.STRIPE_PRICE_BOOKKEEPING_TAX;
 
   if (!priceId) {
-    throw new Error(`Missing Stripe Price ID for bookkeeping:${plan}`);
+    throw new Error(
+      `Missing Stripe Price ID for bookkeeping:${plan}`
+    );
+  }
+
+  return priceId;
+}
+
+function getCreditsPriceId(
+  credits: CreditPack
+): string {
+  let priceId: string | undefined;
+
+  if (credits === "25") {
+    priceId =
+      process.env.STRIPE_PRICE_BOOKKEEPING_CREDITS_25;
+  }
+
+  if (credits === "50") {
+    priceId =
+      process.env.STRIPE_PRICE_BOOKKEEPING_CREDITS_50;
+  }
+
+  if (credits === "100") {
+    priceId =
+      process.env.STRIPE_PRICE_BOOKKEEPING_CREDITS_100;
+  }
+
+  if (!priceId) {
+    throw new Error(
+      `Missing Stripe Price ID for bookkeeping credits:${credits}`
+    );
   }
 
   return priceId;
@@ -54,12 +107,17 @@ function getPriceId(plan: Plan): string {
 
 export async function POST(req: Request) {
   try {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const stripeSecretKey =
+      process.env.STRIPE_SECRET_KEY;
 
     if (!stripeSecretKey) {
       return NextResponse.json(
-        { error: "Missing STRIPE_SECRET_KEY" },
-        { status: 500 }
+        {
+          error: "Missing STRIPE_SECRET_KEY",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
@@ -67,8 +125,12 @@ export async function POST(req: Request) {
 
     if (!origin) {
       return NextResponse.json(
-        { error: "Missing site origin" },
-        { status: 500 }
+        {
+          error: "Missing site origin",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
@@ -84,122 +146,307 @@ export async function POST(req: Request) {
 
     if (userError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        {
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
       );
     }
 
-    const body = (await req.json().catch(() => ({}))) as CheckoutBody;
+    const body = (await req
+      .json()
+      .catch(() => ({}))) as CheckoutBody;
 
     const plan = normalizePlan(body.plan);
+    const credits = normalizeCredits(body.credits);
     const lang = normalizeLang(body.lang);
 
-    if (!plan) {
+    /*
+     * On doit recevoir soit :
+     *
+     * plan: "essential" | "tax"
+     *
+     * OU
+     *
+     * credits: "25" | "50" | "100"
+     */
+    if (!plan && !credits) {
       return NextResponse.json(
-        { error: "Invalid bookkeeping plan" },
-        { status: 400 }
+        {
+          error: "Invalid bookkeeping checkout",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    const priceId = getPriceId(plan);
+    /*
+     * On ne permet pas d'acheter un abonnement
+     * et un bloc de transactions en même temps.
+     */
+    if (plan && credits) {
+      return NextResponse.json(
+        {
+          error:
+            "Choose either a bookkeeping plan or a credit pack",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const stripe = new Stripe(stripeSecretKey);
 
-    const returnUrl = new URL("/tenue-de-livres", origin);
-    returnUrl.searchParams.set("lang", lang);
-    returnUrl.searchParams.set("checkout", "success");
+    /*
+     * =====================================================
+     * BLOCS DE TRANSACTIONS
+     * =====================================================
+     *
+     * +25
+     * +50
+     * +100
+     *
+     * Paiement ponctuel.
+     */
+    if (credits) {
+      const priceId =
+        getCreditsPriceId(credits);
 
-    const session = await stripe.checkout.sessions.create({
-      /*
-       * Paiement intégré dans ComptaNet Québec.
-       */
-      ui_mode: "embedded",
+      const returnUrl = new URL(
+        "/tenue-de-livres",
+        origin
+      );
 
-      /*
-       * Abonnement mensuel.
-       */
-      mode: "subscription",
+      returnUrl.searchParams.set(
+        "lang",
+        lang
+      );
 
-      line_items: [
+      returnUrl.searchParams.set(
+        "credits_checkout",
+        "success"
+      );
+
+      const session =
+        await stripe.checkout.sessions.create({
+          /*
+           * Checkout intégré.
+           */
+          ui_mode: "embedded",
+
+          /*
+           * Achat unique.
+           */
+          mode: "payment",
+
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+
+          /*
+           * Stripe Tax.
+           */
+          automatic_tax: {
+            enabled: true,
+          },
+
+          billing_address_collection:
+            "required",
+
+          customer_email:
+            user.email || undefined,
+
+          client_reference_id:
+            user.id,
+
+          metadata: {
+            service: "bookkeeping",
+            purchase_type: "credits",
+            credits,
+            user_id: user.id,
+            lang,
+          },
+
+          return_url:
+            returnUrl.toString(),
+        });
+
+      if (!session.client_secret) {
+        return NextResponse.json(
+          {
+            error:
+              "Stripe session missing client secret",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      return NextResponse.json(
         {
-          price: priceId,
-          quantity: 1,
+          clientSecret:
+            session.client_secret,
+
+          checkoutType: "credits",
+
+          credits:
+            Number(credits),
         },
-      ],
+        {
+          status: 200,
+        }
+      );
+    }
 
-      /*
-       * STRIPE TAX
-       *
-       * Stripe calcule automatiquement les taxes applicables
-       * selon l'adresse du client et les inscriptions fiscales
-       * configurées dans Stripe Tax.
-       */
-      automatic_tax: {
-        enabled: true,
-      },
+    /*
+     * =====================================================
+     * ABONNEMENT MENSUEL
+     * =====================================================
+     *
+     * Essentiel : 19,99 $ / mois
+     * TPS/TVQ   : 29,99 $ / mois
+     *
+     * AUCUN ESSAI GRATUIT.
+     */
+    if (!plan) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid bookkeeping plan",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-      /*
-       * Permet à Stripe de demander l'adresse nécessaire
-       * au calcul des taxes.
-       */
-      billing_address_collection: "required",
+    const priceId =
+      getPlanPriceId(plan);
 
-      /*
-       * On rattache le paiement à l'utilisateur Supabase.
-       */
-      customer_email: user.email || undefined,
+    const returnUrl = new URL(
+      "/tenue-de-livres",
+      origin
+    );
 
-      client_reference_id: user.id,
+    returnUrl.searchParams.set(
+      "lang",
+      lang
+    );
 
-      metadata: {
-        service: "bookkeeping",
-        plan,
-        user_id: user.id,
-        lang,
-      },
+    returnUrl.searchParams.set(
+      "checkout",
+      "success"
+    );
 
-      /*
-       * ABONNEMENT TENUE DE LIVRES
-       *
-       * TEMPORAIRE POUR NOTRE TEST :
-       * 2 jours d'essai gratuit.
-       *
-       * Après validation, supprimer uniquement :
-       *
-       * trial_period_days: 2,
-       */
-      subscription_data: {
-        trial_period_days: 2,
+    const session =
+      await stripe.checkout.sessions.create({
+        /*
+         * Checkout intégré.
+         */
+        ui_mode: "embedded",
+
+        /*
+         * Abonnement mensuel.
+         */
+        mode: "subscription",
+
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+
+        /*
+         * Stripe Tax.
+         */
+        automatic_tax: {
+          enabled: true,
+        },
+
+        billing_address_collection:
+          "required",
+
+        customer_email:
+          user.email || undefined,
+
+        client_reference_id:
+          user.id,
 
         metadata: {
           service: "bookkeeping",
+          purchase_type:
+            "subscription",
           plan,
           user_id: user.id,
+          lang,
         },
-      },
 
-      return_url: returnUrl.toString(),
-    });
+        /*
+         * IMPORTANT :
+         *
+         * Aucun trial_period_days ici.
+         * Le client paie immédiatement.
+         */
+        subscription_data: {
+          metadata: {
+            service: "bookkeeping",
+            purchase_type:
+              "subscription",
+            plan,
+            user_id: user.id,
+          },
+        },
+
+        return_url:
+          returnUrl.toString(),
+      });
 
     if (!session.client_secret) {
       return NextResponse.json(
-        { error: "Stripe session missing client secret" },
-        { status: 500 }
+        {
+          error:
+            "Stripe session missing client secret",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
     return NextResponse.json(
       {
-        clientSecret: session.client_secret,
+        clientSecret:
+          session.client_secret,
+
+        checkoutType:
+          "subscription",
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     );
   } catch (e: unknown) {
     const message =
-      e instanceof Error ? e.message : "Bookkeeping checkout error";
+      e instanceof Error
+        ? e.message
+        : "Bookkeeping checkout error";
 
     return NextResponse.json(
-      { error: message },
-      { status: 500 }
+      {
+        error: message,
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
