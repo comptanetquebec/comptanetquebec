@@ -1061,7 +1061,7 @@ export default function TaxesPage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  TPS / GST: {money(Math.abs(netGst))} + TVQ / QST: {money(Math.abs(netQst))}
+                  TPS: {money(Math.abs(netGst))} + TVQ: {money(Math.abs(netQst))}
                 </div>
               </section>
             </section>
