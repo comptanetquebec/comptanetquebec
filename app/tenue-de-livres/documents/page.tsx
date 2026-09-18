@@ -74,7 +74,7 @@ export default function DocumentsTenueLivresPage() {
   const t = {
     fr: {
       title: "Documents",
-      subtitle: "Importez une photo ou un PDF. L’IA sépare les transactions, puis vous les vérifiez avant de les confirmer.",
+      subtitle: "Importez une photo ou un PDF. Les transactions sont détectées automatiquement, puis vous les vérifiez avant de les confirmer.",
       back: "Retour à la tenue de livres",
       upload: "Importer une photo ou un PDF",
       formats: "PDF, JPG, PNG ou WebP — maximum 20 Mo",
@@ -98,7 +98,7 @@ export default function DocumentsTenueLivresPage() {
       gst: "TPS",
       qst: "TVQ",
       total: "Total",
-      confidence: "Confiance IA",
+      confidence: "Niveau de confiance",
       notes: "À vérifier",
       badFile: "Utilisez un PDF, JPG, PNG ou WebP de 20 Mo maximum.",
       saved: "Toutes les transactions ont été confirmées.",
@@ -110,7 +110,7 @@ export default function DocumentsTenueLivresPage() {
     },
     en: {
       title: "Documents",
-      subtitle: "Upload a photo or PDF. AI separates the transactions, then you review them before confirming.",
+      subtitle: "Upload a photo or PDF. Transactions are detected automatically, then you review them before confirming.",
       back: "Back to bookkeeping",
       upload: "Upload a photo or PDF",
       formats: "PDF, JPG, PNG or WebP — maximum 20 MB",
@@ -134,7 +134,7 @@ export default function DocumentsTenueLivresPage() {
       gst: "GST",
       qst: "QST",
       total: "Total",
-      confidence: "AI confidence",
+      confidence: "Confidence level",
       notes: "Review",
       badFile: "Use a PDF, JPG, PNG or WebP file up to 20 MB.",
       saved: "All transactions were confirmed.",
@@ -146,7 +146,7 @@ export default function DocumentsTenueLivresPage() {
     },
     es: {
       title: "Documentos",
-      subtitle: "Suba una foto o un PDF. La IA separa las transacciones y usted las revisa antes de confirmarlas.",
+      subtitle: "Suba una foto o un PDF. Las transacciones se detectan automáticamente y usted las revisa antes de confirmarlas.",
       back: "Volver a contabilidad",
       upload: "Subir una foto o un PDF",
       formats: "PDF, JPG, PNG o WebP — máximo 20 MB",
@@ -170,7 +170,7 @@ export default function DocumentsTenueLivresPage() {
       gst: "GST",
       qst: "QST",
       total: "Total",
-      confidence: "Confianza IA",
+      confidence: "Nivel de confianza",
       notes: "Por verificar",
       badFile: "Use un PDF, JPG, PNG o WebP de hasta 20 MB.",
       saved: "Todas las transacciones fueron confirmadas.",
