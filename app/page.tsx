@@ -366,18 +366,6 @@ export default function Home() {
         ],
         bookkeepingCta: "Découvrir la tenue de livres",
 
-        bookkeepingTitle: "Online bookkeeping",
-        bookkeepingSub:
-          "Keep a clear view of your business: income, expenses, transactions, and preparation of your GST/QST returns.",
-        bookkeepingPoints: [
-          "Income and expense tracking",
-          "Transaction categorization",
-          "Preparation of GST/QST returns",
-          "Monthly, quarterly or annual periods",
-          "Secure portal and online tracking",
-        ],
-        bookkeepingCta: "Discover bookkeeping",
-
         servicesTitle: "Services",
         servicesSub:
           "Déclarations de revenus au Québec — dépôt de documents par portail sécurisé.",
@@ -552,6 +540,18 @@ plans: [
         seoP3: "Independent, simple and confidential.",
         seoCities:
           "100% online across Québec (e.g., Québec City, Montréal, Laval, Gatineau, Lévis, Sherbrooke, Trois-Rivières).",
+
+        bookkeepingTitle: "Online bookkeeping",
+        bookkeepingSub:
+          "Keep a clear view of your business: income, expenses, transactions, and preparation of your GST/QST returns.",
+        bookkeepingPoints: [
+          "Income and expense tracking",
+          "Transaction categorization",
+          "Preparation of GST/QST returns",
+          "Monthly, quarterly or annual periods",
+          "Secure portal and online tracking",
+        ],
+        bookkeepingCta: "Discover bookkeeping",
 
         servicesTitle: "Services",
         servicesSub: "Québec-only tax returns — secure document portal.",
