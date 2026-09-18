@@ -858,7 +858,7 @@ plans: [
     lang
   )}&next=${encodeURIComponent("/tenue-de-livres")}`;
 
-  const toBookkeepingInfo = `/tenue-de-livres-info?lang=${encodeURIComponent(lang)}`;
+  const toBookkeepingInfo = `/tenue-de-livres/info?lang=${encodeURIComponent(lang)}`;
 
   const faqJsonLd = useMemo(() => {
     return {
