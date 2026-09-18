@@ -554,15 +554,15 @@ export default function TenueDeLivresPage() {
         "Impossible de vérifier votre accès",
 
       retry: "Réessayer",
-      creditsTitle: "Analyses disponibles",
+      creditsTitle: "Utilisations disponibles",
       monthlyCredits: "Forfait mensuel",
       essentialCurrentPlan: "Forfait Essentiel — 19,99 $ / mois",
       taxCurrentPlan: "Forfait TPS / TVQ — 29,99 $ / mois",
       monthlyRemaining: "restantes",
       bonusCredits: "Crédits supplémentaires",
-      buyCredits: "Besoin de plus d’analyses ?",
+      buyCredits: "Besoin de plus d’utilisations ?",
       buyCreditsDesc:
-        "Les analyses supplémentaires achetées restent disponibles jusqu’à leur utilisation.",
+        "Les utilisations supplémentaires achetées restent disponibles jusqu’à leur utilisation.",
       buy: "Acheter",
     },
 
@@ -650,15 +650,15 @@ export default function TenueDeLivresPage() {
         "Unable to verify your access",
 
       retry: "Try again",
-      creditsTitle: "Available analyses",
+      creditsTitle: "Available uses",
       monthlyCredits: "Monthly plan",
       essentialCurrentPlan: "Essential plan — $19.99 / month",
       taxCurrentPlan: "GST / QST plan — $29.99 / month",
       monthlyRemaining: "remaining",
       bonusCredits: "Extra credits",
-      buyCredits: "Need more analyses?",
+      buyCredits: "Need more uses?",
       buyCreditsDesc:
-        "Extra analyses you purchase remain available until they are used.",
+        "Extra uses you purchase remain available until they are used.",
       buy: "Buy",
     },
 
@@ -746,15 +746,15 @@ export default function TenueDeLivresPage() {
         "No se puede verificar su acceso",
 
       retry: "Intentar de nuevo",
-      creditsTitle: "Análisis disponibles",
+      creditsTitle: "Usos disponibles",
       monthlyCredits: "Plan mensual",
       essentialCurrentPlan: "Plan Esencial — 19,99 $ / mes",
       taxCurrentPlan: "Plan GST / QST — 29,99 $ / mes",
       monthlyRemaining: "disponibles",
       bonusCredits: "Créditos adicionales",
-      buyCredits: "¿Necesita más análisis?",
+      buyCredits: "¿Necesita más usos?",
       buyCreditsDesc:
-        "Los análisis adicionales comprados permanecen disponibles hasta que se utilicen.",
+        "Los usos adicionales comprados permanecen disponibles hasta que se utilicen.",
       buy: "Comprar",
     },
   }[lang];
