@@ -77,23 +77,27 @@ function LabelWithMark({
   );
 }
 
-const AI_TEXT = {
+/* =========================================================
+   INFORMATION SUR LE TRAITEMENT DES RENSEIGNEMENTS
+   ========================================================= */
+
+const PROCESSING_TEXT = {
   fr: {
-    title: "Utilisation de l’intelligence artificielle",
+    title: "Traitement de vos renseignements",
     text:
-      "ComptaNet Québec peut utiliser des outils d’intelligence artificielle à titre d’assistance pour analyser, classer et organiser les renseignements et documents fournis afin de faciliter la préparation de votre déclaration de revenus. L’intelligence artificielle ne prend aucune décision fiscale de façon autonome. Les informations produites sont vérifiées par une personne avant leur utilisation. Votre numéro d’assurance sociale (NAS) n’est pas transmis à l’outil d’intelligence artificielle.",
+      "ComptaNet Québec peut utiliser des outils automatisés pour analyser, classer et organiser les renseignements et documents fournis afin de faciliter la préparation de votre déclaration de revenus. Les informations produites sont vérifiées par une personne avant leur utilisation. Votre numéro d’assurance sociale (NAS) n’est pas transmis aux outils automatisés.",
   },
 
   en: {
-    title: "Use of artificial intelligence",
+    title: "Processing of your information",
     text:
-      "ComptaNet Québec may use artificial intelligence tools to assist in analyzing, classifying and organizing the information and documents provided in order to facilitate the preparation of your income tax return. Artificial intelligence does not make tax decisions autonomously. The information produced is reviewed by a person before it is used. Your Social Insurance Number (SIN) is not transmitted to the artificial intelligence tool.",
+      "ComptaNet Québec may use automated tools to analyze, classify and organize the information and documents provided in order to facilitate the preparation of your income tax return. The information produced is reviewed by a person before it is used. Your Social Insurance Number (SIN) is not transmitted to automated processing tools.",
   },
 
   es: {
-    title: "Uso de inteligencia artificial",
+    title: "Tratamiento de su información",
     text:
-      "ComptaNet Québec puede utilizar herramientas de inteligencia artificial como apoyo para analizar, clasificar y organizar la información y los documentos proporcionados con el fin de facilitar la preparación de su declaración de impuestos. La inteligencia artificial no toma decisiones fiscales de forma autónoma. La información producida es revisada por una persona antes de ser utilizada. Su número de seguro social (SIN) no se transmite a la herramienta de inteligencia artificial.",
+      "ComptaNet Québec puede utilizar herramientas automatizadas para analizar, clasificar y organizar la información y los documentos proporcionados con el fin de facilitar la preparación de su declaración de impuestos. La información producida es revisada por una persona antes de ser utilizada. Su número de seguro social (SIN) no se transmite a las herramientas de procesamiento automatizado.",
   },
 } as const;
 
@@ -136,7 +140,7 @@ export default function ConfirmationsSection(props: {
     setVConsentement,
   } = props;
 
-  const ai = AI_TEXT[lang];
+  const processing = PROCESSING_TEXT[lang];
 
   const marks = useMemo(() => {
     const m1: Mark = vExactitude ? "ok" : "bad";
@@ -265,10 +269,10 @@ export default function ConfirmationsSection(props: {
               color: "#1e3a8a",
             }}
           >
-            {ai.title}
+            {processing.title}
           </div>
 
-          <div>{ai.text}</div>
+          <div>{processing.text}</div>
         </div>
       </div>
     </section>
