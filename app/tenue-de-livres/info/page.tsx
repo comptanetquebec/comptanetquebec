@@ -40,10 +40,6 @@ type Copy = {
     description: string;
     features: string[];
   }[];
-  creditsTitle: string;
-  creditsIntro: string;
-  oneTime: string;
-  credits: { label: string; price: string }[];
   assistantEyebrow: string;
   assistantTitle: string;
   assistantText: string;
@@ -167,15 +163,6 @@ const COPY: Record<Lang, Copy> = {
         ],
       },
     ],
-    creditsTitle: "Besoin de plus de crédits ?",
-    creditsIntro:
-      "Ajoutez des crédits au besoin, sans changer votre abonnement.",
-    oneTime: "achat unique",
-    credits: [
-      { label: "25 crédits", price: "4,99 $" },
-      { label: "50 crédits", price: "7,99 $" },
-      { label: "100 crédits", price: "14,99 $" },
-    ],
     assistantEyebrow: "Une question avant de commencer ?",
     assistantTitle: "Demandez directement à l’assistant ComptaNet",
     assistantText:
@@ -273,14 +260,6 @@ const COPY: Record<Lang, Copy> = {
         features: ["Everything in Essential", "GST tracking", "QST tracking", "GST/QST period organization"],
       },
     ],
-    creditsTitle: "Need more credits?",
-    creditsIntro: "Add credits when needed without changing your subscription.",
-    oneTime: "one-time purchase",
-    credits: [
-      { label: "25 credits", price: "$4.99" },
-      { label: "50 credits", price: "$7.99" },
-      { label: "100 credits", price: "$14.99" },
-    ],
     assistantEyebrow: "Have a question before you start?",
     assistantTitle: "Ask the ComptaNet assistant directly",
     assistantText:
@@ -364,14 +343,6 @@ const COPY: Record<Lang, Copy> = {
         description: "Para la contabilidad con seguimiento de GST y QST.",
         features: ["Todo el plan Esencial", "Seguimiento GST", "Seguimiento QST", "Organización de períodos GST/QST"],
       },
-    ],
-    creditsTitle: "¿Necesita más créditos?",
-    creditsIntro: "Añada créditos cuando los necesite sin cambiar su suscripción.",
-    oneTime: "compra única",
-    credits: [
-      { label: "25 créditos", price: "4,99 $" },
-      { label: "50 créditos", price: "7,99 $" },
-      { label: "100 créditos", price: "14,99 $" },
     ],
     assistantEyebrow: "¿Tiene una pregunta antes de empezar?",
     assistantTitle: "Pregunte directamente al asistente ComptaNet",
@@ -621,28 +592,6 @@ function PageContent() {
             ))}
           </div>
 
-          <div className="mx-auto mt-8 max-w-4xl rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200 sm:p-8">
-            <div className="text-center">
-              <h3 className="text-2xl font-black">{T.creditsTitle}</h3>
-              <p className="mt-2 text-slate-600">{T.creditsIntro}</p>
-            </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              {T.credits.map((pack) => (
-                <div
-                  key={pack.label}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 text-center"
-                >
-                  <div className="font-bold">{pack.label}</div>
-                  <div className="mt-2 text-2xl font-black text-[#004aad]">
-                    {pack.price}
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    {T.cad} · {T.oneTime}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
