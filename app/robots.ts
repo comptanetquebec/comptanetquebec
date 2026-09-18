@@ -5,7 +5,13 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: "/",
+
+      // Pages publiques accessibles à Google
+      allow: [
+        "/",
+        "/tenue-de-livres/info",
+      ],
+
       disallow: [
         // Technique / administration
         "/api/",
@@ -20,8 +26,10 @@ export default function robots(): MetadataRoute.Robots {
         "/documents/",
         "/depot-documents/",
 
-        // Tenue de livres
-        "/tenue-de-livres/",
+        // Tenue de livres privée
+        // IMPORTANT : ne pas mettre "/tenue-de-livres/"
+        // sinon /tenue-de-livres/info serait aussi bloquée.
+        "/tenue-de-livres",
 
         // Formulaires clients
         "/formulaire/",
