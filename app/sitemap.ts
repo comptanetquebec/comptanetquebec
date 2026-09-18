@@ -6,12 +6,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
   return [
+    // Accueil
     {
       url: baseUrl,
       lastModified,
       changeFrequency: "weekly",
       priority: 1,
     },
+
+    // Impôts
     {
       url: `${baseUrl}/declaration-impot-quebec`,
       lastModified,
@@ -24,18 +27,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.9,
     },
+
+    // Tenue de livres - page publique
+    {
+      url: `${baseUrl}/tenue-de-livres/info`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+
+    // Tarifs
     {
       url: `${baseUrl}/tarifs`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.8,
     },
+
+    // Aide
     {
       url: `${baseUrl}/aide`,
       lastModified,
       changeFrequency: "monthly",
       priority: 0.6,
     },
+
+    // Contact
     {
       url: `${baseUrl}/contact`,
       lastModified,
