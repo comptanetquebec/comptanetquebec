@@ -5,7 +5,19 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Lang = "fr" | "en" | "es";
-type Body = { message?: string; lang?: Lang };
+type ChatRole = "user" | "assistant";
+
+type HistoryItem = {
+  role?: ChatRole;
+  content?: string;
+};
+
+type Body = {
+  message?: string;
+  lang?: Lang;
+  context?: "public" | "bookkeeping";
+  history?: HistoryItem[];
+};
 
 const MAX_CHARS = 1500;
 const RATE_WINDOW_MS = 60_000;
@@ -148,6 +160,55 @@ function systemPrompt(lang: Lang): string {
     "Réponds en français.",
     "Termine par une prochaine étape concrète lorsque pertinent.",
   ].join("\n");
+}
+
+
+function bookkeepingSystemPrompt(lang: Lang): string {
+  if (lang === "en") {
+    return [
+      "You are the ComptaNet Québec assistant INSIDE the secure bookkeeping area.",
+      "Your role is to help the client use the bookkeeping tool and understand ordinary bookkeeping concepts in Québec.",
+      "Stay focused on bookkeeping: income, expenses, documents, transaction categories, GST/QST, periods, annual summaries and how to use ComptaNet Québec.",
+      "You may explain what information is normally needed to classify a transaction, but do not pretend you have opened or reviewed a document unless its content was actually provided to you.",
+      "Do not claim you can see the client's dashboard, transactions, documents or balances unless that data is explicitly included in the conversation.",
+      "Do not provide legal advice or guarantee tax treatment.",
+      "For a specific expense, explain the usual bookkeeping treatment and what facts or supporting documents matter. If tax treatment depends on the facts, say so clearly.",
+      "Never ask for a SIN, password, full bank account number or full card number.",
+      "Keep answers conversational, concise and practical.",
+      "Use the previous chat messages to understand follow-up questions.",
+      "Answer in English.",
+    ].join("\\n");
+  }
+
+  if (lang === "es") {
+    return [
+      "Eres el asistente de ComptaNet Québec DENTRO del área segura de contabilidad.",
+      "Tu función es ayudar al cliente a usar la herramienta de contabilidad y comprender conceptos habituales de contabilidad en Québec.",
+      "Concéntrate en contabilidad: ingresos, gastos, documentos, categorías de transacciones, GST/QST (TPS/TVQ), períodos, resúmenes anuales y uso de ComptaNet Québec.",
+      "Puedes explicar qué información suele ser necesaria para clasificar una transacción, pero no afirmes haber abierto o revisado un documento si su contenido no fue proporcionado.",
+      "No afirmes que puedes ver el panel, las transacciones, los documentos o los saldos del cliente si esos datos no aparecen explícitamente en la conversación.",
+      "No des asesoría legal ni garantices un tratamiento fiscal.",
+      "Para un gasto específico, explica el tratamiento contable habitual y qué hechos o comprobantes son importantes. Si el tratamiento fiscal depende de los hechos, indícalo claramente.",
+      "Nunca pidas NAS/SIN, contraseñas, números completos de cuenta bancaria o tarjeta.",
+      "Responde de forma conversacional, breve y práctica.",
+      "Usa los mensajes anteriores del chat para comprender las preguntas de seguimiento.",
+      "Responde en español.",
+    ].join("\\n");
+  }
+
+  return [
+    "Tu es l’assistant ComptaNet Québec À L’INTÉRIEUR de l’espace sécurisé de tenue de livres.",
+    "Ton rôle est d’aider le client à utiliser l’outil de tenue de livres et à comprendre les notions courantes de tenue de livres au Québec.",
+    "Reste centré sur la tenue de livres : revenus, dépenses, documents, catégories de transactions, TPS/TVQ, périodes, résumé annuel et utilisation de ComptaNet Québec.",
+    "Tu peux expliquer quelles informations sont normalement nécessaires pour classer une transaction, mais ne prétends jamais avoir ouvert ou vérifié un document si son contenu ne t’a pas été fourni.",
+    "Ne prétends pas voir le tableau de bord, les transactions, les documents ou les soldes du client si ces données ne sont pas explicitement présentes dans la conversation.",
+    "Ne donne pas d’avis juridique et ne garantis pas un traitement fiscal.",
+    "Pour une dépense précise, explique le traitement habituel en tenue de livres et les faits ou pièces justificatives qui comptent. Si le traitement fiscal dépend des faits, dis-le clairement.",
+    "Ne demande jamais le NAS, un mot de passe, un numéro complet de compte bancaire ou de carte.",
+    "Réponds comme dans un vrai chat : court, clair, naturel et pratique.",
+    "Utilise les messages précédents de la conversation pour comprendre les questions de suivi.",
+    "Réponds en français.",
+  ].join("\\n");
 }
 
 type Intent =
@@ -383,6 +444,24 @@ export async function POST(req: Request) {
     const lang: Lang =
       body.lang === "en" || body.lang === "es" ? body.lang : "fr";
     const message = (body.message ?? "").trim();
+    const context =
+      body.context === "bookkeeping" ? "bookkeeping" : "public";
+
+    const history = Array.isArray(body.history)
+      ? body.history
+          .filter(
+            (item): item is HistoryItem =>
+              !!item &&
+              (item.role === "user" || item.role === "assistant") &&
+              typeof item.content === "string" &&
+              item.content.trim().length > 0
+          )
+          .slice(-10)
+          .map((item) => ({
+            role: item.role as ChatRole,
+            content: item.content!.trim().slice(0, MAX_CHARS),
+          }))
+      : [];
 
     const ip = getIp(req);
     const rl = rateLimit(ip);
@@ -435,8 +514,14 @@ export async function POST(req: Request) {
     if (kind) {
       return NextResponse.json({
         ok: true,
-        content: `${refusal(lang, kind)}\n\n${footer(lang)}`,
-        next_actions: nextActionsFor("unknown", lang),
+        content:
+          context === "bookkeeping"
+            ? refusal(lang, kind)
+            : `${refusal(lang, kind)}\n\n${footer(lang)}`,
+        next_actions:
+          context === "bookkeeping"
+            ? []
+            : nextActionsFor("unknown", lang),
         tags: ["safety"],
       });
     }
@@ -449,7 +534,14 @@ export async function POST(req: Request) {
         temperature: 0.3,
         max_tokens: 450,
         messages: [
-          { role: "system", content: systemPrompt(lang) },
+          {
+            role: "system",
+            content:
+              context === "bookkeeping"
+                ? bookkeepingSystemPrompt(lang)
+                : systemPrompt(lang),
+          },
+          ...history,
           { role: "user", content: message },
         ],
       }),
@@ -458,14 +550,26 @@ export async function POST(req: Request) {
 
     const modelText = completion.choices?.[0]?.message?.content?.trim() ?? "";
 
-    const content = modelText
-      ? `${modelText}\n\n${footer(lang)}`
-      : footer(lang);
+    const content =
+      context === "bookkeeping"
+        ? modelText ||
+          t(
+            lang,
+            "Je n’ai pas réussi à générer une réponse. Réessayez.",
+            "I couldn’t generate an answer. Please try again.",
+            "No pude generar una respuesta. Inténtelo de nuevo."
+          )
+        : modelText
+          ? `${modelText}\n\n${footer(lang)}`
+          : footer(lang);
 
     return NextResponse.json({
       ok: true,
       content,
-      next_actions: nextActionsFor(intent, lang),
+      next_actions:
+        context === "bookkeeping"
+          ? []
+          : nextActionsFor(intent, lang),
       tags: tagsFor(intent),
     });
   } catch (e: unknown) {
