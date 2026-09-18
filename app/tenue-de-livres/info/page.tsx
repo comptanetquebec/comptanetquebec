@@ -44,10 +44,10 @@ type Copy = {
   creditsIntro: string;
   oneTime: string;
   credits: { label: string; price: string }[];
-  aiEyebrow: string;
-  aiTitle: string;
-  aiText: string;
-  aiButton: string;
+  assistantEyebrow: string;
+  assistantTitle: string;
+  assistantText: string;
+  assistantButton: string;
   chatClose: string;
   faqTitle: string;
   faq: { q: string; a: string }[];
@@ -176,11 +176,11 @@ const COPY: Record<Lang, Copy> = {
       { label: "50 crédits", price: "7,99 $" },
       { label: "100 crédits", price: "14,99 $" },
     ],
-    aiEyebrow: "Une question avant de commencer ?",
-    aiTitle: "Demandez directement à l’assistant ComptaNet",
-    aiText:
+    assistantEyebrow: "Une question avant de commencer ?",
+    assistantTitle: "Demandez directement à l’assistant ComptaNet",
+    assistantText:
       "Tenue de livres, TPS/TVQ, documents ou fonctionnement du portail : ouvrez le chat et posez votre question tout de suite.",
-    aiButton: "Ouvrir le chat",
+    assistantButton: "Ouvrir le chat",
     chatClose: "Fermer",
     faqTitle: "Questions fréquentes",
     faq: [
@@ -197,8 +197,8 @@ const COPY: Record<Lang, Copy> = {
         a: "Oui. Votre tenue de livres peut être organisée selon la période applicable à votre dossier.",
       },
       {
-        q: "L’assistant public analyse-t-il mes reçus ?",
-        a: "Non. Le chat public donne de l’information générale. L’analyse de vos documents et transactions se fait dans votre espace sécurisé.",
+        q: "Puis-je traiter mes reçus dans le chat public ?",
+        a: "Non. Le chat public donne de l’information générale. Le traitement de vos documents et transactions se fait dans votre espace sécurisé.",
       },
     ],
     finalTitle: "Prêt à simplifier votre tenue de livres ?",
@@ -281,18 +281,18 @@ const COPY: Record<Lang, Copy> = {
       { label: "50 credits", price: "$7.99" },
       { label: "100 credits", price: "$14.99" },
     ],
-    aiEyebrow: "Have a question before you start?",
-    aiTitle: "Ask the ComptaNet assistant directly",
-    aiText:
+    assistantEyebrow: "Have a question before you start?",
+    assistantTitle: "Ask the ComptaNet assistant directly",
+    assistantText:
       "Bookkeeping, GST/QST, documents or the portal: open the chat and ask your question right away.",
-    aiButton: "Open chat",
+    assistantButton: "Open chat",
     chatClose: "Close",
     faqTitle: "Frequently asked questions",
     faq: [
       { q: "Is it only for self-employed workers?", a: "No. The service also suits small businesses and entrepreneurs who want organized bookkeeping." },
       { q: "Do I need to be registered for GST/QST?", a: "No. You can use bookkeeping to organize income, expenses and transactions. GST/QST obligations depend on your situation." },
       { q: "Can I track monthly, quarterly or annually?", a: "Yes. Your bookkeeping can be organized according to the period that applies to your file." },
-      { q: "Does the public assistant analyze my receipts?", a: "No. The public chat provides general information. Document and transaction analysis takes place in your secure space." },
+      { q: "Can I process my receipts in the public chat?", a: "No. The public chat provides general information. Document and transaction analysis takes place in your secure space." },
     ],
     finalTitle: "Ready to simplify your bookkeeping?",
     finalText: "Open your secure space and keep a clear view of your business.",
@@ -373,18 +373,18 @@ const COPY: Record<Lang, Copy> = {
       { label: "50 créditos", price: "7,99 $" },
       { label: "100 créditos", price: "14,99 $" },
     ],
-    aiEyebrow: "¿Tiene una pregunta antes de empezar?",
-    aiTitle: "Pregunte directamente al asistente ComptaNet",
-    aiText:
+    assistantEyebrow: "¿Tiene una pregunta antes de empezar?",
+    assistantTitle: "Pregunte directamente al asistente ComptaNet",
+    assistantText:
       "Contabilidad, GST/QST, documentos o el portal: abra el chat y haga su pregunta de inmediato.",
-    aiButton: "Abrir el chat",
+    assistantButton: "Abrir el chat",
     chatClose: "Cerrar",
     faqTitle: "Preguntas frecuentes",
     faq: [
       { q: "¿Es solo para trabajadores autónomos?", a: "No. El servicio también conviene a pequeñas empresas y emprendedores que desean organizar su contabilidad." },
       { q: "¿Debo estar registrado para GST/QST?", a: "No. Puede usar la contabilidad para organizar ingresos, gastos y transacciones. Las obligaciones GST/QST dependen de su situación." },
       { q: "¿Puedo hacer seguimiento mensual, trimestral o anual?", a: "Sí. Su contabilidad puede organizarse según el período aplicable a su expediente." },
-      { q: "¿El asistente público analiza mis recibos?", a: "No. El chat público ofrece información general. El análisis de documentos y transacciones se realiza en su espacio seguro." },
+      { q: "¿Puedo procesar mis recibos en el chat público?", a: "No. El chat público ofrece información general. El análisis de documentos y transacciones se realiza en su espacio seguro." },
     ],
     finalTitle: "¿Listo para simplificar su contabilidad?",
     finalText: "Abra su espacio seguro y mantenga una visión clara de su empresa.",
@@ -646,22 +646,22 @@ function PageContent() {
         </div>
       </section>
 
-      {/* IA */}
+      {/* ASSISTANT */}
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-3xl bg-[#004aad] px-6 py-10 text-center text-white shadow-lg sm:px-10 sm:py-12">
           <div className="text-sm font-black uppercase tracking-wide text-blue-100">
-            {T.aiEyebrow}
+            {T.assistantEyebrow}
           </div>
           <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-black sm:text-4xl">
-            {T.aiTitle}
+            {T.assistantTitle}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl leading-7 text-blue-50">{T.aiText}</p>
+          <p className="mx-auto mt-4 max-w-2xl leading-7 text-blue-50">{T.assistantText}</p>
           <button
             type="button"
             onClick={() => setChatOpen(true)}
             className="mt-7 rounded-xl bg-white px-6 py-3.5 font-black text-[#004aad] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
-            💬 {T.aiButton}
+            💬 {T.assistantButton}
           </button>
         </div>
       </section>
@@ -711,7 +711,7 @@ function PageContent() {
           <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
               <div>
-                <div className="font-black text-slate-900">{T.aiTitle}</div>
+                <div className="font-black text-slate-900">{T.assistantTitle}</div>
                 <div className="text-xs text-slate-500">ComptaNet Québec</div>
               </div>
               <button
