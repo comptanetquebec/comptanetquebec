@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import AssistantChat from "@/components/AssistantChat";
 
 type Lang = "fr" | "en" | "es";
 type Plan = "essential" | "tax";
@@ -1507,32 +1506,187 @@ export default function TenueDeLivresPage() {
         </div>
       </div>
 
-      {/* Assistant flottant — visible seulement dans le tableau de bord actif */}
-      {chatOpen && (
-        <div
+      {/* Mini-chat de tenue de livres — visible seulement dans le tableau de bord actif */}
+      <BookkeepingChat
+        lang={lang}
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+      />
+    </main>
+  );
+}
+
+type ChatRole = "user" | "assistant";
+
+type ChatMessage = {
+  role: ChatRole;
+  content: string;
+};
+
+function BookkeepingChat({
+  lang,
+  open,
+  onOpenChange,
+}: {
+  lang: Lang;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const copy = {
+    fr: {
+      title: "Assistant ComptaNet",
+      hello:
+        "Bonjour! 👋 Posez-moi votre question sur votre tenue de livres.",
+      placeholder: "Écrivez votre question…",
+      send: "Envoyer",
+      thinking: "Je vérifie…",
+      error:
+        "Je n’arrive pas à répondre pour le moment. Réessayez dans quelques secondes.",
+      close: "Fermer le chat",
+      open: "Ouvrir l’assistant ComptaNet",
+    },
+    en: {
+      title: "ComptaNet Assistant",
+      hello:
+        "Hello! 👋 Ask me your bookkeeping question.",
+      placeholder: "Type your question…",
+      send: "Send",
+      thinking: "Checking…",
+      error:
+        "I can’t answer right now. Please try again in a few seconds.",
+      close: "Close chat",
+      open: "Open ComptaNet Assistant",
+    },
+    es: {
+      title: "Asistente ComptaNet",
+      hello:
+        "¡Hola! 👋 Hágame su pregunta sobre contabilidad.",
+      placeholder: "Escriba su pregunta…",
+      send: "Enviar",
+      thinking: "Verificando…",
+      error:
+        "No puedo responder en este momento. Inténtelo de nuevo en unos segundos.",
+      close: "Cerrar el chat",
+      open: "Abrir el asistente ComptaNet",
+    },
+  }[lang];
+
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: copy.hello },
+  ]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    setMessages((current) => {
+      if (
+        current.length === 1 &&
+        current[0]?.role === "assistant"
+      ) {
+        return [{ role: "assistant", content: copy.hello }];
+      }
+      return current;
+    });
+  }, [copy.hello]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onOpenChange(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onOpenChange]);
+
+  async function sendMessage() {
+    const message = input.trim();
+
+    if (!message || sending) {
+      return;
+    }
+
+    const conversationHistory = messages
+      .filter(
+        (item, index) =>
+          !(index === 0 && item.role === "assistant")
+      )
+      .slice(-10);
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: message,
+    };
+
+    setMessages((current) => [...current, userMessage]);
+    setInput("");
+    setSending(true);
+
+    try {
+      const response = await fetch("/api/assistant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          message,
+          lang,
+          context: "bookkeeping",
+          history: conversationHistory,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.ok || !result?.content) {
+        throw new Error(result?.error || "Assistant error");
+      }
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: String(result.content),
+        },
+      ]);
+    } catch {
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: copy.error,
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <>
+      {open && (
+        <section
+          role="dialog"
+          aria-label={copy.title}
           style={{
             position: "fixed",
             right: 20,
-            bottom: 92,
-            width: "min(420px, calc(100vw - 24px))",
-            height: "min(650px, calc(100vh - 125px))",
+            bottom: 90,
+            width: "min(370px, calc(100vw - 24px))",
+            height: "min(480px, calc(100vh - 120px))",
             background: "#ffffff",
             border: "1px solid #cfe3ff",
             borderRadius: 18,
-            boxShadow: "0 20px 55px rgba(15,23,42,.22)",
+            boxShadow: "0 18px 50px rgba(15,23,42,.20)",
             zIndex: 1000,
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
           }}
-          role="dialog"
-          aria-label={
-            lang === "fr"
-              ? "Assistant ComptaNet"
-              : lang === "es"
-                ? "Asistente ComptaNet"
-                : "ComptaNet Assistant"
-          }
         >
           <div
             style={{
@@ -1546,34 +1700,20 @@ export default function TenueDeLivresPage() {
               flex: "0 0 auto",
             }}
           >
-            <div style={{ fontWeight: 900 }}>
-              💬{" "}
-              {lang === "fr"
-                ? "Assistant ComptaNet"
-                : lang === "es"
-                  ? "Asistente ComptaNet"
-                  : "ComptaNet Assistant"}
-            </div>
+            <strong>💬 {copy.title}</strong>
 
             <button
               type="button"
-              onClick={() => setChatOpen(false)}
-              aria-label={
-                lang === "fr"
-                  ? "Fermer le chat"
-                  : lang === "es"
-                    ? "Cerrar el chat"
-                    : "Close chat"
-              }
+              onClick={() => onOpenChange(false)}
+              aria-label={copy.close}
               style={{
-                width: 34,
-                height: 34,
-                border: "1px solid rgba(255,255,255,.35)",
-                borderRadius: 9,
-                background: "rgba(255,255,255,.12)",
+                width: 32,
+                height: 32,
+                border: 0,
+                borderRadius: 8,
+                background: "rgba(255,255,255,.14)",
                 color: "#ffffff",
-                fontSize: 22,
-                lineHeight: 1,
+                fontSize: 21,
                 cursor: "pointer",
                 display: "grid",
                 placeItems: "center",
@@ -1587,38 +1727,116 @@ export default function TenueDeLivresPage() {
             style={{
               flex: 1,
               minHeight: 0,
-              overflow: "auto",
-              background: "#ffffff",
+              overflowY: "auto",
+              padding: 14,
+              background: "#f8fbff",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
             }}
           >
-            <AssistantChat lang={lang} />
+            {messages.map((item, index) => {
+              const mine = item.role === "user";
+
+              return (
+                <div
+                  key={`${item.role}-${index}`}
+                  style={{
+                    alignSelf: mine ? "flex-end" : "flex-start",
+                    maxWidth: "86%",
+                    padding: "10px 12px",
+                    borderRadius: mine
+                      ? "14px 14px 4px 14px"
+                      : "14px 14px 14px 4px",
+                    background: mine ? "#004aad" : "#ffffff",
+                    color: mine ? "#ffffff" : "#0f172a",
+                    border: mine ? "none" : "1px solid #dbe5f1",
+                    lineHeight: 1.45,
+                    fontSize: 14,
+                    whiteSpace: "pre-wrap",
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {item.content}
+                </div>
+              );
+            })}
+
+            {sending && (
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  padding: "9px 12px",
+                  borderRadius: "14px 14px 14px 4px",
+                  background: "#ffffff",
+                  border: "1px solid #dbe5f1",
+                  color: "#64748b",
+                  fontSize: 13,
+                }}
+              >
+                {copy.thinking}
+              </div>
+            )}
           </div>
-        </div>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void sendMessage();
+            }}
+            style={{
+              display: "flex",
+              gap: 8,
+              padding: 10,
+              borderTop: "1px solid #e5e7eb",
+              background: "#ffffff",
+              flex: "0 0 auto",
+            }}
+          >
+            <input
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder={copy.placeholder}
+              maxLength={1500}
+              disabled={sending}
+              autoComplete="off"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                border: "1px solid #cbd5e1",
+                borderRadius: 10,
+                padding: "11px 12px",
+                outline: "none",
+                fontSize: 14,
+              }}
+            />
+
+            <button
+              type="submit"
+              disabled={sending || !input.trim()}
+              style={{
+                border: 0,
+                borderRadius: 10,
+                padding: "10px 13px",
+                background: "#004aad",
+                color: "#ffffff",
+                fontWeight: 900,
+                cursor:
+                  sending || !input.trim() ? "default" : "pointer",
+                opacity: sending || !input.trim() ? 0.55 : 1,
+              }}
+            >
+              {copy.send}
+            </button>
+          </form>
+        </section>
       )}
 
       <button
         type="button"
-        onClick={() => setChatOpen((open) => !open)}
-        aria-label={
-          chatOpen
-            ? lang === "fr"
-              ? "Fermer l’assistant"
-              : lang === "es"
-                ? "Cerrar el asistente"
-                : "Close assistant"
-            : lang === "fr"
-              ? "Ouvrir l’assistant ComptaNet"
-              : lang === "es"
-                ? "Abrir el asistente ComptaNet"
-                : "Open ComptaNet Assistant"
-        }
-        title={
-          lang === "fr"
-            ? "Assistant ComptaNet"
-            : lang === "es"
-              ? "Asistente ComptaNet"
-              : "ComptaNet Assistant"
-        }
+        onClick={() => onOpenChange(!open)}
+        aria-label={open ? copy.close : copy.open}
+        title={copy.title}
         style={{
           position: "fixed",
           right: 20,
@@ -1637,9 +1855,9 @@ export default function TenueDeLivresPage() {
           placeItems: "center",
         }}
       >
-        {chatOpen ? "×" : "💬"}
+        {open ? "×" : "💬"}
       </button>
-    </main>
+    </>
   );
 }
 
