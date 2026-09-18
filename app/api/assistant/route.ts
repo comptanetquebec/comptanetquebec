@@ -73,65 +73,88 @@ function refusal(lang: Lang, kind: "fraud" | "sexual") {
   if (kind === "fraud") {
     return t(
       lang,
-      "Je ne peux pas aider avec la fraude fiscale, l’évasion ou le contournement des règles. Je peux toutefois aider avec une question générale sur l’impôt au Québec.",
-      "I can’t help with tax fraud, evasion, or bypassing rules. I can still help with a general question about Québec taxes.",
-      "No puedo ayudar con fraude fiscal, evasión o formas de eludir reglas. Sí puedo ayudar con una pregunta general sobre impuestos en Québec."
+      "Je ne peux pas aider avec la fraude fiscale, l’évasion ou le contournement des règles. Je peux toutefois aider avec une question générale sur l’impôt, la tenue de livres ou la TPS/TVQ au Québec.",
+      "I can’t help with tax fraud, evasion, or bypassing rules. I can still help with a general question about Québec taxes, bookkeeping, or GST/QST.",
+      "No puedo ayudar con fraude fiscal, evasión o formas de eludir reglas. Sí puedo ayudar con una pregunta general sobre impuestos, contabilidad o GST/QST en Québec."
     );
   }
 
   return t(
     lang,
-    "Je ne peux pas aider avec du contenu sexuel. Je peux toutefois aider avec une question générale sur l’impôt au Québec.",
-    "I can’t help with sexual content. I can still help with a general question about Québec taxes.",
-    "No puedo ayudar con contenido sexual. Sí puedo ayudar con una pregunta general sobre impuestos en Québec."
+    "Je ne peux pas aider avec du contenu sexuel. Je peux toutefois aider avec une question générale sur l’impôt, la tenue de livres ou la TPS/TVQ au Québec.",
+    "I can’t help with sexual content. I can still help with a general question about Québec taxes, bookkeeping, or GST/QST.",
+    "No puedo ayudar con contenido sexual. Sí puedo ayudar con una pregunta general sobre impuestos, contabilidad o GST/QST en Québec."
   );
 }
 
 function systemPrompt(lang: Lang): string {
   if (lang === "en") {
     return [
-      "You are ComptaNet Québec's assistant for GENERAL INFORMATION ONLY.",
-      "Allowed scope: Québec tax filing general guidance, documents, process, deadlines, payment flow, secure portal, file types (T1, self-employed, T2).",
-      "Do not provide personalized tax advice.",
-      "Do not calculate exact taxes or refunds.",
+      "You are ComptaNet Québec's public assistant for GENERAL INFORMATION ONLY.",
+      "Allowed scope: Québec tax filing, T1, self-employed and T2 files, bookkeeping, business income and expenses, transaction organization, documents, GST/QST, monthly/quarterly/annual filing periods, process, deadlines, payment flow and the secure client portal.",
+      "For bookkeeping, explain how ComptaNet Québec can help organize income, expenses and transactions and prepare information needed for GST/QST returns.",
+      "Do not claim that ComptaNet Québec files or transmits a GST/QST return unless the service and the client's file have been specifically confirmed.",
+      "This public assistant does not analyze the client's actual accounting records, receipts or transactions. Those functions belong in the secure bookkeeping area.",
+      "Do not provide personalized tax, accounting or legal advice.",
+      "Do not calculate exact taxes, refunds, GST/QST balances, deductions or business-use percentages from a user's personal situation.",
+      "Do not decide that a specific expense is deductible without reviewing the file and supporting documents.",
       "Do not guarantee outcomes.",
-      "If the answer depends on the user's personal situation, say they must open a file and submit documents.",
-      "Keep answers concise, clear, and practical.",
+      "Never ask the user to provide a SIN, full bank/card number, password or other highly sensitive identifier in the chat.",
+      "If the answer depends on the user's specific situation or documents, explain that ComptaNet Québec must review the file.",
+      "If asked about a price that is not explicitly provided in the conversation, do not invent a price. Direct the user to the current pricing or client area.",
+      "Keep answers concise, clear and practical.",
       "Prefer 1 short paragraph plus 2 to 4 short bullet points when useful.",
-      "End with a practical next step.",
+      "Answer in English.",
+      "End with a practical next step when appropriate.",
     ].join("\n");
   }
 
   if (lang === "es") {
     return [
-      "Eres el asistente de ComptaNet Québec para INFORMACIÓN GENERAL SOLAMENTE.",
-      "Alcance permitido: orientación general sobre impuestos en Québec, documentos, proceso, plazos, pagos, portal seguro y tipos de expediente (T1, autónomo, T2).",
-      "No des asesoría fiscal personalizada.",
-      "No calcules montos exactos de impuestos o reembolsos.",
+      "Eres el asistente público de ComptaNet Québec para INFORMACIÓN GENERAL SOLAMENTE.",
+      "Alcance permitido: impuestos en Québec, expedientes T1, autónomo y T2, contabilidad, ingresos y gastos de empresa, organización de transacciones, documentos, GST/QST (TPS/TVQ), períodos mensuales/trimestrales/anuales, proceso, plazos, pagos y portal seguro.",
+      "Para contabilidad, explica cómo ComptaNet Québec puede ayudar a organizar ingresos, gastos y transacciones y a preparar la información necesaria para las declaraciones de GST/QST.",
+      "No afirmes que ComptaNet Québec presenta o transmite una declaración GST/QST a menos que el servicio y el expediente del cliente lo confirmen específicamente.",
+      "Este asistente público no analiza los registros contables, recibos ni transacciones reales del cliente. Esas funciones pertenecen al área segura de contabilidad.",
+      "No des asesoría fiscal, contable o legal personalizada.",
+      "No calcules impuestos, reembolsos, saldos GST/QST, deducciones ni porcentajes de uso comercial exactos a partir de la situación personal del usuario.",
+      "No decidas que un gasto específico es deducible sin revisar el expediente y los documentos.",
       "No garantices resultados.",
-      "Si la respuesta depende de la situación personal del usuario, indica que debe abrir un expediente y subir sus documentos.",
+      "Nunca pidas NAS/SIN, números completos de cuenta o tarjeta, contraseñas ni otros identificadores muy sensibles en el chat.",
+      "Si la respuesta depende de la situación o documentos específicos del usuario, explica que ComptaNet Québec debe revisar el expediente.",
+      "Si preguntan por un precio que no está explícitamente disponible en la conversación, no inventes un precio. Dirige al usuario a las tarifas actuales o al portal.",
       "Respuestas breves, claras y prácticas.",
       "Prefiere 1 párrafo corto y de 2 a 4 viñetas cortas si ayuda.",
-      "Termina con un siguiente paso concreto.",
+      "Responde en español.",
+      "Termina con un siguiente paso concreto cuando corresponda.",
     ].join("\n");
   }
 
   return [
-    "Tu es l’assistant de ComptaNet Québec pour de l’INFORMATION GÉNÉRALE SEULEMENT.",
-    "Portée permise : info générale sur l’impôt au Québec, documents, processus, délais, paiement, portail sécurisé et types de dossier (T1, autonome, T2).",
-    "Ne donne jamais d’avis fiscal personnalisé.",
-    "Ne calcule jamais d’impôt ou de remboursement exact.",
+    "Tu es l’assistant public de ComptaNet Québec pour de l’INFORMATION GÉNÉRALE SEULEMENT.",
+    "Portée permise : impôt au Québec, dossiers T1, travailleur autonome et T2, tenue de livres, revenus et dépenses d’entreprise, organisation des transactions, documents, TPS/TVQ, périodes mensuelles/trimestrielles/annuelles, processus, délais, paiement et portail client sécurisé.",
+    "Pour la tenue de livres, explique comment ComptaNet Québec peut aider à organiser les revenus, dépenses et transactions et à préparer les informations nécessaires aux remises de TPS/TVQ.",
+    "N’affirme pas que ComptaNet Québec produit ou transmet une remise de TPS/TVQ à moins que ce service et le dossier du client aient été spécifiquement confirmés.",
+    "Cet assistant public n’analyse pas les véritables écritures comptables, reçus ou transactions du client. Ces fonctions appartiennent à l’espace sécurisé de tenue de livres.",
+    "Ne donne jamais d’avis fiscal, comptable ou juridique personnalisé.",
+    "Ne calcule jamais un impôt, remboursement, solde TPS/TVQ, déduction ou pourcentage d’utilisation commerciale exact à partir de la situation personnelle d’un utilisateur.",
+    "Ne décide jamais qu’une dépense précise est déductible sans analyse du dossier et des pièces justificatives.",
     "Ne garantis jamais un résultat.",
-    "Si la réponse dépend de la situation personnelle du client, indique qu’il faut ouvrir un dossier et transmettre les documents.",
+    "Ne demande jamais au client d’écrire son NAS, numéro complet de compte ou de carte, mot de passe ou autre identifiant très sensible dans le chat.",
+    "Si la réponse dépend de la situation ou des documents précis du client, explique que ComptaNet Québec doit vérifier le dossier.",
+    "Si on te demande un prix qui n’est pas explicitement disponible dans la conversation, n’invente jamais un prix. Oriente vers les tarifs actuels ou l’espace client.",
     "Réponses courtes, claires et pratiques.",
     "Privilégie 1 court paragraphe et 2 à 4 puces courtes si utile.",
-    "Termine par une prochaine étape concrète.",
+    "Réponds en français.",
+    "Termine par une prochaine étape concrète lorsque pertinent.",
   ].join("\n");
 }
 
 type Intent =
   | "docs"
   | "t1_ta_t2"
+  | "bookkeeping"
+  | "gst_qst"
   | "process"
   | "pricing"
   | "deadline"
@@ -140,34 +163,77 @@ type Intent =
   | "unknown";
 
 function detectIntent(text: string): Intent {
-  const t = text.toLowerCase();
+  const value = text.toLowerCase();
 
-  if (/(document|documents|documento|documentos|pi[eè]ce|facture|factura|justificatif|justificante|preuve|proof|receipt|relev[ée]|slip)/i.test(t)) {
+  // Check the most specific service intents first.
+  if (
+    /(tps|tvq|gst|qst|sales tax|taxes de vente|taxe de vente|remise|remises|return gst|return qst|declaraci[oó]n gst|declaraci[oó]n qst|mensuel|mensuelle|monthly|trimestriel|trimestrielle|quarterly|annuel|annuelle|annual)/i.test(
+      value
+    )
+  ) {
+    return "gst_qst";
+  }
+
+  if (
+    /(tenue de livres|tenue des livres|bookkeeping|contabilidad|revenu d['’]?entreprise|revenus d['’]?entreprise|business income|ingresos de empresa|d[eé]pense d['’]?entreprise|d[eé]penses d['’]?entreprise|business expense|business expenses|gastos de empresa|transaction|transactions|cat[eé]gorisation|classification|categorization)/i.test(
+      value
+    )
+  ) {
+    return "bookkeeping";
+  }
+
+  if (
+    /(document|documents|documento|documentos|pi[eè]ce|pi[eè]ces|facture|factures|factura|facturas|justificatif|justificatifs|justificante|preuve|proof|receipt|receipts|reçu|reçus|relev[ée]|slip)/i.test(
+      value
+    )
+  ) {
     return "docs";
   }
 
-  if (/(t1|t2|travailleur autonome|autonome|self-employed|autónomo|incorpor|corporation|compagnie|company|empresa|sociedad)/i.test(t)) {
+  if (
+    /(t1|t2|travailleur autonome|autonome|self-employed|autónomo|incorpor|corporation|compagnie|company|empresa|sociedad)/i.test(
+      value
+    )
+  ) {
     return "t1_ta_t2";
   }
 
-  if (/(comment|how|como|proc[eé]dure|procedure|steps?|pasos?|[eé]tape|d[eé]poser|upload|envoyer|submit|send|dossier|file|portal|portail|fonctionne|funciona)/i.test(t)) {
-    return "process";
-  }
-
-  if (/(prix|tarif|co[uû]t|pricing|price|cost|acompte|deposit|payer|paiement|payment|pago)/i.test(t)) {
+  if (
+    /(prix|tarif|co[uû]t|pricing|price|cost|acompte|deposit|payer|paiement|payment|pago)/i.test(
+      value
+    )
+  ) {
     return "pricing";
   }
 
-  if (/(date limite|[eé]ch[eé]ance|deadline|due date|retard|late|penalit[eé]|penalty|fecha l[ií]mite|vencimiento)/i.test(t)) {
+  if (
+    /(date limite|[eé]ch[eé]ance|deadline|due date|retard|late|penalit[eé]|penalty|fecha l[ií]mite|vencimiento)/i.test(
+      value
+    )
+  ) {
     return "deadline";
   }
 
-  if (/(portail|portal|espace client|client area|portal seguro)/i.test(t)) {
+  if (
+    /(portail|portal|espace client|client area|portal seguro)/i.test(value)
+  ) {
     return "portal";
   }
 
-  if (/(contact|appeler|t[eé]l[eé]phone|phone|email|courriel|correo|parler|speak|hablar)/i.test(t)) {
+  if (
+    /(contact|appeler|t[eé]l[eé]phone|phone|email|courriel|correo|parler|speak|hablar)/i.test(
+      value
+    )
+  ) {
     return "contact";
+  }
+
+  if (
+    /(comment|how|como|c[oó]mo|proc[eé]dure|procedure|steps?|pasos?|[eé]tape|d[eé]poser|upload|envoyer|submit|send|dossier|file|fonctionne|funciona)/i.test(
+      value
+    )
+  ) {
+    return "process";
   }
 
   return "unknown";
@@ -176,7 +242,8 @@ function detectIntent(text: string): Intent {
 function nextActionsFor(intent: Intent, lang: Lang): string[] {
   const map = {
     fr: {
-      open: "Ouvrir un dossier",
+      openTax: "Ouvrir un dossier — Impôt",
+      openBookkeeping: "Espace client — Tenue de livres",
       docs: "Quels documents ?",
       diff: "Différence T1, autonome, T2",
       process: "Comment ça fonctionne ?",
@@ -184,11 +251,15 @@ function nextActionsFor(intent: Intent, lang: Lang): string[] {
       t1: "T1",
       ta: "Travailleur autonome",
       t2: "T2",
+      bookkeeping: "Tenue de livres",
+      gstqst: "TPS/TVQ",
+      periods: "Mensuel, trimestriel ou annuel ?",
       pay: "Paiement",
       deadline: "Date limite",
     },
     en: {
-      open: "Open a file",
+      openTax: "Open a file — Tax",
+      openBookkeeping: "Client portal — Bookkeeping",
       docs: "Which documents?",
       diff: "Difference T1, self-employed, T2",
       process: "How does it work?",
@@ -196,11 +267,15 @@ function nextActionsFor(intent: Intent, lang: Lang): string[] {
       t1: "T1",
       ta: "Self-employed",
       t2: "T2",
+      bookkeeping: "Bookkeeping",
+      gstqst: "GST/QST",
+      periods: "Monthly, quarterly or annual?",
       pay: "Payment",
       deadline: "Deadline",
     },
     es: {
-      open: "Abrir expediente",
+      openTax: "Abrir expediente — Impuestos",
+      openBookkeeping: "Portal del cliente — Contabilidad",
       docs: "¿Qué documentos?",
       diff: "Diferencia T1, autónomo, T2",
       process: "¿Cómo funciona?",
@@ -208,6 +283,9 @@ function nextActionsFor(intent: Intent, lang: Lang): string[] {
       t1: "T1",
       ta: "Autónomo",
       t2: "T2",
+      bookkeeping: "Contabilidad",
+      gstqst: "GST/QST (TPS/TVQ)",
+      periods: "¿Mensual, trimestral o anual?",
       pay: "Pago",
       deadline: "Fecha límite",
     },
@@ -217,21 +295,34 @@ function nextActionsFor(intent: Intent, lang: Lang): string[] {
 
   switch (intent) {
     case "docs":
-      return [c.t1, c.ta, c.t2, c.open];
+      return [c.t1, c.ta, c.bookkeeping, c.openTax];
+
     case "t1_ta_t2":
-      return [c.t1, c.ta, c.t2, c.open];
+      return [c.t1, c.ta, c.t2, c.openTax];
+
+    case "bookkeeping":
+      return [c.gstqst, c.docs, c.periods, c.openBookkeeping];
+
+    case "gst_qst":
+      return [c.bookkeeping, c.periods, c.docs, c.openBookkeeping];
+
     case "process":
-      return [c.open, c.docs, c.portal];
+      return [c.openTax, c.openBookkeeping, c.docs, c.portal];
+
     case "pricing":
-      return [c.t1, c.ta, c.t2, c.pay];
+      return [c.t1, c.ta, c.bookkeeping, c.pay];
+
     case "deadline":
-      return [c.t1, c.ta, c.t2, c.deadline];
+      return [c.t1, c.ta, c.gstqst, c.deadline];
+
     case "portal":
-      return [c.open, c.docs, c.portal];
+      return [c.openTax, c.openBookkeeping, c.docs, c.portal];
+
     case "contact":
-      return [c.open, c.process, c.docs];
+      return [c.openTax, c.openBookkeeping, c.process, c.docs];
+
     default:
-      return [c.open, c.docs, c.diff, c.process];
+      return [c.bookkeeping, c.gstqst, c.docs, c.diff];
   }
 }
 
@@ -239,18 +330,31 @@ function tagsFor(intent: Intent): string[] {
   switch (intent) {
     case "docs":
       return ["documents", "justificatifs"];
+
     case "t1_ta_t2":
       return ["T1", "TA", "T2"];
+
+    case "bookkeeping":
+      return ["tenue-de-livres", "revenus", "depenses", "transactions"];
+
+    case "gst_qst":
+      return ["TPS", "TVQ", "remises"];
+
     case "process":
       return ["processus", "portail"];
+
     case "pricing":
       return ["prix", "paiement"];
+
     case "deadline":
       return ["délais", "échéances"];
+
     case "portal":
       return ["portail", "sécurité"];
+
     case "contact":
       return ["contact", "orientation"];
+
     default:
       return ["aide", "orientation"];
   }
@@ -275,6 +379,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const body = (await req.json()) as Body;
+    const lang: Lang =
+      body.lang === "en" || body.lang === "es" ? body.lang : "fr";
+    const message = (body.message ?? "").trim();
+
     const ip = getIp(req);
     const rl = rateLimit(ip);
 
@@ -283,7 +392,7 @@ export async function POST(req: Request) {
         {
           ok: false,
           error: t(
-            "fr",
+            lang,
             "Trop de requêtes. Réessayez dans 1 minute.",
             "Too many requests. Please try again in 1 minute.",
             "Demasiadas solicitudes. Inténtelo de nuevo en 1 minuto."
@@ -291,14 +400,12 @@ export async function POST(req: Request) {
         },
         {
           status: 429,
-          headers: { "retry-after": String(Math.ceil(rl.retryAfterMs / 1000)) },
+          headers: {
+            "retry-after": String(Math.ceil(rl.retryAfterMs / 1000)),
+          },
         }
       );
     }
-
-    const body = (await req.json()) as Body;
-    const lang: Lang = body.lang === "en" || body.lang === "es" ? body.lang : "fr";
-    const message = (body.message ?? "").trim();
 
     if (!message) {
       return NextResponse.json(
