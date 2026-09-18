@@ -40,6 +40,26 @@ type Copy = {
     text: string;
   }[];
 
+  pricingTitle: string;
+  pricingIntro: string;
+  pricingMonthly: string;
+  pricingCad: string;
+  pricingChoose: string;
+  pricingPopular: string;
+  pricingPlans: {
+    name: string;
+    price: string;
+    description: string;
+    features: string[];
+  }[];
+  creditsTitle: string;
+  creditsIntro: string;
+  creditsOneTime: string;
+  creditPacks: {
+    credits: string;
+    price: string;
+  }[];
+
   aiTitle: string;
   aiText: string;
 
@@ -157,6 +177,49 @@ const COPY: Record<Lang, Copy> = {
         text:
           "Vos informations organisées facilitent le suivi comptable et la préparation de vos périodes de TPS/TVQ.",
       },
+    ],
+
+    pricingTitle: "Tarifs de tenue de livres",
+    pricingIntro:
+      "Choisissez le forfait qui correspond aux besoins de votre entreprise. Les prix sont en dollars canadiens.",
+    pricingMonthly: "/ mois",
+    pricingCad: "CAD",
+    pricingChoose: "Choisir ce forfait",
+    pricingPopular: "Avec TPS/TVQ",
+    pricingPlans: [
+      {
+        name: "Essentiel",
+        price: "19,99 $",
+        description:
+          "Pour garder une vue claire de vos revenus, dépenses et documents.",
+        features: [
+          "Suivi des revenus",
+          "Suivi des dépenses",
+          "Gestion des documents",
+          "Accès à votre espace sécurisé",
+        ],
+      },
+      {
+        name: "TPS/TVQ",
+        price: "29,99 $",
+        description:
+          "Pour la tenue de livres avec le suivi de la TPS et de la TVQ.",
+        features: [
+          "Tout ce qui est inclus dans Essentiel",
+          "Suivi de la TPS",
+          "Suivi de la TVQ",
+          "Organisation des informations pour vos périodes de TPS/TVQ",
+        ],
+      },
+    ],
+    creditsTitle: "Crédits supplémentaires",
+    creditsIntro:
+      "Besoin de crédits supplémentaires ? Vous pouvez en acheter séparément, sans modifier votre abonnement.",
+    creditsOneTime: "achat unique",
+    creditPacks: [
+      { credits: "25 crédits", price: "4,99 $" },
+      { credits: "50 crédits", price: "7,99 $" },
+      { credits: "100 crédits", price: "14,99 $" },
     ],
 
     aiTitle: "Vous avez une question ?",
@@ -305,6 +368,49 @@ const COPY: Record<Lang, Copy> = {
       },
     ],
 
+    pricingTitle: "Bookkeeping pricing",
+    pricingIntro:
+      "Choose the plan that fits your business needs. Prices are in Canadian dollars.",
+    pricingMonthly: "/ month",
+    pricingCad: "CAD",
+    pricingChoose: "Choose this plan",
+    pricingPopular: "With GST/QST",
+    pricingPlans: [
+      {
+        name: "Essential",
+        price: "$19.99",
+        description:
+          "For a clear view of your income, expenses and documents.",
+        features: [
+          "Income tracking",
+          "Expense tracking",
+          "Document management",
+          "Access to your secure space",
+        ],
+      },
+      {
+        name: "GST/QST",
+        price: "$29.99",
+        description:
+          "For bookkeeping with GST and QST tracking.",
+        features: [
+          "Everything included in Essential",
+          "GST tracking",
+          "QST tracking",
+          "Organization of information for your GST/QST periods",
+        ],
+      },
+    ],
+    creditsTitle: "Additional credits",
+    creditsIntro:
+      "Need more credits? You can purchase additional credits separately without changing your subscription.",
+    creditsOneTime: "one-time purchase",
+    creditPacks: [
+      { credits: "25 credits", price: "$4.99" },
+      { credits: "50 credits", price: "$7.99" },
+      { credits: "100 credits", price: "$14.99" },
+    ],
+
     aiTitle: "Have a question?",
 
     aiText:
@@ -449,6 +555,49 @@ const COPY: Record<Lang, Copy> = {
         text:
           "La información organizada facilita la preparación de los períodos contables y GST/QST.",
       },
+    ],
+
+    pricingTitle: "Precios de contabilidad",
+    pricingIntro:
+      "Elija el plan que corresponda a las necesidades de su empresa. Los precios están en dólares canadienses.",
+    pricingMonthly: "/ mes",
+    pricingCad: "CAD",
+    pricingChoose: "Elegir este plan",
+    pricingPopular: "Con GST/QST",
+    pricingPlans: [
+      {
+        name: "Esencial",
+        price: "19,99 $",
+        description:
+          "Para mantener una visión clara de sus ingresos, gastos y documentos.",
+        features: [
+          "Seguimiento de ingresos",
+          "Seguimiento de gastos",
+          "Gestión de documentos",
+          "Acceso a su espacio seguro",
+        ],
+      },
+      {
+        name: "GST/QST",
+        price: "29,99 $",
+        description:
+          "Para la contabilidad con seguimiento de GST y QST.",
+        features: [
+          "Todo lo incluido en Esencial",
+          "Seguimiento de GST",
+          "Seguimiento de QST",
+          "Organización de la información para sus períodos GST/QST",
+        ],
+      },
+    ],
+    creditsTitle: "Créditos adicionales",
+    creditsIntro:
+      "¿Necesita más créditos? Puede comprarlos por separado sin cambiar su suscripción.",
+    creditsOneTime: "compra única",
+    creditPacks: [
+      { credits: "25 créditos", price: "4,99 $" },
+      { credits: "50 créditos", price: "7,99 $" },
+      { credits: "100 créditos", price: "14,99 $" },
     ],
 
     aiTitle: "¿Tiene una pregunta?",
@@ -692,6 +841,116 @@ function InfoTenueDeLivresContent() {
               </p>
             </article>
           ))}
+        </div>
+      </section>
+
+      {/* TARIFS */}
+      <section className="border-y border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-bold">
+              {T.pricingTitle}
+            </h2>
+
+            <p className="mt-3 text-slate-600">
+              {T.pricingIntro}
+            </p>
+          </div>
+
+          <div className="mx-auto mt-9 grid max-w-4xl gap-6 md:grid-cols-2">
+            {T.pricingPlans.map((plan, index) => (
+              <article
+                key={plan.name}
+                className={`relative rounded-3xl border bg-white p-7 shadow-sm ${
+                  index === 1
+                    ? "border-[#004aad] ring-2 ring-blue-100"
+                    : "border-slate-200"
+                }`}
+              >
+                {index === 1 && (
+                  <div className="absolute -top-3 left-6 rounded-full bg-[#004aad] px-3 py-1 text-xs font-bold text-white">
+                    {T.pricingPopular}
+                  </div>
+                )}
+
+                <h3 className="text-xl font-bold">
+                  {plan.name}
+                </h3>
+
+                <div className="mt-4 flex items-end gap-2">
+                  <span className="text-4xl font-bold text-[#004aad]">
+                    {plan.price}
+                  </span>
+
+                  <span className="pb-1 text-sm text-slate-500">
+                    {T.pricingCad} {T.pricingMonthly}
+                  </span>
+                </div>
+
+                <p className="mt-4 leading-7 text-slate-600">
+                  {plan.description}
+                </p>
+
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex gap-3 text-slate-700"
+                    >
+                      <span className="font-bold text-[#004aad]">
+                        ✓
+                      </span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={clientHref}
+                  className={`mt-7 inline-flex w-full justify-center rounded-xl px-5 py-3 text-sm font-semibold transition ${
+                    index === 1
+                      ? "bg-[#004aad] text-white hover:opacity-90"
+                      : "border border-[#004aad] bg-white text-[#004aad] hover:bg-blue-50"
+                  }`}
+                >
+                  {T.pricingChoose}
+                </Link>
+              </article>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-10 max-w-4xl rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold">
+                {T.creditsTitle}
+              </h3>
+
+              <p className="mx-auto mt-3 max-w-2xl text-slate-600">
+                {T.creditsIntro}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              {T.creditPacks.map((pack) => (
+                <div
+                  key={pack.credits}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm"
+                >
+                  <div className="font-bold text-slate-900">
+                    {pack.credits}
+                  </div>
+
+                  <div className="mt-2 text-2xl font-bold text-[#004aad]">
+                    {pack.price}
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-500">
+                    {T.pricingCad} · {T.creditsOneTime}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
