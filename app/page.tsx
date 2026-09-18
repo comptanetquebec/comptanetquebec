@@ -1189,24 +1189,16 @@ plans: [
             background: "#ffffff",
           }}
         >
-          <div
+          <h2
+            className={styles.sectionTitle}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 10,
-              padding: "7px 12px",
-              borderRadius: 999,
-              background: "#eff6ff",
+              marginBottom: 14,
               color: bleu,
-              fontWeight: 800,
-              fontSize: 14,
+              fontSize: "clamp(28px, 4vw, 42px)",
+              fontWeight: 900,
+              lineHeight: 1.1,
             }}
           >
-            💼 {T.nav.bookkeeping}
-          </div>
-
-          <h2 className={styles.sectionTitle} style={{ marginBottom: 10 }}>
             {T.bookkeepingTitle}
           </h2>
 
