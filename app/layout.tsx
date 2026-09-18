@@ -1,24 +1,32 @@
 // app/layout.tsx
+
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import "./globals.css";
+
 import CookieBanner from "@/components/CookieBanner";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://comptanetquebec.com"),
+
   title: {
     default:
-      "Service d'impôt au Québec | Déclaration en ligne T1, Travailleur autonome, T2",
+      "Impôt et tenue de livres au Québec | ComptaNet Québec",
     template: "%s | ComptaNet Québec",
   },
+
   description:
-    "Service de déclaration d'impôt en ligne au Québec. Particuliers (T1), travailleurs autonomes et compagnies incorporées (T2). Portail sécurisé, paiement Stripe et transmission électronique (TED) lorsque applicable.",
+    "Services d'impôt et de tenue de livres en ligne au Québec. Déclarations T1, travailleurs autonomes, compagnies incorporées (T2), suivi des revenus et dépenses, portail sécurisé et paiement en ligne.",
+
   applicationName: "ComptaNet Québec",
+
   verification: {
     google: "OVaZ1-gi1TotpMxE-0tuhBVNGOO7JW_YLV0BWMgY9sM",
   },
+
   robots: {
     index: true,
     follow: true,
@@ -30,39 +38,51 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+
   openGraph: {
     type: "website",
     siteName: "ComptaNet Québec",
+
     title:
-      "Service d'impôt au Québec | Déclaration en ligne sécurisée",
+      "Impôt et tenue de livres au Québec | ComptaNet Québec",
+
     description:
-      "Ouvrez votre dossier sécurisé, téléversez vos documents, et votre déclaration est préparée à partir des informations fournies. Transmission électronique (TED) lorsque applicable.",
+      "Services d'impôt et de tenue de livres en ligne au Québec. Portail sécurisé pour vos documents, revenus, dépenses et services fiscaux.",
+
     url: "/",
     locale: "fr_CA",
+
     images: [
       {
         url: "/banniere.png",
         width: 1200,
         height: 630,
-        alt: "ComptaNet Québec – Service d'impôt en ligne",
+        alt: "ComptaNet Québec – Impôt et tenue de livres en ligne",
       },
     ],
   },
+
   twitter: {
     card: "summary_large_image",
+
     title:
-      "Service d'impôt au Québec | Déclaration en ligne",
+      "Impôt et tenue de livres au Québec | ComptaNet Québec",
+
     description:
-      "Particuliers, travailleurs autonomes et compagnies incorporées. Portail sécurisé, paiement Stripe et TED lorsque applicable.",
+      "Services d'impôt et de tenue de livres en ligne pour particuliers, travailleurs autonomes et entreprises au Québec.",
+
     images: ["/banniere.png"],
   },
+
   alternates: {
     canonical: "/",
   },
+
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
+
   other: {
     "format-detection": "telephone=no",
   },
@@ -70,31 +90,47 @@ export const metadata: Metadata = {
 
 async function getPathnameFromHeaders(): Promise<string> {
   const h = await headers();
+
   const fromUrl = h.get("x-url");
+
   if (fromUrl) {
     try {
       return new URL(fromUrl).pathname;
     } catch {
-      // ignore
+      // Ignore une URL invalide
     }
   }
+
   const fromNextUrl = h.get("next-url");
-  if (fromNextUrl) return fromNextUrl;
+
+  if (fromNextUrl) {
+    return fromNextUrl;
+  }
+
   return "/";
 }
 
 export default async function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const pathname = await getPathnameFromHeaders();
+
+  // L'accueil possède déjà sa propre présentation.
   const showHeader = pathname !== "/";
+
   return (
     <html lang="fr" className="h-full">
-      <body className="min-h-full bg-slate-50 text-slate-900 antialiased">
-        {showHeader ? <Header /> : null}
-        <Suspense fallback={null}>{children}</Suspense>
+      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900 antialiased">
+        <Suspense fallback={null}>
+          {showHeader ? <Header /> : null}
+
+          <div className="flex-1">{children}</div>
+
+          <Footer />
+        </Suspense>
+
         <CookieBanner />
       </body>
     </html>
