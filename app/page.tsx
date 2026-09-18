@@ -300,8 +300,8 @@ export default function Home() {
           pricing: "Tarifs",
           faq: "FAQ",
           contact: "Contact",
-          client: "Espace client",
-          bookkeeping: "Tenue de livres",
+          client: "Espace client — Impôt",
+          bookkeeping: "Espace client — Tenue de livres",
           help: "Besoin d’aide ?",
           menu: "Menu",
           close: "Fermer",
@@ -364,7 +364,7 @@ export default function Home() {
           "Périodes mensuelles, trimestrielles ou annuelles",
           "Portail sécurisé et suivi en ligne",
         ],
-        bookkeepingCta: "Découvrir la tenue de livres",
+        bookkeepingCta: "Ouvrir l’espace client — Tenue de livres",
 
         servicesTitle: "Services",
         servicesSub:
@@ -490,8 +490,8 @@ plans: [
           pricing: "Pricing",
           faq: "FAQ",
           contact: "Contact",
-          client: "Client portal",
-          bookkeeping: "Bookkeeping",
+          client: "Client portal — Tax",
+          bookkeeping: "Client portal — Bookkeeping",
           help: "Need help?",
           menu: "Menu",
           close: "Close",
@@ -551,7 +551,7 @@ plans: [
           "Monthly, quarterly or annual periods",
           "Secure portal and online tracking",
         ],
-        bookkeepingCta: "Discover bookkeeping",
+        bookkeepingCta: "Open client portal — Bookkeeping",
 
         servicesTitle: "Services",
         servicesSub: "Québec-only tax returns — secure document portal.",
@@ -661,8 +661,8 @@ plans: [
           pricing: "Precios",
           faq: "FAQ",
           contact: "Contacto",
-          client: "Portal del cliente",
-          bookkeeping: "Contabilidad",
+          client: "Portal del cliente — Impuestos",
+          bookkeeping: "Portal del cliente — Contabilidad",
           help: "¿Necesitas ayuda?",
           menu: "Menú",
           close: "Cerrar",
@@ -723,7 +723,7 @@ plans: [
           "Períodos mensuales, trimestrales o anuales",
           "Portal seguro y seguimiento en línea",
         ],
-        bookkeepingCta: "Descubrir la contabilidad",
+        bookkeepingCta: "Abrir portal del cliente — Contabilidad",
 
         servicesTitle: "Servicios",
         servicesSub: "Solo Québec — portal seguro para documentos.",
@@ -1477,10 +1477,10 @@ plans: [
                 prefetch
               >
                 {lang === "fr"
-                  ? "Ouvrir l’espace client"
+                  ? "Ouvrir l’espace client — Impôt"
                   : lang === "en"
                   ? "Open client portal"
-                  : "Abrir portal del cliente"}
+                  : "Abrir portal del cliente — Impuestos"}
               </Link>
 
               <Link
