@@ -58,6 +58,11 @@ type CopyDict = {
   seoP3: string;
   seoCities: string;
 
+  bookkeepingTitle: string;
+  bookkeepingSub: string;
+  bookkeepingPoints: string[];
+  bookkeepingCta: string;
+
   servicesTitle: string;
   servicesSub: string;
   services: ServiceItem[];
@@ -348,6 +353,30 @@ export default function Home() {
           "Service fiscal indépendant, simple et confidentiel, disponible partout au Québec.",
         seoCities:
           "Service 100 % en ligne partout au Québec (ex. Québec, Montréal, Laval, Gatineau, Lévis, Sherbrooke, Trois-Rivières).",
+
+        bookkeepingTitle: "Tenue de livres en ligne",
+        bookkeepingSub:
+          "Gardez une vue claire de votre entreprise : revenus, dépenses, transactions et préparation de vos remises de TPS/TVQ.",
+        bookkeepingPoints: [
+          "Suivi des revenus et dépenses",
+          "Classement des transactions",
+          "Préparation des remises de TPS/TVQ",
+          "Périodes mensuelles, trimestrielles ou annuelles",
+          "Portail sécurisé et suivi en ligne",
+        ],
+        bookkeepingCta: "Découvrir la tenue de livres",
+
+        bookkeepingTitle: "Online bookkeeping",
+        bookkeepingSub:
+          "Keep a clear view of your business: income, expenses, transactions, and preparation of your GST/QST returns.",
+        bookkeepingPoints: [
+          "Income and expense tracking",
+          "Transaction categorization",
+          "Preparation of GST/QST returns",
+          "Monthly, quarterly or annual periods",
+          "Secure portal and online tracking",
+        ],
+        bookkeepingCta: "Discover bookkeeping",
 
         servicesTitle: "Services",
         servicesSub:
@@ -683,6 +712,18 @@ plans: [
         seoP3: "Servicio independiente, simple y confidencial.",
         seoCities:
           "100% en línea en todo Québec (ej. Québec, Montréal, Laval, Gatineau, Lévis, Sherbrooke, Trois-Rivières).",
+
+        bookkeepingTitle: "Contabilidad en línea",
+        bookkeepingSub:
+          "Mantenga una visión clara de su negocio: ingresos, gastos, transacciones y preparación de sus declaraciones de GST/QST (TPS/TVQ).",
+        bookkeepingPoints: [
+          "Seguimiento de ingresos y gastos",
+          "Clasificación de transacciones",
+          "Preparación de declaraciones de GST/QST (TPS/TVQ)",
+          "Períodos mensuales, trimestrales o anuales",
+          "Portal seguro y seguimiento en línea",
+        ],
+        bookkeepingCta: "Descubrir la contabilidad",
 
         servicesTitle: "Servicios",
         servicesSub: "Solo Québec — portal seguro para documentos.",
@@ -1127,6 +1168,89 @@ plans: [
 </div> {/* heroCard */}
 </div>
 </section>
+
+      {/* TENUE DE LIVRES — bloc principal visible */}
+      <section className={styles.section}>
+        <div
+          className={styles.cardBox}
+          style={{
+            maxWidth: 980,
+            margin: "0 auto",
+            padding: "28px",
+            textAlign: "center",
+            border: "2px solid #dbeafe",
+            borderRadius: 18,
+            background: "#ffffff",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 10,
+              padding: "7px 12px",
+              borderRadius: 999,
+              background: "#eff6ff",
+              color: bleu,
+              fontWeight: 800,
+              fontSize: 14,
+            }}
+          >
+            💼 {T.nav.bookkeeping}
+          </div>
+
+          <h2 className={styles.sectionTitle} style={{ marginBottom: 10 }}>
+            {T.bookkeepingTitle}
+          </h2>
+
+          <p
+            className={styles.sectionSub}
+            style={{ maxWidth: 760, margin: "0 auto 18px" }}
+          >
+            {T.bookkeepingSub}
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 10,
+              marginBottom: 20,
+            }}
+          >
+            {T.bookkeepingPoints.map((point, i) => (
+              <span
+                key={i}
+                style={{
+                  padding: "9px 12px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 999,
+                  background: "#f8fafc",
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                ✓ {point}
+              </span>
+            ))}
+          </div>
+
+          <Link
+            href={toBookkeeping}
+            className="btn btn-primary"
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              borderRadius: btnRadius,
+            }}
+            prefetch
+          >
+            {T.bookkeepingCta}
+          </Link>
+        </div>
+      </section>
 
       {/* ✅ SECTION AVIS (déplacée hors hero) */}
       <section className={styles.section}>
