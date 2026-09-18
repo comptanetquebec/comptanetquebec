@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import AssistantChat from "@/components/AssistantChat";
 
 type Lang = "fr" | "en" | "es";
 type Plan = "essential" | "tax";
@@ -49,6 +50,7 @@ export default function TenueDeLivresPage() {
     useState<AccessState>("loading");
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
 
   const [totals, setTotals] = useState<DashboardTotals>({
     income: 0,
@@ -1504,6 +1506,139 @@ export default function TenueDeLivresPage() {
           </Link>
         </div>
       </div>
+
+      {/* Assistant flottant — visible seulement dans le tableau de bord actif */}
+      {chatOpen && (
+        <div
+          style={{
+            position: "fixed",
+            right: 20,
+            bottom: 92,
+            width: "min(420px, calc(100vw - 24px))",
+            height: "min(650px, calc(100vh - 125px))",
+            background: "#ffffff",
+            border: "1px solid #cfe3ff",
+            borderRadius: 18,
+            boxShadow: "0 20px 55px rgba(15,23,42,.22)",
+            zIndex: 1000,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+          role="dialog"
+          aria-label={
+            lang === "fr"
+              ? "Assistant ComptaNet"
+              : lang === "es"
+                ? "Asistente ComptaNet"
+                : "ComptaNet Assistant"
+          }
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              padding: "12px 14px",
+              background: "#004aad",
+              color: "#ffffff",
+              flex: "0 0 auto",
+            }}
+          >
+            <div style={{ fontWeight: 900 }}>
+              💬{" "}
+              {lang === "fr"
+                ? "Assistant ComptaNet"
+                : lang === "es"
+                  ? "Asistente ComptaNet"
+                  : "ComptaNet Assistant"}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setChatOpen(false)}
+              aria-label={
+                lang === "fr"
+                  ? "Fermer le chat"
+                  : lang === "es"
+                    ? "Cerrar el chat"
+                    : "Close chat"
+              }
+              style={{
+                width: 34,
+                height: 34,
+                border: "1px solid rgba(255,255,255,.35)",
+                borderRadius: 9,
+                background: "rgba(255,255,255,.12)",
+                color: "#ffffff",
+                fontSize: 22,
+                lineHeight: 1,
+                cursor: "pointer",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflow: "auto",
+              background: "#ffffff",
+            }}
+          >
+            <AssistantChat lang={lang} />
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setChatOpen((open) => !open)}
+        aria-label={
+          chatOpen
+            ? lang === "fr"
+              ? "Fermer l’assistant"
+              : lang === "es"
+                ? "Cerrar el asistente"
+                : "Close assistant"
+            : lang === "fr"
+              ? "Ouvrir l’assistant ComptaNet"
+              : lang === "es"
+                ? "Abrir el asistente ComptaNet"
+                : "Open ComptaNet Assistant"
+        }
+        title={
+          lang === "fr"
+            ? "Assistant ComptaNet"
+            : lang === "es"
+              ? "Asistente ComptaNet"
+              : "ComptaNet Assistant"
+        }
+        style={{
+          position: "fixed",
+          right: 20,
+          bottom: 20,
+          width: 58,
+          height: 58,
+          border: 0,
+          borderRadius: "50%",
+          background: "#004aad",
+          color: "#ffffff",
+          boxShadow: "0 10px 28px rgba(0,74,173,.32)",
+          fontSize: 25,
+          cursor: "pointer",
+          zIndex: 1001,
+          display: "grid",
+          placeItems: "center",
+        }}
+      >
+        {chatOpen ? "×" : "💬"}
+      </button>
     </main>
   );
 }
