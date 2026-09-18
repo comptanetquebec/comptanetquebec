@@ -73,7 +73,7 @@ const COPY: Record<Lang, Copy> = {
       "Travailleurs autonomes",
       "Petites entreprises",
       "Entrepreneurs",
-      "Entreprises inscrites à la TPS/TVQ",
+      "Entreprises inscrites ou non inscrites à la TPS/TVQ",
     ],
     includedTitle: "Tout ce qu’il faut pour y voir clair",
     includedIntro:
@@ -223,7 +223,7 @@ const COPY: Record<Lang, Copy> = {
       "Self-employed workers",
       "Small businesses",
       "Entrepreneurs",
-      "Businesses registered for GST/QST",
+      "Businesses registered or not registered for GST/QST",
     ],
     includedTitle: "Everything you need for a clear view",
     includedIntro:
@@ -315,7 +315,7 @@ const COPY: Record<Lang, Copy> = {
       "Trabajadores autónomos",
       "Pequeñas empresas",
       "Emprendedores",
-      "Empresas registradas para GST/QST",
+      "Empresas registradas o no registradas para GST/QST (TPS/TVQ)",
     ],
     includedTitle: "Todo lo necesario para verlo claro",
     includedIntro:
