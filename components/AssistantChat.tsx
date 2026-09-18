@@ -16,14 +16,37 @@ type Msg = {
 const MAX_CHARS = 1500;
 const BRAND_BLUE = "#004aad";
 
-const ACTION_LINKS: Record<string, string> = {
-  "Ouvrir un dossier": "/espace-client",
-  "Open a file": "/espace-client",
-  "Abrir expediente": "/espace-client",
-  "Portail sécurisé": "/espace-client",
-  "Secure portal": "/espace-client",
-  "Portal seguro": "/espace-client",
-};
+function actionHref(action: string, lang: Lang): string | null {
+  const taxActions = new Set([
+    "Ouvrir un dossier",
+    "Open a file",
+    "Abrir expediente",
+    "Ouvrir un dossier — Impôt",
+    "Open a file — Tax",
+    "Abrir expediente — Impuestos",
+    "Portail sécurisé",
+    "Secure portal",
+    "Portal seguro",
+  ]);
+
+  const bookkeepingActions = new Set([
+    "Espace client — Tenue de livres",
+    "Client portal — Bookkeeping",
+    "Portal del cliente — Contabilidad",
+  ]);
+
+  if (bookkeepingActions.has(action)) {
+    return `/espace-client?lang=${encodeURIComponent(
+      lang
+    )}&next=${encodeURIComponent("/tenue-de-livres")}`;
+  }
+
+  if (taxActions.has(action)) {
+    return `/espace-client?lang=${encodeURIComponent(lang)}`;
+  }
+
+  return null;
+}
 
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
@@ -47,10 +70,10 @@ function welcomeFor(lang: Lang): Msg {
     ),
     actions:
       lang === "fr"
-        ? ["T1", "Travailleur autonome", "T2", "Ouvrir un dossier"]
+        ? ["T1", "Travailleur autonome", "Tenue de livres", "TPS/TVQ"]
         : lang === "en"
-        ? ["T1", "Self-employed", "T2", "Open a file"]
-        : ["T1", "Autónomo", "T2", "Abrir expediente"],
+        ? ["T1", "Self-employed", "Bookkeeping", "GST/QST"]
+        : ["T1", "Autónomo", "Contabilidad", "GST/QST (TPS/TVQ)"],
   };
 }
 
@@ -66,8 +89,10 @@ function microSafety(lang: Lang) {
 function quickPrompts(lang: Lang): string[] {
   if (lang === "en") {
     return [
+      "What does the bookkeeping service include?",
+      "How does GST/QST work with bookkeeping?",
+      "What documents are needed for bookkeeping?",
       "What documents are needed for a T1?",
-      "What documents are needed for self-employed?",
       "Difference between T1, self-employed, and T2?",
       "How does the secure portal work?",
     ];
@@ -75,16 +100,20 @@ function quickPrompts(lang: Lang): string[] {
 
   if (lang === "es") {
     return [
+      "¿Qué incluye el servicio de contabilidad?",
+      "¿Cómo funciona GST/QST con la contabilidad?",
+      "¿Qué documentos se necesitan para la contabilidad?",
       "¿Qué documentos se necesitan para una T1?",
-      "¿Qué documentos se necesitan para autónomo?",
       "¿Diferencia entre T1, autónomo y T2?",
       "¿Cómo funciona el portal seguro?",
     ];
   }
 
   return [
+    "Qu’est-ce qui est inclus dans la tenue de livres ?",
+    "Comment fonctionne la TPS/TVQ avec la tenue de livres ?",
+    "Quels documents pour la tenue de livres ?",
     "Quels documents pour une T1 ?",
-    "Quels documents pour travailleur autonome ?",
     "Différence entre T1, autonome et T2 ?",
     "Comment fonctionne le portail sécurisé ?",
   ];
@@ -315,6 +344,7 @@ export default function AssistantChat({ lang = "fr" }: { lang?: Lang }) {
               content={m.content}
               actions={m.actions}
               onAction={onSend}
+              lang={lang}
             />
           ))}
 
@@ -387,16 +417,22 @@ function Bubble({
   content,
   actions,
   onAction,
+  lang,
 }: {
   role: Role;
   content: string;
   actions?: string[];
   onAction?: (a: string) => void;
+  lang: Lang;
 }) {
   const isUser = role === "user";
 
-  const linkActions = (actions ?? []).filter((action) => ACTION_LINKS[action]);
-  const buttonActions = (actions ?? []).filter((action) => !ACTION_LINKS[action]);
+  const linkActions = (actions ?? []).filter(
+    (action) => actionHref(action, lang) !== null
+  );
+  const buttonActions = (actions ?? []).filter(
+    (action) => actionHref(action, lang) === null
+  );
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -427,7 +463,9 @@ function Bubble({
         {!!linkActions.length && (
           <div className="mt-3 space-y-2">
             {linkActions.map((action) => {
-              const href = ACTION_LINKS[action];
+              const href = actionHref(action, lang);
+
+              if (!href) return null;
 
               return (
                 <a
