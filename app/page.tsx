@@ -62,6 +62,7 @@ type CopyDict = {
   bookkeepingSub: string;
   bookkeepingPoints: string[];
   bookkeepingCta: string;
+  bookkeepingLearnMore: string;
 
   servicesTitle: string;
   servicesSub: string;
@@ -365,6 +366,7 @@ export default function Home() {
           "Portail sécurisé et suivi en ligne",
         ],
         bookkeepingCta: "Ouvrir l’espace client — Tenue de livres",
+        bookkeepingLearnMore: "En savoir plus sur la tenue de livres",
 
         servicesTitle: "Services",
         servicesSub:
@@ -552,6 +554,7 @@ plans: [
           "Secure portal and online tracking",
         ],
         bookkeepingCta: "Open client portal — Bookkeeping",
+        bookkeepingLearnMore: "Learn more about bookkeeping",
 
         servicesTitle: "Services",
         servicesSub: "Québec-only tax returns — secure document portal.",
@@ -724,6 +727,7 @@ plans: [
           "Portal seguro y seguimiento en línea",
         ],
         bookkeepingCta: "Abrir portal del cliente — Contabilidad",
+        bookkeepingLearnMore: "Más información sobre contabilidad",
 
         servicesTitle: "Servicios",
         servicesSub: "Solo Québec — portal seguro para documentos.",
@@ -853,6 +857,8 @@ plans: [
   const toBookkeeping = `/espace-client?lang=${encodeURIComponent(
     lang
   )}&next=${encodeURIComponent("/tenue-de-livres")}`;
+
+  const toBookkeepingInfo = `/tenue-de-livres-info?lang=${encodeURIComponent(lang)}`;
 
   const faqJsonLd = useMemo(() => {
     return {
@@ -1237,18 +1243,40 @@ plans: [
             ))}
           </div>
 
-          <Link
-            href={toBookkeeping}
-            className="btn btn-primary"
+          <div
             style={{
-              width: "100%",
-              maxWidth: 420,
-              borderRadius: btnRadius,
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 12,
             }}
-            prefetch
           >
-            {T.bookkeepingCta}
-          </Link>
+            <Link
+              href={toBookkeepingInfo}
+              className="btn btn-outline"
+              style={{
+                width: "100%",
+                maxWidth: 360,
+                borderRadius: btnRadius,
+              }}
+              prefetch
+            >
+              {T.bookkeepingLearnMore}
+            </Link>
+
+            <Link
+              href={toBookkeeping}
+              className="btn btn-primary"
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                borderRadius: btnRadius,
+              }}
+              prefetch
+            >
+              {T.bookkeepingCta}
+            </Link>
+          </div>
         </div>
       </section>
 
