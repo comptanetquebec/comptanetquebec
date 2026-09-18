@@ -1434,56 +1434,7 @@ plans: [
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className={styles.footer}>
-        <div className={styles.footerInner}>
-          <div className={styles.footerTop}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Image src="/logo-cq.png" alt="" width={28} height={28} />
-              <span>© {new Date().getFullYear()} ComptaNet Québec</span>
-            </div>
 
-            <div className={styles.footerLinks}>
-              <a href="#services">{T.footerLinks.services}</a>
-              <a href="#tarifs">{T.footerLinks.pricing}</a>
-              <a href="#contact">{T.footerLinks.contact}</a>
-              <Link href={toHelp} className={styles.footerHelpLink} prefetch>
-                {T.footerLinks.help}
-              </Link>
-            </div>
-          </div>
-
-          <div className={styles.footerLegal}>
-            <div className={styles.footerLegalRow}>
-              <Link
-                href={`/legal/confidentialite?lang=${encodeURIComponent(lang)}`}
-                className={styles.footerLegalLink}
-                prefetch
-              >
-                {T.footerLinks.legal.privacy}
-              </Link>
-              <span className={styles.dot}>•</span>
-              <Link
-                href={`/legal/conditions?lang=${encodeURIComponent(lang)}`}
-                className={styles.footerLegalLink}
-                prefetch
-              >
-                {T.footerLinks.legal.terms}
-              </Link>
-              <span className={styles.dot}>•</span>
-              <Link
-                href={`/legal/avis-legal?lang=${encodeURIComponent(lang)}`}
-                className={styles.footerLegalLink}
-                prefetch
-              >
-                {T.footerLinks.legal.disclaimer}
-              </Link>
-            </div>
-
-            <div className={styles.footerNote}>{T.footerLinks.legal.note}</div>
-          </div>
-        </div>
-      </footer>
  </main>
   );
 }
