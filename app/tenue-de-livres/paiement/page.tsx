@@ -143,7 +143,7 @@ export default function PaiementTenueLivresPage() {
       back: isCredits ? "Retour à la tenue de livres" : "Retour aux forfaits",
       secure: "Paiement sécurisé",
       title: isCredits
-        ? "Achetez des analyses supplémentaires"
+        ? "Achetez des crédits supplémentaires"
         : "Finalisez votre abonnement",
       subtitle:
         "Votre paiement est effectué de façon sécurisée directement dans ComptaNet Québec.",
@@ -155,7 +155,7 @@ export default function PaiementTenueLivresPage() {
       taxDesc:
         "Tenue de livres avec suivi de la TPS et de la TVQ.",
       creditsDesc:
-        "Analyses supplémentaires sans expiration. Elles restent disponibles jusqu’à leur utilisation.",
+        "Crédits supplémentaires sans expiration. Ils restent disponibles jusqu’à leur utilisation.",
       perMonth: "par mois",
       essentialPrice: "19,99 $",
       taxPrice: "29,99 $",
@@ -163,7 +163,7 @@ export default function PaiementTenueLivresPage() {
       protectedDesc:
         "Vos informations de carte sont traitées de façon sécurisée par Stripe. ComptaNet Québec ne conserve pas votre numéro de carte.",
       after: isCredits
-        ? "Après le paiement, vos analyses supplémentaires seront ajoutées automatiquement à votre compte."
+        ? "Après le paiement, vos crédits supplémentaires seront ajoutés automatiquement à votre compte."
         : "Après le paiement, votre abonnement sera confirmé automatiquement.",
       loading: "Chargement du paiement sécurisé…",
       errorTitle: "Le paiement ne peut pas être chargé",
@@ -172,14 +172,14 @@ export default function PaiementTenueLivresPage() {
       stripeError:
         "Une erreur est survenue pendant le chargement du paiement sécurisé.",
       retry: "Retourner à la tenue de livres",
-      analyses: "analyses supplémentaires",
+      creditsLabel: "crédits supplémentaires",
     },
 
     en: {
       back: isCredits ? "Back to bookkeeping" : "Back to plans",
       secure: "Secure payment",
       title: isCredits
-        ? "Purchase additional analyses"
+        ? "Purchase additional credits"
         : "Complete your subscription",
       subtitle:
         "Your payment is securely completed directly within ComptaNet Québec.",
@@ -191,7 +191,7 @@ export default function PaiementTenueLivresPage() {
       taxDesc:
         "Bookkeeping with GST and QST tracking.",
       creditsDesc:
-        "Additional analyses do not expire. They remain available until used.",
+        "Additional credits do not expire. They remain available until used.",
       perMonth: "per month",
       essentialPrice: "$19.99",
       taxPrice: "$29.99",
@@ -199,7 +199,7 @@ export default function PaiementTenueLivresPage() {
       protectedDesc:
         "Your card information is securely processed by Stripe. ComptaNet Québec does not store your card number.",
       after: isCredits
-        ? "After payment, your additional analyses will automatically be added to your account."
+        ? "After payment, your additional credits will automatically be added to your account."
         : "After payment, your subscription will be confirmed automatically.",
       loading: "Loading secure payment…",
       errorTitle: "Payment cannot be loaded",
@@ -208,14 +208,14 @@ export default function PaiementTenueLivresPage() {
       stripeError:
         "An error occurred while loading the secure payment form.",
       retry: "Back to bookkeeping",
-      analyses: "additional analyses",
+      creditsLabel: "additional credits",
     },
 
     es: {
       back: isCredits ? "Volver a contabilidad" : "Volver a los planes",
       secure: "Pago seguro",
       title: isCredits
-        ? "Compre análisis adicionales"
+        ? "Compre créditos adicionales"
         : "Complete su suscripción",
       subtitle:
         "Su pago se realiza de forma segura directamente en ComptaNet Québec.",
@@ -227,7 +227,7 @@ export default function PaiementTenueLivresPage() {
       taxDesc:
         "Contabilidad con seguimiento de GST y QST.",
       creditsDesc:
-        "Los análisis adicionales no caducan. Permanecen disponibles hasta que se utilicen.",
+        "Los créditos adicionales no caducan. Permanecen disponibles hasta que se utilicen.",
       perMonth: "por mes",
       essentialPrice: "19,99 $",
       taxPrice: "29,99 $",
@@ -235,7 +235,7 @@ export default function PaiementTenueLivresPage() {
       protectedDesc:
         "Los datos de su tarjeta son procesados de forma segura por Stripe. ComptaNet Québec no almacena su número de tarjeta.",
       after: isCredits
-        ? "Después del pago, sus análisis adicionales se añadirán automáticamente a su cuenta."
+        ? "Después del pago, sus créditos adicionales se añadirán automáticamente a su cuenta."
         : "Después del pago, su suscripción se confirmará automáticamente.",
       loading: "Cargando el pago seguro…",
       errorTitle: "No se puede cargar el pago",
@@ -244,12 +244,12 @@ export default function PaiementTenueLivresPage() {
       stripeError:
         "Se produjo un error al cargar el formulario de pago seguro.",
       retry: "Volver a contabilidad",
-      analyses: "análisis adicionales",
+      creditsLabel: "créditos adicionales",
     },
   }[lang];
 
   const itemName = isCredits
-    ? `+${creditAmount} ${copy.analyses}`
+    ? `+${creditAmount} ${copy.creditsLabel}`
     : checkoutItem === "tax"
       ? copy.tax
       : copy.essential;
