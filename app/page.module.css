@@ -1428,3 +1428,14 @@
     margin-bottom: -12px;
   }
 }
+@media (max-width: 600px) {
+  .navCtas :global(.btn-primary) {
+    background: #004aad !important;
+    color: #ffffff !important;
+    border-color: #004aad !important;
+  }
+
+  .navCtas :global(.btn-primary) * {
+    color: #ffffff !important;
+  }
+}
