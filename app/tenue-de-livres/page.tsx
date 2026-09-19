@@ -115,6 +115,7 @@ export default function TenueDeLivresPage() {
   async function loadDashboard(id: string, year: number) {
     const yearStart = `${year}-01-01`;
     const yearEnd = `${year}-12-31`;
+    const nextYearStart = `${year + 1}-01-01`;
 
     const { data: transactions, error: transactionsError } = await supabase
       .from("bookkeeping_transactions")
@@ -131,7 +132,9 @@ export default function TenueDeLivresPage() {
     const { count: documentCount, error: documentsError } = await supabase
       .from("bookkeeping_documents")
       .select("id", { count: "exact", head: true })
-      .eq("business_id", id);
+      .eq("business_id", id)
+      .gte("created_at", `${yearStart}T00:00:00`)
+      .lt("created_at", `${nextYearStart}T00:00:00`);
 
     if (documentsError) {
       throw new Error(documentsError.message);
@@ -188,6 +191,8 @@ export default function TenueDeLivresPage() {
       .from("bookkeeping_documents")
       .select("*")
       .eq("business_id", id)
+      .gte("created_at", `${yearStart}T00:00:00`)
+      .lt("created_at", `${nextYearStart}T00:00:00`)
       .order("created_at", { ascending: false })
       .limit(4);
 
@@ -1118,7 +1123,7 @@ export default function TenueDeLivresPage() {
               <span className="bk-summaryicon">▤</span>
               <div>
                 <b>{text.expensesTotal}</b>
-                <strong>-{money(totals.expenses)}</strong>
+                <strong>{totals.expenses > 0 ? `-${money(totals.expenses)}` : money(0)}</strong>
               </div>
             </Link>
 
