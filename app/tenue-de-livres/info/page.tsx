@@ -2,6 +2,7 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import AssistantChat from "@/components/AssistantChat";
 
@@ -507,6 +508,29 @@ function PageContent() {
                 <p className="mt-2 leading-7 text-slate-600">{item.text}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* APERÇU DU TABLEAU DE BORD */}
+      <section className="bg-slate-50">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-2 shadow-xl sm:p-3">
+            <Image
+              src="/tenue-de-livres-tableau-de-bord.png"
+              alt={
+                lang === "fr"
+                  ? "Aperçu du tableau de bord de tenue de livres ComptaNet Québec"
+                  : lang === "en"
+                    ? "Preview of the ComptaNet Québec bookkeeping dashboard"
+                    : "Vista previa del panel de contabilidad de ComptaNet Québec"
+              }
+              width={1200}
+              height={1200}
+              sizes="(max-width: 768px) 100vw, 1152px"
+              className="h-auto w-full rounded-2xl"
+              priority={false}
+            />
           </div>
         </div>
       </section>
