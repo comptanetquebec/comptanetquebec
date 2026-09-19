@@ -117,8 +117,39 @@ export default async function RootLayout({
 }>) {
   const pathname = await getPathnameFromHeaders();
 
-  // L'accueil possède déjà sa propre présentation.
+  /*
+   * L'accueil possède déjà sa propre présentation.
+   */
   const showHeader = pathname !== "/";
+
+  /*
+   * Les pages privées de tenue de livres utilisent
+   * leur propre interface.
+   *
+   * On retire donc le pied de page général de :
+   *
+   * /tenue-de-livres
+   * /tenue-de-livres/revenus
+   * /tenue-de-livres/depenses
+   * /tenue-de-livres/documents
+   * /tenue-de-livres/taxes
+   * /tenue-de-livres/periodes
+   * /tenue-de-livres/resume-annuel
+   * /tenue-de-livres/configuration
+   * etc.
+   *
+   * MAIS on conserve le pied de page sur :
+   *
+   * /tenue-de-livres/info
+   *
+   * car cette page est publique.
+   */
+  const isPrivateBookkeeping =
+    pathname === "/tenue-de-livres" ||
+    (pathname.startsWith("/tenue-de-livres/") &&
+      pathname !== "/tenue-de-livres/info");
+
+  const showFooter = !isPrivateBookkeeping;
 
   return (
     <html lang="fr" className="h-full">
@@ -128,7 +159,7 @@ export default async function RootLayout({
 
           <div className="flex-1">{children}</div>
 
-          <Footer />
+          {showFooter ? <Footer /> : null}
         </Suspense>
 
         <CookieBanner />
