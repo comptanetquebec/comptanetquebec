@@ -357,11 +357,11 @@ export default function Home() {
 
         bookkeepingTitle: "Tenue de livres en ligne",
         bookkeepingSub:
-          "Gardez une vue claire de votre entreprise : revenus, dépenses, transactions et préparation de vos remises de TPS/TVQ.",
+          "Gardez une vue claire de votre entreprise : revenus, dépenses, transactions et préparation des informations pour vos remises de TPS/TVQ.",
         bookkeepingPoints: [
           "Suivi des revenus et dépenses",
           "Classement des transactions",
-          "Préparation des remises de TPS/TVQ",
+          "Informations préparées pour vos remises de TPS/TVQ",
           "Périodes mensuelles, trimestrielles ou annuelles",
           "Portail sécurisé et suivi en ligne",
         ],
@@ -545,11 +545,11 @@ plans: [
 
         bookkeepingTitle: "Online bookkeeping",
         bookkeepingSub:
-          "Keep a clear view of your business: income, expenses, transactions, and preparation of your GST/QST returns.",
+          "Keep a clear view of your business: income, expenses, transactions, and preparation of the information needed for your GST/QST returns.",
         bookkeepingPoints: [
           "Income and expense tracking",
           "Transaction categorization",
-          "Preparation of GST/QST returns",
+          "Information prepared for your GST/QST returns",
           "Monthly, quarterly or annual periods",
           "Secure portal and online tracking",
         ],
@@ -718,11 +718,11 @@ plans: [
 
         bookkeepingTitle: "Contabilidad en línea",
         bookkeepingSub:
-          "Mantenga una visión clara de su negocio: ingresos, gastos, transacciones y preparación de sus declaraciones de GST/QST (TPS/TVQ).",
+          "Mantenga una visión clara de su negocio: ingresos, gastos, transacciones y preparación de la información necesaria para sus declaraciones de GST/QST (TPS/TVQ).",
         bookkeepingPoints: [
           "Seguimiento de ingresos y gastos",
           "Clasificación de transacciones",
-          "Preparación de declaraciones de GST/QST (TPS/TVQ)",
+          "Información preparada para sus declaraciones de GST/QST (TPS/TVQ)",
           "Períodos mensuales, trimestrales o anuales",
           "Portal seguro y seguimiento en línea",
         ],
