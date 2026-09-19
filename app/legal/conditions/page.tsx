@@ -573,7 +573,7 @@ export default function ConditionsPage() {
   const NOM_LEGAL = "Les Entreprises Kema Inc.";
   const MARQUE = "ComptaNet Québec";
   const NEQ = "1175912972";
-  const COURRIEL = "comptanetquebec@gmail.com";
+  const COURRIEL = "info@comptanetquebec.com";
 
   const legalHref = `/legal/avis-legal?lang=${lang}`;
   const privacyHref = `/legal/confidentialite?lang=${lang}`;
