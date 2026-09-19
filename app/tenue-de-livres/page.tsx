@@ -48,6 +48,7 @@ export default function TenueDeLivresPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Record<string, unknown>[]>([]);
   const [recentDocuments, setRecentDocuments] = useState<Record<string, unknown>[]>([]);
   const [taxTotals, setTaxTotals] = useState({
@@ -101,6 +102,12 @@ export default function TenueDeLivresPage() {
 
     setLang(selected);
     setSelectedYear(initialYear);
+
+    try {
+      setCompanyLogo(localStorage.getItem("comptanet_company_logo"));
+    } catch {
+      setCompanyLogo(null);
+    }
     void checkAccess(selected, initialYear);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1054,7 +1061,13 @@ export default function TenueDeLivresPage() {
             className="bk-account"
             href={`/tenue-de-livres/configuration?lang=${lang}&year=${selectedYear}`}
           >
-            <span className="bk-avatar">CQ</span>
+            <span className={`bk-avatar ${companyLogo ? "has-logo" : ""}`}>
+              {companyLogo ? (
+                <img src={companyLogo} alt="" />
+              ) : (
+                "CQ"
+              )}
+            </span>
             <div>
               <strong>ComptaNet Québec</strong>
               <small>{dashboardCopy.company}</small>
@@ -1470,6 +1483,18 @@ export default function TenueDeLivresPage() {
           font-size: 12px;
           font-weight: 900;
           overflow: hidden;
+        }
+        .bk-avatar.has-logo {
+          background: #ffffff;
+          border: 1px solid #dbe3ef;
+        }
+        .bk-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          display: block;
+          padding: 2px;
+          box-sizing: border-box;
         }
         .bk-content {
           padding: 20px 26px 24px;
