@@ -1192,9 +1192,9 @@ export default function TenueDeLivresPage() {
    */
   const taxBalance = taxTotals.gstCollected + taxTotals.qstCollected - taxTotals.gstCredits - taxTotals.qstCredits;
   const dashboardCopy = {
-    fr: { recent: "Dernières transactions", seeAll: "Voir toutes", taxBox: `TPS / TVQ (${selectedYear})`, gstCollected: "TPS perçue", qstCollected: "TVQ perçue", gstCredits: "Crédits de TPS", qstCredits: "Crédits de TVQ", balance: "Solde à remettre", recentDocs: "Documents récents", company: "Mon entreprise", settings: "Paramètres", help: "Aide", logout: "Se déconnecter", addIncome: "Ajouter un revenu", addExpense: "Ajouter une dépense", addDocument: "Ajouter un document", viewTaxes: "Voir la section TPS / TVQ", viewPeriods: "Voir les périodes", generateSummary: "Générer le résumé", date: "Date", type: "Type", description: "Description", category: "Catégorie", amount: "Montant", noTransactions: "Aucune transaction confirmée pour cette année.", noDocuments: "Aucun document récent.", simple: "Comptabilité simple. Résultats clairs." },
-    en: { recent: "Latest transactions", seeAll: "View all", taxBox: `GST / QST (${selectedYear})`, gstCollected: "GST collected", qstCollected: "QST collected", gstCredits: "GST credits", qstCredits: "QST credits", balance: "Balance payable", recentDocs: "Recent documents", company: "My business", settings: "Settings", help: "Help", logout: "Sign out", addIncome: "Add income", addExpense: "Add expense", addDocument: "Add document", viewTaxes: "View GST / QST", viewPeriods: "View periods", generateSummary: "Generate summary", date: "Date", type: "Type", description: "Description", category: "Category", amount: "Amount", noTransactions: "No confirmed transactions for this year.", noDocuments: "No recent documents.", simple: "Simple bookkeeping. Clear results." },
-    es: { recent: "Últimas transacciones", seeAll: "Ver todas", taxBox: `GST / QST (${selectedYear})`, gstCollected: "GST cobrado", qstCollected: "QST cobrado", gstCredits: "Créditos GST", qstCredits: "Créditos QST", balance: "Saldo a remitir", recentDocs: "Documentos recientes", company: "Mi empresa", settings: "Configuración", help: "Ayuda", logout: "Cerrar sesión", addIncome: "Añadir ingreso", addExpense: "Añadir gasto", addDocument: "Añadir documento", viewTaxes: "Ver GST / QST", viewPeriods: "Ver períodos", generateSummary: "Generar resumen", date: "Fecha", type: "Tipo", description: "Descripción", category: "Categoría", amount: "Importe", noTransactions: "No hay transacciones confirmadas para este año.", noDocuments: "No hay documentos recientes.", simple: "Contabilidad simple. Resultados claros." },
+    fr: { recent: "Dernières transactions", seeAll: "Voir toutes", taxBox: `TPS / TVQ (${selectedYear})`, gstCollected: "TPS perçue", qstCollected: "TVQ perçue", gstCredits: "Crédits de TPS", qstCredits: "Crédits de TVQ", balance: "Solde à remettre", recentDocs: "Documents récents", company: "Mon entreprise", settings: "Paramètres", logo: "Logo de l’entreprise", addLogo: "Ajouter un logo", changeLogo: "Changer le logo", removeLogo: "Enlever le logo", logoHint: "PNG, JPG ou WebP — facultatif", help: "Aide", logout: "Se déconnecter", addIncome: "Ajouter un revenu", addExpense: "Ajouter une dépense", addDocument: "Ajouter un document", viewTaxes: "Voir la section TPS / TVQ", viewPeriods: "Voir les périodes", generateSummary: "Générer le résumé", date: "Date", type: "Type", description: "Description", category: "Catégorie", amount: "Montant", noTransactions: "Aucune transaction confirmée pour cette année.", noDocuments: "Aucun document récent.", simple: "Comptabilité simple. Résultats clairs." },
+    en: { recent: "Latest transactions", seeAll: "View all", taxBox: `GST / QST (${selectedYear})`, gstCollected: "GST collected", qstCollected: "QST collected", gstCredits: "GST credits", qstCredits: "QST credits", balance: "Balance payable", recentDocs: "Recent documents", company: "My business", settings: "Settings", logo: "Business logo", addLogo: "Add a logo", changeLogo: "Change logo", removeLogo: "Remove logo", logoHint: "PNG, JPG or WebP — optional", help: "Help", logout: "Sign out", addIncome: "Add income", addExpense: "Add expense", addDocument: "Add document", viewTaxes: "View GST / QST", viewPeriods: "View periods", generateSummary: "Generate summary", date: "Date", type: "Type", description: "Description", category: "Category", amount: "Amount", noTransactions: "No confirmed transactions for this year.", noDocuments: "No recent documents.", simple: "Simple bookkeeping. Clear results." },
+    es: { recent: "Últimas transacciones", seeAll: "Ver todas", taxBox: `GST / QST (${selectedYear})`, gstCollected: "GST cobrado", qstCollected: "QST cobrado", gstCredits: "Créditos GST", qstCredits: "Créditos QST", balance: "Saldo a remitir", recentDocs: "Documentos recientes", company: "Mi empresa", settings: "Configuración", logo: "Logo de la empresa", addLogo: "Añadir logo", changeLogo: "Cambiar logo", removeLogo: "Eliminar logo", logoHint: "PNG, JPG o WebP — opcional", help: "Ayuda", logout: "Cerrar sesión", addIncome: "Añadir ingreso", addExpense: "Añadir gasto", addDocument: "Añadir documento", viewTaxes: "Ver GST / QST", viewPeriods: "Ver períodos", generateSummary: "Generar resumen", date: "Fecha", type: "Tipo", description: "Descripción", category: "Categoría", amount: "Importe", noTransactions: "No hay transacciones confirmadas para este año.", noDocuments: "No hay documentos recientes.", simple: "Contabilidad simple. Resultados claros." },
   }[lang];
 
   function rowText(row: Record<string, unknown>, keys: string[], fallback = "—") {
@@ -1209,6 +1209,66 @@ export default function TenueDeLivresPage() {
     const direct = Number(row.total ?? row.amount ?? 0);
     if (Number.isFinite(direct) && direct !== 0) return direct;
     return Number(row.subtotal ?? 0) + Number(row.gst ?? 0) + Number(row.qst ?? 0);
+  }
+
+  function chooseCompanyLogo(file: File | null) {
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      window.alert(
+        lang === "fr"
+          ? "Choisissez une image PNG, JPG ou WebP."
+          : lang === "es"
+            ? "Elija una imagen PNG, JPG o WebP."
+            : "Choose a PNG, JPG or WebP image."
+      );
+      return;
+    }
+
+    // Limite volontairement petite puisque le logo est conservé localement.
+    if (file.size > 1_500_000) {
+      window.alert(
+        lang === "fr"
+          ? "Le logo doit faire moins de 1,5 Mo."
+          : lang === "es"
+            ? "El logo debe pesar menos de 1,5 MB."
+            : "The logo must be smaller than 1.5 MB."
+      );
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      if (!result) return;
+
+      try {
+        window.localStorage.setItem("comptanet_company_logo", result);
+        setCompanyLogo(result);
+      } catch {
+        window.alert(
+          lang === "fr"
+            ? "Impossible d’enregistrer ce logo dans ce navigateur."
+            : lang === "es"
+              ? "No se puede guardar este logo en este navegador."
+              : "Unable to save this logo in this browser."
+        );
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function removeCompanyLogo() {
+    try {
+      window.localStorage.removeItem("comptanet_company_logo");
+    } catch {
+      // Rien à faire.
+    }
+
+    setCompanyLogo(null);
   }
 
   async function signOut() {
@@ -1247,14 +1307,48 @@ export default function TenueDeLivresPage() {
           <button className="bk-menu" type="button" onClick={() => setMobileMenuOpen(true)}>☰</button>
           <div className="bk-langs">{(["fr","en","es"] as const).map((item) => <button key={item} type="button" onClick={() => changeLang(item)} className={lang === item ? "active" : ""}>{item.toUpperCase()}</button>)}</div>
           <div className="bk-account">
-            {companyLogo ? (
-              <span className="bk-avatar bk-avatar-logo">
-                <img src={companyLogo} alt="" />
-              </span>
-            ) : (
-              <span className="bk-avatar">CQ</span>
-            )}
-            <div><strong>ComptaNet Québec</strong><small>{dashboardCopy.company}</small></div>
+            <label className="bk-logo-picker" title={companyLogo ? dashboardCopy.changeLogo : dashboardCopy.addLogo}>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => {
+                  chooseCompanyLogo(event.target.files?.[0] ?? null);
+                  event.currentTarget.value = "";
+                }}
+              />
+              {companyLogo ? (
+                <span className="bk-avatar bk-avatar-logo">
+                  <img src={companyLogo} alt={dashboardCopy.logo} />
+                </span>
+              ) : (
+                <span className="bk-avatar">CQ</span>
+              )}
+            </label>
+
+            <div className="bk-accounttext">
+              <strong>ComptaNet Québec</strong>
+              <small>{dashboardCopy.company}</small>
+            </div>
+
+            <div className="bk-logo-actions">
+              <label className="bk-logo-action">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => {
+                    chooseCompanyLogo(event.target.files?.[0] ?? null);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                {companyLogo ? dashboardCopy.changeLogo : dashboardCopy.addLogo}
+              </label>
+
+              {companyLogo ? (
+                <button type="button" onClick={removeCompanyLogo}>
+                  {dashboardCopy.removeLogo}
+                </button>
+              ) : null}
+            </div>
           </div>
         </header>
 
@@ -1302,7 +1396,7 @@ export default function TenueDeLivresPage() {
       <BookkeepingChat lang={lang} open={chatOpen} onOpenChange={setChatOpen} />
 
       <style jsx global>{`
-        .bk-shell{min-height:100vh;background:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;display:flex}.bk-sidebar{width:250px;background:linear-gradient(180deg,#17263a 0%,#142236 100%);color:#fff;position:fixed;inset:0 auto 0 0;padding:24px 14px 14px;display:flex;flex-direction:column;z-index:100}.bk-brand{display:flex;gap:12px;align-items:center;padding:0 10px 24px}.bk-brandmark{font-size:30px}.bk-brand strong{display:block;font-size:18px}.bk-brand small{display:block;color:#cbd5e1;font-size:11px;margin-top:4px}.bk-nav{display:grid;gap:7px}.bk-nav a,.bk-sidebottom a,.bk-sidebottom button{display:flex;align-items:center;gap:13px;color:#fff;text-decoration:none;padding:12px 13px;border-radius:8px;font-size:15px;border:0;background:transparent;width:100%;text-align:left;cursor:pointer}.bk-nav a span,.bk-sidebottom span{width:22px;text-align:center;font-weight:900}.bk-nav a.active{background:#1264d5}.bk-nav a:hover,.bk-sidebottom a:hover,.bk-sidebottom button:hover{background:rgba(255,255,255,.08)}.bk-sidebottom{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:12px;display:grid;gap:3px}.bk-sidebottom button{margin-top:12px;background:rgba(255,255,255,.08)}.bk-main{margin-left:250px;width:calc(100% - 250px);min-width:0}.bk-topbar{height:46px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:flex-end;padding:0 24px;gap:18px;position:sticky;top:0;z-index:40}.bk-menu{display:none}.bk-langs{display:flex;gap:5px}.bk-langs button{border:1px solid #dbe3ef;background:#fff;border-radius:6px;padding:5px 8px;font-weight:800;cursor:pointer}.bk-langs button.active{background:#1264d5;color:#fff;border-color:#1264d5}.bk-account{display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid #e2e8f0}.bk-account strong,.bk-account small{display:block}.bk-account strong{font-size:13px}.bk-account small{font-size:11px;color:#64748b}.bk-avatar{width:31px;height:31px;border-radius:50%;background:#1264d5;color:#fff;display:grid;place-items:center;font-size:12px;overflow:hidden}.bk-avatar-logo{background:#fff;border:1px solid #dbe3ef}.bk-avatar-logo img{width:100%;height:100%;object-fit:contain;display:block}.bk-content{padding:20px 26px 24px;max-width:1500px;margin:0 auto}.bk-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:24px}.bk-heading h1{font-size:36px;line-height:1;margin:0 0 8px}.bk-heading p{margin:0;color:#53657f;font-size:15px}.bk-year{display:flex;align-items:center;gap:14px;background:#f8fafc;border:1px solid #dbe3ef;border-radius:9px;padding:9px 12px;font-weight:800}.bk-year select{background:#fff;border:1px solid #cbd5e1;border-radius:7px;padding:8px 34px 8px 12px;font-weight:800;font-size:15px}.bk-summarygrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px}.bk-summary{min-height:138px;border:1px solid #dce5ef;border-radius:10px;padding:20px;display:flex;align-items:flex-start;gap:15px;text-decoration:none;color:#0f172a}.bk-summary.income{background:linear-gradient(135deg,#f5fffa,#effcf5)}.bk-summary.expense{background:linear-gradient(135deg,#fff8f8,#fff1f1)}.bk-summary.result{background:linear-gradient(135deg,#f7fbff,#eef6ff)}.bk-summary.docs{background:linear-gradient(135deg,#fffdf7,#fff8ec)}.bk-summaryicon{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-size:23px;font-weight:900;flex:0 0 auto}.bk-summary.income .bk-summaryicon{background:#d9f7e7;color:#079447}.bk-summary.expense .bk-summaryicon{background:#ffdede;color:#dc2626}.bk-summary.result .bk-summaryicon{background:#dcecff;color:#1264d5}.bk-summary.docs .bk-summaryicon{background:#fff0cc;color:#e99b00}.bk-summary b{display:block;font-size:15px;margin:4px 0 8px}.bk-summary strong{display:block;font-size:27px;letter-spacing:-.5px}.bk-summary.expense strong{color:#dc2626}.bk-summary small{display:block;color:#64748b;margin-top:8px}.bk-actiongrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:20px}.bk-action{border:1px solid #dce5ef;background:#fff;border-radius:9px;padding:15px;text-decoration:none;color:#0f172a;min-height:165px;display:flex;flex-direction:column}.bk-actionicon{font-size:22px;margin-bottom:8px}.bk-action>strong{font-size:15px}.bk-action p{color:#475569;font-size:12px;line-height:1.5;margin:9px 0 12px;flex:1}.bk-action>b{font-size:11px;text-align:center;border-radius:7px;padding:9px 7px;background:#eef6ff;color:#0756b7}.bk-action:nth-child(1)>b{background:#eafaf2;color:#087a3d}.bk-action:nth-child(2)>b{background:#fff0f0;color:#c81e1e}.bk-action:nth-child(3)>b{background:#fff7e8;color:#a46100}.bk-lowergrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,.95fr);gap:16px}.bk-panel{background:#fff;border:1px solid #dce5ef;border-radius:9px;overflow:hidden}.bk-panelhead{height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #e2e8f0}.bk-panelhead h2{font-size:16px;margin:0}.bk-panelhead a{color:#075fcb;text-decoration:none;font-weight:800;font-size:12px}.bk-tablewrap{overflow:auto}.bk-transactions table{width:100%;border-collapse:collapse;font-size:12px}.bk-transactions th,.bk-transactions td{padding:9px 12px;border-bottom:1px solid #e8edf3;text-align:left;white-space:nowrap}.bk-transactions th{background:#f8fafc}.tag{display:inline-block;border-radius:999px;padding:4px 9px;font-weight:800}.tag.income{background:#dff8e9;color:#087a3d}.tag.expense{background:#ffe4e4;color:#c81e1e}.amount{font-weight:900;text-align:right!important}.amount.income{color:#079447}.amount.expense{color:#dc2626}.bk-rightcol{display:grid;gap:16px;align-content:start}.bk-taxrows>div{display:flex;justify-content:space-between;padding:8px 16px;border-bottom:1px solid #edf1f5;font-size:12px}.bk-taxrows .total{background:#e9f3ff;font-size:13px}.bk-taxrows .total b{color:#075fcb}.bk-doclist>div{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid #edf1f5;font-size:12px}.bk-doclist small{color:#64748b}.bk-empty{padding:28px 16px;text-align:center;color:#64748b;font-size:13px}.bk-overlay{display:none}
+        .bk-shell{min-height:100vh;background:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;display:flex}.bk-sidebar{width:250px;background:linear-gradient(180deg,#17263a 0%,#142236 100%);color:#fff;position:fixed;inset:0 auto 0 0;padding:24px 14px 14px;display:flex;flex-direction:column;z-index:100}.bk-brand{display:flex;gap:12px;align-items:center;padding:0 10px 24px}.bk-brandmark{font-size:30px}.bk-brand strong{display:block;font-size:18px}.bk-brand small{display:block;color:#cbd5e1;font-size:11px;margin-top:4px}.bk-nav{display:grid;gap:7px}.bk-nav a,.bk-sidebottom a,.bk-sidebottom button{display:flex;align-items:center;gap:13px;color:#fff;text-decoration:none;padding:12px 13px;border-radius:8px;font-size:15px;border:0;background:transparent;width:100%;text-align:left;cursor:pointer}.bk-nav a span,.bk-sidebottom span{width:22px;text-align:center;font-weight:900}.bk-nav a.active{background:#1264d5}.bk-nav a:hover,.bk-sidebottom a:hover,.bk-sidebottom button:hover{background:rgba(255,255,255,.08)}.bk-sidebottom{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:12px;display:grid;gap:3px}.bk-sidebottom button{margin-top:12px;background:rgba(255,255,255,.08)}.bk-main{margin-left:250px;width:calc(100% - 250px);min-width:0}.bk-topbar{height:46px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:flex-end;padding:0 24px;gap:18px;position:sticky;top:0;z-index:40}.bk-menu{display:none}.bk-langs{display:flex;gap:5px}.bk-langs button{border:1px solid #dbe3ef;background:#fff;border-radius:6px;padding:5px 8px;font-weight:800;cursor:pointer}.bk-langs button.active{background:#1264d5;color:#fff;border-color:#1264d5}.bk-account{display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid #e2e8f0}.bk-account strong,.bk-account small{display:block}.bk-account strong{font-size:13px}.bk-account small{font-size:11px;color:#64748b}.bk-accounttext{min-width:105px}.bk-avatar{width:31px;height:31px;border-radius:50%;background:#1264d5;color:#fff;display:grid;place-items:center;font-size:12px;overflow:hidden}.bk-avatar-logo{background:#fff;border:1px solid #dbe3ef}.bk-avatar-logo img{width:100%;height:100%;object-fit:contain;display:block}.bk-logo-picker,.bk-logo-action{cursor:pointer}.bk-logo-picker input,.bk-logo-action input{display:none}.bk-logo-actions{display:flex;align-items:center;gap:6px;margin-left:3px}.bk-logo-action,.bk-logo-actions button{border:1px solid #dbe3ef;background:#fff;color:#0756b7;border-radius:6px;padding:5px 7px;font-size:10px;font-weight:800;white-space:nowrap}.bk-logo-actions button{color:#b42318;cursor:pointer}.bk-logo-action:hover,.bk-logo-actions button:hover{background:#f8fafc}.bk-content{padding:20px 26px 24px;max-width:1500px;margin:0 auto}.bk-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:24px}.bk-heading h1{font-size:36px;line-height:1;margin:0 0 8px}.bk-heading p{margin:0;color:#53657f;font-size:15px}.bk-year{display:flex;align-items:center;gap:14px;background:#f8fafc;border:1px solid #dbe3ef;border-radius:9px;padding:9px 12px;font-weight:800}.bk-year select{background:#fff;border:1px solid #cbd5e1;border-radius:7px;padding:8px 34px 8px 12px;font-weight:800;font-size:15px}.bk-summarygrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px}.bk-summary{min-height:138px;border:1px solid #dce5ef;border-radius:10px;padding:20px;display:flex;align-items:flex-start;gap:15px;text-decoration:none;color:#0f172a}.bk-summary.income{background:linear-gradient(135deg,#f5fffa,#effcf5)}.bk-summary.expense{background:linear-gradient(135deg,#fff8f8,#fff1f1)}.bk-summary.result{background:linear-gradient(135deg,#f7fbff,#eef6ff)}.bk-summary.docs{background:linear-gradient(135deg,#fffdf7,#fff8ec)}.bk-summaryicon{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-size:23px;font-weight:900;flex:0 0 auto}.bk-summary.income .bk-summaryicon{background:#d9f7e7;color:#079447}.bk-summary.expense .bk-summaryicon{background:#ffdede;color:#dc2626}.bk-summary.result .bk-summaryicon{background:#dcecff;color:#1264d5}.bk-summary.docs .bk-summaryicon{background:#fff0cc;color:#e99b00}.bk-summary b{display:block;font-size:15px;margin:4px 0 8px}.bk-summary strong{display:block;font-size:27px;letter-spacing:-.5px}.bk-summary.expense strong{color:#dc2626}.bk-summary small{display:block;color:#64748b;margin-top:8px}.bk-actiongrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:20px}.bk-action{border:1px solid #dce5ef;background:#fff;border-radius:9px;padding:15px;text-decoration:none;color:#0f172a;min-height:165px;display:flex;flex-direction:column}.bk-actionicon{font-size:22px;margin-bottom:8px}.bk-action>strong{font-size:15px}.bk-action p{color:#475569;font-size:12px;line-height:1.5;margin:9px 0 12px;flex:1}.bk-action>b{font-size:11px;text-align:center;border-radius:7px;padding:9px 7px;background:#eef6ff;color:#0756b7}.bk-action:nth-child(1)>b{background:#eafaf2;color:#087a3d}.bk-action:nth-child(2)>b{background:#fff0f0;color:#c81e1e}.bk-action:nth-child(3)>b{background:#fff7e8;color:#a46100}.bk-lowergrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,.95fr);gap:16px}.bk-panel{background:#fff;border:1px solid #dce5ef;border-radius:9px;overflow:hidden}.bk-panelhead{height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #e2e8f0}.bk-panelhead h2{font-size:16px;margin:0}.bk-panelhead a{color:#075fcb;text-decoration:none;font-weight:800;font-size:12px}.bk-tablewrap{overflow:auto}.bk-transactions table{width:100%;border-collapse:collapse;font-size:12px}.bk-transactions th,.bk-transactions td{padding:9px 12px;border-bottom:1px solid #e8edf3;text-align:left;white-space:nowrap}.bk-transactions th{background:#f8fafc}.tag{display:inline-block;border-radius:999px;padding:4px 9px;font-weight:800}.tag.income{background:#dff8e9;color:#087a3d}.tag.expense{background:#ffe4e4;color:#c81e1e}.amount{font-weight:900;text-align:right!important}.amount.income{color:#079447}.amount.expense{color:#dc2626}.bk-rightcol{display:grid;gap:16px;align-content:start}.bk-taxrows>div{display:flex;justify-content:space-between;padding:8px 16px;border-bottom:1px solid #edf1f5;font-size:12px}.bk-taxrows .total{background:#e9f3ff;font-size:13px}.bk-taxrows .total b{color:#075fcb}.bk-doclist>div{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid #edf1f5;font-size:12px}.bk-doclist small{color:#64748b}.bk-empty{padding:28px 16px;text-align:center;color:#64748b;font-size:13px}.bk-overlay{display:none}
         @media(max-width:1180px){.bk-actiongrid{grid-template-columns:repeat(3,1fr)}.bk-summarygrid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:820px){.bk-sidebar{transform:translateX(-100%);transition:transform .2s ease;box-shadow:12px 0 35px rgba(15,23,42,.22)}.bk-sidebar.open{transform:translateX(0)}.bk-main{margin-left:0;width:100%}.bk-menu{display:grid;place-items:center;margin-right:auto;border:0;background:#eef6ff;color:#0756b7;border-radius:7px;width:34px;height:34px;font-size:20px}.bk-overlay{display:block;position:fixed;inset:0;border:0;background:rgba(15,23,42,.35);z-index:90}.bk-heading{flex-direction:column}.bk-lowergrid{grid-template-columns:1fr}.bk-content{padding:18px 14px}.bk-account{display:none}}
         @media(max-width:600px){.bk-heading h1{font-size:30px}.bk-summarygrid,.bk-actiongrid{grid-template-columns:1fr}.bk-summary{min-height:auto}.bk-year{width:100%;justify-content:space-between}.bk-topbar{padding:0 14px}}
