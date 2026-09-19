@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ChangeEvent,
   FormEvent,
   useEffect,
   useState,
@@ -69,6 +70,12 @@ export default function ConfigurationTenueLivresPage() {
 
   const [taxActivationMode, setTaxActivationMode] =
     useState(false);
+
+  const [companyLogo, setCompanyLogo] =
+    useState<string | null>(null);
+
+  const [logoError, setLogoError] =
+    useState("");
 
   const [selectedYear, setSelectedYear] =
     useState(new Date().getFullYear());
@@ -218,6 +225,16 @@ export default function ConfigurationTenueLivresPage() {
       existing:
         "Votre dossier est déjà configuré.",
 
+      logoTitle: "Logo de l’entreprise",
+      logoDesc:
+        "Ajoutez votre logo pour personnaliser votre espace de tenue de livres. Cette étape est facultative.",
+      logoAdd: "Ajouter un logo",
+      logoChange: "Changer le logo",
+      logoRemove: "Retirer le logo",
+      logoHelp: "PNG, JPG ou WebP — maximum 1,5 Mo.",
+      logoTooLarge: "Le logo ne doit pas dépasser 1,5 Mo.",
+      logoInvalid: "Utilisez une image PNG, JPG ou WebP.",
+
       dashboard:
         "Retourner au tableau de bord",
     },
@@ -365,6 +382,16 @@ export default function ConfigurationTenueLivresPage() {
 
       existing:
         "Your file is already configured.",
+
+      logoTitle: "Business logo",
+      logoDesc:
+        "Add your logo to personalize your bookkeeping workspace. This step is optional.",
+      logoAdd: "Add a logo",
+      logoChange: "Change logo",
+      logoRemove: "Remove logo",
+      logoHelp: "PNG, JPG or WebP — maximum 1.5 MB.",
+      logoTooLarge: "The logo must not exceed 1.5 MB.",
+      logoInvalid: "Use a PNG, JPG or WebP image.",
 
       dashboard:
         "Return to dashboard",
@@ -514,6 +541,16 @@ export default function ConfigurationTenueLivresPage() {
       existing:
         "Su expediente ya está configurado.",
 
+      logoTitle: "Logo de la empresa",
+      logoDesc:
+        "Añada su logo para personalizar su espacio de contabilidad. Este paso es opcional.",
+      logoAdd: "Añadir un logo",
+      logoChange: "Cambiar logo",
+      logoRemove: "Eliminar logo",
+      logoHelp: "PNG, JPG o WebP — máximo 1,5 MB.",
+      logoTooLarge: "El logo no debe superar 1,5 MB.",
+      logoInvalid: "Utilice una imagen PNG, JPG o WebP.",
+
       dashboard:
         "Volver al panel",
     },
@@ -532,6 +569,12 @@ export default function ConfigurationTenueLivresPage() {
         : "fr";
 
     setLang(selected);
+
+    try {
+      setCompanyLogo(localStorage.getItem("comptanet_company_logo"));
+    } catch {
+      setCompanyLogo(null);
+    }
 
     const params =
       new URLSearchParams(window.location.search);
@@ -666,6 +709,57 @@ export default function ConfigurationTenueLivresPage() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  function chooseCompanyLogo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    setLogoError("");
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setLogoError(copy.logoInvalid);
+      return;
+    }
+
+    if (file.size > 1.5 * 1024 * 1024) {
+      setLogoError(copy.logoTooLarge);
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+
+      if (!result) return;
+
+      setCompanyLogo(result);
+
+      try {
+        localStorage.setItem("comptanet_company_logo", result);
+      } catch {
+        // Le logo reste affiché pour la session même si le navigateur
+        // refuse le stockage local.
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function removeCompanyLogo() {
+    setCompanyLogo(null);
+    setLogoError("");
+
+    try {
+      localStorage.removeItem("comptanet_company_logo");
+    } catch {
+      // Rien à faire.
     }
   }
 
@@ -1377,6 +1471,152 @@ export default function ConfigurationTenueLivresPage() {
                 }
               />
             </label>
+          </section>
+
+          {/* LOGO DE L’ENTREPRISE — FACULTATIF */}
+          <section
+            style={{
+              background: "#ffffff",
+              border: "1px solid #dbe5f1",
+              borderRadius: 18,
+              padding: 24,
+              boxShadow: "0 6px 20px rgba(15,23,42,.04)",
+            }}
+          >
+            <StepHeader
+              number="✓"
+              title={copy.logoTitle}
+              description={copy.logoDesc}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 20,
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: 18,
+                  border: "1px solid #dbe5f1",
+                  background: "#f8fafc",
+                  display: "grid",
+                  placeItems: "center",
+                  overflow: "hidden",
+                  flex: "0 0 96px",
+                }}
+              >
+                {companyLogo ? (
+                  <img
+                    src={companyLogo}
+                    alt={copy.logoTitle}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      padding: 8,
+                      boxSizing: "border-box",
+                    }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      width: 54,
+                      height: 54,
+                      borderRadius: "50%",
+                      background: "#1264d5",
+                      color: "#ffffff",
+                      display: "grid",
+                      placeItems: "center",
+                      fontWeight: 900,
+                      fontSize: 17,
+                    }}
+                  >
+                    CQ
+                  </span>
+                )}
+              </div>
+
+              <div style={{ flex: "1 1 300px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 10,
+                      padding: "11px 16px",
+                      background: "#004aad",
+                      color: "#ffffff",
+                      fontWeight: 900,
+                      fontSize: 14,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {companyLogo ? copy.logoChange : copy.logoAdd}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={chooseCompanyLogo}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+
+                  {companyLogo && (
+                    <button
+                      type="button"
+                      onClick={removeCompanyLogo}
+                      style={{
+                        border: "1px solid #fecaca",
+                        borderRadius: 10,
+                        padding: "10px 15px",
+                        background: "#ffffff",
+                        color: "#b91c1c",
+                        fontWeight: 800,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {copy.logoRemove}
+                    </button>
+                  )}
+                </div>
+
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    color: "#64748b",
+                    fontSize: 13,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {copy.logoHelp}
+                </p>
+
+                {logoError && (
+                  <p
+                    style={{
+                      margin: "9px 0 0",
+                      color: "#b91c1c",
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {logoError}
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
 
           {/* ÉTAPE 2 */}
