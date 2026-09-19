@@ -5,15 +5,14 @@ import { Suspense } from "react";
 import "./globals.css";
 
 import CookieBanner from "@/components/CookieBanner";
-import Header from "@/components/Header";
+import ConditionalHeader from "@/components/ConditionalHeader";
 import ConditionalFooter from "@/components/ConditionalFooter";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://comptanetquebec.com"),
 
   title: {
-    default:
-      "Impôt et tenue de livres au Québec | ComptaNet Québec",
+    default: "Impôt et tenue de livres au Québec | ComptaNet Québec",
     template: "%s | ComptaNet Québec",
   },
 
@@ -42,8 +41,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "ComptaNet Québec",
 
-    title:
-      "Impôt et tenue de livres au Québec | ComptaNet Québec",
+    title: "Impôt et tenue de livres au Québec | ComptaNet Québec",
 
     description:
       "Services d'impôt et de tenue de livres en ligne au Québec. Portail sécurisé pour vos documents, revenus, dépenses et services fiscaux.",
@@ -64,8 +62,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
 
-    title:
-      "Impôt et tenue de livres au Québec | ComptaNet Québec",
+    title: "Impôt et tenue de livres au Québec | ComptaNet Québec",
 
     description:
       "Services d'impôt et de tenue de livres en ligne pour particuliers, travailleurs autonomes et entreprises au Québec.",
@@ -96,11 +93,9 @@ export default function RootLayout({
     <html lang="fr" className="h-full">
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900 antialiased">
         <Suspense fallback={null}>
-          <Header />
+          <ConditionalHeader />
 
-          <div className="flex-1">
-            {children}
-          </div>
+          <div className="flex-1">{children}</div>
 
           <ConditionalFooter />
         </Suspense>
