@@ -614,23 +614,76 @@ export async function genererFacturePdf(
     normalizeLines(facture);
 
   /*
-    Pour la première page, on garde volontairement
-    un maximum de 5 lignes.
+    La première page possède une zone réservée aux
+    totaux et au paiement. Le nombre de lignes ne peut
+    donc pas être fixé simplement à 5 : une description
+    longue peut prendre plusieurs lignes dans le PDF.
 
-    Cela empêche les totaux et le paiement
-    de descendre vers le bas de la page.
+    On estime la hauteur réelle de chaque ligne avant
+    de construire le tableau. Ainsi, une description
+    longue est automatiquement envoyée sur une page
+    de continuation au lieu d'écraser les totaux.
   */
-  const MAX_FIRST_PAGE = 5;
+  function estimatedRowHeight(
+    ligne: FacturePdfLigne
+  ) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
 
-  const firstPageLines =
-    lignes.slice(
-      0,
-      MAX_FIRST_PAGE
+    const descriptionLines =
+      doc.splitTextToSize(
+        ligne.description || "—",
+        94
+      ).length;
+
+    // 2.8 mm de padding en haut + en bas,
+    // environ 2.8 mm par ligne de texte.
+    return Math.max(
+      8,
+      5.6 + descriptionLines * 2.8
     );
+  }
+
+  const FIRST_TABLE_MAX_Y = 169;
+  const TABLE_HEADER_HEIGHT = 10;
+
+  const firstPageLines: FacturePdfLigne[] = [];
+  let estimatedY =
+    131 + TABLE_HEADER_HEIGHT;
+
+  for (const ligne of lignes) {
+    const rowHeight =
+      estimatedRowHeight(ligne);
+
+    if (
+      firstPageLines.length > 0 &&
+      estimatedY + rowHeight >
+        FIRST_TABLE_MAX_Y
+    ) {
+      break;
+    }
+
+    /*
+      Une seule ligne très longue peut dépasser
+      la zone réservée. Dans ce cas on la laisse
+      partir en continuation plutôt que de risquer
+      un chevauchement avec les totaux.
+    */
+    if (
+      firstPageLines.length === 0 &&
+      estimatedY + rowHeight >
+        FIRST_TABLE_MAX_Y
+    ) {
+      break;
+    }
+
+    firstPageLines.push(ligne);
+    estimatedY += rowHeight;
+  }
 
   const remainingLines =
     lignes.slice(
-      MAX_FIRST_PAGE
+      firstPageLines.length
     );
 
   // =========================================================
@@ -1166,7 +1219,7 @@ doc.addImage(
   function drawTable(
     tableLines: FacturePdfLigne[],
     startY: number
-  ) {
+  ): number {
     autoTable(doc, {
       startY,
 
@@ -1206,6 +1259,7 @@ doc.addImage(
       margin: {
         left: 10,
         right: 10,
+        bottom: 30,
       },
 
       theme: "grid",
@@ -1309,6 +1363,19 @@ doc.addImage(
         }
       },
     });
+
+    const tableEnd =
+      (
+        doc as jsPDF & {
+          lastAutoTable?: {
+            finalY?: number;
+          };
+        }
+      ).lastAutoTable?.finalY;
+
+    return Number(
+      tableEnd ?? startY
+    );
   }
 
   function drawTotals() {
@@ -1940,23 +2007,96 @@ doc.addImage(
       }
     );
 
-    drawTable(
-      pageLines,
-      35
-    );
-
     /*
-      Si c'est la dernière page supplémentaire,
-      on rappelle le total en bas.
+      On réserve le bas de la page pour le total.
+      autoTable peut continuer automatiquement sur
+      une page supplémentaire si une description est
+      très longue.
     */
+    const tableEndY =
+      drawTable(
+        pageLines,
+        35
+      );
+
     if (finalPage) {
+      /*
+        Si le tableau est trop bas, on ajoute une page
+        dédiée au total plutôt que de le superposer.
+      */
+      if (tableEndY > 205) {
+        doc.addPage(
+          "letter",
+          "portrait"
+        );
+
+        doc.setTextColor(
+          ...navy
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(18);
+
+        doc.text(
+          "ComptaNet Québec",
+          12,
+          18
+        );
+
+        doc.setFontSize(16);
+
+        doc.text(
+          `${L.invoice} ${
+            facture.numero_facture ??
+            ""
+          }`,
+          200,
+          18,
+          {
+            align: "right",
+          }
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setFontSize(7);
+
+        doc.setTextColor(
+          ...grey
+        );
+
+        doc.text(
+          `${L.continued} — ${pageNumber + 1}`,
+          200,
+          25,
+          {
+            align: "right",
+          }
+        );
+      }
+
+      const totalY =
+        tableEndY > 205
+          ? 65
+          : Math.max(
+              tableEndY + 10,
+              220
+            );
+
       doc.setFillColor(
         ...lightBlue
       );
 
       doc.roundedRect(
         114,
-        220,
+        totalY,
         86,
         15,
         2.5,
@@ -1980,7 +2120,7 @@ doc.addImage(
           ? L.totalPaid
           : L.totalDue,
         120,
-        229.5
+        totalY + 9.5
       );
 
       doc.setFontSize(13);
@@ -1991,7 +2131,7 @@ doc.addImage(
           lang
         ),
         194,
-        229.5,
+        totalY + 9.5,
         {
           align: "right",
         }
@@ -2012,38 +2152,63 @@ doc.addImage(
   // =========================================================
 
   /*
-    Cas normal ComptaNet :
-    1 à 5 lignes = une seule page.
-
-    Au-delà de 5 lignes, les lignes supplémentaires
-    sont placées sur une nouvelle page au lieu de
-    faire descendre les totaux.
+    Les pages de continuation sont également réparties
+    selon la hauteur estimée des descriptions. On évite
+    ainsi qu'une longue description transforme une page
+    en tableau illisible.
   */
 
   if (
     remainingLines.length >
     0
   ) {
-    const LINES_PER_EXTRA_PAGE =
-      14;
+    const EXTRA_PAGE_START_Y = 35;
+    const EXTRA_PAGE_MAX_Y = 205;
+    const EXTRA_HEADER_HEIGHT = 10;
 
     const pages:
       FacturePdfLigne[][] =
         [];
 
-    for (
-      let i = 0;
-      i <
-      remainingLines.length;
-      i +=
-        LINES_PER_EXTRA_PAGE
+    let currentPage:
+      FacturePdfLigne[] =
+        [];
+
+    let currentY =
+      EXTRA_PAGE_START_Y +
+      EXTRA_HEADER_HEIGHT;
+
+    for (const ligne of remainingLines) {
+      const rowHeight =
+        estimatedRowHeight(ligne);
+
+      if (
+        currentPage.length > 0 &&
+        currentY + rowHeight >
+          EXTRA_PAGE_MAX_Y
+      ) {
+        pages.push(
+          currentPage
+        );
+
+        currentPage = [];
+        currentY =
+          EXTRA_PAGE_START_Y +
+          EXTRA_HEADER_HEIGHT;
+      }
+
+      currentPage.push(
+        ligne
+      );
+
+      currentY += rowHeight;
+    }
+
+    if (
+      currentPage.length > 0
     ) {
       pages.push(
-        remainingLines.slice(
-          i,
-          i +
-            LINES_PER_EXTRA_PAGE
-        )
+        currentPage
       );
     }
 
