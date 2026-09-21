@@ -61,14 +61,25 @@ export default function DeleteFactureButton({
         }
       );
 
+      const data = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error("Delete failed");
+        console.error("Erreur API suppression:", data);
+
+        throw new Error(
+          data?.error || TEXT[lang].error
+        );
       }
 
       router.refresh();
     } catch (error) {
       console.error("Erreur suppression facture:", error);
-      alert(TEXT[lang].error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : TEXT[lang].error
+      );
     } finally {
       setLoading(false);
     }
@@ -99,21 +110,25 @@ export default function DeleteFactureButton({
             strokeLinejoin="round"
             d="M3 6h18"
           />
+
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             d="M8 6V4h8v2"
           />
+
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             d="M19 6l-1 14H6L5 6"
           />
+
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             d="M10 11v5"
           />
+
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
