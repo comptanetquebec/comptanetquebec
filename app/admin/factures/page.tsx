@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabaseServer";
+import DeleteFactureButton from "./DeleteFactureButton";
 
 type Lang = "fr" | "en" | "es";
 
@@ -52,6 +53,7 @@ const COPY = {
     paidAmount: "Payé",
     status: "Statut",
     date: "Date",
+    action: "Action",
     paid: "Payée",
     unpaid: "À payer",
     error: "Erreur de chargement",
@@ -72,6 +74,7 @@ const COPY = {
     paidAmount: "Paid",
     status: "Status",
     date: "Date",
+    action: "Action",
     paid: "Paid",
     unpaid: "Amount due",
     error: "Loading error",
@@ -92,6 +95,7 @@ const COPY = {
     paidAmount: "Pagado",
     status: "Estado",
     date: "Fecha",
+    action: "Acción",
     paid: "Pagada",
     unpaid: "Por pagar",
     error: "Error de carga",
@@ -104,8 +108,8 @@ function argent(value: number | null, lang: Lang) {
     lang === "fr"
       ? "fr-CA"
       : lang === "es"
-      ? "es-CA"
-      : "en-CA";
+        ? "es-CA"
+        : "en-CA";
 
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -300,6 +304,11 @@ export default async function AdminFacturesPage({
                     <th className="px-5 py-4 font-semibold">
                       {L.date}
                     </th>
+
+                    {/* NOUVEAU */}
+                    <th className="px-5 py-4 text-center font-semibold">
+                      {L.action}
+                    </th>
                   </tr>
                 </thead>
 
@@ -315,7 +324,7 @@ export default async function AdminFacturesPage({
                         className="hover:bg-slate-50"
                       >
 
-                        {/* NUMÉRO CLIQUABLE */}
+                        {/* NUMÉRO */}
                         <td className="whitespace-nowrap px-5 py-4 font-semibold">
                           <Link
                             href={`/admin/factures/${facture.id}?lang=${lang}`}
@@ -325,6 +334,7 @@ export default async function AdminFacturesPage({
                           </Link>
                         </td>
 
+                        {/* CLIENT */}
                         <td className="px-5 py-4">
                           <div className="font-medium text-slate-900">
                             {facture.client_nom ?? "—"}
@@ -337,18 +347,22 @@ export default async function AdminFacturesPage({
                           )}
                         </td>
 
+                        {/* DESCRIPTION */}
                         <td className="max-w-xs px-5 py-4 text-slate-600">
                           {facture.description ?? "—"}
                         </td>
 
+                        {/* TOTAL */}
                         <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-900">
                           {argent(facture.total, lang)}
                         </td>
 
+                        {/* PAYÉ */}
                         <td className="whitespace-nowrap px-5 py-4">
                           {argent(facture.montant_paye, lang)}
                         </td>
 
+                        {/* STATUT */}
                         <td className="px-5 py-4">
                           <span
                             className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
@@ -361,6 +375,7 @@ export default async function AdminFacturesPage({
                           </span>
                         </td>
 
+                        {/* DATE */}
                         <td className="whitespace-nowrap px-5 py-4 text-slate-500">
                           {facture.date_facture
                             ? new Date(
@@ -369,10 +384,19 @@ export default async function AdminFacturesPage({
                                 lang === "fr"
                                   ? "fr-CA"
                                   : lang === "es"
-                                  ? "es-CA"
-                                  : "en-CA"
+                                    ? "es-CA"
+                                    : "en-CA"
                               )
                             : "—"}
+                        </td>
+
+                        {/* NOUVEAU : SUPPRIMER */}
+                        <td className="whitespace-nowrap px-5 py-4 text-center">
+                          <DeleteFactureButton
+                            factureId={facture.id}
+                            numeroFacture={facture.numero_facture}
+                            lang={lang}
+                          />
                         </td>
 
                       </tr>
