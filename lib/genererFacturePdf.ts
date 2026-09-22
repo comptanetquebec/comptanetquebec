@@ -614,15 +614,11 @@ export async function genererFacturePdf(
     normalizeLines(facture);
 
   /*
-    La première page possède une zone réservée aux
-    totaux et au paiement. Le nombre de lignes ne peut
-    donc pas être fixé simplement à 5 : une description
-    longue peut prendre plusieurs lignes dans le PDF.
+    Gestion intelligente de la première page.
 
-    On estime la hauteur réelle de chaque ligne avant
-    de construire le tableau. Ainsi, une description
-    longue est automatiquement envoyée sur une page
-    de continuation au lieu d'écraser les totaux.
+    On estime la hauteur réelle de chaque ligne pour garder
+    ensemble les petites lignes lorsqu'elles peuvent tenir
+    sur la première page.
   */
   function estimatedRowHeight(
     ligne: FacturePdfLigne
@@ -636,20 +632,20 @@ export async function genererFacturePdf(
         94
       ).length;
 
-    // 2.8 mm de padding en haut + en bas,
-    // environ 2.8 mm par ligne de texte.
     return Math.max(
       8,
       5.6 + descriptionLines * 2.8
     );
   }
 
-  const FIRST_TABLE_MAX_Y = 169;
+  const FIRST_TABLE_START_Y = 131;
+  const FIRST_TABLE_MAX_Y = 190;
   const TABLE_HEADER_HEIGHT = 10;
 
   const firstPageLines: FacturePdfLigne[] = [];
   let estimatedY =
-    131 + TABLE_HEADER_HEIGHT;
+    FIRST_TABLE_START_Y +
+    TABLE_HEADER_HEIGHT;
 
   for (const ligne of lignes) {
     const rowHeight =
@@ -657,20 +653,6 @@ export async function genererFacturePdf(
 
     if (
       firstPageLines.length > 0 &&
-      estimatedY + rowHeight >
-        FIRST_TABLE_MAX_Y
-    ) {
-      break;
-    }
-
-    /*
-      Une seule ligne très longue peut dépasser
-      la zone réservée. Dans ce cas on la laisse
-      partir en continuation plutôt que de risquer
-      un chevauchement avec les totaux.
-    */
-    if (
-      firstPageLines.length === 0 &&
       estimatedY + rowHeight >
         FIRST_TABLE_MAX_Y
     ) {
@@ -1378,7 +1360,9 @@ doc.addImage(
     );
   }
 
-  function drawTotals() {
+  function drawTotals(
+    tableEndY: number
+  ) {
     /*
       POSITION FIXE.
 
@@ -1387,7 +1371,10 @@ doc.addImage(
     */
     const left = 119;
     const right = 200;
-    const y = 174;
+    const y = Math.max(
+      174,
+      tableEndY + 8
+    );
 
     doc.setTextColor(
       ...dark
@@ -1476,9 +1463,14 @@ doc.addImage(
       ...lightBlue
     );
 
+    const totalBoxY = Math.max(
+      201,
+      y + 27
+    );
+
     doc.roundedRect(
       114,
-      201,
+      totalBoxY,
       86,
       15,
       2.5,
@@ -1502,7 +1494,7 @@ doc.addImage(
         ? L.totalPaid
         : L.totalDue,
       120,
-      210.5
+      totalBoxY + 9.5
     );
 
     doc.setFontSize(13);
@@ -1513,7 +1505,7 @@ doc.addImage(
         lang
       ),
       194,
-      210.5,
+      totalBoxY + 9.5,
       {
         align: "right",
       }
@@ -1537,9 +1529,11 @@ doc.addImage(
       );
     }
 
+    const statusY = totalBoxY + 17;
+
     doc.roundedRect(
       169,
-      218,
+      statusY,
       31,
       7,
       2.5,
@@ -1559,7 +1553,7 @@ doc.addImage(
         ? L.paid
         : L.unpaid,
       184.5,
-      222.6,
+      statusY + 4.6,
       {
         align: "center",
       }
@@ -1929,14 +1923,16 @@ doc.addImage(
 
     /*
       Tableau commence toujours ici.
-      Il a une zone réservée jusqu'aux totaux.
+      Sa hauteur réelle détermine maintenant
+      la position des totaux.
     */
-    drawTable(
-      firstPageLines,
-      131
-    );
+    const tableEndY =
+      drawTable(
+        firstPageLines,
+        FIRST_TABLE_START_Y
+      );
 
-    drawTotals();
+    drawTotals(tableEndY);
     drawPayment();
     drawTaxNumbers();
     drawThankYou();
