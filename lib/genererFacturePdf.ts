@@ -1510,55 +1510,7 @@ doc.addImage(
         align: "right",
       }
     );
-
-    if (isPaid) {
-      doc.setFillColor(
-        ...greenBg
-      );
-
-      doc.setTextColor(
-        ...green
-      );
-    } else {
-      doc.setFillColor(
-        ...amberBg
-      );
-
-      doc.setTextColor(
-        ...amber
-      );
-    }
-
-    const statusY = totalBoxY + 17;
-
-    doc.roundedRect(
-      169,
-      statusY,
-      31,
-      7,
-      2.5,
-      2.5,
-      "F"
-    );
-
-    doc.setFont(
-      "helvetica",
-      "bold"
-    );
-
-    doc.setFontSize(6.5);
-
-    doc.text(
-      isPaid
-        ? L.paid
-        : L.unpaid,
-      184.5,
-      statusY + 4.6,
-      {
-        align: "center",
-      }
-    );
-  }
+     }
 
   function paymentTitle() {
     if (
