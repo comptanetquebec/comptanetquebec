@@ -437,6 +437,17 @@ plans: [
     ],
     href: "/tarifs/t2",
   },
+  {
+    t: "Services à l’heure",
+    p: "94,99 $ / heure + taxes",
+    pts: [
+      "Rendez-vous et consultation",
+      "Accompagnement et vérification",
+      "Travaux supplémentaires",
+      "Services hors forfait",
+    ],
+    href: "/tarifs/horaire",
+  },
 ],
         getPrice: "Voir les détails",
 
@@ -608,6 +619,17 @@ plans: [
       "No-revenue corporation: from $450 + taxes",
     ],
     href: "/tarifs/t2",
+  },
+  {
+    t: "Hourly services",
+    p: "$94.99 / hour + taxes",
+    pts: [
+      "Appointments and consultation",
+      "Assistance and review",
+      "Additional work",
+      "Services outside fixed-price packages",
+    ],
+    href: "/tarifs/horaire",
   },
 ],
         getPrice: "View details",
@@ -781,6 +803,17 @@ plans: [
       "Empresa sin ingresos: desde $450 CAD + impuestos",
     ],
     href: "/tarifs/t2",
+  },
+  {
+    t: "Servicios por hora",
+    p: "94,99 $ / hora + impuestos",
+    pts: [
+      "Citas y consultas",
+      "Acompañamiento y verificación",
+      "Trabajos adicionales",
+      "Servicios fuera de tarifa fija",
+    ],
+    href: "/tarifs/horaire",
   },
 ],
         getPrice: "Ver detalles",
