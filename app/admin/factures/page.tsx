@@ -58,6 +58,7 @@ const COPY = {
     unpaid: "À payer",
     error: "Erreur de chargement",
     accessDenied: "Accès refusé",
+    viewInvoice: "Voir la facture",
   },
 
   en: {
@@ -79,6 +80,7 @@ const COPY = {
     unpaid: "Amount due",
     error: "Loading error",
     accessDenied: "Access denied",
+    viewInvoice: "View invoice",
   },
 
   es: {
@@ -100,6 +102,7 @@ const COPY = {
     unpaid: "Por pagar",
     error: "Error de carga",
     accessDenied: "Acceso denegado",
+    viewInvoice: "Ver factura",
   },
 } as const;
 
@@ -115,6 +118,20 @@ function argent(value: number | null, lang: Lang) {
     style: "currency",
     currency: "CAD",
   }).format(value ?? 0);
+}
+
+function formatDate(value: string | null, lang: Lang) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Date(`${value}T12:00:00`).toLocaleDateString(
+    lang === "fr"
+      ? "fr-CA"
+      : lang === "es"
+        ? "es-CA"
+        : "en-CA"
+  );
 }
 
 type PageProps = {
@@ -183,7 +200,7 @@ export default async function AdminFacturesPage({
   const factures = data ?? [];
 
   return (
-    <main className="p-6 md:p-8">
+    <main className="p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
 
         {/* LANGUES */}
@@ -251,7 +268,7 @@ export default async function AdminFacturesPage({
 
         {/* AUCUNE FACTURE */}
         {!error && factures.length === 0 && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm md:p-12">
             <div className="text-xl font-semibold text-slate-800">
               {L.noInvoice}
             </div>
@@ -269,9 +286,128 @@ export default async function AdminFacturesPage({
           </div>
         )}
 
-        {/* TABLEAU */}
+        {/* ========================= */}
+        {/* MOBILE : CARTES */}
+        {/* ========================= */}
+
         {factures.length > 0 && (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="space-y-4 md:hidden">
+            {factures.map((facture) => {
+              const paye = facture.statut === "paid";
+
+              return (
+                <div
+                  key={facture.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  {/* HAUT DE CARTE */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/admin/factures/${facture.id}?lang=${lang}`}
+                        className="text-lg font-bold text-blue-700 hover:underline"
+                      >
+                        {facture.numero_facture ?? "—"}
+                      </Link>
+
+                      <div className="mt-1 font-semibold text-slate-900">
+                        {facture.client_nom ?? "—"}
+                      </div>
+
+                      {facture.client_courriel && (
+                        <div className="break-all text-sm text-slate-500">
+                          {facture.client_courriel}
+                        </div>
+                      )}
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                        paye
+                          ? "bg-green-100 text-green-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {paye ? L.paid : L.unpaid}
+                    </span>
+                  </div>
+
+                  {/* DESCRIPTION */}
+                  {facture.description && (
+                    <div className="mt-4 border-t border-slate-100 pt-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        {L.description}
+                      </div>
+
+                      <div className="mt-1 text-sm leading-5 text-slate-600">
+                        {facture.description}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MONTANTS */}
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs font-semibold text-slate-500">
+                        {L.total}
+                      </div>
+
+                      <div className="mt-1 font-bold text-slate-900">
+                        {argent(facture.total, lang)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs font-semibold text-slate-500">
+                        {L.paidAmount}
+                      </div>
+
+                      <div className="mt-1 font-bold text-slate-900">
+                        {argent(facture.montant_paye, lang)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* DATE */}
+                  <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                    <span className="font-semibold text-slate-500">
+                      {L.date}
+                    </span>
+
+                    <span className="text-slate-700">
+                      {formatDate(facture.date_facture, lang)}
+                    </span>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-4">
+                    <Link
+                      href={`/admin/factures/${facture.id}?lang=${lang}`}
+                      className="flex-1 rounded-lg bg-blue-700 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-800"
+                    >
+                      {L.viewInvoice}
+                    </Link>
+
+                    <div className="flex h-10 w-10 items-center justify-center">
+                      <DeleteFactureButton
+                        factureId={facture.id}
+                        numeroFacture={facture.numero_facture}
+                        lang={lang}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ========================= */}
+        {/* ORDINATEUR : TABLEAU */}
+        {/* ========================= */}
+
+        {factures.length > 0 && (
+          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
 
@@ -305,7 +441,6 @@ export default async function AdminFacturesPage({
                       {L.date}
                     </th>
 
-                    {/* NOUVEAU */}
                     <th className="px-5 py-4 text-center font-semibold">
                       {L.action}
                     </th>
@@ -313,17 +448,14 @@ export default async function AdminFacturesPage({
                 </thead>
 
                 <tbody className="divide-y divide-slate-100">
-
                   {factures.map((facture) => {
-                    const paye =
-                      facture.statut === "paid";
+                    const paye = facture.statut === "paid";
 
                     return (
                       <tr
                         key={facture.id}
                         className="hover:bg-slate-50"
                       >
-
                         {/* NUMÉRO */}
                         <td className="whitespace-nowrap px-5 py-4 font-semibold">
                           <Link
@@ -377,20 +509,10 @@ export default async function AdminFacturesPage({
 
                         {/* DATE */}
                         <td className="whitespace-nowrap px-5 py-4 text-slate-500">
-                          {facture.date_facture
-                            ? new Date(
-                                `${facture.date_facture}T12:00:00`
-                              ).toLocaleDateString(
-                                lang === "fr"
-                                  ? "fr-CA"
-                                  : lang === "es"
-                                    ? "es-CA"
-                                    : "en-CA"
-                              )
-                            : "—"}
+                          {formatDate(facture.date_facture, lang)}
                         </td>
 
-                        {/* NOUVEAU : SUPPRIMER */}
+                        {/* SUPPRIMER */}
                         <td className="whitespace-nowrap px-5 py-4 text-center">
                           <DeleteFactureButton
                             factureId={facture.id}
@@ -398,11 +520,9 @@ export default async function AdminFacturesPage({
                             lang={lang}
                           />
                         </td>
-
                       </tr>
                     );
                   })}
-
                 </tbody>
               </table>
             </div>
