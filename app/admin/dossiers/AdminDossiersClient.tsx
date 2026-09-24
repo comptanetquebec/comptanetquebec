@@ -871,7 +871,7 @@ export default function AdminDossiersClient({
                       }
                       className="px-5 py-5 transition hover:bg-slate-50/70"
                     >
-                      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_210px] xl:items-center xl:gap-3">
+                      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(210px,1.3fr)_minmax(190px,1fr)_120px_90px_130px_150px_330px] xl:items-center xl:gap-3">
                         {/* CLIENT */}
 
                         <div className="min-w-0">
@@ -1025,7 +1025,7 @@ export default function AdminDossiersClient({
 
                         {/* ACTIONS */}
 
-                        <div className="flex gap-2 xl:justify-end">
+                        <div className="flex flex-wrap gap-2 xl:justify-end">
                           <Link
                             href={`/formulaire-fiscal?fid=${encodeURIComponent(
                               row.formulaire_id
@@ -1042,6 +1042,15 @@ export default function AdminDossiersClient({
                             className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
                           >
                             📄 Docs
+                          </Link>
+
+                          <Link
+                            href={`/admin/dossiers/signatures?fid=${encodeURIComponent(
+                              row.formulaire_id
+                            )}`}
+                            className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+                          >
+                            ✍️ Signatures
                           </Link>
                         </div>
                       </div>
