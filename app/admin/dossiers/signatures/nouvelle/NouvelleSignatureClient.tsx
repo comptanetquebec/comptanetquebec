@@ -15,13 +15,32 @@ type Props = {
 
 type DocumentType = "T183" | "TP1000TE";
 
+type YearBlock = {
+  key: string;
+  year: string;
+  t183File: File | null;
+  tp1000File: File | null;
+};
+
 type PreparedDocument = {
+  year: number;
   type: DocumentType;
   label: string;
   file: File;
 };
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+function makeKey() {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 function isPdf(file: File) {
   return (
@@ -52,6 +71,20 @@ function validEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+function validateFile(file: File | null, label: string) {
+  if (!file) return null;
+
+  if (!isPdf(file)) {
+    return `${label} doit être un fichier PDF.`;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return `${label} dépasse la limite de 20 Mo.`;
+  }
+
+  return null;
+}
+
 export default function NouvelleSignatureClient({
   fid,
   cqId,
@@ -63,12 +96,15 @@ export default function NouvelleSignatureClient({
 
   const [signerName, setSignerName] = useState(initialName);
   const [signerEmail, setSignerEmail] = useState(initialEmail);
-  const [taxYear, setTaxYear] = useState(
-    initialYear ? String(initialYear) : ""
-  );
 
-  const [t183File, setT183File] = useState<File | null>(null);
-  const [tp1000File, setTp1000File] = useState<File | null>(null);
+  const [years, setYears] = useState<YearBlock[]>(() => [
+    {
+      key: makeKey(),
+      year: initialYear ? String(initialYear) : "",
+      t183File: null,
+      tp1000File: null,
+    },
+  ]);
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -76,34 +112,114 @@ export default function NouvelleSignatureClient({
   const preparedDocuments = useMemo<PreparedDocument[]>(() => {
     const items: PreparedDocument[] = [];
 
-    if (t183File) {
-      items.push({
-        type: "T183",
-        label: "T183",
-        file: t183File,
-      });
-    }
+    for (const block of years) {
+      const year = Number(block.year);
 
-    if (tp1000File) {
-      items.push({
-        type: "TP1000TE",
-        label: "TP-1000.TE",
-        file: tp1000File,
-      });
+      if (!Number.isInteger(year)) {
+        continue;
+      }
+
+      if (block.t183File) {
+        items.push({
+          year,
+          type: "T183",
+          label: `T183 ${year}`,
+          file: block.t183File,
+        });
+      }
+
+      if (block.tp1000File) {
+        items.push({
+          year,
+          type: "TP1000TE",
+          label: `TP-1000.TE ${year}`,
+          file: block.tp1000File,
+        });
+      }
     }
 
     return items;
-  }, [t183File, tp1000File]);
+  }, [years]);
 
-  function validateFile(file: File | null, label: string) {
-    if (!file) return null;
+  function addYear() {
+    setYears((current) => [
+      ...current,
+      {
+        key: makeKey(),
+        year: "",
+        t183File: null,
+        tp1000File: null,
+      },
+    ]);
+  }
 
-    if (!isPdf(file)) {
-      return `${label} doit être un fichier PDF.`;
-    }
+  function removeYear(key: string) {
+    setYears((current) => {
+      if (current.length === 1) {
+        return current;
+      }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return `${label} dépasse la limite de 20 Mo.`;
+      return current.filter((block) => block.key !== key);
+    });
+  }
+
+  function updateYear(
+    key: string,
+    patch: Partial<Omit<YearBlock, "key">>
+  ) {
+    setYears((current) =>
+      current.map((block) =>
+        block.key === key
+          ? {
+              ...block,
+              ...patch,
+            }
+          : block
+      )
+    );
+  }
+
+  function validateYears() {
+    const seen = new Set<number>();
+
+    for (const block of years) {
+      const year = Number(block.year);
+
+      if (
+        !Number.isInteger(year) ||
+        year < 2000 ||
+        year > 2100
+      ) {
+        return "Une des années d’imposition est invalide.";
+      }
+
+      if (seen.has(year)) {
+        return `L’année ${year} est inscrite deux fois.`;
+      }
+
+      seen.add(year);
+
+      if (!block.t183File && !block.tp1000File) {
+        return `Ajoute au moins un PDF pour l’année ${year}, ou retire cette année.`;
+      }
+
+      const t183Error = validateFile(
+        block.t183File,
+        `Le T183 ${year}`
+      );
+
+      if (t183Error) {
+        return t183Error;
+      }
+
+      const tpError = validateFile(
+        block.tp1000File,
+        `Le TP-1000.TE ${year}`
+      );
+
+      if (tpError) {
+        return tpError;
+      }
     }
 
     return null;
@@ -116,7 +232,6 @@ export default function NouvelleSignatureClient({
 
     const name = signerName.trim();
     const email = signerEmail.trim().toLowerCase();
-    const year = Number(taxYear);
 
     if (!name) {
       setMessage("❌ Le nom du client est obligatoire.");
@@ -128,31 +243,15 @@ export default function NouvelleSignatureClient({
       return;
     }
 
-    if (
-      !Number.isInteger(year) ||
-      year < 2000 ||
-      year > 2100
-    ) {
-      setMessage("❌ L’année d’imposition est invalide.");
+    const yearsError = validateYears();
+
+    if (yearsError) {
+      setMessage(`❌ ${yearsError}`);
       return;
     }
 
     if (preparedDocuments.length === 0) {
-      setMessage(
-        "❌ Ajoute au moins un PDF à signer : T183 ou TP-1000.TE."
-      );
-      return;
-    }
-
-    const t183Error = validateFile(t183File, "Le T183");
-    if (t183Error) {
-      setMessage(`❌ ${t183Error}`);
-      return;
-    }
-
-    const tpError = validateFile(tp1000File, "Le TP-1000.TE");
-    if (tpError) {
-      setMessage(`❌ ${tpError}`);
+      setMessage("❌ Ajoute au moins un PDF à signer.");
       return;
     }
 
@@ -183,8 +282,6 @@ export default function NouvelleSignatureClient({
 
       requestId = request.id;
 
-      // Le dossier Storage est stable par client grâce au hash du courriel,
-      // sans exposer le courriel lui-même dans le chemin.
       const clientHash = await sha256Text(email);
       const clientFolder = clientHash.slice(0, 24);
 
@@ -192,7 +289,7 @@ export default function NouvelleSignatureClient({
         const fileHash = await sha256File(document.file);
 
         const storagePath =
-          `clients/${clientFolder}/${year}/` +
+          `clients/${clientFolder}/${document.year}/` +
           `${request.id}/${document.type}-original.pdf`;
 
         const { data: uploadData, error: uploadError } =
@@ -215,32 +312,38 @@ export default function NouvelleSignatureClient({
 
         const documentName =
           document.type === "T183"
-            ? `T183 — Déclaration de revenus ${year}`
-            : `TP-1000.TE — Déclaration de revenus ${year}`;
+            ? `T183 — Déclaration de revenus ${document.year}`
+            : `TP-1000.TE — Déclaration de revenus ${document.year}`;
 
-        const { error: documentError } = await supabase
-          .from("signature_documents")
-          .insert({
-            signature_request_id: request.id,
-            formulaire_id: fid,
-            tax_year: year,
-            document_type: document.type,
-            document_name: documentName,
-            original_file_path: uploadData.path,
-            signed_file_path: null,
-            original_sha256: fileHash,
-            signed_sha256: null,
-            signature_image_path: null,
-            status: "pending",
-          });
+        const { data: insertedDocument, error: documentError } =
+          await supabase
+            .from("signature_documents")
+            .insert({
+              signature_request_id: request.id,
+              formulaire_id: fid,
+              tax_year: document.year,
+              document_type: document.type,
+              document_name: documentName,
+              original_file_path: uploadData.path,
+              signed_file_path: null,
+              original_sha256: fileHash,
+              signed_sha256: null,
+              signature_image_path: null,
+              status: "pending",
+            })
+            .select("id")
+            .single<{ id: string }>();
 
-        if (documentError) {
-          throw new Error(documentError.message);
+        if (documentError || !insertedDocument?.id) {
+          throw new Error(
+            documentError?.message ??
+              `Impossible d'enregistrer ${document.label}.`
+          );
         }
 
         await supabase.from("signature_events").insert({
           signature_request_id: request.id,
-          signature_document_id: null,
+          signature_document_id: insertedDocument.id,
           event_type: "document_uploaded",
           user_agent:
             typeof navigator !== "undefined"
@@ -248,7 +351,7 @@ export default function NouvelleSignatureClient({
               : null,
           metadata: {
             document_type: document.type,
-            tax_year: year,
+            tax_year: document.year,
             original_sha256: fileHash,
           },
         });
@@ -265,15 +368,18 @@ export default function NouvelleSignatureClient({
         metadata: {
           formulaire_id: fid,
           cq_id: cqId || null,
-          tax_year: year,
+          tax_years: years.map((block) => Number(block.year)),
           document_types: preparedDocuments.map(
-            (document) => document.type
+            (document) => ({
+              year: document.year,
+              type: document.type,
+            })
           ),
         },
       });
 
       setMessage(
-        "✅ Les PDF sont enregistrés dans la demande de signature."
+        "✅ Tous les PDF sont enregistrés dans une seule demande de signature."
       );
 
       router.push(
@@ -288,6 +394,16 @@ export default function NouvelleSignatureClient({
       }
 
       if (requestId) {
+        await supabase
+          .from("signature_events")
+          .delete()
+          .eq("signature_request_id", requestId);
+
+        await supabase
+          .from("signature_documents")
+          .delete()
+          .eq("signature_request_id", requestId);
+
         await supabase
           .from("signature_requests")
           .delete()
@@ -309,7 +425,7 @@ export default function NouvelleSignatureClient({
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
           <Link
             href="/admin/dossiers"
             className="flex items-center"
@@ -332,7 +448,7 @@ export default function NouvelleSignatureClient({
         </div>
       </div>
 
-      <main className="mx-auto max-w-5xl px-5 py-7">
+      <main className="mx-auto max-w-6xl px-5 py-7">
         <div className="mb-6">
           <div className="text-sm font-bold uppercase tracking-wide text-violet-600">
             Nouvelle demande
@@ -343,8 +459,8 @@ export default function NouvelleSignatureClient({
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Exporte les formulaires depuis ton logiciel d’impôt,
-            puis ajoute simplement les PDF ici.
+            Un seul client peut maintenant avoir plusieurs années
+            dans la même demande de signature.
           </p>
         </div>
 
@@ -384,25 +500,9 @@ export default function NouvelleSignatureClient({
                 />
               </label>
 
-              <label className="grid gap-2">
+              <div className="grid gap-2 md:col-span-2">
                 <span className="text-sm font-semibold text-slate-700">
-                  Année d’imposition
-                </span>
-
-                <input
-                  inputMode="numeric"
-                  value={taxYear}
-                  onChange={(event) =>
-                    setTaxYear(event.target.value)
-                  }
-                  placeholder="2025"
-                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-
-              <div className="grid gap-2">
-                <span className="text-sm font-semibold text-slate-700">
-                  Dossier
+                  Dossier de départ
                 </span>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
@@ -413,69 +513,125 @@ export default function NouvelleSignatureClient({
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">
-              Documents à signer
-            </h2>
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Années et documents
+                </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Tu peux ajouter les deux PDF ou seulement celui dont
-              tu as besoin.
-            </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Ajoute 2023, 2024, 2025 ou autant d’années que nécessaire.
+                </p>
+              </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <label className="rounded-2xl border border-dashed border-blue-300 bg-blue-50/50 p-5">
-                <div className="font-bold text-blue-800">
-                  T183 — ARC
-                </div>
+              <button
+                type="button"
+                onClick={addYear}
+                className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-100"
+              >
+                + Ajouter une année
+              </button>
+            </div>
 
-                <div className="mt-1 text-xs text-slate-500">
-                  PDF exporté de ton logiciel d’impôt
-                </div>
+            <div className="mt-5 grid gap-5">
+              {years.map((block, index) => (
+                <div
+                  key={block.key}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5"
+                >
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-slate-800">
+                        Année d’imposition
+                      </span>
 
-                <input
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={(event) =>
-                    setT183File(
-                      event.target.files?.[0] ?? null
-                    )
-                  }
-                  className="mt-4 block w-full text-sm text-slate-600"
-                />
+                      <input
+                        inputMode="numeric"
+                        value={block.year}
+                        onChange={(event) =>
+                          updateYear(block.key, {
+                            year: event.target.value,
+                          })
+                        }
+                        placeholder="2025"
+                        className="w-36 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </label>
 
-                {t183File && (
-                  <div className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700">
-                    📄 {t183File.name}
+                    {years.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeYear(block.key)}
+                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100"
+                      >
+                        Retirer cette année
+                      </button>
+                    )}
                   </div>
-                )}
-              </label>
 
-              <label className="rounded-2xl border border-dashed border-violet-300 bg-violet-50/50 p-5">
-                <div className="font-bold text-violet-800">
-                  TP-1000.TE — Revenu Québec
-                </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="rounded-2xl border border-dashed border-blue-300 bg-blue-50/50 p-5">
+                      <div className="font-bold text-blue-800">
+                        T183 — ARC
+                      </div>
 
-                <div className="mt-1 text-xs text-slate-500">
-                  PDF exporté de ton logiciel d’impôt
-                </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        PDF exporté de ton logiciel d’impôt
+                      </div>
 
-                <input
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={(event) =>
-                    setTp1000File(
-                      event.target.files?.[0] ?? null
-                    )
-                  }
-                  className="mt-4 block w-full text-sm text-slate-600"
-                />
+                      <input
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={(event) =>
+                          updateYear(block.key, {
+                            t183File:
+                              event.target.files?.[0] ?? null,
+                          })
+                        }
+                        className="mt-4 block w-full text-sm text-slate-600"
+                      />
 
-                {tp1000File && (
-                  <div className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700">
-                    📄 {tp1000File.name}
+                      {block.t183File && (
+                        <div className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                          📄 {block.t183File.name}
+                        </div>
+                      )}
+                    </label>
+
+                    <label className="rounded-2xl border border-dashed border-violet-300 bg-violet-50/50 p-5">
+                      <div className="font-bold text-violet-800">
+                        TP-1000.TE — Revenu Québec
+                      </div>
+
+                      <div className="mt-1 text-xs text-slate-500">
+                        PDF exporté de ton logiciel d’impôt
+                      </div>
+
+                      <input
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={(event) =>
+                          updateYear(block.key, {
+                            tp1000File:
+                              event.target.files?.[0] ?? null,
+                          })
+                        }
+                        className="mt-4 block w-full text-sm text-slate-600"
+                      />
+
+                      {block.tp1000File && (
+                        <div className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                          📄 {block.tp1000File.name}
+                        </div>
+                      )}
+                    </label>
                   </div>
-                )}
-              </label>
+
+                  <div className="mt-3 text-xs text-slate-400">
+                    Bloc {index + 1}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -509,7 +665,9 @@ export default function NouvelleSignatureClient({
             >
               {saving
                 ? "Enregistrement…"
-                : "Enregistrer les PDF"}
+                : `Enregistrer ${preparedDocuments.length || ""} PDF${
+                    preparedDocuments.length > 1 ? "s" : ""
+                  }`}
             </button>
           </div>
         </div>
