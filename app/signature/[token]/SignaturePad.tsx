@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   token: string;
@@ -13,6 +14,7 @@ export default function SignaturePad({
   documentId,
   documentName,
 }: Props) {
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const hasInkRef = useRef(false);
@@ -129,6 +131,105 @@ export default function SignaturePad({
     setMessage(null);
   }
 
+  function getTrimmedSignatureDataUrl() {
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      throw new Error(
+        "Zone de signature introuvable."
+      );
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error(
+        "Impossible de lire la signature."
+      );
+    }
+
+    const imageData = context.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    const { data } = imageData;
+
+    let minX = canvas.width;
+    let minY = canvas.height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const alpha =
+          data[(y * canvas.width + x) * 4 + 3];
+
+        if (alpha > 20) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+
+    if (maxX < minX || maxY < minY) {
+      throw new Error(
+        "Aucune signature détectée."
+      );
+    }
+
+    const padding = 18;
+
+    const sx = Math.max(0, minX - padding);
+    const sy = Math.max(0, minY - padding);
+
+    const ex = Math.min(
+      canvas.width,
+      maxX + padding
+    );
+
+    const ey = Math.min(
+      canvas.height,
+      maxY + padding
+    );
+
+    const width = Math.max(1, ex - sx);
+    const height = Math.max(1, ey - sy);
+
+    const trimmed =
+      document.createElement("canvas");
+
+    trimmed.width = width;
+    trimmed.height = height;
+
+    const trimmedContext =
+      trimmed.getContext("2d");
+
+    if (!trimmedContext) {
+      throw new Error(
+        "Impossible de préparer la signature."
+      );
+    }
+
+    trimmedContext.drawImage(
+      canvas,
+      sx,
+      sy,
+      width,
+      height,
+      0,
+      0,
+      width,
+      height
+    );
+
+    return trimmed.toDataURL("image/png");
+  }
+
   async function saveSignature() {
     if (saving || saved) return;
 
@@ -146,15 +247,17 @@ export default function SignaturePad({
       return;
     }
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     setSaving(true);
     setMessage(null);
 
     try {
       const signatureDataUrl =
-        canvas.toDataURL("image/png");
+        getTrimmedSignatureDataUrl();
+
+      const clientTimeZone =
+        Intl.DateTimeFormat()
+          .resolvedOptions()
+          .timeZone || "America/Toronto";
 
       const response = await fetch(
         "/api/signatures/capture",
@@ -168,6 +271,7 @@ export default function SignaturePad({
             documentId,
             signatureDataUrl,
             consent: true,
+            clientTimeZone,
           }),
         }
       );
@@ -183,7 +287,11 @@ export default function SignaturePad({
       }
 
       setSaved(true);
-      setMessage("✅ Signature enregistrée.");
+      setMessage(
+        "✅ Signature et PDF signé enregistrés."
+      );
+
+      router.refresh();
     } catch (error) {
       setMessage(
         `❌ ${
@@ -271,9 +379,9 @@ export default function SignaturePad({
         className="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {saved
-          ? "✓ Signature enregistrée"
+          ? "✓ PDF signé enregistré"
           : saving
-          ? "Enregistrement…"
+          ? "Création du PDF signé…"
           : "Confirmer la signature"}
       </button>
 
