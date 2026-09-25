@@ -3,6 +3,7 @@
 import { createHash, randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export const runtime = "nodejs";
@@ -23,9 +24,35 @@ type FactureRow = {
   numero_facture: string | null;
   formulaire_id: string | null;
   cq_id: string | null;
+
+  client_nom: string | null;
+  client_courriel: string | null;
+  client_adresse: string | null;
+  client_ville: string | null;
+  client_province: string | null;
+  client_code_postal: string | null;
+
+  description: string | null;
+  quantite: number | string | null;
+  prix_unitaire: number | string | null;
+
+  sous_total: number | string | null;
+  tps: number | string | null;
+  tvq: number | string | null;
   total: number | string | null;
+
   montant_paye: number | string | null;
+  mode_paiement: string | null;
   statut: string | null;
+  date_facture: string | null;
+};
+
+type FactureLigneRow = {
+  description: string | null;
+  quantite: number | string | null;
+  prix_unitaire: number | string | null;
+  montant: number | string | null;
+  ordre: number | null;
 };
 
 type ProfileRow = {
@@ -83,6 +110,599 @@ function toNumber(
   return Number.isFinite(n)
     ? n
     : 0;
+}
+
+async function creerFacturePdf(
+  facture: FactureRow,
+  lignes: FactureLigneRow[]
+): Promise<Buffer> {
+  const pdf = await PDFDocument.create();
+
+  const page = pdf.addPage([612, 792]);
+
+  const regular = await pdf.embedFont(
+    StandardFonts.Helvetica
+  );
+
+  const bold = await pdf.embedFont(
+    StandardFonts.HelveticaBold
+  );
+
+  const navy = rgb(
+    7 / 255,
+    65 / 255,
+    105 / 255
+  );
+
+  const blue = rgb(
+    29 / 255,
+    78 / 255,
+    216 / 255
+  );
+
+  const dark = rgb(
+    30 / 255,
+    41 / 255,
+    59 / 255
+  );
+
+  const light = rgb(
+    239 / 255,
+    246 / 255,
+    255 / 255
+  );
+
+  const red = rgb(
+    185 / 255,
+    28 / 255,
+    28 / 255
+  );
+
+  const total =
+    toNumber(
+      facture.total
+    );
+
+  const montantPaye =
+    Math.max(
+      0,
+      toNumber(
+        facture.montant_paye
+      )
+    );
+
+  const solde =
+    Math.max(
+      0,
+      Math.round(
+        (
+          total -
+          montantPaye
+        ) * 100
+      ) / 100
+    );
+
+  const estPayee =
+    facture.statut === "paid" ||
+    (
+      total > 0 &&
+      montantPaye >=
+        total - 0.005
+    );
+
+  const moneyPdf = (
+    value: number
+  ) =>
+    new Intl.NumberFormat(
+      "fr-CA",
+      {
+        style: "currency",
+        currency: "CAD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    ).format(value);
+
+  const safe = (
+    value:
+      | string
+      | null
+      | undefined
+  ) =>
+    String(value ?? "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  page.drawRectangle({
+    x: 0,
+    y: 700,
+    width: 612,
+    height: 92,
+    color: light,
+  });
+
+  page.drawText(
+    "ComptaNet Québec",
+    {
+      x: 42,
+      y: 750,
+      size: 22,
+      font: bold,
+      color: navy,
+    }
+  );
+
+  page.drawText(
+    "FACTURE",
+    {
+      x: 470,
+      y: 748,
+      size: 22,
+      font: bold,
+      color: navy,
+    }
+  );
+
+  page.drawText(
+    "849, boulevard Pie XII",
+    {
+      x: 42,
+      y: 681,
+      size: 9,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    "Québec, Québec  G1X 3T2",
+    {
+      x: 42,
+      y: 668,
+      size: 9,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    "581-985-2599",
+    {
+      x: 42,
+      y: 655,
+      size: 9,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    "comptanetquebec@gmail.com",
+    {
+      x: 42,
+      y: 642,
+      size: 9,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawRectangle({
+    x: 382,
+    y: 630,
+    width: 188,
+    height: 60,
+    color: light,
+  });
+
+  page.drawText(
+    `N° FACTURE : ${
+      safe(
+        facture.numero_facture
+      ) || "—"
+    }`,
+    {
+      x: 395,
+      y: 670,
+      size: 9,
+      font: bold,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    `DATE : ${
+      safe(
+        facture.date_facture
+      ) || "—"
+    }`,
+    {
+      x: 395,
+      y: 652,
+      size: 9,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    `N° CLIENT : ${
+      safe(
+        facture.cq_id
+      ) || "—"
+    }`,
+    {
+      x: 395,
+      y: 634,
+      size: 9,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    "FACTURÉ À",
+    {
+      x: 42,
+      y: 595,
+      size: 9,
+      font: bold,
+      color: navy,
+    }
+  );
+
+  page.drawText(
+    safe(
+      facture.client_nom
+    ) || "Client",
+    {
+      x: 42,
+      y: 576,
+      size: 11,
+      font: bold,
+      color: dark,
+    }
+  );
+
+  const adresse = [
+    safe(
+      facture.client_adresse
+    ),
+    [
+      safe(
+        facture.client_ville
+      ),
+      safe(
+        facture.client_province
+      ),
+      safe(
+        facture.client_code_postal
+      ),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  ].filter(Boolean);
+
+  let adresseY = 560;
+
+  for (const ligne of adresse) {
+    page.drawText(
+      ligne,
+      {
+        x: 42,
+        y: adresseY,
+        size: 9,
+        font: regular,
+        color: dark,
+      }
+    );
+
+    adresseY -= 13;
+  }
+
+  page.drawRectangle({
+    x: 42,
+    y: 495,
+    width: 528,
+    height: 24,
+    color: navy,
+  });
+
+  page.drawText(
+    "DESCRIPTION",
+    {
+      x: 50,
+      y: 503,
+      size: 8,
+      font: bold,
+      color: rgb(1, 1, 1),
+    }
+  );
+
+  page.drawText(
+    "QTÉ",
+    {
+      x: 360,
+      y: 503,
+      size: 8,
+      font: bold,
+      color: rgb(1, 1, 1),
+    }
+  );
+
+  page.drawText(
+    "PRIX UNITAIRE",
+    {
+      x: 405,
+      y: 503,
+      size: 8,
+      font: bold,
+      color: rgb(1, 1, 1),
+    }
+  );
+
+  page.drawText(
+    "MONTANT",
+    {
+      x: 518,
+      y: 503,
+      size: 8,
+      font: bold,
+      color: rgb(1, 1, 1),
+    }
+  );
+
+  const lignesPdf =
+    lignes.length > 0
+      ? lignes
+      : [
+          {
+            description:
+              facture.description,
+            quantite:
+              facture.quantite,
+            prix_unitaire:
+              facture.prix_unitaire,
+            montant:
+              facture.sous_total,
+            ordre: 1,
+          },
+        ];
+
+  let y = 475;
+
+  for (
+    const ligne of
+    lignesPdf.slice(0, 10)
+  ) {
+    page.drawText(
+      safe(
+        ligne.description
+      ).slice(0, 58),
+      {
+        x: 50,
+        y,
+        size: 8.5,
+        font: regular,
+        color: dark,
+      }
+    );
+
+    page.drawText(
+      String(
+        toNumber(
+          ligne.quantite
+        ) || 1
+      ),
+      {
+        x: 362,
+        y,
+        size: 8.5,
+        font: regular,
+        color: dark,
+      }
+    );
+
+    page.drawText(
+      moneyPdf(
+        toNumber(
+          ligne.prix_unitaire
+        )
+      ),
+      {
+        x: 405,
+        y,
+        size: 8.5,
+        font: regular,
+        color: dark,
+      }
+    );
+
+    page.drawText(
+      moneyPdf(
+        toNumber(
+          ligne.montant
+        )
+      ),
+      {
+        x: 510,
+        y,
+        size: 8.5,
+        font: regular,
+        color: dark,
+      }
+    );
+
+    y -= 24;
+  }
+
+  const totalX = 370;
+  let totalY =
+    Math.max(
+      190,
+      y - 20
+    );
+
+  const drawAmount = (
+    label: string,
+    value: string,
+    color = dark,
+    font = regular
+  ) => {
+    page.drawText(
+      label,
+      {
+        x: totalX,
+        y: totalY,
+        size: 9,
+        font,
+        color,
+      }
+    );
+
+    page.drawText(
+      value,
+      {
+        x: 500,
+        y: totalY,
+        size: 9,
+        font,
+        color,
+      }
+    );
+
+    totalY -= 18;
+  };
+
+  drawAmount(
+    "Sous-total",
+    moneyPdf(
+      toNumber(
+        facture.sous_total
+      )
+    )
+  );
+
+  drawAmount(
+    "TPS (5 %)",
+    moneyPdf(
+      toNumber(
+        facture.tps
+      )
+    )
+  );
+
+  drawAmount(
+    "TVQ (9,975 %)",
+    moneyPdf(
+      toNumber(
+        facture.tvq
+      )
+    )
+  );
+
+  if (
+    montantPaye > 0 &&
+    !estPayee
+  ) {
+    drawAmount(
+      "Total",
+      moneyPdf(total),
+      dark,
+      bold
+    );
+
+    drawAmount(
+      "Acompte déjà reçu",
+      `- ${moneyPdf(
+        montantPaye
+      )}`,
+      red,
+      regular
+    );
+  }
+
+  page.drawRectangle({
+    x: totalX - 8,
+    y: totalY - 6,
+    width: 205,
+    height: 32,
+    color: light,
+    borderColor: blue,
+    borderWidth: 1,
+  });
+
+  page.drawText(
+    estPayee
+      ? "TOTAL PAYÉ"
+      : montantPaye > 0
+        ? "SOLDE À PAYER"
+        : "TOTAL À PAYER",
+    {
+      x: totalX,
+      y: totalY + 5,
+      size: 10,
+      font: bold,
+      color: navy,
+    }
+  );
+
+  page.drawText(
+    moneyPdf(
+      estPayee
+        ? total
+        : montantPaye > 0
+          ? solde
+          : total
+    ),
+    {
+      x: 500,
+      y: totalY + 5,
+      size: 11,
+      font: bold,
+      color: navy,
+    }
+  );
+
+  page.drawText(
+    "N° d'inscription TPS : 701807737",
+    {
+      x: 42,
+      y: 42,
+      size: 7.5,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    "N° d'inscription TVQ : 1227932399",
+    {
+      x: 42,
+      y: 29,
+      size: 7.5,
+      font: regular,
+      color: dark,
+    }
+  );
+
+  page.drawText(
+    "Merci de votre confiance !",
+    {
+      x: 425,
+      y: 35,
+      size: 9,
+      font: bold,
+      color: navy,
+    }
+  );
+
+  const bytes =
+    await pdf.save({
+      useObjectStreams: false,
+    });
+
+  return Buffer.from(bytes);
 }
 
 export async function POST(request: Request) {
@@ -202,7 +822,29 @@ export async function POST(request: Request) {
       await supabase
         .from("factures")
         .select(
-          "id, numero_facture, formulaire_id, cq_id, total, montant_paye, statut"
+          `
+            id,
+            numero_facture,
+            formulaire_id,
+            cq_id,
+            client_nom,
+            client_courriel,
+            client_adresse,
+            client_ville,
+            client_province,
+            client_code_postal,
+            description,
+            quantite,
+            prix_unitaire,
+            sous_total,
+            tps,
+            tvq,
+            total,
+            montant_paye,
+            mode_paiement,
+            statut,
+            date_facture
+          `
         )
         .eq(
           "formulaire_id",
@@ -242,6 +884,57 @@ export async function POST(request: Request) {
       Boolean(facture) &&
       facture?.statut !== "paid" &&
       solde > 0;
+
+    let factureAttachment:
+      | {
+          filename: string;
+          content: Buffer;
+        }
+      | null = null;
+
+    if (facture) {
+      const {
+        data: lignesFacture,
+      } =
+        await supabase
+          .from("facture_lignes")
+          .select(
+            "description, quantite, prix_unitaire, montant, ordre"
+          )
+          .eq(
+            "facture_id",
+            facture.id
+          )
+          .order(
+            "ordre",
+            {
+              ascending: true,
+            }
+          )
+          .returns<FactureLigneRow[]>();
+
+      const pdfFacture =
+        await creerFacturePdf(
+          facture,
+          lignesFacture ?? []
+        );
+
+      const nomFacture =
+        (
+          facture.numero_facture ||
+          "facture"
+        ).replace(
+          /[^a-zA-Z0-9_-]/g,
+          "_"
+        );
+
+      factureAttachment = {
+        filename:
+          `${nomFacture}.pdf`,
+        content:
+          pdfFacture,
+      };
+    }
 
     const resendApiKey =
       process.env.RESEND_API_KEY?.trim();
@@ -444,6 +1137,14 @@ export async function POST(request: Request) {
           les documents et poursuivre la signature.
         </p>
 
+        ${
+          factureAttachment
+            ? `<p>
+                Votre facture est jointe à ce courriel en PDF.
+              </p>`
+            : ""
+        }
+
         <p style="margin:24px 0">
           <a
             href="${signingUrl}"
@@ -523,6 +1224,12 @@ export async function POST(request: Request) {
             : "Documents à signer — ComptaNet Québec",
         html,
         text,
+        attachments:
+          factureAttachment
+            ? [
+                factureAttachment,
+              ]
+            : undefined,
         tags: [
           {
             name: "type",
@@ -571,6 +1278,10 @@ export async function POST(request: Request) {
           tax_years: years,
           facture_id:
             facture?.id ?? null,
+          facture_jointe:
+            Boolean(
+              factureAttachment
+            ),
           solde:
             paiementRequis
               ? solde
