@@ -180,9 +180,21 @@ async function mergePdfFiles(
       useObjectStreams: false,
     });
 
+  // pdf-lib retourne un Uint8Array<ArrayBufferLike>.
+  // Blob attend ici un ArrayBuffer standard avec TypeScript 5.6+.
+  // On copie donc les octets dans un vrai ArrayBuffer.
+  const mergedArrayBuffer =
+    new ArrayBuffer(
+      mergedBytes.byteLength
+    );
+
+  new Uint8Array(
+    mergedArrayBuffer
+  ).set(mergedBytes);
+
   const blob =
     new Blob(
-      [mergedBytes],
+      [mergedArrayBuffer],
       {
         type: "application/pdf",
       }
