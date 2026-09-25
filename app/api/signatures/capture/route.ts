@@ -455,7 +455,7 @@ async function stampTP1000TE(
     
     const signatureY =
   taxYear >= 2025
-    ? 185
+    ? 193
     : taxYear === 2024
     ? 175
     : 298;
