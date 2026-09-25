@@ -285,7 +285,7 @@ async function stampT183(
       png,
       {
         x: 40 * sx,
-        y: 113 * sy,
+        y: 140 * sy,
         width: size.width,
         height: size.height,
       }
@@ -442,7 +442,7 @@ async function stampTP1000TE(
     // Les gabarits 2024 et 2025 placent cette ligne plus bas.
     const signatureY =
       taxYear >= 2024
-        ? 95
+        ? 265
         : 298;
 
     page.drawImage(
