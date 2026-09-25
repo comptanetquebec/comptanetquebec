@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import SendSignatureButton from "./SendSignatureButton";
+import DeleteSignatureRequestButton from "./DeleteSignatureRequestButton";
 
 type PageProps = {
   searchParams: Promise<{
@@ -492,12 +493,19 @@ export default async function AdminSignaturesPage({
                       </div>
                     </div>
 
-                    {request.status === "draft" &&
-                      requestDocs.length > 0 && (
-                        <SendSignatureButton
-                          requestId={request.id}
-                        />
-                      )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {request.status === "draft" &&
+                        requestDocs.length > 0 && (
+                          <SendSignatureButton
+                            requestId={request.id}
+                          />
+                        )}
+
+                      <DeleteSignatureRequestButton
+                        requestId={request.id}
+                        signerName={request.signer_name}
+                      />
+                    </div>
                   </div>
 
                   <div className="p-5">
