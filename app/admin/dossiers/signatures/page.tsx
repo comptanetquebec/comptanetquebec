@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
+import SendSignatureButton from "./SendSignatureButton";
 
 type PageProps = {
   searchParams: Promise<{
@@ -470,6 +471,13 @@ export default async function AdminSignaturesPage({
                           : ""}
                       </div>
                     </div>
+
+                    {request.status === "draft" &&
+                      requestDocs.length > 0 && (
+                        <SendSignatureButton
+                          requestId={request.id}
+                        />
+                      )}
                   </div>
 
                   <div className="p-5">
