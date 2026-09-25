@@ -62,6 +62,9 @@ const COPY = {
     subtotal: "Sous-total",
     gst: "TPS (5 %)",
     qst: "TVQ (9,975 %)",
+    invoiceTotal: "Total",
+    depositPaid: "Acompte déjà reçu",
+    balanceDue: "SOLDE À PAYER",
     totalDue: "TOTAL À PAYER",
     payment: "PAIEMENT",
     interac: "Virement Interac",
@@ -87,6 +90,9 @@ const COPY = {
     subtotal: "Subtotal",
     gst: "GST (5%)",
     qst: "QST (9.975%)",
+    invoiceTotal: "Total",
+    depositPaid: "Deposit already paid",
+    balanceDue: "BALANCE DUE",
     totalDue: "TOTAL DUE",
     payment: "PAYMENT",
     interac: "Interac e-Transfer",
@@ -112,6 +118,9 @@ const COPY = {
     subtotal: "Subtotal",
     gst: "GST/TPS (5 %)",
     qst: "QST/TVQ (9,975 %)",
+    invoiceTotal: "Total",
+    depositPaid: "Anticipo ya pagado",
+    balanceDue: "SALDO POR PAGAR",
     totalDue: "TOTAL A PAGAR",
     payment: "PAGO",
     interac: "Transferencia Interac",
@@ -288,6 +297,23 @@ export default async function FacturePage({
   const estPayee =
     facture.statut === "paid";
 
+  const montantPaye = Math.max(
+    0,
+    Number(facture.montant_paye ?? 0)
+  );
+
+  const solde = Math.max(
+    0,
+    Math.round(
+      ((Number(facture.total ?? 0) - montantPaye) +
+        Number.EPSILON) *
+        100
+    ) / 100
+  );
+
+  const aUnAcompte =
+    !estPayee && montantPaye > 0;
+
   const adresseClient = [
     facture.client_adresse,
     facture.client_ville,
@@ -381,6 +407,9 @@ export default async function FacturePage({
 
                 statut:
                   facture.statut,
+
+                montant_paye:
+                  facture.montant_paye,
 
                 mode_paiement:
                   facture.mode_paiement,
@@ -685,15 +714,49 @@ export default async function FacturePage({
 
               </div>
 
+              {aUnAcompte && (
+                <>
+                  <div className="mt-2 flex justify-between border-t border-slate-200 pt-3 text-slate-700">
+                    <span className="font-semibold">
+                      {L.invoiceTotal}
+                    </span>
+
+                    <span className="font-semibold">
+                      {money(
+                        facture.total,
+                        lang
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between py-2 text-red-600">
+                    <span>
+                      {L.depositPaid}
+                    </span>
+
+                    <span className="font-semibold">
+                      - {money(
+                        montantPaye,
+                        lang
+                      )}
+                    </span>
+                  </div>
+                </>
+              )}
+
               <div className="mt-3 flex items-center justify-between border-t-2 border-blue-900 pt-4">
 
                 <span className="font-black text-slate-900">
-                  {L.totalDue}
+                  {aUnAcompte
+                    ? L.balanceDue
+                    : L.totalDue}
                 </span>
 
                 <span className="text-2xl font-black text-blue-800">
                   {money(
-                    facture.total,
+                    aUnAcompte
+                      ? solde
+                      : facture.total,
                     lang
                   )}
                 </span>
