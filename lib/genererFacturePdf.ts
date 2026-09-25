@@ -30,6 +30,7 @@ export type FacturePdf = {
   total: number | null;
 
   statut: string | null;
+  montant_paye?: number | null;
   mode_paiement?: string | null;
   date_facture: string | null;
 
@@ -57,6 +58,9 @@ const COPY = {
     gst: "TPS (5 %)",
     qst: "TVQ (9,975 %)",
 
+    invoiceTotal: "Total",
+    depositPaid: "Acompte déjà reçu",
+    balanceDue: "SOLDE À PAYER",
     totalDue: "TOTAL À PAYER",
     totalPaid: "TOTAL PAYÉ",
 
@@ -107,6 +111,9 @@ const COPY = {
     gst: "GST (5%)",
     qst: "QST (9.975%)",
 
+    invoiceTotal: "Total",
+    depositPaid: "Deposit already paid",
+    balanceDue: "BALANCE DUE",
     totalDue: "TOTAL DUE",
     totalPaid: "TOTAL PAID",
 
@@ -157,6 +164,9 @@ const COPY = {
     gst: "GST/TPS (5 %)",
     qst: "QST/TVQ (9,975 %)",
 
+    invoiceTotal: "Total",
+    depositPaid: "Anticipo ya pagado",
+    balanceDue: "SALDO POR PAGAR",
     totalDue: "TOTAL A PAGAR",
     totalPaid: "TOTAL PAGADO",
 
@@ -609,6 +619,33 @@ export async function genererFacturePdf(
       facture.mode_paiement ??
       ""
     ).toLowerCase();
+
+  const totalFacture =
+    Number(facture.total ?? 0);
+
+  const montantPaye =
+    Math.max(
+      0,
+      Number(
+        facture.montant_paye ?? 0
+      )
+    );
+
+  const solde =
+    Math.max(
+      0,
+      Math.round(
+        (
+          totalFacture -
+          montantPaye +
+          Number.EPSILON
+        ) * 100
+      ) / 100
+    );
+
+  const aUnAcompte =
+    !isPaid &&
+    montantPaye > 0;
 
   const lignes =
     normalizeLines(facture);
@@ -1363,12 +1400,6 @@ doc.addImage(
   function drawTotals(
     tableEndY: number
   ) {
-    /*
-      POSITION FIXE.
-
-      Peu importe qu'il y ait 1, 2, 3, 4 ou 5
-      lignes, ces totaux restent ici.
-    */
     const left = 119;
     const right = 200;
     const y = Math.max(
@@ -1459,13 +1490,94 @@ doc.addImage(
       }
     );
 
+    let totalBoxY: number;
+
+    if (aUnAcompte) {
+      /*
+       * Le total de la facture reste complet.
+       * L'acompte est ensuite soustrait pour
+       * obtenir le vrai solde à payer.
+       */
+      doc.setDrawColor(
+        ...line
+      );
+
+      doc.line(
+        left,
+        y + 26,
+        right,
+        y + 26
+      );
+
+      doc.setTextColor(
+        ...dark
+      );
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(8.6);
+
+      doc.text(
+        L.invoiceTotal,
+        left,
+        y + 31
+      );
+
+      doc.text(
+        money(
+          totalFacture,
+          lang
+        ),
+        right,
+        y + 31,
+        {
+          align: "right",
+        }
+      );
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setTextColor(
+        ...negative
+      );
+
+      doc.text(
+        L.depositPaid,
+        left,
+        y + 39
+      );
+
+      doc.text(
+        `- ${money(
+          montantPaye,
+          lang
+        )}`,
+        right,
+        y + 39,
+        {
+          align: "right",
+        }
+      );
+
+      totalBoxY = Math.max(
+        214,
+        y + 43
+      );
+    } else {
+      totalBoxY = Math.max(
+        201,
+        y + 27
+      );
+    }
+
     doc.setFillColor(
       ...lightBlue
-    );
-
-    const totalBoxY = Math.max(
-      201,
-      y + 27
     );
 
     doc.roundedRect(
@@ -1492,6 +1604,8 @@ doc.addImage(
     doc.text(
       isPaid
         ? L.totalPaid
+        : aUnAcompte
+        ? L.balanceDue
         : L.totalDue,
       120,
       totalBoxY + 9.5
@@ -1501,7 +1615,11 @@ doc.addImage(
 
     doc.text(
       money(
-        facture.total,
+        isPaid
+          ? totalFacture
+          : aUnAcompte
+          ? solde
+          : totalFacture,
         lang
       ),
       194,
@@ -1510,7 +1628,7 @@ doc.addImage(
         align: "right",
       }
     );
-     }
+  }
 
   function paymentTitle() {
     if (
@@ -1721,7 +1839,7 @@ doc.addImage(
 
     doc.line(
       118,
-      228,
+      232,
       118,
       256
     );
@@ -2038,13 +2156,77 @@ doc.addImage(
               220
             );
 
+      let finalBoxY =
+        totalY;
+
+      if (aUnAcompte) {
+        doc.setTextColor(
+          ...dark
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(8.6);
+
+        doc.text(
+          L.invoiceTotal,
+          119,
+          totalY
+        );
+
+        doc.text(
+          money(
+            totalFacture,
+            lang
+          ),
+          200,
+          totalY,
+          {
+            align: "right",
+          }
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setTextColor(
+          ...negative
+        );
+
+        doc.text(
+          L.depositPaid,
+          119,
+          totalY + 8
+        );
+
+        doc.text(
+          `- ${money(
+            montantPaye,
+            lang
+          )}`,
+          200,
+          totalY + 8,
+          {
+            align: "right",
+          }
+        );
+
+        finalBoxY =
+          totalY + 12;
+      }
+
       doc.setFillColor(
         ...lightBlue
       );
 
       doc.roundedRect(
         114,
-        totalY,
+        finalBoxY,
         86,
         15,
         2.5,
@@ -2066,20 +2248,26 @@ doc.addImage(
       doc.text(
         isPaid
           ? L.totalPaid
+          : aUnAcompte
+          ? L.balanceDue
           : L.totalDue,
         120,
-        totalY + 9.5
+        finalBoxY + 9.5
       );
 
       doc.setFontSize(13);
 
       doc.text(
         money(
-          facture.total,
+          isPaid
+            ? totalFacture
+            : aUnAcompte
+            ? solde
+            : totalFacture,
           lang
         ),
         194,
-        totalY + 9.5,
+        finalBoxY + 9.5,
         {
           align: "right",
         }
