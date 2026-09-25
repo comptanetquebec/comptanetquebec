@@ -309,6 +309,25 @@ export default async function AdminSignaturesPage({
     docsByRequest.set(document.signature_request_id, list);
   }
 
+  // Liens temporaires vers les PDF signés dans le bucket privé.
+  // Ils permettent de consulter les formulaires signés directement
+  // depuis l'admin sans rendre le bucket public.
+  const signedUrls = new Map<string, string>();
+
+  for (const document of documents) {
+    if (!document.signed_file_path) {
+      continue;
+    }
+
+    const { data: signedUrlData } = await supabase.storage
+      .from("tax-signatures")
+      .createSignedUrl(document.signed_file_path, 60 * 60);
+
+    if (signedUrlData?.signedUrl) {
+      signedUrls.set(document.id, signedUrlData.signedUrl);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="border-b border-slate-200 bg-white">
@@ -518,6 +537,18 @@ export default async function AdminSignaturesPage({
                                   {formatDateTime(document.signed_at)}
                                 </span>
                               )}
+
+                              {document.status === "signed" &&
+                                signedUrls.get(document.id) && (
+                                  <a
+                                    href={signedUrls.get(document.id)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                                  >
+                                    📄 Voir le PDF signé
+                                  </a>
+                                )}
                             </div>
                           </div>
                         ))}
