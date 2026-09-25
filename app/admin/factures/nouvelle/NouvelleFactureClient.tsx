@@ -25,6 +25,11 @@ type ClientData = {
     prenom?: string;
     nom?: string;
     courriel?: string;
+    adresse?: string;
+    app?: string;
+    ville?: string;
+    province?: string;
+    codePostal?: string;
   };
 };
 
@@ -272,6 +277,44 @@ export default function NouvelleFactureClient({
       if (client?.courriel) {
         setClientCourriel(
           client.courriel.trim().toLowerCase()
+        );
+      }
+
+      /*
+       * Reprendre automatiquement les coordonnées
+       * inscrites dans le formulaire fiscal.
+       */
+      const adresse = (client?.adresse ?? "").trim();
+      const app = (client?.app ?? "").trim();
+
+      if (adresse || app) {
+        setClientAdresse(
+          [
+            adresse,
+            app ? `App. ${app}` : "",
+          ]
+            .filter(Boolean)
+            .join(", ")
+        );
+      }
+
+      if (client?.ville) {
+        setClientVille(
+          client.ville.trim()
+        );
+      }
+
+      if (client?.province) {
+        setClientProvince(
+          client.province.trim()
+        );
+      }
+
+      if (client?.codePostal) {
+        setClientCodePostal(
+          client.codePostal
+            .trim()
+            .toUpperCase()
         );
       }
 
