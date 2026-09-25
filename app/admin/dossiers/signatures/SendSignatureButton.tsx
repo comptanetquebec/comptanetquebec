@@ -5,15 +5,19 @@ import { useRouter } from "next/navigation";
 
 type Props = {
   requestId: string;
+  status: string;
 };
 
 export default function SendSignatureButton({
   requestId,
+  status,
 }: Props) {
   const router = useRouter();
 
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const isResend = status === "sent";
 
   async function send() {
     if (sending) return;
@@ -35,7 +39,9 @@ export default function SendSignatureButton({
         }
       );
 
-      const data = await response.json().catch(() => null);
+      const data = await response
+        .json()
+        .catch(() => null);
 
       if (!response.ok || !data?.ok) {
         throw new Error(
@@ -44,7 +50,12 @@ export default function SendSignatureButton({
         );
       }
 
-      setMessage("✅ Courriel envoyé.");
+      setMessage(
+        isResend
+          ? "✅ Courriel renvoyé."
+          : "✅ Courriel envoyé."
+      );
+
       router.refresh();
     } catch (error) {
       setMessage(
@@ -68,7 +79,11 @@ export default function SendSignatureButton({
         className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {sending
-          ? "Envoi en cours…"
+          ? isResend
+            ? "Renvoi en cours…"
+            : "Envoi en cours…"
+          : isResend
+          ? "📧 Renvoyer la signature"
           : "📧 Envoyer pour signature"}
       </button>
 
@@ -81,7 +96,7 @@ export default function SendSignatureButton({
           }`}
         >
           {message}
- </div>
+        </div>
       )}
     </div>
   );
