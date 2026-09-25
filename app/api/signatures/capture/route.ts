@@ -239,19 +239,98 @@ async function stampT183(
   const height =
     page.getHeight();
 
-  // Coordonnées calibrées sur le T183 2023 fourni :
-  // 576 x 756 pts. Le formulaire 2025 montré suit
-  // le même emplacement de signature.
+  const png =
+    await pdfDoc.embedPng(
+      signaturePng
+    );
+
+  const font =
+    await pdfDoc.embedFont(
+      StandardFonts.Helvetica
+    );
+
+  /*
+   * ImpôtExpert n'exporte pas toutes les années du T183
+   * avec exactement le même gabarit PDF.
+   *
+   * T183 2023 fourni : 576 x 756 pts
+   * T183 2025 testé : format Letter ~612 x 792 pts,
+   * avec la zone de signature nettement plus haute.
+   *
+   * On choisit donc les coordonnées selon le format réel
+   * de la première page au lieu d'utiliser une seule position
+   * pour tous les T183.
+   */
+  const isLetterLayout =
+    width >= 600 &&
+    height >= 780;
+
+  if (isLetterLayout) {
+    const sx =
+      width / 612;
+
+    const sy =
+      height / 792;
+
+    const size =
+      fitImage(
+        png.width,
+        png.height,
+        190 * sx,
+        28 * sy
+      );
+
+    // T183 2025 : signature sur la ligne de la partie F.
+    page.drawImage(
+      png,
+      {
+        x: 40 * sx,
+        y: 113 * sy,
+        width: size.width,
+        height: size.height,
+      }
+    );
+
+    // La date est déjà écrite par le logiciel d'impôt.
+    // On ajoute uniquement HH / MM / SS dans les cases.
+    const values = [
+      {
+        value: parts.hour,
+        x: 449,
+      },
+      {
+        value: parts.minute,
+        x: 476,
+      },
+      {
+        value: parts.second,
+        x: 501,
+      },
+    ];
+
+    for (const item of values) {
+      page.drawText(
+        item.value,
+        {
+          x: item.x * sx,
+          y: 89 * sy,
+          size: 8 * sy,
+          font,
+          color: rgb(0, 0, 0),
+        }
+      );
+    }
+
+    return;
+  }
+
+  // Ancien gabarit, dont le T183 2023 fourni :
+  // 576 x 756 pts.
   const sx =
     width / 576;
 
   const sy =
     height / 756;
-
-  const png =
-    await pdfDoc.embedPng(
-      signaturePng
-    );
 
   const size =
     fitImage(
@@ -270,15 +349,6 @@ async function stampT183(
       height: size.height,
     }
   );
-
-  // Le logiciel d'impôt a déjà inscrit l'année,
-  // le mois et le jour sur le T183 fourni.
-  // On conserve donc la date existante et on ajoute
-  // seulement l'heure exacte de la signature : HH MM SS.
-  const font =
-    await pdfDoc.embedFont(
-      StandardFonts.Helvetica
-    );
 
   const values = [
     {
@@ -311,15 +381,14 @@ async function stampT183(
 
 async function stampTP1000TE(
   pdfDoc: PDFDocument,
-  signaturePng: Uint8Array,
-  parts: ZonedParts
+  signaturePng: Uint8Array
 ) {
   const pages =
     pdfDoc.getPages();
 
-  if (pages.length < 2) {
+  if (pages.length < 1) {
     throw new Error(
-      "Le TP-1000.TE ne contient pas la page de signature."
+      "Le TP-1000.TE ne contient aucune page."
     );
   }
 
@@ -328,23 +397,19 @@ async function stampTP1000TE(
       signaturePng
     );
 
-  const font =
-    await pdfDoc.embedFont(
-      StandardFonts.Helvetica
-    );
-
-  // Le PDF 2023 fourni contient deux exemplaires :
-  // pages 2 et 4. Un PDF ne contenant qu'un seul
-  // exemplaire utilisera seulement la page 2.
+  // Certains logiciels exportent seulement la page 2
+  // du TP-1000.TE : dans ce cas, le PDF ne contient
+  // qu'une seule page et cette page EST la page de signature.
+  //
+  // Un PDF complet contient normalement la page de signature
+  // en page 2. Certains exports contiennent aussi un deuxième
+  // exemplaire de la même page plus loin dans le PDF.
   const indexes =
-    pages.length >= 4
+    pages.length === 1
+      ? [0]
+      : pages.length >= 4
       ? [1, 3]
       : [1];
-
-  const dateText =
-    `${parts.year}-` +
-    `${parts.month}-` +
-    `${parts.day}`;
 
   for (const index of indexes) {
     if (index >= pages.length) {
@@ -368,6 +433,9 @@ async function stampTP1000TE(
         32 * sy
       );
 
+    // Signature seulement.
+    // La date du TP-1000.TE reste celle déjà inscrite
+    // par le logiciel d'impôt; ComptaNet n'y touche pas.
     page.drawImage(
       png,
       {
@@ -377,47 +445,6 @@ async function stampTP1000TE(
         height: size.height,
       }
     );
-
-    // Le TP-1000.TE fourni contient un champ de date
-    // ("date" pour le premier exemplaire et "rep_date"
-    // pour le deuxième). Si le logiciel d'impôt l'a déjà
-    // rempli, on conserve cette date. Si le champ est vide,
-    // ComptaNet inscrit la date du moment de la signature.
-    let existingDate = "";
-
-    try {
-      const form =
-        pdfDoc.getForm();
-
-      const fieldName =
-        index === 1
-          ? "date"
-          : "rep_date";
-
-      const field =
-        form.getTextField(
-          fieldName
-        );
-
-      existingDate =
-        field.getText()?.trim() ||
-        "";
-    } catch {
-      existingDate = "";
-    }
-
-    if (!existingDate) {
-      page.drawText(
-        dateText,
-        {
-          x: 333 * sx,
-          y: 301 * sy,
-          size: 9 * sy,
-          font,
-          color: rgb(0, 0, 0),
-        }
-      );
-    }
   }
 }
 
@@ -456,8 +483,7 @@ async function createSignedPdf(
   ) {
     await stampTP1000TE(
       pdfDoc,
-      signaturePng,
-      parts
+      signaturePng
     );
   } else {
     throw new Error(
