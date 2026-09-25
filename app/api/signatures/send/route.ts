@@ -1414,6 +1414,9 @@ export async function POST(request: Request) {
         rawToken
       )}&lang=fr`;
 
+    const interacUrl =
+      `${paymentUrl}&view=interac`;
+
     const safeName = escapeHtml(
       signatureRequest.signer_name || "Client"
     );
@@ -1479,6 +1482,11 @@ export async function POST(request: Request) {
                 comptanetquebec@gmail.com
               </strong>
               <br>
+              ou au :
+              <strong>
+                581-985-2599
+              </strong>
+              <br>
               Dépôt automatique activé —
               aucune question de sécurité.
               <br>
@@ -1490,10 +1498,28 @@ export async function POST(request: Request) {
 
             <p style="margin:0">
               <a
+                href="${interacUrl}"
+                style="
+                  display:inline-block;
+                  padding:12px 18px;
+                  margin-right:10px;
+                  margin-bottom:10px;
+                  background:#facc15;
+                  color:#111827;
+                  border-radius:10px;
+                  text-decoration:none;
+                  font-weight:700;
+                "
+              >
+                Payer par Interac
+              </a>
+
+              <a
                 href="${paymentUrl}"
                 style="
                   display:inline-block;
                   padding:12px 18px;
+                  margin-bottom:10px;
                   background:#1d4ed8;
                   color:#ffffff;
                   border-radius:10px;
@@ -1595,9 +1621,11 @@ export async function POST(request: Request) {
             `\n\nVirement Interac — recommandé` +
             `\nMontant : ${money(solde)}` +
             `\nEnvoyer à : comptanetquebec@gmail.com` +
+            `\nou au : 581-985-2599` +
             `\nDépôt automatique activé — aucune question de sécurité.` +
             `\nMessage : ${cqId}` +
-            `\n\nPayer par carte : ${paymentUrl}`
+            `\n\nPayer par Interac : ${interacUrl}` +
+            `\nPayer par carte : ${paymentUrl}`
           )
         : "";
 
