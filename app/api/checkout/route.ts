@@ -1,5 +1,6 @@
 // app/api/checkout/route.ts
 
+import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
@@ -14,6 +15,7 @@ type PayMode = "acompte" | "solde";
 type CheckoutBody = {
   fid?: unknown;
   factureId?: unknown;
+  token?: unknown;
   type?: unknown;
   mode?: unknown;
   lang?: unknown;
@@ -28,6 +30,13 @@ type FactureRow = {
   total: number | string | null;
   montant_paye: number | string | null;
   statut: string | null;
+};
+
+type SignatureRequestRow = {
+  id: string;
+  formulaire_id: string | null;
+  status: string;
+  expires_at: string | null;
 };
 
 function normalizeLang(v: unknown): Lang {
@@ -68,19 +77,25 @@ function parseId(v: unknown): string | null {
 }
 
 function safeOrigin(req: Request): string {
-  const fromHeader =
-    req.headers.get("origin");
-
   const fromEnv =
     process.env.NEXT_PUBLIC_SITE_URL;
 
+  const fromHeader =
+    req.headers.get("origin");
+
   const origin = (
-    fromHeader ||
     fromEnv ||
+    fromHeader ||
     ""
   ).trim();
 
   return origin.replace(/\/+$/, "");
+}
+
+function parseToken(v: unknown): string {
+  return typeof v === "string"
+    ? v.trim()
+    : "";
 }
 
 function toMoneyNumber(
@@ -235,6 +250,112 @@ async function loadFacture(
   return data;
 }
 
+async function loadSignatureRequestFromToken(
+  rawToken: string
+): Promise<SignatureRequestRow> {
+  const supabase =
+    makeAdminSupabase();
+
+  const tokenHash =
+    createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+  const { data, error } =
+    await supabase
+      .from("signature_requests")
+      .select(
+        "id, formulaire_id, status, expires_at"
+      )
+      .eq("token_hash", tokenHash)
+      .maybeSingle<SignatureRequestRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error(
+      "Lien de paiement invalide."
+    );
+  }
+
+  if (
+    data.status === "cancelled" ||
+    data.status === "expired"
+  ) {
+    throw new Error(
+      "Ce lien de paiement n’est plus actif."
+    );
+  }
+
+  if (
+    data.expires_at &&
+    new Date(data.expires_at).getTime() <
+      Date.now()
+  ) {
+    await supabase
+      .from("signature_requests")
+      .update({
+        status: "expired",
+      })
+      .eq("id", data.id);
+
+    throw new Error(
+      "Ce lien de paiement a expiré."
+    );
+  }
+
+  if (!data.formulaire_id) {
+    throw new Error(
+      "Cette demande n’est reliée à aucun dossier."
+    );
+  }
+
+  return data;
+}
+
+async function loadLatestFactureForFid(
+  fid: string
+): Promise<FactureRow> {
+  const supabase =
+    makeAdminSupabase();
+
+  const { data, error } =
+    await supabase
+      .from("factures")
+      .select(
+        `
+          id,
+          formulaire_id,
+          cq_id,
+          numero_facture,
+          client_courriel,
+          total,
+          montant_paye,
+          statut
+        `
+      )
+      .eq("formulaire_id", fid)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(1)
+      .maybeSingle<FactureRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error(
+      "Aucune facture reliée à ce dossier."
+    );
+  }
+
+  return data;
+}
+
 export async function POST(
   req: Request
 ) {
@@ -284,6 +405,9 @@ export async function POST(
 
     const factureId =
       parseId(body.factureId);
+
+    const rawToken =
+      parseToken(body.token);
 
     if (!payMode) {
       return NextResponse.json(
@@ -450,11 +574,11 @@ export async function POST(
      *
      * solde = total - montant_paye
      */
-    if (!factureId) {
+    if (!rawToken) {
       return NextResponse.json(
         {
           error:
-            "Missing factureId",
+            "Lien de paiement manquant.",
         },
         {
           status: 400,
@@ -462,20 +586,32 @@ export async function POST(
       );
     }
 
-    const facture =
-      await loadFacture(
-        factureId
+    /*
+     * Le token de signature est aussi la clé
+     * temporaire qui autorise le paiement.
+     * On ne fait confiance ni au fid ni au
+     * montant reçus du navigateur.
+     */
+    const signatureRequest =
+      await loadSignatureRequestFromToken(
+        rawToken
       );
 
-    /*
-     * Si le fid est fourni, on vérifie
-     * que la facture appartient bien
-     * à ce dossier.
-     */
+    const finalFid =
+      signatureRequest.formulaire_id;
+
+    const facture =
+      factureId
+        ? await loadFacture(
+            factureId
+          )
+        : await loadLatestFactureForFid(
+            finalFid
+          );
+
     if (
-      fid &&
-      facture.formulaire_id &&
-      facture.formulaire_id !== fid
+      facture.formulaire_id !==
+      finalFid
     ) {
       return NextResponse.json(
         {
@@ -488,27 +624,9 @@ export async function POST(
       );
     }
 
-    const finalFid =
-      facture.formulaire_id ||
-      fid;
-
-    if (!finalFid) {
-      return NextResponse.json(
-        {
-          error:
-            "La facture n'est reliée à aucun dossier.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
     const cqId =
       facture.cq_id ||
-      (await ensureCqId(
-        finalFid
-      ));
+      finalFid;
 
     const total =
       toMoneyNumber(
@@ -702,6 +820,9 @@ export async function POST(
         solde,
         factureId:
           facture.id,
+        numeroFacture:
+          facture.numero_facture,
+        cqId,
       },
       {
         status: 200,
