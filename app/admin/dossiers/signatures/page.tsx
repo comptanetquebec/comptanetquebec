@@ -67,86 +67,127 @@ type ClientData = {
   };
 };
 
-function asClientData(value: Record<string, unknown> | null): ClientData {
-  if (!value || typeof value !== "object") return {};
+function asClientData(
+  value: Record<string, unknown> | null
+): ClientData {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
   return value as ClientData;
 }
 
-function formatDateTime(value: string | null | undefined) {
-  if (!value) return "—";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
+function formatDateTime(
+  value: string | null | undefined
+) {
+  if (!value) {
     return "—";
   }
 
-  return date.toLocaleString("fr-CA", {
-    timeZone: "America/Toronto",
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "—";
+  }
+
+  return date.toLocaleString(
+    "fr-CA",
+    {
+      timeZone:
+        "America/Toronto",
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
 }
 
-function requestStatusLabel(status: SignatureRequestRow["status"]) {
+function requestStatusLabel(
+  status: SignatureRequestRow["status"]
+) {
   switch (status) {
     case "draft":
       return "Brouillon";
+
     case "sent":
       return "Envoyée";
+
     case "opened":
       return "Ouverte";
+
     case "partially_signed":
       return "Partiellement signée";
+
     case "signed":
       return "Signée";
+
     case "expired":
       return "Expirée";
+
     case "cancelled":
       return "Annulée";
   }
 }
 
-function requestStatusClass(status: SignatureRequestRow["status"]) {
+function requestStatusClass(
+  status: SignatureRequestRow["status"]
+) {
   switch (status) {
     case "signed":
       return "border-emerald-200 bg-emerald-50 text-emerald-700";
+
     case "sent":
     case "opened":
     case "partially_signed":
       return "border-blue-200 bg-blue-50 text-blue-700";
+
     case "expired":
     case "cancelled":
       return "border-red-200 bg-red-50 text-red-700";
+
     default:
       return "border-slate-200 bg-slate-50 text-slate-600";
   }
 }
 
-function documentStatusLabel(status: SignatureDocumentRow["status"]) {
+function documentStatusLabel(
+  status: SignatureDocumentRow["status"]
+) {
   switch (status) {
     case "pending":
       return "À signer";
+
     case "viewed":
       return "Consulté";
+
     case "signed":
       return "Signé";
+
     case "cancelled":
       return "Annulé";
   }
 }
 
-function documentStatusClass(status: SignatureDocumentRow["status"]) {
+function documentStatusClass(
+  status: SignatureDocumentRow["status"]
+) {
   switch (status) {
     case "signed":
       return "border-emerald-200 bg-emerald-50 text-emerald-700";
+
     case "viewed":
       return "border-blue-200 bg-blue-50 text-blue-700";
+
     case "cancelled":
       return "border-red-200 bg-red-50 text-red-700";
+
     default:
       return "border-amber-200 bg-amber-50 text-amber-700";
   }
@@ -155,10 +196,16 @@ function documentStatusClass(status: SignatureDocumentRow["status"]) {
 export default async function AdminSignaturesPage({
   searchParams,
 }: PageProps) {
-  const params = await searchParams;
+  const params =
+    await searchParams;
 
-  const rawFid = params.fid;
-  const fid = Array.isArray(rawFid) ? rawFid[0] : rawFid;
+  const rawFid =
+    params.fid;
+
+  const fid =
+    Array.isArray(rawFid)
+      ? rawFid[0]
+      : rawFid;
 
   if (!fid) {
     return (
@@ -183,11 +230,20 @@ export default async function AdminSignaturesPage({
     );
   }
 
-  const supabase = await supabaseServer();
+  const supabase =
+    await supabaseServer();
 
-  const { data: auth, error: authError } = await supabase.auth.getUser();
+  const {
+    data: auth,
+    error: authError,
+  } =
+    await supabase.auth
+      .getUser();
 
-  if (authError || !auth?.user) {
+  if (
+    authError ||
+    !auth?.user
+  ) {
     redirect(
       `/espace-client?next=${encodeURIComponent(
         `/admin/dossiers/signatures?fid=${fid}`
@@ -195,13 +251,23 @@ export default async function AdminSignaturesPage({
     );
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", auth.user.id)
-    .maybeSingle<ProfileRow>();
+  const {
+    data: profile,
+    error: profileError,
+  } =
+    await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq(
+        "id",
+        auth.user.id
+      )
+      .maybeSingle<ProfileRow>();
 
-  if (profileError || !profile?.is_admin) {
+  if (
+    profileError ||
+    !profile?.is_admin
+  ) {
     return (
       <main className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-5xl rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
@@ -213,11 +279,22 @@ export default async function AdminSignaturesPage({
     );
   }
 
-  const { data: form, error: formError } = await supabase
-    .from("formulaires_fiscaux")
-    .select("id, cq_id, annee, data")
-    .eq("id", fid)
-    .maybeSingle<FormRow>();
+  const {
+    data: form,
+    error: formError,
+  } =
+    await supabase
+      .from(
+        "formulaires_fiscaux"
+      )
+      .select(
+        "id, cq_id, annee, data"
+      )
+      .eq(
+        "id",
+        fid
+      )
+      .maybeSingle<FormRow>();
 
   if (formError) {
     return (
@@ -254,78 +331,180 @@ export default async function AdminSignaturesPage({
     );
   }
 
-  const clientData = asClientData(form.data);
+  const clientData =
+    asClientData(
+      form.data
+    );
 
   const clientName =
     `${clientData.client?.prenom ?? ""} ${
       clientData.client?.nom ?? ""
-    }`.trim() || "Client sans nom";
+    }`.trim() ||
+    "Client sans nom";
 
   const clientEmail =
-    clientData.client?.courriel?.trim() || null;
+    clientData.client
+      ?.courriel
+      ?.trim() ||
+    null;
 
   const taxYear =
-    typeof form.annee === "number"
+    typeof form.annee ===
+    "number"
       ? form.annee
-      : typeof form.annee === "string" &&
-        /^\d{4}$/.test(form.annee.trim())
-      ? Number(form.annee.trim())
+      : typeof form.annee ===
+          "string" &&
+        /^\d{4}$/.test(
+          form.annee.trim()
+        )
+      ? Number(
+          form.annee.trim()
+        )
       : null;
 
-  const { data: requestsData, error: requestsError } = await supabase
-    .from("signature_requests")
-    .select(
-      "id, formulaire_id, signer_name, signer_email, status, sent_at, opened_at, completed_at, created_at"
-    )
-    .eq("formulaire_id", fid)
-    .order("created_at", { ascending: false })
-    .returns<SignatureRequestRow[]>();
-
-  const requests = requestsData ?? [];
-
-  const requestIds = requests.map((request) => request.id);
-
-  let documents: SignatureDocumentRow[] = [];
-  let documentsError: string | null = null;
-
-  if (requestIds.length > 0) {
-    const { data, error } = await supabase
-      .from("signature_documents")
-      .select(
-        "id, signature_request_id, formulaire_id, tax_year, document_type, document_name, original_file_path, signed_file_path, status, viewed_at, signed_at, created_at"
+  const {
+    data: requestsData,
+    error: requestsError,
+  } =
+    await supabase
+      .from(
+        "signature_requests"
       )
-      .in("signature_request_id", requestIds)
-      .order("created_at", { ascending: true })
-      .returns<SignatureDocumentRow[]>();
+      .select(
+        "id, formulaire_id, signer_name, signer_email, status, sent_at, opened_at, completed_at, created_at"
+      )
+      .eq(
+        "formulaire_id",
+        fid
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        }
+      )
+      .returns<
+        SignatureRequestRow[]
+      >();
 
-    documents = data ?? [];
-    documentsError = error?.message ?? null;
+  const requests =
+    requestsData ?? [];
+
+  const requestIds =
+    requests.map(
+      (request) =>
+        request.id
+    );
+
+  let documents:
+    SignatureDocumentRow[] =
+    [];
+
+  let documentsError:
+    string | null =
+    null;
+
+  if (
+    requestIds.length > 0
+  ) {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          "signature_documents"
+        )
+        .select(
+          "id, signature_request_id, formulaire_id, tax_year, document_type, document_name, original_file_path, signed_file_path, status, viewed_at, signed_at, created_at"
+        )
+        .in(
+          "signature_request_id",
+          requestIds
+        )
+        .order(
+          "created_at",
+          {
+            ascending: true,
+          }
+        )
+        .returns<
+          SignatureDocumentRow[]
+        >();
+
+    documents =
+      data ?? [];
+
+    documentsError =
+      error?.message ??
+      null;
   }
 
-  const docsByRequest = new Map<string, SignatureDocumentRow[]>();
+  const docsByRequest =
+    new Map<
+      string,
+      SignatureDocumentRow[]
+    >();
 
-  for (const document of documents) {
-    const list = docsByRequest.get(document.signature_request_id) ?? [];
+  for (
+    const document of
+    documents
+  ) {
+    const list =
+      docsByRequest.get(
+        document
+          .signature_request_id
+      ) ?? [];
+
     list.push(document);
-    docsByRequest.set(document.signature_request_id, list);
+
+    docsByRequest.set(
+      document
+        .signature_request_id,
+      list
+    );
   }
 
   // Liens temporaires vers les PDF signés dans le bucket privé.
   // Ils permettent de consulter les formulaires signés directement
   // depuis l'admin sans rendre le bucket public.
-  const signedUrls = new Map<string, string>();
+  const signedUrls =
+    new Map<
+      string,
+      string
+    >();
 
-  for (const document of documents) {
-    if (!document.signed_file_path) {
+  for (
+    const document of
+    documents
+  ) {
+    if (
+      !document.signed_file_path
+    ) {
       continue;
     }
 
-    const { data: signedUrlData } = await supabase.storage
-      .from("tax-signatures")
-      .createSignedUrl(document.signed_file_path, 60 * 60);
+    const {
+      data: signedUrlData,
+    } =
+      await supabase.storage
+        .from(
+          "tax-signatures"
+        )
+        .createSignedUrl(
+          document
+            .signed_file_path,
+          60 * 60
+        );
 
-    if (signedUrlData?.signedUrl) {
-      signedUrls.set(document.id, signedUrlData.signedUrl);
+    if (
+      signedUrlData
+        ?.signedUrl
+    ) {
+      signedUrls.set(
+        document.id,
+        signedUrlData.signedUrl
+      );
     }
   }
 
@@ -387,11 +566,14 @@ export default async function AdminSignaturesPage({
 
               <div className="mt-3 flex flex-wrap gap-2 text-sm">
                 <span className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold text-slate-700">
-                  {form.cq_id ?? "Sans numéro CQ"}
+                  {form.cq_id ??
+                    "Sans numéro CQ"}
                 </span>
 
                 <span className="rounded-lg bg-blue-50 px-3 py-1.5 font-semibold text-blue-700">
-                  Année {taxYear ?? "—"}
+                  Année{" "}
+                  {taxYear ??
+                    "—"}
                 </span>
 
                 {clientEmail && (
@@ -415,19 +597,28 @@ export default async function AdminSignaturesPage({
 
         {requestsError && (
           <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            Erreur demandes de signature : {requestsError.message}
+            Erreur demandes de signature :{" "}
+            {
+              requestsError.message
+            }
           </div>
         )}
 
         {documentsError && (
           <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            Erreur documents de signature : {documentsError}
+            Erreur documents de signature :{" "}
+            {
+              documentsError
+            }
           </div>
         )}
 
-        {requests.length === 0 ? (
+        {requests.length ===
+        0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-            <div className="text-5xl">✍️</div>
+            <div className="text-5xl">
+              ✍️
+            </div>
 
             <h2 className="mt-4 text-lg font-bold text-slate-900">
               Aucune demande de signature
@@ -449,123 +640,178 @@ export default async function AdminSignaturesPage({
           </div>
         ) : (
           <div className="space-y-5">
-            {requests.map((request) => {
-              const requestDocs =
-                docsByRequest.get(request.id) ?? [];
+            {requests.map(
+              (
+                request
+              ) => {
+                const requestDocs =
+                  docsByRequest.get(
+                    request.id
+                  ) ?? [];
 
-              return (
-                <section
-                  key={request.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                >
-                  <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 md:flex-row md:items-center">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${requestStatusClass(
-                            request.status
-                          )}`}
-                        >
-                          {requestStatusLabel(request.status)}
-                        </span>
-
-                        <span className="text-sm font-semibold text-slate-800">
-                          {request.signer_name}
-                        </span>
-
-                        <span className="text-sm text-slate-500">
-                          {request.signer_email}
-                        </span>
-                      </div>
-
-                      <div className="mt-2 text-xs text-slate-400">
-                        Créée le {formatDateTime(request.created_at)}
-                        {request.sent_at
-                          ? ` · envoyée le ${formatDateTime(
-                              request.sent_at
-                            )}`
-                          : ""}
-                        {request.completed_at
-                          ? ` · complétée le ${formatDateTime(
-                              request.completed_at
-                            )}`
-                          : ""}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      {request.status === "draft" &&
-                        requestDocs.length > 0 && (
-                          <SendSignatureButton
-                            requestId={request.id}
-                          />
-                        )}
-
-                      <DeleteSignatureRequestButton
-                        requestId={request.id}
-                        signerName={request.signer_name}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-5">
-                    {requestDocs.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
-                        Aucun document dans cette demande.
-                      </div>
-                    ) : (
-                      <div className="grid gap-3">
-                        {requestDocs.map((document) => (
-                          <div
-                            key={document.id}
-                            className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"
+                return (
+                  <section
+                    key={
+                      request.id
+                    }
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                  >
+                    <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 md:flex-row md:items-center">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${requestStatusClass(
+                              request.status
+                            )}`}
                           >
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                {document.document_name}
-                              </div>
+                            {requestStatusLabel(
+                              request.status
+                            )}
+                          </span>
 
-                              <div className="mt-1 text-xs text-slate-500">
-                                {document.document_type} · année{" "}
-                                {document.tax_year}
-                              </div>
-                            </div>
+                          <span className="text-sm font-semibold text-slate-800">
+                            {
+                              request.signer_name
+                            }
+                          </span>
 
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${documentStatusClass(
-                                  document.status
-                                )}`}
-                              >
-                                {documentStatusLabel(document.status)}
-                              </span>
+                          <span className="text-sm text-slate-500">
+                            {
+                              request.signer_email
+                            }
+                          </span>
+                        </div>
 
-                              {document.signed_at && (
-                                <span className="text-xs text-slate-500">
-                                  {formatDateTime(document.signed_at)}
-                                </span>
-                              )}
+                        <div className="mt-2 text-xs text-slate-400">
+                          Créée le{" "}
+                          {formatDateTime(
+                            request.created_at
+                          )}
 
-                              {document.status === "signed" &&
-                                signedUrls.get(document.id) && (
-                                  <a
-                                    href={signedUrls.get(document.id)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
-                                  >
-                                    📄 Voir le PDF signé
-                                  </a>
-                                )}
-                            </div>
-                          </div>
-                        ))}
+                          {request.sent_at
+                            ? ` · envoyée le ${formatDateTime(
+                                request.sent_at
+                              )}`
+                            : ""}
+
+                          {request.completed_at
+                            ? ` · complétée le ${formatDateTime(
+                                request.completed_at
+                              )}`
+                            : ""}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </section>
-              );
-            })}
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {(request.status ===
+                          "draft" ||
+                          request.status ===
+                            "sent") &&
+                          requestDocs.length >
+                            0 && (
+                            <SendSignatureButton
+                              requestId={
+                                request.id
+                              }
+                              status={
+                                request.status
+                              }
+                            />
+                          )}
+
+                        <DeleteSignatureRequestButton
+                          requestId={
+                            request.id
+                          }
+                          signerName={
+                            request.signer_name
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      {requestDocs.length ===
+                      0 ? (
+                        <div className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+                          Aucun document dans cette demande.
+                        </div>
+                      ) : (
+                        <div className="grid gap-3">
+                          {requestDocs.map(
+                            (
+                              document
+                            ) => (
+                              <div
+                                key={
+                                  document.id
+                                }
+                                className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"
+                              >
+                                <div>
+                                  <div className="font-semibold text-slate-900">
+                                    {
+                                      document.document_name
+                                    }
+                                  </div>
+
+                                  <div className="mt-1 text-xs text-slate-500">
+                                    {
+                                      document.document_type
+                                    }{" "}
+                                    · année{" "}
+                                    {
+                                      document.tax_year
+                                    }
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span
+                                    className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${documentStatusClass(
+                                      document.status
+                                    )}`}
+                                  >
+                                    {documentStatusLabel(
+                                      document.status
+                                    )}
+                                  </span>
+
+                                  {document.signed_at && (
+                                    <span className="text-xs text-slate-500">
+                                      {formatDateTime(
+                                        document.signed_at
+                                      )}
+                                    </span>
+                                  )}
+
+                                  {document.status ===
+                                    "signed" &&
+                                    signedUrls.get(
+                                      document.id
+                                    ) && (
+                                      <a
+                                        href={signedUrls.get(
+                                          document.id
+                                        )}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                                      >
+                                        📄 Voir le PDF signé
+                                      </a>
+                                    )}
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                );
+              }
+            )}
           </div>
         )}
       </main>
