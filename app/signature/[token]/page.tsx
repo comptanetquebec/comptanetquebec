@@ -2,6 +2,7 @@
 
 import { createHash } from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import SignaturePad from "./SignaturePad";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ type SignatureDocumentRow = {
   document_type: string;
   document_name: string;
   original_file_path: string;
+  signature_image_path: string | null;
   status: string;
 };
 
@@ -125,7 +127,7 @@ export default async function SignaturePage({
     await supabase
       .from("signature_documents")
       .select(
-        "id, tax_year, document_type, document_name, original_file_path, status"
+        "id, tax_year, document_type, document_name, original_file_path, signature_image_path, status"
       )
       .eq(
         "signature_request_id",
@@ -155,9 +157,9 @@ export default async function SignaturePage({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-5 py-8">
+    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-5 sm:py-8">
       <main className="mx-auto max-w-3xl">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <img
             src="/logo-cq.png"
             alt="ComptaNet Québec"
@@ -169,49 +171,68 @@ export default async function SignaturePage({
           </h1>
 
           <p className="mt-2 text-sm text-slate-600">
-            Bonjour {request.signer_name}. Vérifiez les
-            documents ci-dessous avant de poursuivre.
+            Bonjour {request.signer_name}. Consultez chaque
+            document, puis signez directement dans la zone
+            prévue sous le document.
           </p>
 
-          <div className="mt-6 grid gap-3">
+          <div className="mt-6 grid gap-5">
             {rows.map((document) => (
-              <div
+              <section
                 key={document.id}
-                className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"
+                className="rounded-2xl border border-slate-200 p-4 sm:p-5"
               >
-                <div>
-                  <div className="font-bold text-slate-900">
-                    {document.document_name}
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                  <div>
+                    <div className="font-bold text-slate-900">
+                      {document.document_name}
+                    </div>
+
+                    <div className="mt-1 text-xs text-slate-500">
+                      {document.document_type} · année{" "}
+                      {document.tax_year}
+                    </div>
                   </div>
 
-                  <div className="mt-1 text-xs text-slate-500">
-                    {document.document_type} · année{" "}
-                    {document.tax_year}
-                  </div>
+                  {document.signedUrl ? (
+                    <a
+                      href={document.signedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-center text-sm font-bold text-blue-700 hover:bg-blue-100"
+                    >
+                      Voir le PDF
+                    </a>
+                  ) : (
+                    <span className="text-xs font-semibold text-red-600">
+                      PDF indisponible
+                    </span>
+                  )}
                 </div>
 
-                {document.signedUrl ? (
-                  <a
-                    href={document.signedUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-100"
-                  >
-                    Voir le PDF
-                  </a>
+                {document.signature_image_path ? (
+                  <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
+                    ✓ Signature enregistrée pour ce document
+                  </div>
                 ) : (
-                  <span className="text-xs font-semibold text-red-600">
-                    PDF indisponible
-                  </span>
+                  <SignaturePad
+                    token={token}
+                    documentId={document.id}
+                    documentName={
+                      document.document_name
+                    }
+                  />
                 )}
-              </div>
+              </section>
             ))}
           </div>
 
-          <div className="mt-6 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800">
-            La consultation des PDF fonctionne. L’étape
-            suivante ajoutera la zone de signature directement
-            sur cette page.
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            La signature est maintenant capturée de façon
+            tactile sur téléphone/tablette et avec la souris
+            sur ordinateur. L’étape suivante sera de placer
+            automatiquement cette signature au bon endroit
+            dans le PDF signé.
           </div>
         </div>
       </main>
