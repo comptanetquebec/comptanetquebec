@@ -627,10 +627,7 @@ export default function NouvelleSignatureClient({
                     </label>
                   </div>
 
-                  <div className="mt-3 text-xs text-slate-400">
-                    Bloc {index + 1}
-                  </div>
-                </div>
+                 </div>
               ))}
             </div>
           </section>
