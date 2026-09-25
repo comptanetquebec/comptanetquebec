@@ -381,7 +381,8 @@ async function stampT183(
 
 async function stampTP1000TE(
   pdfDoc: PDFDocument,
-  signaturePng: Uint8Array
+  signaturePng: Uint8Array,
+  taxYear: number
 ) {
   const pages =
     pdfDoc.getPages();
@@ -436,11 +437,19 @@ async function stampTP1000TE(
     // Signature seulement.
     // La date du TP-1000.TE reste celle déjà inscrite
     // par le logiciel d'impôt; ComptaNet n'y touche pas.
+    //
+    // Le gabarit 2023 place la ligne de signature plus haut.
+    // Les gabarits 2024 et 2025 placent cette ligne plus bas.
+    const signatureY =
+      taxYear >= 2024
+        ? 205
+        : 298;
+
     page.drawImage(
       png,
       {
         x: 38 * sx,
-        y: 298 * sy,
+        y: signatureY * sy,
         width: size.width,
         height: size.height,
       }
@@ -453,6 +462,7 @@ async function createSignedPdf(
   signaturePng: Uint8Array,
   documentType:
     SignatureDocumentRow["document_type"],
+  taxYear: number,
   signedAt: Date,
   timeZone: string
 ) {
@@ -483,7 +493,8 @@ async function createSignedPdf(
   ) {
     await stampTP1000TE(
       pdfDoc,
-      signaturePng
+      signaturePng,
+      taxYear
     );
   } else {
     throw new Error(
@@ -752,6 +763,7 @@ export async function POST(
           originalBytes,
           signatureBuffer,
           document.document_type,
+          document.tax_year,
           signedAt,
           clientTimeZone
         );
