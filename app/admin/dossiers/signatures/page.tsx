@@ -81,6 +81,7 @@ function formatDateTime(value: string | null | undefined) {
   }
 
   return date.toLocaleString("fr-CA", {
+    timeZone: "America/Toronto",
     year: "numeric",
     month: "short",
     day: "2-digit",
