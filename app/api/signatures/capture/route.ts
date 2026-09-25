@@ -452,12 +452,13 @@ async function stampTP1000TE(
     //
     // Le gabarit 2023 place la ligne de signature plus haut.
     // Les gabarits 2024 et 2025 placent cette ligne plus bas.
+    
     const signatureY =
-      taxYear === 2025
-        ? 185
-        : taxYear === 2024
-        ? 175
-        : 298;
+  taxYear >= 2025
+    ? 185
+    : taxYear === 2024
+    ? 175
+    : 298;
 
     page.drawImage(
       png,
