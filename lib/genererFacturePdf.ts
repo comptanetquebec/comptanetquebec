@@ -543,8 +543,9 @@ function normalizeLines(
 
 export async function genererFacturePdf(
   facture: FacturePdf,
-  lang: Lang = "fr"
-) {
+  lang: Lang = "fr",
+  output: "download" | "base64" = "download"
+): Promise<string | null> {
   const L = COPY[lang];
 
   const doc = new jsPDF({
@@ -2375,7 +2376,23 @@ doc.addImage(
       ) ||
     "facture";
 
+  if (output === "base64") {
+    const dataUri =
+      doc.output("datauristring");
+
+    const commaIndex =
+      dataUri.indexOf(",");
+
+    return commaIndex >= 0
+      ? dataUri.slice(
+          commaIndex + 1
+        )
+      : dataUri;
+  }
+
   doc.save(
     `${numero}.pdf`
   );
+
+  return null;
 }
