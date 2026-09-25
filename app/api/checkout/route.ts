@@ -600,6 +600,18 @@ export async function POST(
     const finalFid =
       signatureRequest.formulaire_id;
 
+    if (!finalFid) {
+      return NextResponse.json(
+        {
+          error:
+            "Cette demande n’est reliée à aucun dossier.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const facture =
       factureId
         ? await loadFacture(
