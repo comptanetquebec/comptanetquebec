@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 type Lang = "fr" | "en" | "es";
@@ -11,6 +12,20 @@ type LigneFacture = {
   description: string;
   quantite: number;
   prixUnitaire: string;
+};
+
+type FormulaireRow = {
+  id: string;
+  cq_id: string | null;
+  data: Record<string, unknown> | null;
+};
+
+type ClientData = {
+  client?: {
+    prenom?: string;
+    nom?: string;
+    courriel?: string;
+  };
 };
 
 const COPY = {
@@ -46,8 +61,12 @@ const COPY = {
     unpaid: "À payer",
     paid: "Payée",
     paymentMethod: "Mode de paiement",
+    depositPaid: "Acompte déjà reçu",
+    balance: "Solde à payer",
+    linkedFile: "Dossier lié",
+    loadingFile: "Chargement du dossier…",
     interac: "Virement Interac",
-    stripe: "Stripe",
+    stripe: "Carte",
     cash: "Comptant",
     other: "Autre",
 
@@ -95,8 +114,12 @@ const COPY = {
     unpaid: "Amount due",
     paid: "Paid",
     paymentMethod: "Payment method",
+    depositPaid: "Deposit already paid",
+    balance: "Balance due",
+    linkedFile: "Linked file",
+    loadingFile: "Loading file…",
     interac: "Interac e-Transfer",
-    stripe: "Stripe",
+    stripe: "Card",
     cash: "Cash",
     other: "Other",
 
@@ -144,8 +167,12 @@ const COPY = {
     unpaid: "Por pagar",
     paid: "Pagada",
     paymentMethod: "Método de pago",
+    depositPaid: "Anticipo ya pagado",
+    balance: "Saldo por pagar",
+    linkedFile: "Expediente vinculado",
+    loadingFile: "Cargando expediente…",
     interac: "Transferencia Interac",
-    stripe: "Stripe",
+    stripe: "Tarjeta",
     cash: "Efectivo",
     other: "Otro",
 
@@ -181,6 +208,11 @@ export default function NouvelleFactureClient({
   lang: Lang;
 }) {
   const L = COPY[lang];
+  const searchParams = useSearchParams();
+  const fid = (searchParams.get("fid") ?? "").trim();
+
+  const [cqId, setCqId] = useState<string | null>(null);
+  const [loadingDossier, setLoadingDossier] = useState(false);
 
   const [clientNom, setClientNom] = useState("");
   const [clientCourriel, setClientCourriel] = useState("");
@@ -195,9 +227,64 @@ export default function NouvelleFactureClient({
 
   const [statut, setStatut] = useState("unpaid");
   const [modePaiement, setModePaiement] = useState("interac");
+  const [montantPaye, setMontantPaye] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fid) return;
+
+    let alive = true;
+
+    async function loadDossier() {
+      setLoadingDossier(true);
+
+      const { data, error } = await supabase
+        .from("formulaires_fiscaux")
+        .select("id, cq_id, data")
+        .eq("id", fid)
+        .maybeSingle<FormulaireRow>();
+
+      if (!alive) return;
+
+      setLoadingDossier(false);
+
+      if (error || !data) {
+        setMessage(
+          error?.message ||
+            "Impossible de charger le dossier client."
+        );
+        return;
+      }
+
+      setCqId(data.cq_id ?? null);
+
+      const client =
+        (data.data as ClientData | null)?.client;
+
+      const nom = `${client?.prenom ?? ""} ${
+        client?.nom ?? ""
+      }`.trim();
+
+      if (nom) setClientNom(nom);
+
+      if (client?.courriel) {
+        setClientCourriel(
+          client.courriel.trim().toLowerCase()
+        );
+      }
+
+      // Acompte fiscal standard. Il reste modifiable.
+      setMontantPaye((current) => current || "100");
+    }
+
+    void loadDossier();
+
+    return () => {
+      alive = false;
+    };
+  }, [fid]);
 
   function prixNombre(value: string) {
     return Number(value.replace(",", ".")) || 0;
@@ -228,6 +315,20 @@ export default function NouvelleFactureClient({
       total,
     };
   }, [lignes]);
+
+  const paiementSaisi = Math.max(
+    0,
+    prixNombre(montantPaye)
+  );
+
+  const paiementApplique = Math.min(
+    paiementSaisi,
+    Math.max(0, montants.total)
+  );
+
+  const solde = roundMoney(
+    Math.max(0, montants.total - paiementApplique)
+  );
 
   function money(value: number) {
     const locale =
@@ -321,7 +422,17 @@ export default function NouvelleFactureClient({
     const dateFacture =
       now.toISOString().slice(0, 10);
 
-    const estPayee = statut === "paid";
+    const estPayee =
+      statut === "paid" ||
+      (montants.total > 0 && solde <= 0.009);
+
+    const montantPayeFinal = estPayee
+      ? montants.total
+      : paiementApplique;
+
+    const statutFinal = estPayee
+      ? "paid"
+      : "unpaid";
 
     /*
       On conserve la première ligne dans
@@ -360,8 +471,8 @@ export default function NouvelleFactureClient({
             .trim()
             .toUpperCase() || null,
 
-        formulaire_id: null,
-        cq_id: null,
+        formulaire_id: fid || null,
+        cq_id: cqId,
 
         description:
           premiereLigne.description.trim(),
@@ -379,13 +490,15 @@ export default function NouvelleFactureClient({
         tvq: montants.tvq,
         total: montants.total,
 
-        statut,
+        statut: statutFinal,
 
         montant_paye:
-          estPayee ? montants.total : 0,
+          montantPayeFinal,
 
         mode_paiement:
-          estPayee ? modePaiement : null,
+          montantPayeFinal > 0
+            ? modePaiement
+            : null,
 
         date_facture: dateFacture,
 
@@ -477,6 +590,14 @@ export default function NouvelleFactureClient({
           <p className="mt-1 text-slate-500">
             {L.subtitle}
           </p>
+
+          {fid && (
+            <div className="mt-3 inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">
+              {loadingDossier
+                ? L.loadingFile
+                : `${L.linkedFile}: ${cqId ?? fid}`}
+            </div>
+          )}
         </div>
 
         {/* CLIENT */}
@@ -696,6 +817,20 @@ export default function NouvelleFactureClient({
                 </span>
               </div>
             </div>
+
+            {paiementApplique > 0 && (
+              <MoneyLine
+                label={L.depositPaid}
+                value={`- ${money(paiementApplique)}`}
+              />
+            )}
+
+            <div className="border-t border-slate-200 pt-3">
+              <MoneyLine
+                label={L.balance}
+                value={money(solde)}
+              />
+            </div>
           </div>
         </section>
 
@@ -705,8 +840,24 @@ export default function NouvelleFactureClient({
             {L.payment}
           </h2>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* STATUT */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
+                {L.depositPaid}
+              </label>
+
+              <input
+                type="text"
+                inputMode="decimal"
+                value={montantPaye}
+                placeholder="100.00"
+                onChange={(e) =>
+                  setMontantPaye(e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 px-4 py-3"
+              />
+            </div>
+
             <div>
               <label className="mb-1 block text-sm font-semibold text-slate-700">
                 {L.status}
@@ -729,8 +880,7 @@ export default function NouvelleFactureClient({
               </select>
             </div>
 
-            {/* MODE DE PAIEMENT */}
-            {statut === "paid" && (
+            {(paiementApplique > 0 || statut === "paid") && (
               <div>
                 <label className="mb-1 block text-sm font-semibold text-slate-700">
                   {L.paymentMethod}
@@ -739,9 +889,7 @@ export default function NouvelleFactureClient({
                 <select
                   value={modePaiement}
                   onChange={(e) =>
-                    setModePaiement(
-                      e.target.value
-                    )
+                    setModePaiement(e.target.value)
                   }
                   className="w-full rounded-xl border border-slate-300 px-4 py-3"
                 >
@@ -763,6 +911,17 @@ export default function NouvelleFactureClient({
                 </select>
               </div>
             )}
+          </div>
+
+          <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <span className="font-semibold text-slate-700">
+                {L.balance}
+              </span>
+              <span className="text-xl font-bold text-blue-700">
+                {money(solde)}
+              </span>
+            </div>
           </div>
         </section>
 
