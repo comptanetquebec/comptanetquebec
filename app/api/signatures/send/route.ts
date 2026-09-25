@@ -1,6 +1,9 @@
 // app/api/signatures/send/route.ts
 
-import { createHash, randomBytes } from "crypto";
+import {
+  createHash,
+  randomBytes,
+} from "crypto";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -47,9 +50,14 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const body = await request.json().catch(() => null);
+    const body =
+      await request
+        .json()
+        .catch(() => null);
 
     const requestId =
       typeof body?.requestId === "string"
@@ -59,27 +67,41 @@ export async function POST(request: Request) {
     if (!requestId) {
       return json(400, {
         ok: false,
-        error: "Demande de signature manquante.",
+        error:
+          "Demande de signature manquante.",
       });
     }
 
-    const supabase = await supabaseServer();
+    const supabase =
+      await supabaseServer();
 
-    const { data: auth, error: authError } =
+    const {
+      data: auth,
+      error: authError,
+    } =
       await supabase.auth.getUser();
 
-    if (authError || !auth?.user) {
+    if (
+      authError ||
+      !auth?.user
+    ) {
       return json(401, {
         ok: false,
         error: "Non connecté.",
       });
     }
 
-    const { data: profile, error: profileError } =
+    const {
+      data: profile,
+      error: profileError,
+    } =
       await supabase
         .from("profiles")
         .select("is_admin")
-        .eq("id", auth.user.id)
+        .eq(
+          "id",
+          auth.user.id
+        )
         .maybeSingle<ProfileRow>();
 
     if (
@@ -92,13 +114,19 @@ export async function POST(request: Request) {
       });
     }
 
-    const { data: signatureRequest, error: requestError } =
+    const {
+      data: signatureRequest,
+      error: requestError,
+    } =
       await supabase
         .from("signature_requests")
         .select(
           "id, signer_name, signer_email, status"
         )
-        .eq("id", requestId)
+        .eq(
+          "id",
+          requestId
+        )
         .maybeSingle<RequestRow>();
 
     if (
@@ -107,17 +135,28 @@ export async function POST(request: Request) {
     ) {
       return json(404, {
         ok: false,
-        error: "Demande de signature introuvable.",
+        error:
+          "Demande de signature introuvable.",
       });
     }
 
-    if (signatureRequest.status !== "draft") {
+    // Nouvelle demande OU renvoi.
+    if (
+      signatureRequest.status !==
+        "draft" &&
+      signatureRequest.status !==
+        "sent"
+    ) {
       return json(400, {
         ok: false,
         error:
-          "Cette demande n’est plus en brouillon.",
+          "Cette demande ne peut pas être envoyée ou renvoyée.",
       });
     }
+
+    const isResend =
+      signatureRequest.status ===
+      "sent";
 
     const email =
       signatureRequest.signer_email
@@ -125,19 +164,32 @@ export async function POST(request: Request) {
         .toLowerCase();
 
     if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email
+      )
     ) {
       return json(400, {
         ok: false,
-        error: "Courriel du signataire invalide.",
+        error:
+          "Courriel du signataire invalide.",
       });
     }
 
-    const { data: documents, error: docsError } =
+    const {
+      data: documents,
+      error: docsError,
+    } =
       await supabase
-        .from("signature_documents")
-        .select("tax_year, document_type")
-        .eq("signature_request_id", requestId)
+        .from(
+          "signature_documents"
+        )
+        .select(
+          "tax_year, document_type"
+        )
+        .eq(
+          "signature_request_id",
+          requestId
+        )
         .returns<DocumentRow[]>();
 
     if (docsError) {
@@ -147,7 +199,10 @@ export async function POST(request: Request) {
       });
     }
 
-    if (!documents || documents.length === 0) {
+    if (
+      !documents ||
+      documents.length === 0
+    ) {
       return json(400, {
         ok: false,
         error:
@@ -156,7 +211,9 @@ export async function POST(request: Request) {
     }
 
     const resendApiKey =
-      process.env.RESEND_API_KEY?.trim();
+      process.env
+        .RESEND_API_KEY
+        ?.trim();
 
     if (!resendApiKey) {
       return json(500, {
@@ -167,42 +224,60 @@ export async function POST(request: Request) {
     }
 
     const siteUrl = (
-      process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+      process.env
+        .NEXT_PUBLIC_SITE_URL
+        ?.trim() ||
       "https://comptanetquebec.com"
     ).replace(/\/$/, "");
 
     const fromEmail =
-      process.env.FROM_EMAIL?.trim() ||
+      process.env
+        .FROM_EMAIL
+        ?.trim() ||
       "ComptaNet Québec <info@comptanetquebec.com>";
 
     const replyTo =
-      process.env.RESEND_REPLY_TO?.trim() ||
+      process.env
+        .RESEND_REPLY_TO
+        ?.trim() ||
       undefined;
 
+    // Nouveau lien à chaque envoi
+    // ou renvoi.
     const rawToken =
-      randomBytes(32).toString("base64url");
+      randomBytes(32)
+        .toString("base64url");
 
-    const tokenHash = createHash("sha256")
-      .update(rawToken)
-      .digest("hex");
+    const tokenHash =
+      createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
 
-    const expiresAt = new Date(
-      Date.now() +
-        LINK_VALID_DAYS *
-          24 *
-          60 *
-          60 *
-          1000
-    ).toISOString();
+    const expiresAt =
+      new Date(
+        Date.now() +
+          LINK_VALID_DAYS *
+            24 *
+            60 *
+            60 *
+            1000
+      ).toISOString();
 
-    const { error: tokenError } =
+    const {
+      error: tokenError,
+    } =
       await supabase
-        .from("signature_requests")
+        .from(
+          "signature_requests"
+        )
         .update({
           token_hash: tokenHash,
           expires_at: expiresAt,
         })
-        .eq("id", requestId);
+        .eq(
+          "id",
+          requestId
+        );
 
     if (tokenError) {
       return json(400, {
@@ -214,10 +289,19 @@ export async function POST(request: Request) {
     const years = [
       ...new Set(
         documents
-          .map((document) => Number(document.tax_year))
-          .filter(Number.isFinite)
+          .map(
+            (document) =>
+              Number(
+                document.tax_year
+              )
+          )
+          .filter(
+            Number.isFinite
+          )
       ),
-    ].sort((a, b) => a - b);
+    ].sort(
+      (a, b) => a - b
+    );
 
     const yearsText =
       years.length > 0
@@ -227,9 +311,12 @@ export async function POST(request: Request) {
     const signingUrl =
       `${siteUrl}/signature/${rawToken}`;
 
-    const safeName = escapeHtml(
-      signatureRequest.signer_name || "Client"
-    );
+    const safeName =
+      escapeHtml(
+        signatureRequest
+          .signer_name ||
+          "Client"
+      );
 
     const html = `
       <div
@@ -245,7 +332,20 @@ export async function POST(request: Request) {
           ComptaNet Québec
         </h2>
 
-        <p>Bonjour ${safeName},</p>
+        <p>
+          Bonjour ${safeName},
+        </p>
+
+        ${
+          isResend
+            ? `
+              <p>
+                Ceci est un rappel concernant vos
+                documents fiscaux à signer.
+              </p>
+            `
+            : ""
+        }
 
         <p>
           Des documents fiscaux sont prêts pour votre
@@ -278,43 +378,76 @@ export async function POST(request: Request) {
           </a>
         </p>
 
-        <p style="font-size:13px;color:#64748b">
+        <p
+          style="
+            font-size:13px;
+            color:#64748b;
+          "
+        >
           Ce lien est personnel et expire dans
-          ${LINK_VALID_DAYS} jours. Ne le transférez pas.
+          ${LINK_VALID_DAYS} jours.
+          Ne le transférez pas.
         </p>
 
         <p>
           Merci,<br>
-          <strong>ComptaNet Québec</strong>
+          <strong>
+            ComptaNet Québec
+          </strong>
         </p>
       </div>
     `;
 
     const text =
       `Bonjour ${signatureRequest.signer_name},\n\n` +
+      (
+        isResend
+          ? `Ceci est un rappel concernant vos documents fiscaux à signer.\n\n`
+          : ""
+      ) +
       `Des documents fiscaux sont prêts pour votre signature` +
-      (yearsText
-        ? ` pour l’année ou les années ${yearsText}`
-        : "") +
+      (
+        yearsText
+          ? ` pour l’année ou les années ${yearsText}`
+          : ""
+      ) +
       `.\n\nOuvrez ce lien : ${signingUrl}\n\n` +
       `Ce lien expire dans ${LINK_VALID_DAYS} jours.\n\n` +
       `ComptaNet Québec`;
 
-    const resend = new Resend(resendApiKey);
+    const subjectYears =
+      yearsText
+        ? ` — ${yearsText}`
+        : "";
 
-    const { data: emailData, error: emailError } =
+    const subject =
+      isResend
+        ? `Rappel — Documents à signer${subjectYears} — ComptaNet Québec`
+        : `Documents à signer${subjectYears} — ComptaNet Québec`;
+
+    const resend =
+      new Resend(
+        resendApiKey
+      );
+
+    const {
+      data: emailData,
+      error: emailError,
+    } =
       await resend.emails.send({
         from: fromEmail,
         to: email,
         replyTo,
-        subject:
-          "Documents à signer — ComptaNet Québec",
+        subject,
         html,
         text,
         tags: [
           {
             name: "type",
-            value: "signature",
+            value:
+              isResend
+                ? "signature-resend"
+                : "signature",
           },
         ],
       });
@@ -329,40 +462,63 @@ export async function POST(request: Request) {
     }
 
     const sentAt =
-      new Date().toISOString();
+      new Date()
+        .toISOString();
 
-    const { error: updateError } =
+    const {
+      error: updateError,
+    } =
       await supabase
-        .from("signature_requests")
+        .from(
+          "signature_requests"
+        )
         .update({
           status: "sent",
           sent_at: sentAt,
         })
-        .eq("id", requestId);
+        .eq(
+          "id",
+          requestId
+        );
 
     if (updateError) {
       return json(400, {
         ok: false,
-        error: updateError.message,
+        error:
+          updateError.message,
       });
     }
 
     await supabase
-      .from("signature_events")
+      .from(
+        "signature_events"
+      )
       .insert({
-        signature_request_id: requestId,
-        signature_document_id: null,
-        event_type: "email_sent",
+        signature_request_id:
+          requestId,
+        signature_document_id:
+          null,
+        event_type:
+          isResend
+            ? "email_resent"
+            : "email_sent",
         metadata: {
-          email_id: emailData?.id ?? null,
-          expires_at: expiresAt,
-          tax_years: years,
+          email_id:
+            emailData?.id ??
+            null,
+          expires_at:
+            expiresAt,
+          tax_years:
+            years,
+          resend:
+            isResend,
         },
       });
 
     return json(200, {
       ok: true,
       sentTo: email,
+      resent: isResend,
     });
   } catch (error) {
     return json(500, {
