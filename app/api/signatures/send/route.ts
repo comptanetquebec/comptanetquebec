@@ -622,6 +622,13 @@ async function creerFacturePdf(
     );
   }
 
+  /*
+   * Laisse un espace sous la dernière ligne des totaux
+   * pour que le cadre du solde ne recouvre pas
+   * "Acompte déjà reçu".
+   */
+  totalY -= 18;
+
   page.drawRectangle({
     x: totalX - 8,
     y: totalY - 6,
