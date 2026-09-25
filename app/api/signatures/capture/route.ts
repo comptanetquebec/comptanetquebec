@@ -220,7 +220,8 @@ function fitImage(
 async function stampT183(
   pdfDoc: PDFDocument,
   signaturePng: Uint8Array,
-  parts: ZonedParts
+  parts: ZonedParts,
+  taxYear: number
 ) {
   const pages =
     pdfDoc.getPages();
@@ -280,12 +281,18 @@ async function stampT183(
         28 * sy
       );
 
-    // T183 2025 : signature sur la ligne de la partie F.
+    // T183 : les gabarits 2024 et 2025 n'ont pas
+    // exactement la même hauteur de ligne de signature.
+    const signatureY =
+      taxYear >= 2025
+        ? 155
+        : 113;
+
     page.drawImage(
       png,
       {
         x: 40 * sx,
-        y: 140 * sy,
+        y: signatureY * sy,
         width: size.width,
         height: size.height,
       }
@@ -442,7 +449,7 @@ async function stampTP1000TE(
     // Les gabarits 2024 et 2025 placent cette ligne plus bas.
     const signatureY =
       taxYear >= 2024
-        ? 265
+        ? 175
         : 298;
 
     page.drawImage(
@@ -486,7 +493,8 @@ async function createSignedPdf(
     await stampT183(
       pdfDoc,
       signaturePng,
-      parts
+      parts,
+      taxYear
     );
   } else if (
     documentType === "TP1000TE"
