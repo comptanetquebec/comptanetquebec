@@ -712,6 +712,334 @@ async function creerFacturePdf(
   return Buffer.from(bytes);
 }
 
+export async function GET(request: Request) {
+  try {
+    const url =
+      new URL(request.url);
+
+    const requestId =
+      (
+        url.searchParams.get(
+          "requestId"
+        ) || ""
+      ).trim();
+
+    if (!requestId) {
+      return json(400, {
+        ok: false,
+        error:
+          "Demande de signature manquante.",
+      });
+    }
+
+    const supabase =
+      await supabaseServer();
+
+    const {
+      data: auth,
+      error: authError,
+    } =
+      await supabase.auth.getUser();
+
+    if (
+      authError ||
+      !auth?.user
+    ) {
+      return json(401, {
+        ok: false,
+        error:
+          "Non connecté.",
+      });
+    }
+
+    const {
+      data: profile,
+      error: profileError,
+    } =
+      await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq(
+          "id",
+          auth.user.id
+        )
+        .maybeSingle<ProfileRow>();
+
+    if (
+      profileError ||
+      !profile?.is_admin
+    ) {
+      return json(403, {
+        ok: false,
+        error:
+          "Accès refusé.",
+      });
+    }
+
+    const {
+      data: signatureRequest,
+      error: requestError,
+    } =
+      await supabase
+        .from(
+          "signature_requests"
+        )
+        .select(
+          "id, formulaire_id, signer_name, signer_email, status"
+        )
+        .eq(
+          "id",
+          requestId
+        )
+        .maybeSingle<RequestRow>();
+
+    if (
+      requestError ||
+      !signatureRequest
+    ) {
+      return json(404, {
+        ok: false,
+        error:
+          "Demande de signature introuvable.",
+      });
+    }
+
+    if (
+      signatureRequest.status !==
+        "draft" &&
+      signatureRequest.status !==
+        "sent"
+    ) {
+      return json(400, {
+        ok: false,
+        error:
+          "Cette demande ne peut plus être envoyée.",
+      });
+    }
+
+    const {
+      data: facture,
+      error: factureError,
+    } =
+      await supabase
+        .from("factures")
+        .select(
+          `
+            id,
+            numero_facture,
+            formulaire_id,
+            cq_id,
+            client_nom,
+            client_courriel,
+            client_adresse,
+            client_ville,
+            client_province,
+            client_code_postal,
+            description,
+            quantite,
+            prix_unitaire,
+            sous_total,
+            tps,
+            tvq,
+            total,
+            montant_paye,
+            mode_paiement,
+            statut,
+            date_facture
+          `
+        )
+        .eq(
+          "formulaire_id",
+          signatureRequest
+            .formulaire_id
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        )
+        .limit(1)
+        .maybeSingle<FactureRow>();
+
+    if (factureError) {
+      return json(400, {
+        ok: false,
+        error:
+          factureError.message,
+      });
+    }
+
+    if (!facture) {
+      return json(200, {
+        ok: true,
+        facture: null,
+      });
+    }
+
+    const {
+      data: lignesFacture,
+      error: lignesError,
+    } =
+      await supabase
+        .from(
+          "facture_lignes"
+        )
+        .select(
+          "description, quantite, prix_unitaire, montant, ordre"
+        )
+        .eq(
+          "facture_id",
+          facture.id
+        )
+        .order(
+          "ordre",
+          {
+            ascending: true,
+          }
+        )
+        .returns<
+          FactureLigneRow[]
+        >();
+
+    if (lignesError) {
+      return json(400, {
+        ok: false,
+        error:
+          lignesError.message,
+      });
+    }
+
+    const lignes =
+      lignesFacture &&
+      lignesFacture.length > 0
+        ? lignesFacture.map(
+            (ligne) => ({
+              description:
+                ligne.description ??
+                "",
+              quantite:
+                toNumber(
+                  ligne.quantite
+                ) || 1,
+              prix_unitaire:
+                toNumber(
+                  ligne
+                    .prix_unitaire
+                ),
+              montant:
+                toNumber(
+                  ligne.montant
+                ),
+            })
+          )
+        : [
+            {
+              description:
+                facture.description ??
+                "",
+              quantite:
+                toNumber(
+                  facture.quantite
+                ) || 1,
+              prix_unitaire:
+                toNumber(
+                  facture
+                    .prix_unitaire
+                ),
+              montant:
+                toNumber(
+                  facture
+                    .sous_total
+                ),
+            },
+          ];
+
+    return json(200, {
+      ok: true,
+      facture: {
+        numero_facture:
+          facture
+            .numero_facture,
+        cq_id:
+          facture.cq_id,
+
+        client_nom:
+          facture.client_nom ??
+          "",
+        client_courriel:
+          facture
+            .client_courriel,
+        client_adresse:
+          facture
+            .client_adresse,
+        client_ville:
+          facture.client_ville,
+        client_province:
+          facture
+            .client_province,
+        client_code_postal:
+          facture
+            .client_code_postal,
+
+        description:
+          facture.description,
+        quantite:
+          toNumber(
+            facture.quantite
+          ),
+        prix_unitaire:
+          toNumber(
+            facture
+              .prix_unitaire
+          ),
+
+        sous_total:
+          toNumber(
+            facture
+              .sous_total
+          ),
+        tps:
+          toNumber(
+            facture.tps
+          ),
+        tvq:
+          toNumber(
+            facture.tvq
+          ),
+        total:
+          toNumber(
+            facture.total
+          ),
+
+        statut:
+          facture.statut,
+        montant_paye:
+          toNumber(
+            facture
+              .montant_paye
+          ),
+        mode_paiement:
+          facture
+            .mode_paiement,
+        date_facture:
+          facture
+            .date_facture,
+
+        lignes,
+      },
+    });
+  } catch (error) {
+    return json(500, {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Erreur serveur.",
+    });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
@@ -719,6 +1047,16 @@ export async function POST(request: Request) {
     const requestId =
       typeof body?.requestId === "string"
         ? body.requestId.trim()
+        : "";
+
+    const facturePdfBase64 =
+      typeof body?.facturePdfBase64 === "string"
+        ? body.facturePdfBase64.trim()
+        : "";
+
+    const facturePdfName =
+      typeof body?.facturePdfName === "string"
+        ? body.facturePdfName.trim()
         : "";
 
     if (!requestId) {
@@ -776,11 +1114,19 @@ export async function POST(request: Request) {
       });
     }
 
-    if (signatureRequest.status !== "draft") {
+    const isResend =
+      signatureRequest.status ===
+      "sent";
+
+    if (
+      signatureRequest.status !==
+        "draft" &&
+      !isResend
+    ) {
       return json(400, {
         ok: false,
         error:
-          "Cette demande n’est plus en brouillon.",
+          "Cette demande ne peut plus être envoyée.",
       });
     }
 
@@ -899,7 +1245,55 @@ export async function POST(request: Request) {
         }
       | null = null;
 
-    if (facture) {
+    if (
+      facturePdfBase64.length >
+      12_000_000
+    ) {
+      return json(400, {
+        ok: false,
+        error:
+          "La facture PDF est trop volumineuse.",
+      });
+    }
+
+    if (
+      facture &&
+      facturePdfBase64
+    ) {
+      const nomFacture =
+        (
+          facturePdfName ||
+          facture.numero_facture ||
+          "facture"
+        )
+          .replace(
+            /[^a-zA-Z0-9._-]/g,
+            "_"
+          )
+          .replace(
+            /_+/g,
+            "_"
+          );
+
+      factureAttachment = {
+        filename:
+          nomFacture
+            .toLowerCase()
+            .endsWith(".pdf")
+            ? nomFacture
+            : `${nomFacture}.pdf`,
+        content:
+          Buffer.from(
+            facturePdfBase64,
+            "base64"
+          ),
+      };
+    } else if (facture) {
+      /*
+       * Secours : on garde ton ancien générateur serveur.
+       * Normalement le nouveau bouton envoie maintenant
+       * le PDF original généré par @/lib/genererFacturePdf.
+       */
       const {
         data: lignesFacture,
       } =
@@ -1289,6 +1683,8 @@ export async function POST(request: Request) {
             Boolean(
               factureAttachment
             ),
+          renvoi:
+            isResend,
           solde:
             paiementRequis
               ? solde
