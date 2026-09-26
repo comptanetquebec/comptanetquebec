@@ -40,6 +40,9 @@ type YearFilter =
   | "2026"
   | "2025"
   | "2024"
+  | "2023"
+  | "2022"
+  | "2021"
   | "all";
 
 type SortKey =
@@ -317,7 +320,7 @@ export default function AdminDossiersClient({
     setYearFilter,
   ] =
     useState<YearFilter>(
-      "2026"
+      "all"
     );
 
   const [
@@ -708,7 +711,7 @@ export default function AdminDossiersClient({
     );
 
     setYearFilter(
-      "2026"
+      "all"
     );
   }
 
@@ -823,28 +826,15 @@ export default function AdminDossiersClient({
               Année d’imposition :
             </span>
 
-            {[
-              [
-                "2026",
-                "2026",
-              ],
-              [
-                "2025",
-                "2025",
-              ],
-              [
-                "2024",
-                "2024",
-              ],
-              [
-                "all",
-                "Toutes",
-              ],
-            ].map(
-              ([
-                key,
-                label,
-              ]) => (
+           {[
+  ["2026", "2026"],
+  ["2025", "2025"],
+  ["2024", "2024"],
+  ["2023", "2023"],
+  ["2022", "2022"],
+  ["2021", "2021"],
+  ["all", "Toutes"],
+].map(([key, label]) => (
                 <button
                   key={key}
                   type="button"
