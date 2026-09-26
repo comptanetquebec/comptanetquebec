@@ -700,8 +700,6 @@ function DepotDocumentsT2Inner({
           step={2}
           lang={lang}
           flow="t2"
-          fid={fid}
-          type="t2"
         />
 
         {/* TITRE */}
