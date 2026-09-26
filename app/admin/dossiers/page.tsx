@@ -31,12 +31,30 @@ type StatusRow = {
 };
 
 type ClientData = {
+  /*
+   * T1 / formulaires particuliers
+   */
   client?: {
     prenom?: string;
     nom?: string;
     courriel?: string;
     tel?: string;
     telCell?: string;
+  };
+
+  /*
+   * T2 / société
+   */
+  t2?: {
+    anneeImposition?: string | number;
+
+    companyName?: string;
+    craNumber?: string;
+    neq?: string;
+
+    contactName?: string;
+    contactPhone?: string;
+    contactEmail?: string;
   };
 
   /*
@@ -89,6 +107,14 @@ function parseTaxYear(value: unknown): number | null {
   return null;
 }
 
+function isT2Form(form: FormRow): boolean {
+  return (
+    (form.form_type ?? "")
+      .trim()
+      .toLowerCase() === "t2"
+  );
+}
+
 function resolveTaxYear(
   form: FormRow,
   data: ClientData | null
@@ -104,13 +130,16 @@ function resolveTaxYear(
   }
 
   /*
-   * Repli pour les anciens dossiers si l'année
-   * existe seulement dans le JSON.
+   * Repli pour les anciens dossiers ou T2
+   * si l'année existe seulement dans le JSON.
    */
   const candidates: unknown[] = [
     data?.questionsGenerales?.anneeImposition,
     data?.questionsGenerales?.annee,
     data?.questionsGenerales?.taxYear,
+
+    data?.t2?.anneeImposition,
+
     data?.anneeImposition,
     data?.annee,
     data?.taxYear,
@@ -347,21 +376,64 @@ export default async function AdminDossiersPage() {
       const data =
         form.data as ClientData | null;
 
-      /* ---------- Client ---------- */
+      /* =====================================================
+         CLIENT
+         
+         T1 / TA :
+         conserve exactement l'ancienne lecture data.client
+         
+         T2 :
+         utilise data.t2
+      ===================================================== */
 
-      const clientName = `${
+      const t2 = isT2Form(form);
+
+      const t1ClientName = `${
         data?.client?.prenom ?? ""
       } ${
         data?.client?.nom ?? ""
       }`.trim();
 
-      const clientEmail =
-        data?.client?.courriel ?? null;
+      let clientName: string | null;
+      let clientEmail: string | null;
+      let clientPhone: string | null;
 
-      const clientPhone =
-        data?.client?.telCell ||
-        data?.client?.tel ||
-        null;
+      if (t2) {
+        /*
+         * Pour une société, le nom principal affiché
+         * dans la liste est le nom légal de l'entreprise.
+         *
+         * Si jamais il manque, on utilise le nom
+         * de la personne responsable.
+         */
+        clientName =
+          data?.t2?.companyName?.trim() ||
+          data?.t2?.contactName?.trim() ||
+          null;
+
+        clientEmail =
+          data?.t2?.contactEmail?.trim() ||
+          null;
+
+        clientPhone =
+          data?.t2?.contactPhone?.trim() ||
+          null;
+      } else {
+        /*
+         * T1 / TA :
+         * fonctionnement existant conservé.
+         */
+        clientName =
+          t1ClientName || null;
+
+        clientEmail =
+          data?.client?.courriel ?? null;
+
+        clientPhone =
+          data?.client?.telCell ||
+          data?.client?.tel ||
+          null;
+      }
 
       /* ---------- Type ---------- */
 
@@ -388,7 +460,7 @@ export default async function AdminDossiersPage() {
           form.cq_id ?? null,
 
         client_name:
-          clientName || null,
+          clientName,
 
         client_email:
           clientEmail,
