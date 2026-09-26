@@ -22,6 +22,8 @@ type DocRow = {
   created_at: string | null;
   analyse_ia: string | null;
   analyse_ia_updated_at: string | null;
+  traite: boolean;
+  traite_at: string | null;
 };
 
 type AnalyseResponse = {
@@ -306,6 +308,9 @@ export default function AdminDossierDocsPage() {
   const [analysingIds, setAnalysingIds] =
     useState<Record<string, boolean>>({});
 
+  const [updatingTraiteIds, setUpdatingTraiteIds] =
+    useState<Record<string, boolean>>({});
+
   const [analyses, setAnalyses] =
     useState<Record<string, string>>({});
 
@@ -372,7 +377,7 @@ export default function AdminDossierDocsPage() {
     const { data, error } = await supabase
       .from(DOCS_TABLE)
       .select(
-        "id, original_name, storage_path, created_at, analyse_ia, analyse_ia_updated_at"
+        "id, original_name, storage_path, created_at, analyse_ia, analyse_ia_updated_at, traite, traite_at"
       )
       .eq("formulaire_id", fid)
       .order("created_at", {
@@ -473,6 +478,69 @@ export default function AdminDossierDocsPage() {
       }
     },
     [getSignedUrl]
+  );
+
+  // ==========================================
+  // MARQUER UN DOCUMENT COMME FAIT / À FAIRE
+  // ==========================================
+
+  const toggleTraite = useCallback(
+    async (doc: DocRow) => {
+      if (updatingTraiteIds[doc.id]) return;
+
+      const nextTraite = !doc.traite;
+      const nextTraiteAt = nextTraite
+        ? new Date().toISOString()
+        : null;
+
+      setUpdatingTraiteIds((prev) => ({
+        ...prev,
+        [doc.id]: true,
+      }));
+
+      setMsg(null);
+
+      const { error } = await supabase
+        .from(DOCS_TABLE)
+        .update({
+          traite: nextTraite,
+          traite_at: nextTraiteAt,
+        })
+        .eq("id", doc.id)
+        .eq("formulaire_id", fid);
+
+      if (error) {
+        setMsg(
+          "❌ Impossible de modifier le statut du document : " +
+            error.message
+        );
+
+        setUpdatingTraiteIds((prev) => ({
+          ...prev,
+          [doc.id]: false,
+        }));
+
+        return;
+      }
+
+      setDocs((prev) =>
+        prev.map((item) =>
+          item.id === doc.id
+            ? {
+                ...item,
+                traite: nextTraite,
+                traite_at: nextTraiteAt,
+              }
+            : item
+        )
+      );
+
+      setUpdatingTraiteIds((prev) => ({
+        ...prev,
+        [doc.id]: false,
+      }));
+    },
+    [fid, updatingTraiteIds]
   );
 
   // ==========================================
@@ -1073,6 +1141,12 @@ export default function AdminDossierDocsPage() {
       canAnalyse(doc.original_name)
     ).length;
 
+  const traiteCount =
+    docs.filter((doc) => doc.traite).length;
+
+  const aFaireCount =
+    docs.length - traiteCount;
+
   // ==========================================
   // AFFICHAGE
   // ==========================================
@@ -1117,6 +1191,45 @@ export default function AdminDossierDocsPage() {
           >
             fid: {fid}
           </div>
+
+          {docs.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                marginTop: 10,
+              }}
+            >
+              <span
+                style={{
+                  padding: "5px 9px",
+                  borderRadius: 999,
+                  background: "#fffbeb",
+                  border: "1px solid #f59e0b",
+                  color: "#92400e",
+                  fontSize: 12,
+                  fontWeight: 800,
+                }}
+              >
+                🟠 À faire : {aFaireCount}
+              </span>
+
+              <span
+                style={{
+                  padding: "5px 9px",
+                  borderRadius: 999,
+                  background: "#f0fdf4",
+                  border: "1px solid #10b981",
+                  color: "#065f46",
+                  fontSize: 12,
+                  fontWeight: 800,
+                }}
+              >
+                ✅ Faits : {traiteCount}
+              </span>
+            </div>
+          )}
         </div>
 
         {analysableCount > 0 && (
@@ -1502,15 +1615,23 @@ export default function AdminDossierDocsPage() {
                 doc.original_name
               );
 
+            const updatingTraite =
+              Boolean(
+                updatingTraiteIds[doc.id]
+              );
+
             return (
               <div
                 key={doc.id}
                 style={{
-                  border:
-                    "1px solid #ddd",
+                  border: doc.traite
+                    ? "2px solid #10b981"
+                    : "2px solid #f59e0b",
                   borderRadius: 12,
                   overflow: "hidden",
-                  background: "white",
+                  background: doc.traite
+                    ? "#f0fdf4"
+                    : "#fffbeb",
                 }}
               >
                 {/* DOCUMENT */}
@@ -1564,11 +1685,56 @@ export default function AdminDossierDocsPage() {
                           marginTop: 5,
                         }}
                       >
-                        {formatDate(
+                        Déposé le {formatDate(
                           doc.created_at
                         )}
                       </div>
                     )}
+
+                    <div
+                      style={{
+                        marginTop: 9,
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "5px 9px",
+                          borderRadius: 999,
+                          background: doc.traite
+                            ? "#d1fae5"
+                            : "#fef3c7",
+                          color: doc.traite
+                            ? "#065f46"
+                            : "#92400e",
+                          border: doc.traite
+                            ? "1px solid #10b981"
+                            : "1px solid #f59e0b",
+                          fontSize: 12,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {doc.traite
+                          ? "✅ Fait"
+                          : "🟠 À faire"}
+                      </span>
+
+                      {doc.traite && doc.traite_at && (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "#047857",
+                          }}
+                        >
+                          Fait le {formatDate(doc.traite_at)}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* BOUTONS */}
@@ -1600,6 +1766,38 @@ export default function AdminDossierDocsPage() {
                       }}
                     >
                       Ouvrir
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void toggleTraite(doc)
+                      }
+                      disabled={updatingTraite}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        border: doc.traite
+                          ? "1px solid #059669"
+                          : "1px solid #d97706",
+                        background: doc.traite
+                          ? "#059669"
+                          : "#f59e0b",
+                        color: "white",
+                        fontWeight: 800,
+                        cursor: updatingTraite
+                          ? "wait"
+                          : "pointer",
+                        opacity: updatingTraite
+                          ? 0.65
+                          : 1,
+                      }}
+                    >
+                      {updatingTraite
+                        ? "Enregistrement…"
+                        : doc.traite
+                        ? "↩ Remettre à faire"
+                        : "✓ Marquer fait"}
                     </button>
 
                     {analysable ? (
