@@ -20,6 +20,7 @@ type AnalyseResponse = {
   ok?: boolean;
   analyse?: string;
   identiteNas?: IdentiteNas;
+  detectedType?: "T1" | "T2";
   error?: string;
 };
 
@@ -92,9 +93,21 @@ export default function AdminDossierFormulairePage() {
   const [analyse, setAnalyse] = useState<string | null>(null);
   const [identiteNas, setIdentiteNas] =
     useState<IdentiteNas | null>(null);
+  const [detectedType, setDetectedType] =
+    useState<"T1" | "T2" | null>(null);
   const [analyseError, setAnalyseError] =
     useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const isT2 = useMemo(() => {
+    const t = formType.toLowerCase();
+
+    return (
+      detectedType === "T2" ||
+      t === "t2" ||
+      t.includes("t2")
+    );
+  }, [detectedType, formType]);
 
   const formUrl = useMemo(() => {
     const base = routeForFormPresentiel(formType);
@@ -140,7 +153,18 @@ export default function AdminDossierFormulairePage() {
       }
 
       setAnalyse(result.analyse);
-      setIdentiteNas(result.identiteNas ?? null);
+      setDetectedType(result.detectedType ?? null);
+
+      const resultIsT2 =
+        result.detectedType === "T2" ||
+        formType.toLowerCase() === "t2" ||
+        formType.toLowerCase().includes("t2");
+
+      setIdentiteNas(
+        resultIsT2
+          ? null
+          : result.identiteNas ?? null
+      );
     } catch (error: unknown) {
       setAnalyseError(
         error instanceof Error
@@ -150,10 +174,10 @@ export default function AdminDossierFormulairePage() {
     } finally {
       setAnalysing(false);
     }
-  }, [fid, analysing]);
+  }, [fid, analysing, formType]);
 
   const nasText = useMemo(() => {
-    if (!identiteNas) return "";
+    if (isT2 || !identiteNas) return "";
 
     const lines: string[] = [
       "NAS — INFORMATIONS D'IDENTIFICATION",
@@ -184,7 +208,7 @@ export default function AdminDossierFormulairePage() {
     );
 
     return lines.join("\n");
-  }, [identiteNas]);
+  }, [identiteNas, isT2]);
 
   const copyAnalyse = useCallback(async () => {
     if (!analyse) return;
@@ -320,7 +344,7 @@ export default function AdminDossierFormulairePage() {
                 marginTop: 5,
               }}
             >
-              Type : {formType.toUpperCase()}
+              Type : {isT2 ? "T2" : formType.toUpperCase()}
             </div>
 
             {/* Indication claire pour le TA */}
@@ -469,7 +493,7 @@ export default function AdminDossierFormulairePage() {
 
             {/* NAS */}
 
-            {identiteNas && (
+            {!isT2 && identiteNas && (
               <div
                 style={{
                   marginBottom: 14,
