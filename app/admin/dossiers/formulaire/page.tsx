@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -31,8 +35,12 @@ type AnalyseResponse = {
  * "T1 + TA" contient "t1".
  * Il faut donc tester le TA AVANT le T1.
  */
-function routeForFormPresentiel(formType: string | null) {
-  const t = (formType ?? "").trim().toLowerCase();
+function routeForFormPresentiel(
+  formType: string | null
+) {
+  const t = (formType ?? "")
+    .trim()
+    .toLowerCase();
 
   // TA / T1 + TA
   if (
@@ -46,12 +54,18 @@ function routeForFormPresentiel(formType: string | null) {
   }
 
   // T2
-  if (t === "t2" || t.includes("t2")) {
+  if (
+    t === "t2" ||
+    t.includes("t2")
+  ) {
     return "/formulaire-fiscal-presentiel-t2";
   }
 
   // T1
-  if (t === "t1" || t.includes("t1")) {
+  if (
+    t === "t1" ||
+    t.includes("t1")
+  ) {
     return "/formulaire-fiscal-presentiel-t1";
   }
 
@@ -59,16 +73,28 @@ function routeForFormPresentiel(formType: string | null) {
   return "/formulaire-fiscal-presentiel-t1";
 }
 
-function formatNas(nas: string | null | undefined) {
-  const digits = (nas ?? "").replace(/\D+/g, "").slice(0, 9);
+function formatNas(
+  nas: string | null | undefined
+) {
+  const digits = (nas ?? "")
+    .replace(/\D+/g, "")
+    .slice(0, 9);
 
-  if (!digits) return "Non fourni";
+  if (!digits) {
+    return "Non fourni";
+  }
 
   if (digits.length !== 9) {
     return nas ?? "Non fourni";
   }
 
-  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 9)}`;
+  return `${digits.slice(
+    0,
+    3
+  )}-${digits.slice(
+    3,
+    6
+  )}-${digits.slice(6, 9)}`;
 }
 
 export default function AdminDossierFormulairePage() {
@@ -89,15 +115,27 @@ export default function AdminDossierFormulairePage() {
     [sp]
   );
 
-  const [analysing, setAnalysing] = useState(false);
-  const [analyse, setAnalyse] = useState<string | null>(null);
+  const [analysing, setAnalysing] =
+    useState(false);
+
+  const [analyse, setAnalyse] =
+    useState<string | null>(null);
+
   const [identiteNas, setIdentiteNas] =
     useState<IdentiteNas | null>(null);
+
   const [detectedType, setDetectedType] =
     useState<"T1" | "T2" | null>(null);
+
   const [analyseError, setAnalyseError] =
     useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+
+  const [copied, setCopied] =
+    useState(false);
+
+  /* =========================================================
+     TYPE T2
+  ========================================================= */
 
   const isT2 = useMemo(() => {
     const t = formType.toLowerCase();
@@ -109,153 +147,235 @@ export default function AdminDossierFormulairePage() {
     );
   }, [detectedType, formType]);
 
+  /* =========================================================
+     URL DU FORMULAIRE PRÉSENTIEL
+  ========================================================= */
+
   const formUrl = useMemo(() => {
-    const base = routeForFormPresentiel(formType);
+    const base =
+      routeForFormPresentiel(formType);
 
     return `${base}?fid=${encodeURIComponent(
       fid
     )}&lang=${encodeURIComponent(lang)}`;
   }, [fid, formType, lang]);
 
-  const analyseFormulaire = useCallback(async () => {
-    if (!fid || analysing) return;
+  /* =========================================================
+     ANALYSE IA
+  ========================================================= */
 
-    setAnalysing(true);
-    setAnalyseError(null);
+  const analyseFormulaire =
+    useCallback(async () => {
+      if (!fid || analysing) {
+        return;
+      }
 
-    try {
-      const response = await fetch(
-        "/api/admin/analyse-formulaire",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ fid }),
-        }
-      );
-
-      let result: AnalyseResponse;
+      setAnalysing(true);
+      setAnalyseError(null);
 
       try {
-        result = (await response.json()) as AnalyseResponse;
-      } catch {
-        throw new Error(
-          "Réponse invalide du serveur IA."
+        const response = await fetch(
+          "/api/admin/analyse-formulaire",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              fid,
+            }),
+          }
         );
-      }
 
-      if (!response.ok || !result.ok || !result.analyse) {
-        throw new Error(
-          result.error ??
-            "Impossible d'analyser le formulaire."
+        let result: AnalyseResponse;
+
+        try {
+          result =
+            (await response.json()) as AnalyseResponse;
+        } catch {
+          throw new Error(
+            "Réponse invalide du serveur IA."
+          );
+        }
+
+        if (
+          !response.ok ||
+          !result.ok ||
+          !result.analyse
+        ) {
+          throw new Error(
+            result.error ??
+              "Impossible d'analyser le formulaire."
+          );
+        }
+
+        setAnalyse(result.analyse);
+
+        setDetectedType(
+          result.detectedType ?? null
         );
+
+        const resultIsT2 =
+          result.detectedType === "T2" ||
+          formType.toLowerCase() === "t2" ||
+          formType
+            .toLowerCase()
+            .includes("t2");
+
+        setIdentiteNas(
+          resultIsT2
+            ? null
+            : result.identiteNas ?? null
+        );
+      } catch (error: unknown) {
+        setAnalyseError(
+          error instanceof Error
+            ? error.message
+            : "Erreur pendant l'analyse IA du formulaire."
+        );
+      } finally {
+        setAnalysing(false);
       }
+    }, [
+      fid,
+      analysing,
+      formType,
+    ]);
 
-      setAnalyse(result.analyse);
-      setDetectedType(result.detectedType ?? null);
-
-      const resultIsT2 =
-        result.detectedType === "T2" ||
-        formType.toLowerCase() === "t2" ||
-        formType.toLowerCase().includes("t2");
-
-      setIdentiteNas(
-        resultIsT2
-          ? null
-          : result.identiteNas ?? null
-      );
-    } catch (error: unknown) {
-      setAnalyseError(
-        error instanceof Error
-          ? error.message
-          : "Erreur pendant l'analyse IA du formulaire."
-      );
-    } finally {
-      setAnalysing(false);
-    }
-  }, [fid, analysing, formType]);
+  /* =========================================================
+     NAS
+  ========================================================= */
 
   const nasText = useMemo(() => {
-    if (isT2 || !identiteNas) return "";
+    if (
+      isT2 ||
+      !identiteNas
+    ) {
+      return "";
+    }
 
     const lines: string[] = [
       "NAS — INFORMATIONS D'IDENTIFICATION",
-      `Client : ${formatNas(identiteNas.client)}`,
+      `Client : ${formatNas(
+        identiteNas.client
+      )}`,
     ];
 
     if (identiteNas.conjoint) {
       lines.push(
-        `Conjoint : ${formatNas(identiteNas.conjoint)}`
+        `Conjoint : ${formatNas(
+          identiteNas.conjoint
+        )}`
       );
     }
 
     identiteNas.personnesACharge.forEach(
       (personne, index) => {
-        if (!personne.nas) return;
+        if (!personne.nas) {
+          return;
+        }
 
         const nom =
-          [personne.prenom, personne.nom]
+          [
+            personne.prenom,
+            personne.nom,
+          ]
             .filter(Boolean)
             .join(" ")
             .trim() ||
-          `Personne à charge ${index + 1}`;
+          `Personne à charge ${
+            index + 1
+          }`;
 
         lines.push(
-          `${nom} : ${formatNas(personne.nas)}`
+          `${nom} : ${formatNas(
+            personne.nas
+          )}`
         );
       }
     );
 
     return lines.join("\n");
-  }, [identiteNas, isT2]);
+  }, [
+    identiteNas,
+    isT2,
+  ]);
 
-  const copyAnalyse = useCallback(async () => {
-    if (!analyse) return;
+  /* =========================================================
+     COPIER ANALYSE
+  ========================================================= */
 
-    const texteComplet = nasText
-      ? `${nasText}\n\n${analyse}`
-      : analyse;
+  const copyAnalyse =
+    useCallback(async () => {
+      if (!analyse) {
+        return;
+      }
 
-    try {
-      await navigator.clipboard.writeText(texteComplet);
+      const texteComplet = nasText
+        ? `${nasText}\n\n${analyse}`
+        : analyse;
 
-      setCopied(true);
+      try {
+        await navigator.clipboard.writeText(
+          texteComplet
+        );
 
-      window.setTimeout(() => {
-        setCopied(false);
-      }, 1800);
-    } catch {
-      setAnalyseError(
-        "Impossible de copier l'analyse."
-      );
-    }
-  }, [analyse, nasText]);
+        setCopied(true);
+
+        window.setTimeout(() => {
+          setCopied(false);
+        }, 1800);
+      } catch {
+        setAnalyseError(
+          "Impossible de copier l'analyse."
+        );
+      }
+    }, [
+      analyse,
+      nasText,
+    ]);
+
+  /* =========================================================
+     FID MANQUANT
+  ========================================================= */
 
   if (!fid) {
     return (
-      <div style={{ padding: 16 }}>
+      <div
+        style={{
+          padding: 16,
+        }}
+      >
         ❌ fid manquant
         <br />
-        (ex: /admin/dossiers/formulaire?fid=...)
+        (ex:
+        /admin/dossiers/formulaire?fid=...)
       </div>
     );
   }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <div
       style={{
         padding: 16,
-        maxWidth: 1000,
+        maxWidth: 1200,
         margin: "0 auto",
       }}
     >
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "flex-start",
           gap: 16,
           flexWrap: "wrap",
@@ -290,7 +410,8 @@ export default function AdminDossierFormulairePage() {
           style={{
             padding: "9px 13px",
             borderRadius: 8,
-            border: "1px solid #cbd5e1",
+            border:
+              "1px solid #cbd5e1",
             background: "white",
             color: "#334155",
             fontWeight: 700,
@@ -302,21 +423,30 @@ export default function AdminDossierFormulairePage() {
         </Link>
       </div>
 
-      {/* FORMULAIRE */}
+      {/* =====================================================
+          FORMULAIRE
+      ===================================================== */}
 
       <div
         style={{
-          border: "1px solid #ddd",
+          border:
+            "1px solid #ddd",
           borderRadius: 12,
           overflow: "hidden",
           background: "white",
         }}
       >
+        {/* ===================================================
+            BARRE DU FORMULAIRE
+        =================================================== */}
+
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
+            justifyContent:
+              "space-between",
+            alignItems:
+              "flex-start",
             gap: 16,
             padding: 14,
             flexWrap: "wrap",
@@ -331,10 +461,12 @@ export default function AdminDossierFormulairePage() {
             <div
               style={{
                 fontWeight: 700,
-                wordBreak: "break-word",
+                wordBreak:
+                  "break-word",
               }}
             >
-              📋 Formulaire fiscal du client
+              📋 Formulaire fiscal du
+              client
             </div>
 
             <div
@@ -344,28 +476,41 @@ export default function AdminDossierFormulairePage() {
                 marginTop: 5,
               }}
             >
-              Type : {isT2 ? "T2" : formType.toUpperCase()}
+              Type :{" "}
+              {isT2
+                ? "T2"
+                : formType.toUpperCase()}
             </div>
 
             {/* Indication claire pour le TA */}
+
             {(formType
               .toLowerCase()
               .includes("ta") ||
               formType
                 .toLowerCase()
-                .includes("autonome") ||
+                .includes(
+                  "autonome"
+                ) ||
               formType
                 .toLowerCase()
-                .includes("travailleur")) && (
+                .includes(
+                  "travailleur"
+                )) && (
               <div
                 style={{
-                  display: "inline-block",
+                  display:
+                    "inline-block",
                   marginTop: 8,
-                  padding: "5px 9px",
+                  padding:
+                    "5px 9px",
                   borderRadius: 7,
-                  background: "#eff6ff",
-                  border: "1px solid #bfdbfe",
-                  color: "#1d4ed8",
+                  background:
+                    "#eff6ff",
+                  border:
+                    "1px solid #bfdbfe",
+                  color:
+                    "#1d4ed8",
                   fontSize: 12,
                   fontWeight: 700,
                 }}
@@ -385,13 +530,19 @@ export default function AdminDossierFormulairePage() {
             <Link
               href={formUrl}
               style={{
-                padding: "8px 12px",
+                padding:
+                  "8px 12px",
                 borderRadius: 8,
-                border: "1px solid #ccc",
-                background: "white",
-                color: "#111827",
-                textDecoration: "none",
-                cursor: "pointer",
+                border:
+                  "1px solid #ccc",
+                background:
+                  "white",
+                color:
+                  "#111827",
+                textDecoration:
+                  "none",
+                cursor:
+                  "pointer",
               }}
             >
               Ouvrir
@@ -399,20 +550,27 @@ export default function AdminDossierFormulairePage() {
 
             <button
               type="button"
-              onClick={() => void analyseFormulaire()}
+              onClick={() =>
+                void analyseFormulaire()
+              }
               disabled={analysing}
               style={{
-                padding: "8px 12px",
+                padding:
+                  "8px 12px",
                 borderRadius: 8,
-                border: "1px solid #2563eb",
-                background: analysing
-                  ? "#dbeafe"
-                  : "#eff6ff",
-                color: "#1d4ed8",
+                border:
+                  "1px solid #2563eb",
+                background:
+                  analysing
+                    ? "#dbeafe"
+                    : "#eff6ff",
+                color:
+                  "#1d4ed8",
                 fontWeight: 700,
-                cursor: analysing
-                  ? "wait"
-                  : "pointer",
+                cursor:
+                  analysing
+                    ? "wait"
+                    : "pointer",
               }}
             >
               {analysing
@@ -424,40 +582,132 @@ export default function AdminDossierFormulairePage() {
           </div>
         </div>
 
-        {/* ERREUR */}
+        {/* ===================================================
+            FORMULAIRE AFFICHÉ DIRECTEMENT
+        =================================================== */}
+
+        <div
+          style={{
+            borderTop:
+              "1px solid #e5e7eb",
+            background:
+              "#f8fafc",
+            padding: 14,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent:
+                "space-between",
+              alignItems:
+                "center",
+              flexWrap: "wrap",
+              gap: 10,
+              marginBottom: 10,
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 800,
+                fontSize: 15,
+                color:
+                  "#111827",
+              }}
+            >
+              📋 Formulaire rempli
+            </div>
+
+            <div
+              style={{
+                fontSize: 12,
+                color:
+                  "#64748b",
+              }}
+            >
+              {isT2
+                ? "Société — T2"
+                : formType
+                    .toLowerCase()
+                    .includes("ta") ||
+                  formType
+                    .toLowerCase()
+                    .includes(
+                      "autonome"
+                    )
+                ? "Travailleur autonome"
+                : "Particulier — T1"}
+            </div>
+          </div>
+
+          <iframe
+            key={formUrl}
+            src={formUrl}
+            title={`Formulaire ${
+              isT2
+                ? "T2"
+                : formType.toUpperCase()
+            }`}
+            style={{
+              display: "block",
+              width: "100%",
+              height: "1400px",
+              border:
+                "1px solid #d1d5db",
+              borderRadius: 10,
+              background:
+                "white",
+            }}
+          />
+        </div>
+
+        {/* ===================================================
+            ERREUR
+        =================================================== */}
 
         {analyseError && (
           <div
             style={{
-              margin: "0 14px 14px",
+              margin:
+                "14px",
               padding: 12,
               borderRadius: 8,
-              border: "1px solid #fecaca",
-              background: "#fef2f2",
-              color: "#b91c1c",
+              border:
+                "1px solid #fecaca",
+              background:
+                "#fef2f2",
+              color:
+                "#b91c1c",
               fontSize: 14,
-              whiteSpace: "pre-wrap",
+              whiteSpace:
+                "pre-wrap",
             }}
           >
             ❌ {analyseError}
           </div>
         )}
 
-        {/* ANALYSE IA */}
+        {/* ===================================================
+            ANALYSE IA
+        =================================================== */}
 
         {analyse && (
           <div
             style={{
-              borderTop: "1px solid #dbeafe",
-              background: "#f8fbff",
+              borderTop:
+                "1px solid #dbeafe",
+              background:
+                "#f8fbff",
               padding: 16,
             }}
           >
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                justifyContent:
+                  "space-between",
+                alignItems:
+                  "center",
                 gap: 12,
                 flexWrap: "wrap",
                 marginBottom: 10,
@@ -466,23 +716,32 @@ export default function AdminDossierFormulairePage() {
               <div
                 style={{
                   fontWeight: 800,
-                  color: "#1e3a8a",
+                  color:
+                    "#1e3a8a",
                 }}
               >
-                ✨ Analyse IA du formulaire
+                ✨ Analyse IA du
+                formulaire
               </div>
 
               <button
                 type="button"
-                onClick={() => void copyAnalyse()}
+                onClick={() =>
+                  void copyAnalyse()
+                }
                 style={{
-                  padding: "8px 12px",
+                  padding:
+                    "8px 12px",
                   borderRadius: 8,
-                  border: "1px solid #2563eb",
-                  background: "white",
-                  color: "#1d4ed8",
+                  border:
+                    "1px solid #2563eb",
+                  background:
+                    "white",
+                  color:
+                    "#1d4ed8",
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor:
+                    "pointer",
                 }}
               >
                 {copied
@@ -491,85 +750,125 @@ export default function AdminDossierFormulairePage() {
               </button>
             </div>
 
-            {/* NAS */}
+            {/* ===============================================
+                NAS
+            =============================================== */}
 
-            {!isT2 && identiteNas && (
-              <div
-                style={{
-                  marginBottom: 14,
-                  padding: 12,
-                  borderRadius: 8,
-                  border: "1px solid #cbd5e1",
-                  background: "white",
-                  color: "#111827",
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
+            {!isT2 &&
+              identiteNas && (
                 <div
                   style={{
-                    fontWeight: 800,
-                    marginBottom: 6,
+                    marginBottom: 14,
+                    padding: 12,
+                    borderRadius: 8,
+                    border:
+                      "1px solid #cbd5e1",
+                    background:
+                      "white",
+                    color:
+                      "#111827",
+                    fontSize: 14,
+                    lineHeight: 1.6,
                   }}
                 >
-                  🔒 NAS — affiché depuis le formulaire
-                </div>
-
-                <div>
-                  <strong>Client :</strong>{" "}
-                  {formatNas(identiteNas.client)}
-                </div>
-
-                {identiteNas.conjoint && (
-                  <div>
-                    <strong>Conjoint :</strong>{" "}
-                    {formatNas(identiteNas.conjoint)}
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      marginBottom: 6,
+                    }}
+                  >
+                    🔒 NAS — affiché depuis
+                    le formulaire
                   </div>
-                )}
 
-                {identiteNas.personnesACharge.map(
-                  (personne, index) => {
-                    if (!personne.nas) return null;
+                  <div>
+                    <strong>
+                      Client :
+                    </strong>{" "}
+                    {formatNas(
+                      identiteNas.client
+                    )}
+                  </div>
 
-                    const nom =
-                      [personne.prenom, personne.nom]
-                        .filter(Boolean)
-                        .join(" ")
-                        .trim() ||
-                      `Personne à charge ${index + 1}`;
+                  {identiteNas.conjoint && (
+                    <div>
+                      <strong>
+                        Conjoint :
+                      </strong>{" "}
+                      {formatNas(
+                        identiteNas.conjoint
+                      )}
+                    </div>
+                  )}
 
-                    return (
-                      <div
-                        key={`${nom}-${index}`}
-                      >
-                        <strong>{nom} :</strong>{" "}
-                        {formatNas(personne.nas)}
-                      </div>
-                    );
-                  }
-                )}
+                  {identiteNas.personnesACharge.map(
+                    (
+                      personne,
+                      index
+                    ) => {
+                      if (
+                        !personne.nas
+                      ) {
+                        return null;
+                      }
 
-                <div
-                  style={{
-                    marginTop: 7,
-                    fontSize: 11,
-                    color: "#64748b",
-                  }}
-                >
-                  Ces NAS proviennent directement du
-                  formulaire et ne sont pas envoyés à l'IA.
+                      const nom =
+                        [
+                          personne.prenom,
+                          personne.nom,
+                        ]
+                          .filter(
+                            Boolean
+                          )
+                          .join(" ")
+                          .trim() ||
+                        `Personne à charge ${
+                          index + 1
+                        }`;
+
+                      return (
+                        <div
+                          key={`${nom}-${index}`}
+                        >
+                          <strong>
+                            {nom} :
+                          </strong>{" "}
+                          {formatNas(
+                            personne.nas
+                          )}
+                        </div>
+                      );
+                    }
+                  )}
+
+                  <div
+                    style={{
+                      marginTop: 7,
+                      fontSize: 11,
+                      color:
+                        "#64748b",
+                    }}
+                  >
+                    Ces NAS proviennent
+                    directement du
+                    formulaire et ne sont
+                    pas envoyés à l'IA.
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* TEXTE ANALYSE */}
+            {/* ===============================================
+                TEXTE ANALYSE
+            =============================================== */}
 
             <div
               style={{
-                whiteSpace: "pre-wrap",
+                whiteSpace:
+                  "pre-wrap",
                 lineHeight: 1.6,
                 fontSize: 14,
-                color: "#1f2937",
+                color:
+                  "#1f2937",
               }}
             >
               {analyse}
@@ -579,11 +878,13 @@ export default function AdminDossierFormulairePage() {
               style={{
                 marginTop: 12,
                 fontSize: 11,
-                color: "#64748b",
+                color:
+                  "#64748b",
               }}
             >
-              À valider avant d'utiliser les informations
-              dans le dossier fiscal.
+              À valider avant d'utiliser
+              les informations dans le
+              dossier fiscal.
             </div>
           </div>
         )}
