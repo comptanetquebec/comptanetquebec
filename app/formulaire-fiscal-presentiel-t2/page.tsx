@@ -7,7 +7,10 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -241,10 +244,18 @@ export default function PresentielT2Client({
   fid: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Présentiel : fid = dossier existant.
-  const formulaireId = (fid || "").trim();
+  /*
+   * Présentiel :
+   * on conserve le fid reçu en prop si présent,
+   * sinon on récupère le fid dans l'URL.
+   */
+  const fidFromUrl =
+    (searchParams.get("fid") ?? "").trim();
 
+  const formulaireId =
+    (fid || fidFromUrl).trim();
   const [msg, setMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
