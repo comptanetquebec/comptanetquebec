@@ -1398,15 +1398,16 @@ export default function AdminDossiersClient({
 
                         <div className="flex flex-wrap gap-2 xl:justify-end">
 
-                          <Link
-                            href={`/formulaire-fiscal?fid=${encodeURIComponent(
-                              row.formulaire_id
-                            )}&lang=fr&admin=1`}
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-                          >
-                            📋 Formulaire
-                          </Link>
-
+                         <Link
+  href={`/admin/dossiers/formulaire?fid=${encodeURIComponent(
+    row.formulaire_id
+  )}&type=${encodeURIComponent(
+    row.form_type ?? "T1"
+  )}&lang=fr`}
+  className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+>
+  📋 Formulaire
+</Link>
                           <Link
                             href={`/admin/dossiers/docs?fid=${encodeURIComponent(
                               row.formulaire_id
