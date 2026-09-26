@@ -520,7 +520,6 @@ export default function PresentielT2Client({
           status: "en_cours",
         })
         .eq("id", formulaireId)
-        .eq("user_id", userId)
         .eq("form_type", FORM_TYPE_T2);
 
       if (error) {
@@ -560,7 +559,6 @@ export default function PresentielT2Client({
           "id, user_id, form_type, lang, annee, data, created_at"
         )
         .eq("id", formulaireId)
-        .eq("user_id", userId)
         .eq("form_type", FORM_TYPE_T2)
         .maybeSingle<FormRow>();
 
@@ -730,7 +728,6 @@ export default function PresentielT2Client({
           lang,
         })
         .eq("id", id)
-        .eq("user_id", userId)
         .eq("form_type", FORM_TYPE_T2);
 
       if (error) {
