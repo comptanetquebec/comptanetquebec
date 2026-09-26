@@ -418,9 +418,9 @@ plans: [
   },
   {
     t: "Travailleur autonome",
-    p: "à partir de 150 $ + taxes",
+    p: "à partir de 175 $ + taxes",
     pts: [
-      "Acompte requis : 150 $ + taxes",
+      "Acompte requis : 175 $ + taxes",
       "Portail sécurisé",
       "Revenus + dépenses selon pièces",
     ],
@@ -428,7 +428,7 @@ plans: [
   },
   {
     t: "Compagnie incorporée",
-    p: "à partir de 850 $ + taxes",
+    p: "à partir de 899 $ + taxes",
     pts: [
       "Acompte requis : 450 $ + taxes",
       "Portail sécurisé",
@@ -601,9 +601,9 @@ plans: [
   },
   {
     t: "Self-employed",
-    p: "from $150 + taxes",
+    p: "from $175 + taxes",
     pts: [
-      "Deposit: $150 + taxes",
+      "Deposit: $175 + taxes",
       "Secure client portal",
       "Income and expenses based on documents",
     ],
@@ -611,7 +611,7 @@ plans: [
   },
   {
     t: "Incorporated business",
-    p: "from $850 + taxes",
+    p: "from $899 + taxes",
     pts: [
       "Deposit: $450 + taxes",
       "Secure client portal",
@@ -785,9 +785,9 @@ plans: [
   },
   {
     t: "Autónomo",
-    p: "desde $150 CAD + impuestos",
+    p: "desde $175 CAD + impuestos",
     pts: [
-      "Depósito requerido: $150 + impuestos",
+      "Depósito requerido: $175 + impuestos",
       "Portal seguro",
       "Ingresos y gastos según comprobantes",
     ],
@@ -795,7 +795,7 @@ plans: [
   },
   {
     t: "Empresa incorporada",
-    p: "desde $850 CAD + impuestos",
+    p: "desde $899 CAD + impuestos",
     pts: [
       "Depósito requerido: $450 + impuestos",
       "Portal seguro",
