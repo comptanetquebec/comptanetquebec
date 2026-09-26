@@ -500,6 +500,9 @@ export async function POST(
             ui_mode:
               "embedded",
 
+            locale:
+              lang,
+
             mode:
               "payment",
 
@@ -720,15 +723,26 @@ export async function POST(
     );
 
     const invoiceLabel =
-      facture.numero_facture
-        ? `Solde facture ${facture.numero_facture}`
-        : "Solde de facture";
+      lang === "en"
+        ? facture.numero_facture
+          ? `Invoice balance ${facture.numero_facture}`
+          : "Invoice balance"
+        : lang === "es"
+          ? facture.numero_facture
+            ? `Saldo de factura ${facture.numero_facture}`
+            : "Saldo de factura"
+          : facture.numero_facture
+            ? `Solde facture ${facture.numero_facture}`
+            : "Solde de facture";
 
     const session =
       await stripe.checkout.sessions.create(
         {
           ui_mode:
             "embedded",
+
+          locale:
+            lang,
 
           mode:
             "payment",
