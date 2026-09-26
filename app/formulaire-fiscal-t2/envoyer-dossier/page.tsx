@@ -89,11 +89,11 @@ export default function EnvoyerDossierT2Page() {
 
   // IMPORTANT: nextPath doit être EXACT pour revenir ici après login
   const nextPath = useMemo(() => {
-    const u = new URL(SEND_ROUTE, window.location.origin);
-    u.searchParams.set("fid", fid);
-    u.searchParams.set("type", type);
-    u.searchParams.set("lang", lang);
-    return u.pathname + u.search;
+    const qs = new URLSearchParams();
+    qs.set("fid", fid);
+    qs.set("type", type);
+    qs.set("lang", lang);
+    return `${SEND_ROUTE}?${qs.toString()}`;
   }, [fid, type, lang]);
 
   return (
