@@ -503,10 +503,10 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
               3) {t(lang, "Traitement par l’équipe", "Processed by the team", "Procesado por el equipo")}
             </div>
           </div>
+        </section>
 
           </>
         )}
-        </section>
       </div>
     </main>
   );
