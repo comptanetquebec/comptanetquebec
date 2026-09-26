@@ -4,6 +4,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+
+import {
+  EmbeddedCheckout,
+  EmbeddedCheckoutProvider,
+} from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+
 import { supabase } from "@/lib/supabaseClient";
 import "../formulaire-fiscal.css";
 import Steps from "../Steps";
@@ -19,6 +26,13 @@ const FORMS_TABLE = "formulaires_fiscaux";
  * Stripe checkout API (adapte si ton endpoint diffère)
  */
 const CHECKOUT_API = "/api/checkout";
+
+const stripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+
+const stripePromise = stripePublishableKey
+  ? loadStripe(stripePublishableKey)
+  : null;
 
 /**
  * ✅ Route réelle T2 (unique)
@@ -115,6 +129,7 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
   const [confirm, setConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const docsCount = docs.length;
 
@@ -223,15 +238,20 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
         }),
       });
 
+      const json = (await res.json().catch(() => ({}))) as {
+        clientSecret?: string;
+        error?: string;
+      };
+
       if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || "Stripe error");
+        throw new Error(json.error || "Stripe error");
       }
 
-      const json: { url?: string } = await res.json().catch(() => ({}));
-      if (!json.url) throw new Error("Missing Stripe URL");
+      if (!json.clientSecret) {
+        throw new Error("Missing Stripe client secret");
+      }
 
-      window.location.href = json.url;
+      setClientSecret(json.clientSecret);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur";
       setMsg("❌ " + message);
@@ -283,22 +303,35 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
             </div>
           </div>
 
-          <button className="ff-btn ff-btn-outline" type="button" onClick={goBackUpload}>
-            ← {t(lang, "Retour dépôt", "Back to upload", "Volver a subida")}
-          </button>
+          {!clientSecret && (
+            <button className="ff-btn ff-btn-outline" type="button" onClick={goBackUpload}>
+              ← {t(lang, "Retour dépôt", "Back to upload", "Volver a subida")}
+            </button>
+          )}
         </header>
 
         <Steps step={3} lang={lang} />
 
         <div className="ff-title">
-          <h1>{t(lang, "Résumé et paiement (T2)", "Summary & payment (T2)", "Resumen y pago (T2)")}</h1>
+          <h1>
+            {clientSecret
+              ? t(lang, "Paiement sécurisé (T2)", "Secure payment (T2)", "Pago seguro (T2)")
+              : t(lang, "Résumé et paiement (T2)", "Summary & payment (T2)", "Resumen y pago (T2)")}
+          </h1>
           <p>
-            {t(
-              lang,
-              "Vérifiez votre dossier de société, puis procédez au paiement sécurisé pour soumettre.",
-              "Review your corporate file, then proceed to secure payment to submit.",
-              "Revise su expediente de sociedad y luego proceda al pago seguro para enviar."
-            )}
+            {clientSecret
+              ? t(
+                  lang,
+                  "Effectuez votre paiement directement ici, sans quitter ComptaNet Québec.",
+                  "Complete your payment directly here without leaving ComptaNet Québec.",
+                  "Complete su pago directamente aquí sin salir de ComptaNet Québec."
+                )
+              : t(
+                  lang,
+                  "Vérifiez votre dossier de société, puis procédez au paiement sécurisé pour soumettre.",
+                  "Review your corporate file, then proceed to secure payment to submit.",
+                  "Revise su expediente de sociedad y luego proceda al pago seguro para enviar."
+                )}
           </p>
         </div>
 
@@ -308,6 +341,51 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
           </div>
         )}
 
+        {clientSecret ? (
+          <section className="ff-card">
+            <div className="ff-card-head">
+              <h2>
+                {t(
+                  lang,
+                  "Paiement sécurisé",
+                  "Secure payment",
+                  "Pago seguro"
+                )}
+              </h2>
+              <p>
+                {t(
+                  lang,
+                  "Votre paiement est traité de façon sécurisée directement dans ComptaNet Québec.",
+                  "Your payment is processed securely directly inside ComptaNet Québec.",
+                  "Su pago se procesa de forma segura directamente en ComptaNet Québec."
+                )}
+              </p>
+            </div>
+
+            {!stripePublishableKey ? (
+              <div className="ff-empty">
+                ❌ {t(
+                  lang,
+                  "Clé publique Stripe manquante.",
+                  "Stripe publishable key is missing.",
+                  "Falta la clave pública de Stripe."
+                )}
+              </div>
+            ) : !stripePromise ? (
+              <div className="ff-empty">❌ Stripe</div>
+            ) : (
+              <div style={{ marginTop: 20, width: "100%" }}>
+                <EmbeddedCheckoutProvider
+                  stripe={stripePromise}
+                  options={{ clientSecret }}
+                >
+                  <EmbeddedCheckout />
+                </EmbeddedCheckoutProvider>
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
         <section className="ff-card">
           <div className="ff-card-head">
             <h2>{t(lang, "Résumé du dossier", "File summary", "Resumen del expediente")}</h2>
@@ -380,7 +458,7 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
               onClick={() => void startCheckout()}
             >
               {submitting
-                ? t(lang, "Redirection vers Stripe…", "Redirecting to Stripe…", "Redirigiendo a Stripe…")
+                ? t(lang, "Préparation du paiement…", "Preparing payment…", "Preparando el pago…")
                 : t(lang, "Payer et soumettre", "Pay & submit", "Pagar y enviar")}
             </button>
 
@@ -393,9 +471,9 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
             <p className="ff-footnote" style={{ marginTop: 10 }}>
               {t(
                 lang,
-                "Paiement sécurisé via Stripe. Reçu envoyé par courriel.",
-                "Secure payment via Stripe. Email receipt will be sent.",
-                "Pago seguro con Stripe. Recibirá un recibo por correo."
+                "Paiement sécurisé par carte ou Link. Reçu envoyé par courriel.",
+                "Secure payment by card or Link. Email receipt will be sent.",
+                "Pago seguro con tarjeta o Link. Recibirá un recibo por correo."
               )}
             </p>
           </div>
@@ -425,6 +503,9 @@ function EnvoyerDossierT2Inner({ userId, fid, lang }: { userId: string; fid: str
               3) {t(lang, "Traitement par l’équipe", "Processed by the team", "Procesado por el equipo")}
             </div>
           </div>
+
+          </>
+        )}
         </section>
       </div>
     </main>
