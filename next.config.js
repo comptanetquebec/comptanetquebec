@@ -15,7 +15,16 @@ const nextConfig = {
       },
     ];
   },
+
+  async redirects() {
+    return [
+      {
+        source: "/tenue-de-livres/info",
+        destination: "/tenue-de-livres-info",
+        statusCode: 301,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
-;
