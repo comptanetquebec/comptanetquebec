@@ -1,5 +1,69 @@
 import { NextResponse } from "next/server";
 
+const DOMAIN_ID = "4b7c396a-266a-4097-8e30-d046129b4ddd";
+
+export async function GET() {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "RESEND_API_KEY manquante" },
+      { status: 500 }
+    );
+  }
+
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+
+  // Active Sending + Receiving sur le domaine existant
+  const updateResponse = await fetch(
+    `https://api.resend.com/domains/${DOMAIN_ID}`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({
+        capabilities: {
+          sending: "enabled",
+          receiving: "enabled",
+        },
+      }),
+      cache: "no-store",
+    }
+  );
+
+  const updateResult = await updateResponse.json().catch(() => null);
+
+  if (!updateResponse.ok) {
+    return NextResponse.json(
+      {
+        step: "enable-receiving",
+        status: updateResponse.status,
+        result: updateResult,
+      },
+      { status: updateResponse.status }
+    );
+  }
+
+  // Relit le domaine pour obtenir le MX Receiving exact
+  const domainResponse = await fetch(
+    `https://api.resend.com/domains/${DOMAIN_ID}`,
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      cache: "no-store",
+    }
+  );
+
+  const domain = await domainResponse.json();
+
+  return NextResponse.json(domain, {
+    status: domainResponse.status,
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const event = await request.json();
