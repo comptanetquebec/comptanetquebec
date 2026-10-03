@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FORWARD_TO = "comptanetquebec@gmail.com";
 
@@ -12,56 +10,68 @@ const ALLOWED_RECIPIENTS = [
   "contact@comptanetquebec.com",
 ];
 
+type ResendEvent = {
+  type: string;
+  data: {
+    email_id: string;
+    from?: string;
+    to?: string[];
+    subject?: string;
+  };
+};
+
 export async function POST(req: NextRequest) {
   try {
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
-    const adminApiKey = process.env.RESEND_ADMIN_API_KEY;
+    const apiKey = process.env.RESEND_ADMIN_API_KEY;
 
-    if (!webhookSecret || !adminApiKey) {
+    if (!webhookSecret || !apiKey) {
       console.error("Variables Resend manquantes");
       return new NextResponse("Configuration manquante", {
         status: 500,
       });
     }
 
-    const payload = await req.text();
+    const rawBody = await req.text();
 
     const svixId = req.headers.get("svix-id");
     const svixTimestamp = req.headers.get("svix-timestamp");
     const svixSignature = req.headers.get("svix-signature");
 
     if (!svixId || !svixTimestamp || !svixSignature) {
-      return new NextResponse("Headers webhook manquants", {
+      return new NextResponse("Webhook invalide", {
         status: 400,
       });
     }
 
-    // Vérification cryptographique du webhook Resend
-    const event: any = resend.webhooks.verify({
-      payload,
-      headers: {
-        id: svixId,
-        timestamp: svixTimestamp,
-        signature: svixSignature,
-      },
-      webhookSecret,
+    const valid = verifyWebhookSignature({
+      rawBody,
+      id: svixId,
+      timestamp: svixTimestamp,
+      signatureHeader: svixSignature,
+      secret: webhookSecret,
     });
+
+    if (!valid) {
+      return new NextResponse("Signature invalide", {
+        status: 400,
+      });
+    }
+
+    const event = JSON.parse(rawBody) as ResendEvent;
 
     if (event.type !== "email.received") {
       return NextResponse.json({ ok: true });
     }
 
-    const emailId = event.data.email_id;
-
-    const recipients = (event.data.to || []).map((email: string) =>
+    const recipients = (event.data.to ?? []).map((email) =>
       email.toLowerCase().trim()
     );
 
-    const destination = recipients.find((email: string) =>
+    const destination = recipients.find((email) =>
       ALLOWED_RECIPIENTS.includes(email)
     );
 
-    // Ignore les autres adresses éventuelles du domaine
     if (!destination) {
       return NextResponse.json({
         ok: true,
@@ -69,136 +79,71 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Récupère le contenu complet du courriel reçu
     const emailResponse = await fetch(
-      `https://api.resend.com/emails/receiving/${emailId}`,
+      `https://api.resend.com/emails/receiving/${event.data.email_id}`,
       {
         headers: {
-          Authorization: `Bearer ${adminApiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         cache: "no-store",
       }
     );
 
     if (!emailResponse.ok) {
-      const error = await emailResponse.text();
-
-      console.error("Erreur récupération email :", error);
-
-      return new NextResponse("Impossible de récupérer le courriel", {
-        status: 500,
-      });
-    }
-
-    const email: any = await emailResponse.json();
-
-    // Récupère les pièces jointes
-    const attachmentResponse = await fetch(
-      `https://api.resend.com/emails/receiving/${emailId}/attachments`,
-      {
-        headers: {
-          Authorization: `Bearer ${adminApiKey}`,
-        },
-        cache: "no-store",
-      }
-    );
-
-    let attachments: any[] = [];
-
-    if (attachmentResponse.ok) {
-      const attachmentResult: any = await attachmentResponse.json();
-
-      const files = attachmentResult?.data || [];
-
-      attachments = await Promise.all(
-        files.map(async (file: any) => {
-          if (!file.download_url) {
-            return null;
-          }
-
-          const fileResponse = await fetch(file.download_url);
-
-          if (!fileResponse.ok) {
-            console.error(
-              "Impossible de télécharger :",
-              file.filename
-            );
-            return null;
-          }
-
-          const buffer = Buffer.from(
-            await fileResponse.arrayBuffer()
-          );
-
-          return {
-            filename: file.filename || "piece-jointe",
-            content: buffer.toString("base64"),
-          };
-        })
+      console.error(
+        "Erreur récupération courriel :",
+        await emailResponse.text()
       );
 
-      attachments = attachments.filter(Boolean);
+      return new NextResponse(
+        "Impossible de récupérer le courriel",
+        { status: 500 }
+      );
     }
 
+    const email = await emailResponse.json();
+
     const sender =
+      email.reply_to?.[0] ||
       email.from ||
       event.data.from ||
-      "Expéditeur inconnu";
+      "";
 
     const subject =
       email.subject ||
       event.data.subject ||
       "(Sans objet)";
 
-    const headerHtml = `
-      <div style="
-        font-family:Arial,sans-serif;
-        background:#f4f6f8;
-        border-left:4px solid #173f8a;
-        padding:14px 18px;
-        margin-bottom:20px;
-        line-height:1.5;
-      ">
-        <strong>Courriel reçu sur ${escapeHtml(destination)}</strong><br>
-        De : ${escapeHtml(sender)}
-      </div>
-    `;
+    const sendResponse = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "ComptaNet Québec <contact@comptanetquebec.com>",
+          to: [FORWARD_TO],
+          reply_to: sender,
+          subject,
+          html:
+            email.html ||
+            `<pre>${escapeHtml(email.text || "")}</pre>`,
+          text: email.text || "",
+        }),
+      }
+    );
 
-    const headerText =
-      `Courriel reçu sur ${destination}\n` +
-      `De : ${sender}\n\n`;
+    const sendResult = await sendResponse.json();
 
-    const { data, error } = await resend.emails.send({
-      from: "ComptaNet Québec <contact@comptanetquebec.com>",
-      to: [FORWARD_TO],
-
-      // Quand tu fais Répondre dans Gmail,
-      // la réponse va directement au client.
-      replyTo: sender,
-
-      subject,
-
-      html: email.html
-        ? `${headerHtml}${email.html}`
-        : undefined,
-
-      text:
-        headerText +
-        (email.text || ""),
-
-      attachments:
-        attachments.length > 0
-          ? attachments
-          : undefined,
-    });
-
-    if (error) {
-      console.error("Erreur transfert Gmail :", error);
+    if (!sendResponse.ok) {
+      console.error("Erreur transfert Gmail :", sendResult);
 
       return NextResponse.json(
         {
           ok: false,
-          error,
+          error: sendResult,
         },
         { status: 500 }
       );
@@ -207,17 +152,78 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       forwarded: true,
-      to: FORWARD_TO,
       originalRecipient: destination,
-      id: data?.id,
+      id: sendResult.id,
     });
   } catch (error) {
     console.error("Erreur inbound email :", error);
 
-    return new NextResponse("Webhook invalide", {
+    return new NextResponse("Erreur webhook", {
       status: 400,
     });
   }
+}
+
+function verifyWebhookSignature({
+  rawBody,
+  id,
+  timestamp,
+  signatureHeader,
+  secret,
+}: {
+  rawBody: string;
+  id: string;
+  timestamp: string;
+  signatureHeader: string;
+  secret: string;
+}) {
+  const timestampNumber = Number(timestamp);
+
+  if (!Number.isFinite(timestampNumber)) {
+    return false;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  if (Math.abs(now - timestampNumber) > 300) {
+    return false;
+  }
+
+  const secretValue = secret.startsWith("whsec_")
+    ? secret.slice(6)
+    : secret;
+
+  const secretBytes = Buffer.from(secretValue, "base64");
+
+  const expectedSignature = createHmac(
+    "sha256",
+    secretBytes
+  )
+    .update(`${id}.${timestamp}.${rawBody}`)
+    .digest("base64");
+
+  const signatures = signatureHeader
+    .split(" ")
+    .map((value) => value.trim())
+    .filter((value) => value.startsWith("v1,"))
+    .map((value) => value.slice(3));
+
+  return signatures.some((signature) => {
+    try {
+      const received = Buffer.from(signature, "base64");
+      const expected = Buffer.from(
+        expectedSignature,
+        "base64"
+      );
+
+      return (
+        received.length === expected.length &&
+        timingSafeEqual(received, expected)
+      );
+    } catch {
+      return false;
+    }
+  });
 }
 
 function escapeHtml(value: string) {
