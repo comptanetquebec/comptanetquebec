@@ -10,14 +10,27 @@ const ALLOWED_RECIPIENTS = [
   "contact@comptanetquebec.com",
 ];
 
-const OPENAI_MODEL = "gpt-6-luna";
+const OPENAI_MODEL = "gpt-5.6-luna";
 
 type TriageCategory = "auto" | "manual" | "priority";
+type CustomerReplyType = "ai" | "acknowledgement" | "none";
 
 type ResendAttachment = {
   id?: string;
-  filename?: string;
+  filename?: string | null;
   content_type?: string;
+  content_id?: string | null;
+  content_disposition?: string | null;
+  size?: number;
+  download_url?: string;
+  path?: string;
+};
+
+type ForwardAttachment = {
+  path: string;
+  filename: string;
+  content_type?: string;
+  content_id?: string;
 };
 
 type ResendEvent = {
@@ -37,7 +50,7 @@ type AIDecision = {
 };
 
 /* =========================================================
-   WEBHOOK
+   WEBHOOK PRINCIPAL
 ========================================================= */
 
 export async function POST(req: NextRequest) {
@@ -53,6 +66,10 @@ export async function POST(req: NextRequest) {
         status: 500,
       });
     }
+
+    /* =====================================================
+       VÉRIFICATION DU WEBHOOK
+    ===================================================== */
 
     const rawBody = await req.text();
 
@@ -85,6 +102,10 @@ export async function POST(req: NextRequest) {
     if (event.type !== "email.received") {
       return NextResponse.json({ ok: true });
     }
+
+    /* =====================================================
+       VÉRIFIER L'ADRESSE DESTINATAIRE
+    ===================================================== */
 
     const recipients = (event.data.to ?? []).map((email) =>
       email.toLowerCase().trim()
@@ -147,20 +168,79 @@ export async function POST(req: NextRequest) {
         stripHtml(email.html || "")
     ).trim();
 
-    const hasAttachments =
-      (event.data.attachments?.length ?? 0) > 0;
+    /* =====================================================
+       PIÈCES JOINTES
+    ===================================================== */
+
+    const attachmentMetadata: ResendAttachment[] =
+      Array.isArray(email.attachments) &&
+      email.attachments.length > 0
+        ? email.attachments
+        : event.data.attachments ?? [];
+
+    const hasAnyAttachments =
+      attachmentMetadata.length > 0;
+
+    /*
+     * Une image intégrée dans une signature courriel
+     * ne doit pas automatiquement transformer
+     * le message en dossier manuel.
+     */
+    const hasUserAttachments =
+      attachmentMetadata.some((attachment) => {
+        const disposition =
+          attachment.content_disposition?.toLowerCase();
+
+        return disposition !== "inline";
+      });
+
+    /*
+     * On récupère toutes les pièces jointes,
+     * y compris les images inline, afin que
+     * le courriel transféré reste complet.
+     */
+    let forwardedAttachments: ForwardAttachment[] = [];
+
+    if (hasAnyAttachments) {
+      try {
+        forwardedAttachments =
+          await getForwardableAttachments({
+            apiKey: resendApiKey,
+            emailId: event.data.email_id,
+            fallback: attachmentMetadata,
+          });
+      } catch (error) {
+        /*
+         * On ne transfère jamais un courriel
+         * en perdant silencieusement ses documents.
+         * Le HTTP 500 permet à Resend de réessayer.
+         */
+        console.error(
+          "Erreur récupération pièces jointes :",
+          error
+        );
+
+        return new NextResponse(
+          "Impossible de récupérer les pièces jointes",
+          { status: 500 }
+        );
+      }
+    }
 
     /* =====================================================
-       NE JAMAIS AUTO-RÉPONDRE À CES EXPÉDITEURS
+       BLOQUER LES AUTO-RÉPONSES INDÉSIRABLES
     ===================================================== */
 
     const blockedSender =
       !senderEmail ||
-      shouldNeverAutoReply(senderEmail);
+      shouldNeverAutoReply(senderEmail) ||
+      isAutomatedMessage(
+        email.headers,
+        senderEmail
+      );
 
     /* =====================================================
-       TRIAGE PAR RÈGLES
-       Les cas sensibles ne vont PAS à l'IA.
+       TRIAGE
     ===================================================== */
 
     let category: TriageCategory;
@@ -169,7 +249,7 @@ export async function POST(req: NextRequest) {
     const ruleCategory = classifyByRules({
       subject,
       text: emailText,
-      hasAttachments,
+      hasUserAttachments,
     });
 
     if (blockedSender) {
@@ -180,14 +260,13 @@ export async function POST(req: NextRequest) {
       category = "manual";
     } else {
       /*
-       * Seulement les messages généraux et non sensibles
-       * arrivent ici.
+       * Seuls les messages administratifs généraux
+       * qui ont passé nos filtres arrivent à OpenAI.
        */
       try {
         const decision = await getAIReply({
           apiKey: openaiApiKey,
           destination,
-          sender: senderRaw,
           subject,
           message: emailText,
         });
@@ -208,12 +287,141 @@ export async function POST(req: NextRequest) {
     }
 
     /* =====================================================
-       TRANSFERT DANS TON GMAIL AVEC CATÉGORIE
+       RÉPONSE AU CLIENT
+    ===================================================== */
+
+    let customerReplyType: CustomerReplyType = "none";
+    let customerReplySent = false;
+
+    /*
+     * AUTO-RÉPONSE IA
+     */
+    if (
+      category === "auto" &&
+      aiReplyText &&
+      !blockedSender
+    ) {
+      const replyResult = await sendResendEmail({
+        apiKey: resendApiKey,
+        idempotencyKey:
+          `inbound-auto-reply/${event.data.email_id}`,
+        payload: {
+          from:
+            "ComptaNet Québec <contact@comptanetquebec.com>",
+
+          to: [senderEmail],
+
+          reply_to: destination,
+
+          subject: makeReplySubject(subject),
+
+          text: aiReplyText,
+
+          html: `
+            <div style="
+              font-family:Arial,sans-serif;
+              font-size:15px;
+              line-height:1.65;
+              color:#222;
+            ">
+              ${formatTextAsHtml(aiReplyText)}
+            </div>
+          `,
+        },
+      });
+
+      if (replyResult.ok) {
+        customerReplyType = "ai";
+        customerReplySent = true;
+      } else {
+        /*
+         * Si l'auto-réponse échoue,
+         * on classe le courriel À RÉPONDRE
+         * afin que Gmail ne dise pas faussement
+         * qu'il a été auto-répondu.
+         */
+        console.error(
+          "Erreur réponse automatique :",
+          replyResult.data
+        );
+
+        category = "manual";
+      }
+    }
+
+    /*
+     * ACCUSÉ DE RÉCEPTION
+     * pour MANUEL ou PRIORITÉ
+     */
+    if (
+      (category === "manual" ||
+        category === "priority") &&
+      !blockedSender
+    ) {
+      const language = detectLanguage(
+        `${subject}\n${emailText}`
+      );
+
+      const acknowledgement = getAcknowledgement({
+        language,
+        priority: category === "priority",
+      });
+
+      const acknowledgementResult =
+        await sendResendEmail({
+          apiKey: resendApiKey,
+
+          idempotencyKey:
+            `inbound-ack/${event.data.email_id}`,
+
+          payload: {
+            from:
+              "ComptaNet Québec <contact@comptanetquebec.com>",
+
+            to: [senderEmail],
+
+            reply_to: destination,
+
+            subject: makeReplySubject(subject),
+
+            text: acknowledgement,
+
+            html: `
+              <div style="
+                font-family:Arial,sans-serif;
+                font-size:15px;
+                line-height:1.65;
+                color:#222;
+              ">
+                ${formatTextAsHtml(
+                  acknowledgement
+                )}
+              </div>
+            `,
+          },
+        });
+
+      if (acknowledgementResult.ok) {
+        customerReplyType =
+          "acknowledgement";
+
+        customerReplySent = true;
+      } else {
+        console.error(
+          "Erreur accusé réception :",
+          acknowledgementResult.data
+        );
+      }
+    }
+
+    /* =====================================================
+       TRANSFERT VERS TON GMAIL
     ===================================================== */
 
     const label = getLabel(category);
 
-    const gmailSubject = `${label} ${subject}`;
+    const gmailSubject =
+      `${label} ${subject}`;
 
     const bannerColor =
       category === "priority"
@@ -228,6 +436,15 @@ export async function POST(req: NextRequest) {
         : category === "auto"
         ? "AUTO-RÉPONDU — aucune action requise"
         : "À RÉPONDRE — intervention requise";
+
+    const attachmentInfo =
+      forwardedAttachments.length > 0
+        ? `
+          <br>
+          <strong>Pièce(s) jointe(s) :</strong>
+          ${forwardedAttachments.length}
+        `
+        : "";
 
     const forwardHtml = `
       <div style="
@@ -257,6 +474,8 @@ export async function POST(req: NextRequest) {
 
         <strong>Sujet original :</strong>
         ${escapeHtml(subject)}
+
+        ${attachmentInfo}
       </div>
 
       ${
@@ -272,19 +491,26 @@ export async function POST(req: NextRequest) {
       `${bannerText}\n\n` +
       `Adresse : ${destination}\n` +
       `De : ${senderRaw}\n` +
-      `Sujet original : ${subject}\n\n` +
+      `Sujet original : ${subject}\n` +
+      `Pièces jointes : ${forwardedAttachments.length}\n\n` +
       emailText;
 
     const forwardResult = await sendResendEmail({
       apiKey: resendApiKey,
+
       idempotencyKey:
         `inbound-forward/${event.data.email_id}`,
+
       payload: {
         from:
           "ComptaNet Québec <contact@comptanetquebec.com>",
 
         to: [FORWARD_TO],
 
+        /*
+         * Dans Gmail, Répondre renverra
+         * directement au vrai client.
+         */
         reply_to:
           senderEmail ||
           senderRaw,
@@ -294,6 +520,11 @@ export async function POST(req: NextRequest) {
         html: forwardHtml,
 
         text: forwardText,
+
+        attachments:
+          forwardedAttachments.length > 0
+            ? forwardedAttachments
+            : undefined,
       },
     });
 
@@ -314,143 +545,19 @@ export async function POST(req: NextRequest) {
     }
 
     /* =====================================================
-       EXPÉDITEUR AUTOMATIQUE :
-       ON TRANSFÈRE MAIS ON NE RÉPOND PAS
+       RÉSULTAT
     ===================================================== */
-
-    if (blockedSender) {
-      return NextResponse.json({
-        ok: true,
-        forwarded: true,
-        category,
-        customerReply: false,
-      });
-    }
-
-    /* =====================================================
-       AUTO-RÉPONSE IA
-    ===================================================== */
-
-    if (
-      category === "auto" &&
-      aiReplyText
-    ) {
-      const replyResult = await sendResendEmail({
-        apiKey: resendApiKey,
-
-        idempotencyKey:
-          `inbound-auto-reply/${event.data.email_id}`,
-
-        payload: {
-          from:
-            "ComptaNet Québec <contact@comptanetquebec.com>",
-
-          to: [senderEmail],
-
-          reply_to: destination,
-
-          subject: makeReplySubject(subject),
-
-          text: aiReplyText,
-
-          html: `
-            <div style="
-              font-family:Arial,sans-serif;
-              font-size:15px;
-              line-height:1.65;
-              color:#222;
-            ">
-              ${formatTextAsHtml(aiReplyText)}
-            </div>
-          `,
-        },
-      });
-
-      if (!replyResult.ok) {
-        console.error(
-          "Erreur réponse automatique :",
-          replyResult.data
-        );
-
-        return NextResponse.json({
-          ok: true,
-          forwarded: true,
-          category,
-          customerReply: false,
-          reason: "reply_send_error",
-        });
-      }
-
-      return NextResponse.json({
-        ok: true,
-        forwarded: true,
-        category,
-        customerReply: true,
-        replyType: "ai",
-      });
-    }
-
-    /* =====================================================
-       MANUEL / PRIORITÉ :
-       ACCUSÉ DE RÉCEPTION AUTOMATIQUE
-    ===================================================== */
-
-    const language =
-      detectLanguage(emailText);
-
-    const acknowledgement =
-      getAcknowledgement({
-        language,
-        priority:
-          category === "priority",
-      });
-
-    const acknowledgementResult =
-      await sendResendEmail({
-        apiKey: resendApiKey,
-
-        idempotencyKey:
-          `inbound-ack/${event.data.email_id}`,
-
-        payload: {
-          from:
-            "ComptaNet Québec <contact@comptanetquebec.com>",
-
-          to: [senderEmail],
-
-          reply_to: destination,
-
-          subject: makeReplySubject(subject),
-
-          text: acknowledgement,
-
-          html: `
-            <div style="
-              font-family:Arial,sans-serif;
-              font-size:15px;
-              line-height:1.65;
-              color:#222;
-            ">
-              ${formatTextAsHtml(acknowledgement)}
-            </div>
-          `,
-        },
-      });
-
-    if (!acknowledgementResult.ok) {
-      console.error(
-        "Erreur accusé réception :",
-        acknowledgementResult.data
-      );
-    }
 
     return NextResponse.json({
       ok: true,
       forwarded: true,
       category,
-      customerReply:
-        acknowledgementResult.ok,
-      replyType: "acknowledgement",
+      customerReplySent,
+      customerReplyType,
+      attachmentsForwarded:
+        forwardedAttachments.length,
+      originalRecipient: destination,
+      forwardId: forwardResult.data?.id,
     });
   } catch (error) {
     console.error(
@@ -468,17 +575,189 @@ export async function POST(req: NextRequest) {
 }
 
 /* =========================================================
-   TRIAGE AUTOMATIQUE PAR RÈGLES
+   PIÈCES JOINTES RESEND
+========================================================= */
+
+async function getForwardableAttachments({
+  apiKey,
+  emailId,
+  fallback,
+}: {
+  apiKey: string;
+  emailId: string;
+  fallback: ResendAttachment[];
+}): Promise<ForwardAttachment[]> {
+  /*
+   * Resend fournit un endpoint pour lister
+   * les pièces jointes du courriel reçu.
+   */
+  const listResponse = await fetch(
+    `https://api.resend.com/emails/receiving/${emailId}/attachments?limit=100`,
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      cache: "no-store",
+    }
+  );
+
+  let listedAttachments: ResendAttachment[] = [];
+
+  if (listResponse.ok) {
+    const listData: any =
+      await listResponse
+        .json()
+        .catch(() => null);
+
+    if (Array.isArray(listData?.data)) {
+      listedAttachments =
+        listData.data;
+    }
+  } else {
+    console.error(
+      "Erreur liste pièces jointes :",
+      await listResponse.text()
+    );
+  }
+
+  /*
+   * Si la liste ne retourne rien,
+   * on utilise les métadonnées du webhook.
+   */
+  const source =
+    listedAttachments.length > 0
+      ? listedAttachments
+      : fallback;
+
+  if (source.length === 0) {
+    return [];
+  }
+
+  const attachments =
+    await Promise.all(
+      source.map(
+        async (
+          attachment,
+          index
+        ): Promise<ForwardAttachment> => {
+          let details: any =
+            attachment;
+
+          /*
+           * Selon la réponse API,
+           * download_url peut déjà être présent.
+           * Sinon on récupère le détail
+           * de cette pièce jointe.
+           */
+          if (
+            !details.download_url &&
+            !details.path &&
+            attachment.id
+          ) {
+            const detailResponse =
+              await fetch(
+                `https://api.resend.com/emails/receiving/${emailId}/attachments/${attachment.id}`,
+                {
+                  headers: {
+                    Authorization:
+                      `Bearer ${apiKey}`,
+                  },
+                  cache: "no-store",
+                }
+              );
+
+            if (
+              !detailResponse.ok
+            ) {
+              throw new Error(
+                `Impossible de récupérer la pièce jointe ${attachment.id}`
+              );
+            }
+
+            const detailData: any =
+              await detailResponse
+                .json()
+                .catch(() => null);
+
+            details =
+              detailData?.data ??
+              detailData ??
+              attachment;
+          }
+
+          const downloadUrl =
+            details.download_url ||
+            details.path ||
+            attachment.download_url ||
+            attachment.path;
+
+          if (!downloadUrl) {
+            throw new Error(
+              `Aucune URL de téléchargement pour la pièce jointe ${
+                attachment.filename ||
+                attachment.id ||
+                index + 1
+              }`
+            );
+          }
+
+          const filename =
+            details.filename ||
+            attachment.filename ||
+            `piece-jointe-${index + 1}`;
+
+          const contentType =
+            details.content_type ||
+            attachment.content_type;
+
+          const contentId =
+            details.content_id ||
+            attachment.content_id;
+
+          return {
+            /*
+             * Resend récupère lui-même
+             * le fichier à partir de cette URL.
+             * On évite ainsi de charger les PDF
+             * en mémoire dans Vercel.
+             */
+            path: downloadUrl,
+
+            filename,
+
+            ...(contentType
+              ? {
+                  content_type:
+                    contentType,
+                }
+              : {}),
+
+            ...(contentId
+              ? {
+                  content_id:
+                    contentId,
+                }
+              : {}),
+          };
+        }
+      )
+    );
+
+  return attachments;
+}
+
+/* =========================================================
+   TRIAGE PAR RÈGLES
 ========================================================= */
 
 function classifyByRules({
   subject,
   text,
-  hasAttachments,
+  hasUserAttachments,
 }: {
   subject: string;
   text: string;
-  hasAttachments: boolean;
+  hasUserAttachments: boolean;
 }): TriageCategory | null {
   const value =
     `${subject}\n${text}`.toLowerCase();
@@ -494,7 +773,7 @@ function classifyByRules({
   }
 
   /*
-   * NAS
+   * NAS canadien
    */
   if (
     /\b\d{3}[- ]?\d{3}[- ]?\d{3}\b/.test(
@@ -508,22 +787,26 @@ function classifyByRules({
    * Cartes / comptes / longues séries numériques
    */
   if (
-    /(?:\d[ -]*?){13,19}/.test(value)
+    /(?:\d[ -]*?){13,19}/.test(
+      value
+    )
   ) {
     return "manual";
   }
 
   /*
-   * Pièces jointes :
-   * intervention humaine par défaut.
+   * Un vrai document joint =
+   * intervention humaine.
+   *
+   * Les images inline d'une signature
+   * ne comptent pas.
    */
-  if (hasAttachments) {
+  if (hasUserAttachments) {
     return "manual";
   }
 
   /*
-   * Fiscalité ou dossier personnel :
-   * l'IA ne rédige pas de conseil.
+   * Fiscalité / dossier personnel
    */
   const sensitiveTerms =
     /\b(NAS|SIN|social insurance|assurance sociale|T1|T2|T3|T4|T4A|T5|RL[- ]?\d+|TP[- ]?\d+|imp[oô]t|impots|tax return|déclaration de revenus|declaration de revenus|déduction|deduction|crédit d'impôt|credit d'impot|tax credit|cotisation|pension alimentaire|revenu|income|salaire|salary|travailleur autonome|self-employed|TPS|TVQ|GST|QST|remboursement d'impôt|remboursement d'impot|tax refund)\b/i;
@@ -536,19 +819,17 @@ function classifyByRules({
 }
 
 /* =========================================================
-   IA
+   IA COMPTANET QUÉBEC
 ========================================================= */
 
 async function getAIReply({
   apiKey,
   destination,
-  sender,
   subject,
   message,
 }: {
   apiKey: string;
   destination: string;
-  sender: string;
   subject: string;
   message: string;
 }): Promise<AIDecision> {
@@ -568,27 +849,6 @@ Une personne de ComptaNet Québec doit intervenir.
 
 3. "priority"
 Une personne doit intervenir rapidement.
-
-Retourne UNIQUEMENT du JSON valide :
-
-{
-  "category": "auto",
-  "message": "réponse complète au client"
-}
-
-ou :
-
-{
-  "category": "manual",
-  "message": ""
-}
-
-ou :
-
-{
-  "category": "priority",
-  "message": ""
-}
 
 UTILISE "auto" pour les questions administratives générales, par exemple :
 
@@ -641,6 +901,16 @@ RÈGLES ABSOLUES :
 - signer : ComptaNet Québec.
 `;
 
+  /*
+   * On masque certaines données évidentes
+   * avant de les transmettre au modèle.
+   */
+  const sanitizedSubject =
+    sanitizeForAI(subject);
+
+  const sanitizedMessage =
+    sanitizeForAI(message);
+
   const response = await fetch(
     "https://api.openai.com/v1/responses",
     {
@@ -663,11 +933,49 @@ RÈGLES ABSOLUES :
 
         instructions,
 
+        /*
+         * Structured Outputs :
+         * le modèle doit retourner
+         * exactement notre structure JSON.
+         */
+        text: {
+          format: {
+            type: "json_schema",
+            name: "comptanet_email_triage",
+            strict: true,
+            schema: {
+              type: "object",
+
+              properties: {
+                category: {
+                  type: "string",
+                  enum: [
+                    "auto",
+                    "manual",
+                    "priority",
+                  ],
+                },
+
+                message: {
+                  type: "string",
+                },
+              },
+
+              required: [
+                "category",
+                "message",
+              ],
+
+              additionalProperties:
+                false,
+            },
+          },
+        },
+
         input:
           `Adresse ComptaNet : ${destination}\n` +
-          `Expéditeur : ${sender}\n` +
-          `Sujet : ${subject}\n\n` +
-          `Message :\n${message}`,
+          `Sujet : ${sanitizedSubject}\n\n` +
+          `Message :\n${sanitizedMessage}`,
       }),
     }
   );
@@ -774,13 +1082,14 @@ ComptaNet Québec`;
 }
 
 /* =========================================================
-   LANGUE
+   DÉTECTION DE LANGUE
 ========================================================= */
 
 function detectLanguage(
   value: string
 ): "fr" | "en" | "es" {
-  const text = value.toLowerCase();
+  const text =
+    value.toLowerCase();
 
   let fr = 0;
   let en = 0;
@@ -789,28 +1098,32 @@ function detectLanguage(
   const frenchWords = [
     "bonjour",
     "merci",
-    "je ",
-    "vous ",
-    "mon ",
-    "mes ",
+    " je ",
+    " vous ",
+    " mon ",
+    " mes ",
     "comment",
     "pourquoi",
     "document",
     "impôt",
     "compte",
+    "déclaration",
+    "revenu",
   ];
 
   const englishWords = [
     "hello",
-    "hi ",
+    " hi ",
     "thank",
     "thanks",
-    "my ",
-    "how ",
-    "what ",
+    " my ",
+    " how ",
+    " what ",
     "please",
     "account",
     "documents",
+    "income",
+    "tax",
   ];
 
   const spanishWords = [
@@ -819,8 +1132,8 @@ function detectLanguage(
     "por favor",
     "cómo",
     "como ",
-    "mi ",
-    "mis ",
+    " mi ",
+    " mis ",
     "cuenta",
     "documentos",
     "quiero",
@@ -838,11 +1151,17 @@ function detectLanguage(
     if (text.includes(word)) es++;
   }
 
-  if (es > fr && es > en) {
+  if (
+    es > fr &&
+    es > en
+  ) {
     return "es";
   }
 
-  if (en > fr && en > es) {
+  if (
+    en > fr &&
+    en > es
+  ) {
     return "en";
   }
 
@@ -850,7 +1169,7 @@ function detectLanguage(
 }
 
 /* =========================================================
-   LIBELLÉS GMAIL
+   CATÉGORIES DANS L'OBJET GMAIL
 ========================================================= */
 
 function getLabel(
@@ -868,7 +1187,7 @@ function getLabel(
 }
 
 /* =========================================================
-   NE JAMAIS AUTO-RÉPONDRE
+   EXPÉDITEURS À NE JAMAIS AUTO-RÉPONDRE
 ========================================================= */
 
 function shouldNeverAutoReply(
@@ -892,11 +1211,91 @@ function shouldNeverAutoReply(
     return true;
   }
 
+  const blockedPatterns = [
+    "mailer-daemon",
+    "postmaster",
+    "no-reply",
+    "noreply",
+    "no_reply",
+    "auto-reply",
+    "autoreply",
+    "notification",
+    "notifications",
+  ];
+
+  return blockedPatterns.some(
+    (pattern) =>
+      email.includes(pattern)
+  );
+}
+
+/* =========================================================
+   DÉTECTION DES MESSAGES AUTOMATIQUES
+========================================================= */
+
+function isAutomatedMessage(
+  headers: any,
+  senderEmail: string
+) {
   if (
-    email.includes("mailer-daemon") ||
-    email.includes("postmaster") ||
-    email.includes("no-reply") ||
-    email.includes("noreply")
+    shouldNeverAutoReply(
+      senderEmail
+    )
+  ) {
+    return true;
+  }
+
+  if (!headers) {
+    return false;
+  }
+
+  const normalized:
+    Record<string, string> = {};
+
+  for (
+    const [key, value] of
+    Object.entries(headers)
+  ) {
+    normalized[
+      key.toLowerCase()
+    ] = Array.isArray(value)
+      ? value.join(", ")
+      : String(value ?? "");
+  }
+
+  const autoSubmitted =
+    normalized[
+      "auto-submitted"
+    ]?.toLowerCase();
+
+  if (
+    autoSubmitted &&
+    autoSubmitted !== "no"
+  ) {
+    return true;
+  }
+
+  const precedence =
+    normalized[
+      "precedence"
+    ]?.toLowerCase();
+
+  if (
+    precedence === "bulk" ||
+    precedence === "list" ||
+    precedence === "junk"
+  ) {
+    return true;
+  }
+
+  if (
+    normalized["x-autoreply"] ||
+    normalized[
+      "x-autorespond"
+    ] ||
+    normalized[
+      "x-auto-response-suppress"
+    ]
   ) {
     return true;
   }
@@ -915,7 +1314,10 @@ async function sendResendEmail({
 }: {
   apiKey: string;
   idempotencyKey: string;
-  payload: Record<string, unknown>;
+  payload: Record<
+    string,
+    unknown
+  >;
 }) {
   const response = await fetch(
     "https://api.resend.com/emails",
@@ -954,7 +1356,7 @@ async function sendResendEmail({
 }
 
 /* =========================================================
-   LECTURE RÉPONSE OPENAI
+   OPENAI
 ========================================================= */
 
 function extractOpenAIText(
@@ -983,7 +1385,9 @@ function extractOpenAIText(
         typeof content.text ===
           "string"
       ) {
-        texts.push(content.text);
+        texts.push(
+          content.text
+        );
       }
     }
   }
@@ -1016,9 +1420,12 @@ function parseAIJSON(
       JSON.parse(cleaned);
 
     if (
-      parsed.category !== "auto" &&
-      parsed.category !== "manual" &&
-      parsed.category !== "priority"
+      parsed.category !==
+        "auto" &&
+      parsed.category !==
+        "manual" &&
+      parsed.category !==
+        "priority"
     ) {
       return {
         category: "manual",
@@ -1042,6 +1449,39 @@ function parseAIJSON(
       message: "",
     };
   }
+}
+
+/* =========================================================
+   MASQUAGE AVANT IA
+========================================================= */
+
+function sanitizeForAI(
+  value: string
+) {
+  return value
+    /*
+     * Courriels
+     */
+    .replace(
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
+      "[courriel masqué]"
+    )
+
+    /*
+     * NAS 000-000-000
+     */
+    .replace(
+      /\b\d{3}[- ]?\d{3}[- ]?\d{3}\b/g,
+      "[numéro masqué]"
+    )
+
+    /*
+     * Cartes / longues séries
+     */
+    .replace(
+      /(?:\d[ -]*?){13,19}/g,
+      "[numéro masqué]"
+    );
 }
 
 /* =========================================================
@@ -1152,6 +1592,10 @@ function verifyWebhookSignature({
       Date.now() / 1000
     );
 
+  /*
+   * Rejette un webhook
+   * vieux de plus de 5 minutes.
+   */
   if (
     Math.abs(
       now -
